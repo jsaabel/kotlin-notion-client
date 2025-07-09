@@ -1,5 +1,5 @@
 [versions]
-#kotest = "5.9.1"
+kotest = "5.9.1"
 ben-manes-versions = "0.52.0"
 kotlin = "2.2.0"
 kotlinter = "5.1.1"
@@ -15,7 +15,9 @@ kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", versi
 kotlinter = { id = "org.jmailen.kotlinter", version.ref = "kotlinter" }
 
 [libraries]
-#kotest = { group = "io.kotest", name = "kotest-runner-junit5", version.ref = "kotest" }
+kotest-runner-junit5 = { group = "io.kotest", name = "kotest-runner-junit5", version.ref = "kotest" }
+kotest-framework-engine = { group = "io.kotest", name = "kotest-framework-engine", version.ref = "kotest" }
+kotest-assertions-core = { group = "io.kotest", name = "kotest-assertions-core", version.ref = "kotest" }
 #ktor-client-serialization = { group = "io.ktor", name = "ktor-client-serialization", version.ref = "ktor"}
 kotlinx-serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "kotlinx-serialization-json" }
 ktor-client-cio = { group = "io.ktor", name = "ktor-client-cio", version.ref = "ktor" }
@@ -24,6 +26,7 @@ ktor-client-core = { group = "io.ktor", name = "ktor-client-core", version.ref =
 ktor-client-json = { group = "io.ktor", name = "ktor-client-json", version.ref = "ktor" }
 ktor-client-logging = { group = "io.ktor", name = "ktor-client-logging", version.ref = "ktor" }
 ktor-serialization-kotlinx-json = { group = "io.ktor", name = "ktor-serialization-kotlinx-json", version.ref = "ktor" }
+ktor-client-auth = { group = "io.ktor", name = "ktor-client-auth", version.ref = "ktor" }
 logback-classic = { group = "ch.qos.logback", name = "logback-classic", version.ref = "logback" }
 slf4j-api = { group = "org.slf4j", name = "slf4j-api", version.ref = "slf4j" }
 
@@ -33,6 +36,7 @@ ktor = ["ktor-client-content-negotiation",
     "ktor-client-cio",
     "ktor-client-json",
     "ktor-client-logging",
+    "ktor-client-auth",
     "ktor-serialization-kotlinx-json"]
 logging = ["slf4j-api", "logback-classic"]
 
