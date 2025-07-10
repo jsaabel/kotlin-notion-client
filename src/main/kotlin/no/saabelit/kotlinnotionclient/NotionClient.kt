@@ -13,6 +13,8 @@ import io.ktor.client.plugins.logging.Logger
 import io.ktor.client.plugins.logging.Logging
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.serialization.json.Json
+import no.saabelit.kotlinnotionclient.api.DatabasesApi
+import no.saabelit.kotlinnotionclient.api.PagesApi
 import no.saabelit.kotlinnotionclient.api.UsersApi
 import no.saabelit.kotlinnotionclient.config.NotionConfig
 
@@ -43,10 +45,10 @@ class NotionClient private constructor(
 ) {
     // API delegates - each area has its own specialized client
     val users = UsersApi(httpClient, config)
+    val pages = PagesApi(httpClient, config)
+    val databases = DatabasesApi(httpClient, config)
 
     // TODO: Add remaining API delegates as we implement them
-    // val pages = PagesApi(httpClient)
-    // val databases = DatabasesApi(httpClient)
     // val blocks = BlocksApi(httpClient)
 
     companion object {

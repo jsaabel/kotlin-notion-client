@@ -19,12 +19,12 @@ dependencies {
     implementation(libs.ktor.client.core)
     implementation(libs.bundles.ktor)
     implementation(libs.bundles.logging)
-    implementation("io.ktor:ktor-client-cio-jvm:3.2.1") // TODO: Why is this not included in libs?
-    
+
     // Test dependencies
     testImplementation(libs.kotest.runner.junit5)
     testImplementation(libs.kotest.framework.engine)
     testImplementation(libs.kotest.assertions.core)
+    testImplementation(libs.ktor.client.mock)
 }
 
 tasks.test {
