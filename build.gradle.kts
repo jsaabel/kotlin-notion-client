@@ -1,5 +1,5 @@
 plugins {
-//    id("java")
+    application
     alias(libs.plugins.ben.manes.versions)
     alias(libs.plugins.kotlin.jvm)
     alias(libs.plugins.kotlin.serialization)

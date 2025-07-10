@@ -274,3 +274,8 @@ sealed class Parent {
 - [Ktor Documentation](https://ktor.io/docs/)
 - [Kotlin Serialization Guide](https://github.com/Kotlin/kotlinx.serialization/blob/master/docs/serialization-guide.md)
 - [Kotest Documentation](https://kotest.io/)
+
+## Dependency Management Notes
+- We are using a `libs.toml` file for centralized dependency and version management
+- This approach provides a single source of truth for all project dependencies
+- Allows for easier version updates and consistency across the project

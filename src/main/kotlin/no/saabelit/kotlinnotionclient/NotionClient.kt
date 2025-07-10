@@ -13,6 +13,7 @@ import io.ktor.client.plugins.logging.Logger
 import io.ktor.client.plugins.logging.Logging
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.serialization.json.Json
+import no.saabelit.kotlinnotionclient.api.UsersApi
 import no.saabelit.kotlinnotionclient.config.NotionConfig
 
 /**
@@ -38,10 +39,12 @@ import no.saabelit.kotlinnotionclient.config.NotionConfig
  */
 class NotionClient private constructor(
     private val httpClient: HttpClient,
-    private val config: NotionConfig,
+    val config: NotionConfig,
 ) {
-    // TODO: Add API delegates here as we implement them
-    // val users = UsersApi(httpClient)
+    // API delegates - each area has its own specialized client
+    val users = UsersApi(httpClient, config)
+
+    // TODO: Add remaining API delegates as we implement them
     // val pages = PagesApi(httpClient)
     // val databases = DatabasesApi(httpClient)
     // val blocks = BlocksApi(httpClient)
@@ -95,8 +98,9 @@ class NotionClient private constructor(
                         socketTimeoutMillis = config.socketTimeout.inWholeMilliseconds
                     }
 
-                    // Set default headers
+                    // Set default request configuration
                     defaultRequest {
+                        url(config.baseUrl)
                         headers.append("Notion-Version", config.apiVersion)
                         headers.append("User-Agent", config.userAgent)
                     }
