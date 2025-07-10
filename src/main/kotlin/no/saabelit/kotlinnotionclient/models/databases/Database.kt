@@ -25,9 +25,9 @@ data class Database(
     @SerialName("last_edited_time")
     override val lastEditedTime: String,
     @SerialName("created_by")
-    override val createdBy: User,
+    override val createdBy: User? = null,
     @SerialName("last_edited_by")
-    override val lastEditedBy: User,
+    override val lastEditedBy: User? = null,
     @SerialName("archived")
     override val archived: Boolean,
     @SerialName("title")
@@ -260,6 +260,76 @@ sealed class DatabaseProperty {
     ) : DatabaseProperty() {
         @SerialName("type")
         override val type: String = "last_edited_by"
+    }
+
+    @Serializable
+    @SerialName("people")
+    data class People(
+        @SerialName("id")
+        override val id: String,
+        @SerialName("name")
+        override val name: String,
+        @SerialName("people")
+        val people: JsonObject,
+    ) : DatabaseProperty() {
+        @SerialName("type")
+        override val type: String = "people"
+    }
+
+    @Serializable
+    @SerialName("relation")
+    data class Relation(
+        @SerialName("id")
+        override val id: String,
+        @SerialName("name")
+        override val name: String,
+        @SerialName("relation")
+        val relation: JsonObject,
+    ) : DatabaseProperty() {
+        @SerialName("type")
+        override val type: String = "relation"
+    }
+
+    @Serializable
+    @SerialName("rollup")
+    data class Rollup(
+        @SerialName("id")
+        override val id: String,
+        @SerialName("name")
+        override val name: String,
+        @SerialName("rollup")
+        val rollup: JsonObject,
+    ) : DatabaseProperty() {
+        @SerialName("type")
+        override val type: String = "rollup"
+    }
+
+    @Serializable
+    @SerialName("formula")
+    data class Formula(
+        @SerialName("id")
+        override val id: String,
+        @SerialName("name")
+        override val name: String,
+        @SerialName("formula")
+        val formula: JsonObject,
+    ) : DatabaseProperty() {
+        @SerialName("type")
+        override val type: String = "formula"
+    }
+
+    @Serializable
+    @SerialName("files")
+    data class Files(
+        @SerialName("id")
+        override val id: String,
+        @SerialName("name")
+        override val name: String,
+        @SerialName("files")
+        val files: JsonObject,
+    ) : DatabaseProperty() {
+        @SerialName("type")
+        override val type: String = "files"
     }
 }
 

@@ -23,9 +23,9 @@ data class Page(
     @SerialName("last_edited_time")
     override val lastEditedTime: String,
     @SerialName("created_by")
-    override val createdBy: User,
+    override val createdBy: User? = null,
     @SerialName("last_edited_by")
-    override val lastEditedBy: User,
+    override val lastEditedBy: User? = null,
     @SerialName("archived")
     override val archived: Boolean,
     @SerialName("parent")
@@ -69,6 +69,20 @@ data class PageIcon(
 data class PageCover(
     @SerialName("type")
     val type: String,
+    @SerialName("external")
+    val external: ExternalFile? = null,
+    @SerialName("file")
+    val file: NotionFile? = null,
+)
+
+@Serializable
+data class ExternalFile(
+    @SerialName("url")
+    val url: String,
+)
+
+@Serializable
+data class NotionFile(
     @SerialName("url")
     val url: String,
     @SerialName("expiry_time")

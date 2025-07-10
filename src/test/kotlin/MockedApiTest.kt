@@ -6,14 +6,18 @@ import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.respond
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.http.HttpHeaders
+import io.ktor.http.HttpMethod
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.headersOf
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.serialization.json.Json
+import no.saabelit.kotlinnotionclient.*
 import no.saabelit.kotlinnotionclient.api.DatabasesApi
 import no.saabelit.kotlinnotionclient.api.PagesApi
 import no.saabelit.kotlinnotionclient.config.NotionConfig
 import no.saabelit.kotlinnotionclient.exceptions.NotionException
+import no.saabelit.kotlinnotionclient.models.databases.Database
+import no.saabelit.kotlinnotionclient.models.pages.Page
 
 /**
  * Unit tests using mocked HTTP responses.
@@ -22,108 +26,85 @@ import no.saabelit.kotlinnotionclient.exceptions.NotionException
 class MockedApiTest :
     StringSpec({
 
-        "Pages API should parse valid JSON response correctly" {
-            val pageJson =
-                this::class.java.classLoader
-                    .getResource("sample-page-response.json")!!
-                    .readText()
-
-            val mockEngine =
-                MockEngine { request ->
-                    respond(
-                        content = pageJson,
-                        status = HttpStatusCode.OK,
-                        headers = headersOf(HttpHeaders.ContentType, "application/json"),
-                    )
-                }
-
-            val httpClient =
-                HttpClient(mockEngine) {
-                    install(ContentNegotiation) {
-                        json(Json { ignoreUnknownKeys = true })
-                    }
-                }
+        "Pages API should parse official sample response correctly" {
+            val httpClient = mockClient {
+                addPageRetrieveResponse()
+            }
 
             val config = NotionConfig(token = "test-token")
             val pagesApi = PagesApi(httpClient, config)
 
-            val page = pagesApi.retrieve("22bc63fd-82ed-80da-bbe4-d340cd1b97c7")
+            val page = pagesApi.retrieve("59833787-2cf9-4fdf-8782-e53db20768a5")
 
-            page.id shouldBe "22bc63fd-82ed-80da-bbe4-d340cd1b97c7"
+            // Test using official sample data - much more comprehensive
+            page.id shouldBe "59833787-2cf9-4fdf-8782-e53db20768a5"
             page.objectType shouldBe "page"
-            page.url shouldBe "https://www.notion.so/Test-Page-Title-22bc63fd82ed80dabbe4d340cd1b97c7"
+            page.url shouldBe "https://www.notion.so/Tuscan-kale-598337872cf94fdf8782e53db20768a5"
             page.archived shouldBe false
-            page.inTrash shouldBe false
-            page.createdBy.name shouldBe "Test User"
-            page.lastEditedBy.name shouldBe "Test User"
+            page.createdBy?.id shouldBe "ee5f0f84-409a-440f-983a-a5315961c6e4"
+            page.lastEditedBy?.id shouldBe "0c3e9826-b8f7-4f73-927d-2caaf86f1103"
             page.icon shouldNotBe null
-            page.cover shouldBe null
+            page.cover shouldNotBe null
+            
+            // Test complex properties from official sample - verify they exist
+            page.properties.containsKey("Name") shouldBe true
+            page.properties.containsKey("Food group") shouldBe true
+            page.properties.containsKey("Store availability") shouldBe true
+            page.properties.containsKey("Price") shouldBe true
+            page.properties.containsKey("Description") shouldBe true
+            page.properties.containsKey("Recipes") shouldBe true
+            page.properties.containsKey("Number of meals") shouldBe true
 
             httpClient.close()
         }
 
-        "Databases API should parse valid JSON response correctly" {
-            val databaseJson =
-                this::class.java.classLoader
-                    .getResource("sample-database-response.json")!!
-                    .readText()
-
-            val mockEngine =
-                MockEngine { request ->
-                    respond(
-                        content = databaseJson,
-                        status = HttpStatusCode.OK,
-                        headers = headersOf(HttpHeaders.ContentType, "application/json"),
-                    )
-                }
-
-            val httpClient =
-                HttpClient(mockEngine) {
-                    install(ContentNegotiation) {
-                        json(Json { ignoreUnknownKeys = true })
-                    }
-                }
+        "Databases API should parse official sample response correctly" {
+            val httpClient = mockClient {
+                addDatabaseRetrieveResponse()
+            }
 
             val config = NotionConfig(token = "test-token")
             val databasesApi = DatabasesApi(httpClient, config)
 
-            val database = databasesApi.retrieve("22bc63fd-82ed-80d6-a648-d1433b382457")
+            val database = databasesApi.retrieve("bc1211ca-e3f1-4939-ae34-5260b16f627c")
 
-            database.id shouldBe "22bc63fd-82ed-80d6-a648-d1433b382457"
+            // Test using official sample data - much more comprehensive
+            database.id shouldBe "bc1211ca-e3f1-4939-ae34-5260b16f627c"
             database.objectType shouldBe "database"
-            database.url shouldBe "https://www.notion.so/22bc63fd82ed80d6a648d1433b382457"
+            database.url shouldBe "https://www.notion.so/bc1211cae3f14939ae34260b16f627c"
             database.archived shouldBe false
-            database.inTrash shouldBe false
             database.isInline shouldBe false
-            database.title.first().plainText shouldBe "Test Database"
-            database.description.isEmpty() shouldBe true
-            database.properties.size shouldBe 3
-            database.properties["Name"]?.type shouldBe "title"
-            database.properties["Status"]?.type shouldBe "select"
-            database.properties["Created"]?.type shouldBe "created_time"
+            database.title.first().plainText shouldBe "Grocery List"
+            database.description.first().plainText shouldBe "Grocery list for just kale 🥬"
+            
+            // Test comprehensive property schema from official sample - verify they exist
+            database.properties.containsKey("+1") shouldBe true
+            database.properties.containsKey("In stock") shouldBe true
+            database.properties.containsKey("Price") shouldBe true
+            database.properties.containsKey("Description") shouldBe true
+            database.properties.containsKey("Last ordered") shouldBe true
+            database.properties.containsKey("Meals") shouldBe true
+            database.properties.containsKey("Number of meals") shouldBe true
+            database.properties.containsKey("Store availability") shouldBe true
+            database.properties.containsKey("Photo") shouldBe true
+            database.properties.containsKey("Food group") shouldBe true
+            database.properties.containsKey("Name") shouldBe true
+            
+            // Test that we have all the complex properties
+            database.properties.size shouldBe 11
 
             httpClient.close()
         }
 
         "Pages API should handle 404 error correctly" {
-            // TODO: Make sure this matches / is representative of actual response
-            val mockEngine =
-                MockEngine { request ->
-                    respond(
-                        content =
-                            """{"object": "error", "status": 404, "code": "object_not_found", """ +
-                                """"message": "Could not find page with ID: invalid-id"}""",
-                        status = HttpStatusCode.NotFound,
-                        headers = headersOf(HttpHeaders.ContentType, "application/json"),
-                    )
-                }
-
-            val httpClient =
-                HttpClient(mockEngine) {
-                    install(ContentNegotiation) {
-                        json(Json { ignoreUnknownKeys = true })
-                    }
-                }
+            val httpClient = mockClient {
+                addErrorResponse(
+                    HttpMethod.Get,
+                    "*/v1/pages/*",
+                    HttpStatusCode.NotFound,
+                    "Could not find page with ID: invalid-id"
+                )
+            }
 
             val config = NotionConfig(token = "test-token")
             val pagesApi = PagesApi(httpClient, config)
@@ -143,23 +124,14 @@ class MockedApiTest :
         }
 
         "Databases API should handle 400 error correctly" {
-            val mockEngine =
-                MockEngine { request ->
-                    respond(
-                        content =
-                            """{"object": "error", "status": 400, "code": "validation_error", """ +
-                                """"message": "Invalid database ID format"}""",
-                        status = HttpStatusCode.BadRequest,
-                        headers = headersOf(HttpHeaders.ContentType, "application/json"),
-                    )
-                }
-
-            val httpClient =
-                HttpClient(mockEngine) {
-                    install(ContentNegotiation) {
-                        json(Json { ignoreUnknownKeys = true })
-                    }
-                }
+            val httpClient = mockClient {
+                addErrorResponse(
+                    HttpMethod.Get,
+                    "*/v1/databases/*",
+                    HttpStatusCode.BadRequest,
+                    "Invalid database ID format"
+                )
+            }
 
             val config = NotionConfig(token = "test-token")
             val databasesApi = DatabasesApi(httpClient, config)
@@ -205,5 +177,39 @@ class MockedApiTest :
             caughtException?.cause?.message shouldBe "Network connection failed"
 
             httpClient.close()
+        }
+
+        "MockPresets should provide convenient test setups" {
+            // Test the standard CRUD operations preset
+            val httpClient = MockPresets.standardCrudOperations()
+
+            val config = NotionConfig(token = "test-token")
+            val pagesApi = PagesApi(httpClient, config)
+            val databasesApi = DatabasesApi(httpClient, config)
+
+            // Should work with any ID thanks to wildcard matching
+            val page = pagesApi.retrieve("any-page-id")
+            page.objectType shouldBe "page"
+
+            val database = databasesApi.retrieve("any-database-id")
+            database.objectType shouldBe "database"
+
+            httpClient.close()
+        }
+
+        "TestFixtures should provide easy access to sample data" {
+            // Test that we can load samples directly
+            val pageJson = TestFixtures.Pages.retrievePage()
+            pageJson.toString().isNotEmpty() shouldBe true
+
+            val databaseJson = TestFixtures.Databases.retrieveDatabase()
+            databaseJson.toString().isNotEmpty() shouldBe true
+
+            // Test direct decoding
+            val page: Page = TestFixtures.Pages.retrievePage().decode()
+            page.objectType shouldBe "page"
+
+            val database: Database = TestFixtures.Databases.retrieveDatabase().decode()
+            database.objectType shouldBe "database"
         }
     })
