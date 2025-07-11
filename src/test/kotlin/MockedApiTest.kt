@@ -12,10 +12,15 @@ import io.ktor.http.headersOf
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.serialization.json.Json
 import no.saabelit.kotlinnotionclient.*
+import no.saabelit.kotlinnotionclient.api.BlocksApi
+import no.saabelit.kotlinnotionclient.api.CommentsApi
 import no.saabelit.kotlinnotionclient.api.DatabasesApi
 import no.saabelit.kotlinnotionclient.api.PagesApi
 import no.saabelit.kotlinnotionclient.config.NotionConfig
 import no.saabelit.kotlinnotionclient.exceptions.NotionException
+import no.saabelit.kotlinnotionclient.models.blocks.Block
+import no.saabelit.kotlinnotionclient.models.blocks.BlockList
+import no.saabelit.kotlinnotionclient.models.comments.CommentList
 import no.saabelit.kotlinnotionclient.models.databases.Database
 import no.saabelit.kotlinnotionclient.models.pages.Page
 
@@ -197,6 +202,85 @@ class MockedApiTest :
             httpClient.close()
         }
 
+        "Blocks API should parse official sample response correctly" {
+            val httpClient = mockClient {
+                addBlockRetrieveResponse()
+            }
+
+            val config = NotionConfig(token = "test-token")
+            val blocksApi = BlocksApi(httpClient, config)
+
+            val block = blocksApi.retrieve("c02fc1d3-db8b-45c5-a222-27595b15aea7")
+
+            // Test using official sample data
+            block.id shouldBe "c02fc1d3-db8b-45c5-a222-27595b15aea7"
+            block.objectType shouldBe "block"
+            block.type shouldBe "heading_2"
+            block.hasChildren shouldBe false
+            block.archived shouldBe false
+            
+            // Test specific heading_2 content
+            if (block is Block.Heading2) {
+                block.heading2.richText.first().plainText shouldBe "Lacinato kale"
+                block.heading2.color shouldBe "default"
+                block.heading2.isToggleable shouldBe false
+            }
+
+            httpClient.close()
+        }
+
+        "Blocks API should retrieve children correctly" {
+            val httpClient = mockClient {
+                addBlockChildrenRetrieveResponse()
+            }
+
+            val config = NotionConfig(token = "test-token")
+            val blocksApi = BlocksApi(httpClient, config)
+
+            val blockList = blocksApi.retrieveChildren("parent-block-id")
+
+            // Test using official sample data
+            blockList.objectType shouldBe "list"
+            blockList.type shouldBe "block"
+            blockList.hasMore shouldBe false
+            blockList.results.size shouldBe 2 // heading_2 and paragraph
+
+            // Test first block (heading_2)
+            val heading = blockList.results[0]
+            heading.type shouldBe "heading_2"
+            
+            // Test second block (paragraph)
+            val paragraph = blockList.results[1]
+            paragraph.type shouldBe "paragraph"
+
+            httpClient.close()
+        }
+
+        "Comments API should parse official sample response correctly" {
+            val httpClient = mockClient {
+                addCommentsRetrieveResponse()
+            }
+
+            val config = NotionConfig(token = "test-token")
+            val commentsApi = CommentsApi(httpClient, config)
+
+            val commentList = commentsApi.retrieve("block-id")
+
+            // Test using official sample data
+            commentList.objectType shouldBe "list"
+            commentList.hasMore shouldBe false
+            commentList.results.isNotEmpty() shouldBe true
+
+            // Test first comment
+            val comment = commentList.results.first()
+            comment.objectType shouldBe "comment"
+            comment.id shouldBe "94cc56ab-9f02-409d-9f99-1037e9fe502f"
+            comment.discussionId shouldBe "f1407351-36f5-4c49-a13c-49f8ba11776d"
+            comment.richText.first().plainText shouldBe "Single comment"
+
+            httpClient.close()
+        }
+
         "TestFixtures should provide easy access to sample data" {
             // Test that we can load samples directly
             val pageJson = TestFixtures.Pages.retrievePage()
@@ -205,11 +289,23 @@ class MockedApiTest :
             val databaseJson = TestFixtures.Databases.retrieveDatabase()
             databaseJson.toString().isNotEmpty() shouldBe true
 
+            val blockJson = TestFixtures.Blocks.retrieveBlock()
+            blockJson.toString().isNotEmpty() shouldBe true
+
+            val commentsJson = TestFixtures.Comments.retrieveComments()
+            commentsJson.toString().isNotEmpty() shouldBe true
+
             // Test direct decoding
             val page: Page = TestFixtures.Pages.retrievePage().decode()
             page.objectType shouldBe "page"
 
             val database: Database = TestFixtures.Databases.retrieveDatabase().decode()
             database.objectType shouldBe "database"
+
+            val block: Block = TestFixtures.Blocks.retrieveBlock().decode()
+            block.objectType shouldBe "block"
+
+            val commentList: CommentList = TestFixtures.Comments.retrieveComments().decode()
+            commentList.objectType shouldBe "list"
         }
     })

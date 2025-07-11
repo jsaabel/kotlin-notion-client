@@ -86,6 +86,91 @@ class MockClientBuilder {
     }
     
     /**
+     * Add a block retrieve response using official sample data.
+     */
+    fun addBlockRetrieveResponse() {
+        handlers.add { request ->
+            if (request.method == HttpMethod.Get && request.url.toString().contains("/v1/blocks/")) {
+                respond(
+                    content = TestFixtures.Blocks.retrieveBlockAsString(),
+                    status = HttpStatusCode.OK,
+                    headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString())
+                )
+            } else {
+                respondError(HttpStatusCode.NotFound, "Block not found")
+            }
+        }
+    }
+    
+    /**
+     * Add a block children retrieve response using official sample data.
+     */
+    fun addBlockChildrenRetrieveResponse() {
+        handlers.add { request ->
+            if (request.method == HttpMethod.Get && request.url.toString().contains("/v1/blocks/") && request.url.toString().contains("/children")) {
+                respond(
+                    content = TestFixtures.Blocks.retrieveBlockChildrenAsString(),
+                    status = HttpStatusCode.OK,
+                    headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString())
+                )
+            } else {
+                respondError(HttpStatusCode.NotFound, "Block children not found")
+            }
+        }
+    }
+    
+    /**
+     * Add a block children append response using official sample data.
+     */
+    fun addBlockChildrenAppendResponse() {
+        handlers.add { request ->
+            if (request.method == HttpMethod.Patch && request.url.toString().contains("/v1/blocks/") && request.url.toString().contains("/children")) {
+                respond(
+                    content = TestFixtures.Blocks.appendBlockChildrenAsString(),
+                    status = HttpStatusCode.OK,
+                    headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString())
+                )
+            } else {
+                respondError(HttpStatusCode.NotFound, "Endpoint not found")
+            }
+        }
+    }
+    
+    /**
+     * Add a comment retrieve response using official sample data.
+     */
+    fun addCommentsRetrieveResponse() {
+        handlers.add { request ->
+            if (request.method == HttpMethod.Get && request.url.toString().contains("/v1/comments")) {
+                respond(
+                    content = TestFixtures.Comments.retrieveCommentsAsString(),
+                    status = HttpStatusCode.OK,
+                    headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString())
+                )
+            } else {
+                respondError(HttpStatusCode.NotFound, "Comments not found")
+            }
+        }
+    }
+    
+    /**
+     * Add a comment create response using official sample data.
+     */
+    fun addCommentCreateResponse() {
+        handlers.add { request ->
+            if (request.method == HttpMethod.Post && request.url.toString().contains("/v1/comments")) {
+                respond(
+                    content = TestFixtures.Comments.createCommentAsString(),
+                    status = HttpStatusCode.OK,
+                    headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString())
+                )
+            } else {
+                respondError(HttpStatusCode.NotFound, "Endpoint not found")
+            }
+        }
+    }
+    
+    /**
      * Add error response for testing error handling.
      */
     fun addErrorResponse(
@@ -148,11 +233,28 @@ object MockPresets {
     }
     
     /**
+     * Create a mock client with comprehensive coverage of all API endpoints.
+     */
+    fun comprehensiveOperations(): HttpClient = mockClient {
+        addDatabaseRetrieveResponse()
+        addDatabaseCreateResponse()
+        addPageRetrieveResponse()
+        addPageCreateResponse()
+        addBlockRetrieveResponse()
+        addBlockChildrenRetrieveResponse()
+        addBlockChildrenAppendResponse()
+        addCommentsRetrieveResponse()
+        addCommentCreateResponse()
+    }
+    
+    /**
      * Create a mock client that returns errors for testing error handling.
      */
     fun errorScenarios(): HttpClient = mockClient {
         addErrorResponse(HttpMethod.Get, "/v1/databases/", HttpStatusCode.NotFound, "Database not found")
         addErrorResponse(HttpMethod.Get, "/v1/pages/", HttpStatusCode.Forbidden, "Access denied")
+        addErrorResponse(HttpMethod.Get, "/v1/blocks/", HttpStatusCode.NotFound, "Block not found")
+        addErrorResponse(HttpMethod.Get, "/v1/comments/", HttpStatusCode.Forbidden, "Comments access denied")
         addErrorResponse(HttpMethod.Post, "/v1/", HttpStatusCode.BadRequest, "Invalid request")
     }
 }
