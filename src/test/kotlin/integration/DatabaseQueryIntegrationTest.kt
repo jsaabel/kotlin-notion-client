@@ -1,7 +1,7 @@
 package integration
 
-import io.kotest.core.spec.style.StringSpec
 import io.kotest.core.annotation.Tags
+import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.collections.shouldNotBeEmpty
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
@@ -30,7 +30,6 @@ import no.saabelit.kotlinnotionclient.models.requests.RequestBuilders
 @Tags("Integration", "RequiresApi", "Slow")
 class DatabaseQueryIntegrationTest :
     StringSpec({
-
 
         "Should query database and return created pages with real API" {
             val token = System.getenv("NOTION_API_TOKEN")
@@ -163,7 +162,7 @@ class DatabaseQueryIntegrationTest :
 
                     val andResults = client.databases.query(database.id, andQuery)
                     andResults.results.size shouldBe 1 // Only "High Priority Task" matches (Score=95, Completed=false)
-                    
+
                     // Verify the correct page was returned
                     val resultPage = andResults.results.first()
                     val title = resultPage.getTitleAsPlainText("Name")
@@ -180,11 +179,12 @@ class DatabaseQueryIntegrationTest :
                     val sortedResults = client.databases.query(database.id, sortQuery)
                     sortedResults.results.shouldNotBeEmpty()
                     sortedResults.results.size shouldBe 3
-                    
+
                     // Verify results are actually sorted by Score in descending order
-                    val scores = sortedResults.results.map { page ->
-                        page.getNumberProperty("Score") ?: 0.0
-                    }
+                    val scores =
+                        sortedResults.results.map { page ->
+                            page.getNumberProperty("Score") ?: 0.0
+                        }
                     scores shouldBe listOf(95.0, 75.0, 45.0) // Expected descending order
                     println("✅ Sorting: ${sortedResults.results.size} results correctly sorted by Score (${scores.joinToString(" → ")})")
 
@@ -197,7 +197,7 @@ class DatabaseQueryIntegrationTest :
 
                     val pagedResults = client.databases.query(database.id, pageQuery)
                     pagedResults.results.size shouldBe 2
-                    
+
                     // With 3 total pages and page size 2, we should have more pages available
                     pagedResults.hasMore shouldBe true
                     pagedResults.nextCursor shouldNotBe null

@@ -1,7 +1,7 @@
 package integration
 
-import io.kotest.core.spec.style.StringSpec
 import io.kotest.core.annotation.Tags
+import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.collections.shouldContainAnyOf
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe

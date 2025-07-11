@@ -60,9 +60,10 @@ class MockClientBuilder {
      */
     fun addDatabaseQueryResponse() {
         handlers.add { request ->
-            if (request.method == HttpMethod.Post && 
-                request.url.toString().contains("/v1/databases/") && 
-                request.url.toString().contains("/query")) {
+            if (request.method == HttpMethod.Post &&
+                request.url.toString().contains("/v1/databases/") &&
+                request.url.toString().contains("/query")
+            ) {
                 respond(
                     content = TestFixtures.Databases.queryDatabaseAsString(),
                     status = HttpStatusCode.OK,
@@ -79,9 +80,10 @@ class MockClientBuilder {
      */
     fun addDatabaseCreateResponse() {
         handlers.add { request ->
-            if (request.method == HttpMethod.Post && 
+            if (request.method == HttpMethod.Post &&
                 request.url.toString().contains("/v1/databases") &&
-                !request.url.toString().contains("/query")) {
+                !request.url.toString().contains("/query")
+            ) {
                 respond(
                     content = TestFixtures.Databases.createDatabaseAsString(),
                     status = HttpStatusCode.OK,

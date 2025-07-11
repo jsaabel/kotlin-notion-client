@@ -5,7 +5,6 @@ package no.saabelit.kotlinnotionclient.models.databases
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.json.JsonClassDiscriminator
 import no.saabelit.kotlinnotionclient.models.base.EmptyObject
 import no.saabelit.kotlinnotionclient.models.pages.Page
 
@@ -59,7 +58,6 @@ data class DatabaseFilter(
     // Property information (for property-based filters)
     @SerialName("property")
     val property: String? = null,
-
     // Property conditions (only one should be set for property filters)
     @SerialName("title")
     val title: PropertyCondition? = null,
@@ -81,7 +79,6 @@ data class DatabaseFilter(
     val email: PropertyCondition? = null,
     @SerialName("phone_number")
     val phoneNumber: PropertyCondition? = null,
-
     // Compound conditions
     @SerialName("and")
     val and: List<DatabaseFilter>? = null,

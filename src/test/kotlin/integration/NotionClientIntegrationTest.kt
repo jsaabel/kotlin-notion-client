@@ -1,7 +1,7 @@
 package integration
 
-import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.core.annotation.Tags
+import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.string.shouldNotBeBlank
