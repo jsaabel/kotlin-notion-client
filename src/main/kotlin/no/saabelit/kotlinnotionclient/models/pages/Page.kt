@@ -2,7 +2,6 @@ package no.saabelit.kotlinnotionclient.models.pages
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.json.JsonObject
 import no.saabelit.kotlinnotionclient.models.base.NotionObject
 import no.saabelit.kotlinnotionclient.models.base.Parent
 import no.saabelit.kotlinnotionclient.models.base.RichText
@@ -31,7 +30,7 @@ data class Page(
     @SerialName("parent")
     val parent: Parent,
     @SerialName("properties")
-    val properties: JsonObject,
+    val properties: Map<String, PageProperty>,
     @SerialName("url")
     val url: String,
     @SerialName("public_url")
