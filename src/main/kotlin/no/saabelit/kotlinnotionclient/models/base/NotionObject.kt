@@ -173,3 +173,9 @@ data class DatabaseReference(
     @SerialName("id")
     val id: String,
 )
+
+/**
+ * Empty object for conditions that don't need parameters.
+ */
+@Serializable
+class EmptyObject

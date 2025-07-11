@@ -1,4 +1,5 @@
 import io.kotest.core.spec.style.StringSpec
+import io.kotest.core.annotation.Tags
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.ktor.client.HttpClient
@@ -25,6 +26,7 @@ import no.saabelit.kotlinnotionclient.models.pages.Page
  * Unit tests using mocked HTTP responses.
  * These tests run fast and don't require network access or real API tokens.
  */
+@Tags("Unit")
 class MockedApiTest :
     StringSpec({
 

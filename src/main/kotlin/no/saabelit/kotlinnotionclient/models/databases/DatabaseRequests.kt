@@ -2,6 +2,7 @@ package no.saabelit.kotlinnotionclient.models.databases
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import no.saabelit.kotlinnotionclient.models.base.EmptyObject
 import no.saabelit.kotlinnotionclient.models.base.Parent
 import no.saabelit.kotlinnotionclient.models.base.RichText
 import no.saabelit.kotlinnotionclient.models.pages.PageCover
@@ -178,9 +179,3 @@ data class CreateSelectOption(
     @SerialName("color")
     val color: String = "default",
 )
-
-/**
- * Empty object for properties that don't need configuration.
- */
-@Serializable
-class EmptyObject

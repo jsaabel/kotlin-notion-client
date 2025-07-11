@@ -15,6 +15,8 @@ import no.saabelit.kotlinnotionclient.exceptions.NotionException
 import no.saabelit.kotlinnotionclient.models.databases.ArchiveDatabaseRequest
 import no.saabelit.kotlinnotionclient.models.databases.CreateDatabaseRequest
 import no.saabelit.kotlinnotionclient.models.databases.Database
+import no.saabelit.kotlinnotionclient.models.databases.DatabaseQueryRequest
+import no.saabelit.kotlinnotionclient.models.databases.DatabaseQueryResponse
 
 /**
  * API client for Notion Databases endpoints.
@@ -124,6 +126,52 @@ class DatabasesApi(
 
             if (response.status.isSuccess()) {
                 response.body<Database>()
+            } else {
+                val errorBody =
+                    try {
+                        response.body<String>()
+                    } catch (e: Exception) {
+                        "Could not read error response body"
+                    }
+
+                throw NotionException.ApiError(
+                    code = response.status.value.toString(),
+                    status = response.status.value,
+                    details = "HTTP ${response.status.value}: ${response.status.description}. Response: $errorBody",
+                )
+            }
+        } catch (e: NotionException) {
+            throw e // Re-throw our own exceptions
+        } catch (e: Exception) {
+            throw NotionException.NetworkError(e)
+        }
+
+    /**
+     * Queries a database with optional filtering, sorting, and pagination.
+     *
+     * Returns pages that are children of the database, filtered and sorted according
+     * to the query parameters. This is the primary method for retrieving database content.
+     *
+     * @param databaseId The ID of the database to query
+     * @param request The query request with filters, sorts, and pagination parameters
+     * @return DatabaseQueryResponse containing matching pages and pagination info
+     * @throws NotionException.NetworkError for network-related failures
+     * @throws NotionException.ApiError for API-related errors (4xx, 5xx responses)
+     * @throws NotionException.AuthenticationError for authentication failures
+     */
+    suspend fun query(
+        databaseId: String,
+        request: DatabaseQueryRequest = DatabaseQueryRequest(),
+    ): DatabaseQueryResponse =
+        try {
+            val response: HttpResponse =
+                httpClient.post("${config.baseUrl}/databases/$databaseId/query") {
+                    contentType(ContentType.Application.Json)
+                    setBody(request)
+                }
+
+            if (response.status.isSuccess()) {
+                response.body<DatabaseQueryResponse>()
             } else {
                 val errorBody =
                     try {

@@ -56,11 +56,32 @@ class MockClientBuilder {
     }
 
     /**
+     * Add a database query response using official sample data.
+     */
+    fun addDatabaseQueryResponse() {
+        handlers.add { request ->
+            if (request.method == HttpMethod.Post && 
+                request.url.toString().contains("/v1/databases/") && 
+                request.url.toString().contains("/query")) {
+                respond(
+                    content = TestFixtures.Databases.queryDatabaseAsString(),
+                    status = HttpStatusCode.OK,
+                    headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString()),
+                )
+            } else {
+                respondError(HttpStatusCode.NotFound, "Query endpoint not found")
+            }
+        }
+    }
+
+    /**
      * Add a database create response using official sample data.
      */
     fun addDatabaseCreateResponse() {
         handlers.add { request ->
-            if (request.method == HttpMethod.Post && request.url.toString().contains("/v1/databases")) {
+            if (request.method == HttpMethod.Post && 
+                request.url.toString().contains("/v1/databases") &&
+                !request.url.toString().contains("/query")) {
                 respond(
                     content = TestFixtures.Databases.createDatabaseAsString(),
                     status = HttpStatusCode.OK,

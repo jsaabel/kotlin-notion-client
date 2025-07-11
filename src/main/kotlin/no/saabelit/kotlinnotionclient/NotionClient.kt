@@ -118,6 +118,18 @@ class NotionClient private constructor(
 
             return NotionClient(httpClient, config)
         }
+
+        /**
+         * Creates a NotionClient with a custom HttpClient (for testing).
+         *
+         * @param httpClient Custom HTTP client instance
+         * @param config Configuration object
+         * @return Configured NotionClient instance
+         */
+        internal fun createWithClient(
+            httpClient: HttpClient,
+            config: NotionConfig,
+        ): NotionClient = NotionClient(httpClient, config)
     }
 
     /**

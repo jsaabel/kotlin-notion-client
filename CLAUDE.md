@@ -51,6 +51,29 @@ and best practices in Kotlin.
 ### Development Workflow Reminder
 - Always lint/format code using gradlew before trying to build
 
+### Testing Commands
+The project uses Kotest with tag-based test organization for efficient development workflows:
+
+#### Standard Commands
+- `./gradlew test` - Run only unit tests (fast, no API calls, ~32 tests in ~200ms)
+- `./gradlew integrationTest` - Run only integration tests (requires NOTION_API_TOKEN and NOTION_PARENT_PAGE_ID)  
+- `./gradlew testAll` - Run all tests (unit + integration)
+
+#### Test Organization
+- **Unit Tests**: Tagged with `@Tags("Unit")` - use mocked responses, run fast
+- **Integration Tests**: Tagged with `@Tags("Integration", "RequiresApi")` - hit live Notion API
+- **Slow Tests**: Additionally tagged with `@Tags("Slow")` for tests that take longer
+
+#### Environment Variables for Integration Tests
+```bash
+export NOTION_API_TOKEN="secret_..."
+export NOTION_PARENT_PAGE_ID="12345678-1234-1234-1234-123456789abc"
+```
+
+#### Advanced Usage
+- Run specific tag combinations: `./gradlew test -Dkotest.tags.include="Unit & !Slow"`
+- Exclude specific tags: `./gradlew test -Dkotest.tags.exclude="RequiresApi"`
+
 ### Version Management
 - Use `libs.toml` for centralized dependency version management
 - Leverage Gradle's version catalog to handle library versions consistently

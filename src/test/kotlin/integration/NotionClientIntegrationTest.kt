@@ -1,7 +1,11 @@
+package integration
+
 import io.kotest.core.spec.style.BehaviorSpec
+import io.kotest.core.annotation.Tags
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.string.shouldNotBeBlank
+import io.ktor.client.plugins.logging.LogLevel
 import no.saabelit.kotlinnotionclient.NotionClient
 import no.saabelit.kotlinnotionclient.config.NotionConfig
 import no.saabelit.kotlinnotionclient.exceptions.NotionException
@@ -13,8 +17,9 @@ import no.saabelit.kotlinnotionclient.models.users.UserType
  * To run this test:
  * 1. Get a Notion API token from https://developers.notion.com/
  * 2. Set environment variable: export NOTION_API_TOKEN="your_token_here"
- * 3. Run: ./gradlew test --tests "*NotionClientIntegrationTest*"
+ * 3. Run: ./gradlew integrationTest
  */
+@Tags("Integration", "RequiresApi")
 class NotionClientIntegrationTest :
     BehaviorSpec({
 
@@ -35,7 +40,7 @@ class NotionClientIntegrationTest :
                     NotionClient.create(
                         NotionConfig(
                             token = token!!,
-                            logLevel = io.ktor.client.plugins.logging.LogLevel.INFO,
+                            logLevel = LogLevel.INFO,
                         ),
                     )
 

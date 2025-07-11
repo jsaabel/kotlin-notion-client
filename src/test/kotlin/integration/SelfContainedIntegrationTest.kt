@@ -1,4 +1,7 @@
+package integration
+
 import io.kotest.core.spec.style.StringSpec
+import io.kotest.core.annotation.Tags
 import io.kotest.matchers.collections.shouldContainAnyOf
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
@@ -10,6 +13,7 @@ import no.saabelit.kotlinnotionclient.models.databases.CreateDatabaseProperty
 import no.saabelit.kotlinnotionclient.models.databases.CreateDatabaseRequest
 import no.saabelit.kotlinnotionclient.models.pages.CreatePageRequest
 import no.saabelit.kotlinnotionclient.models.pages.PagePropertyValue
+import no.saabelit.kotlinnotionclient.models.pages.UpdatePageRequest
 import no.saabelit.kotlinnotionclient.models.requests.RequestBuilders
 
 /**
@@ -24,8 +28,9 @@ import no.saabelit.kotlinnotionclient.models.requests.RequestBuilders
  *    (This should be a page where test databases can be created)
  * 3. Your integration should have permissions to create/read/update pages and databases
  *
- * Run with: ./gradlew test --tests "*SelfContainedIntegrationTest*"
+ * Run with: ./gradlew integrationTest
  */
+@Tags("Integration", "RequiresApi")
 class SelfContainedIntegrationTest :
     StringSpec({
 
@@ -156,7 +161,7 @@ class SelfContainedIntegrationTest :
                     val updatedPage =
                         client.pages.update(
                             createdPage.id,
-                            no.saabelit.kotlinnotionclient.models.pages.UpdatePageRequest(
+                            UpdatePageRequest(
                                 properties =
                                     mapOf(
                                         "Completed" to PagePropertyValue.CheckboxValue(checkbox = true),
