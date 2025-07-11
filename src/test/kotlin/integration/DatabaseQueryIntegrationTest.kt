@@ -5,10 +5,6 @@ import io.kotest.core.annotation.Tags
 import io.kotest.matchers.collections.shouldNotBeEmpty
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
-import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.jsonObject
-import kotlinx.serialization.json.jsonPrimitive
-import kotlinx.serialization.json.double
 import kotlinx.coroutines.delay
 import no.saabelit.kotlinnotionclient.NotionClient
 import no.saabelit.kotlinnotionclient.config.NotionConfig
@@ -19,6 +15,8 @@ import no.saabelit.kotlinnotionclient.models.databases.DatabaseQueryBuilder
 import no.saabelit.kotlinnotionclient.models.databases.SortDirection
 import no.saabelit.kotlinnotionclient.models.pages.CreatePageRequest
 import no.saabelit.kotlinnotionclient.models.pages.PagePropertyValue
+import no.saabelit.kotlinnotionclient.models.pages.getNumberProperty
+import no.saabelit.kotlinnotionclient.models.pages.getTitleAsPlainText
 import no.saabelit.kotlinnotionclient.models.requests.RequestBuilders
 
 /**
@@ -168,9 +166,7 @@ class DatabaseQueryIntegrationTest :
                     
                     // Verify the correct page was returned
                     val resultPage = andResults.results.first()
-                    val titleProperty = resultPage.properties["Name"] as? JsonObject
-                    val title = titleProperty?.get("title")?.jsonObject?.get("plain_text")?.jsonPrimitive?.content
-                        ?: titleProperty?.get("title")?.jsonPrimitive?.content
+                    val title = resultPage.getTitleAsPlainText("Name")
                     title shouldBe "High Priority Task"
                     println("✅ AND filter: ${andResults.results.size} results - correct page: '$title'")
 
@@ -187,8 +183,7 @@ class DatabaseQueryIntegrationTest :
                     
                     // Verify results are actually sorted by Score in descending order
                     val scores = sortedResults.results.map { page ->
-                        val scoreProperty = page.properties["Score"] as? JsonObject
-                        scoreProperty?.get("number")?.jsonPrimitive?.double ?: 0.0
+                        page.getNumberProperty("Score") ?: 0.0
                     }
                     scores shouldBe listOf(95.0, 75.0, 45.0) // Expected descending order
                     println("✅ Sorting: ${sortedResults.results.size} results correctly sorted by Score (${scores.joinToString(" → ")})")
