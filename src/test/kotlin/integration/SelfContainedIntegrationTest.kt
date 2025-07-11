@@ -11,6 +11,7 @@ import no.saabelit.kotlinnotionclient.models.base.Parent
 import no.saabelit.kotlinnotionclient.models.databases.CreateDatabaseProperty
 import no.saabelit.kotlinnotionclient.models.databases.CreateDatabaseRequest
 import no.saabelit.kotlinnotionclient.models.pages.CreatePageRequest
+import no.saabelit.kotlinnotionclient.models.pages.PagePropertyValue
 import no.saabelit.kotlinnotionclient.models.pages.UpdatePageRequest
 import no.saabelit.kotlinnotionclient.models.pages.getCheckboxProperty
 import no.saabelit.kotlinnotionclient.models.pages.getEmailProperty
@@ -63,6 +64,7 @@ class SelfContainedIntegrationTest :
                                     pageId = parentPageId,
                                 ),
                             title = listOf(RequestBuilders.createSimpleRichText("Test Database - Kotlin Client")),
+                            icon = RequestBuilders.createEmojiIcon("🗄️"),
                             properties =
                                 mapOf(
                                     "Name" to CreateDatabaseProperty.Title(),
@@ -99,6 +101,7 @@ class SelfContainedIntegrationTest :
                                     type = "database_id",
                                     databaseId = createdDatabase.id,
                                 ),
+                            icon = RequestBuilders.createEmojiIcon("📋"),
                             properties =
                                 pageProperties {
                                     title("Name", "Test Task - Integration Test")
@@ -251,9 +254,20 @@ class SelfContainedIntegrationTest :
                     // Create a standalone page (not in a database)
                     println("📄 Creating standalone test page...")
                     val pageRequest =
-                        RequestBuilders.createChildPage(
-                            parentPageId = parentPageId,
-                            title = "Test Standalone Page - Kotlin Client",
+                        CreatePageRequest(
+                            parent =
+                                Parent(
+                                    type = "page_id",
+                                    pageId = parentPageId,
+                                ),
+                            icon = RequestBuilders.createEmojiIcon("📄"),
+                            properties =
+                                mapOf(
+                                    "title" to
+                                        PagePropertyValue.TitleValue(
+                                            title = listOf(RequestBuilders.createSimpleRichText("Test Standalone Page - Kotlin Client")),
+                                        ),
+                                ),
                         )
 
                     val createdPage = client.pages.create(pageRequest)
@@ -311,6 +325,7 @@ class SelfContainedIntegrationTest :
                         CreateDatabaseRequest(
                             parent = Parent(type = "page_id", pageId = parentPageId),
                             title = listOf(RequestBuilders.createSimpleRichText("Comprehensive Properties Test")),
+                            icon = RequestBuilders.createEmojiIcon("🧪"),
                             properties =
                                 mapOf(
                                     "Title" to CreateDatabaseProperty.Title(),
@@ -357,6 +372,7 @@ class SelfContainedIntegrationTest :
                     val pageRequest =
                         CreatePageRequest(
                             parent = Parent(type = "database_id", databaseId = database.id),
+                            icon = RequestBuilders.createEmojiIcon("⭐"),
                             properties =
                                 pageProperties {
                                     title("Title", "Comprehensive Test Page")

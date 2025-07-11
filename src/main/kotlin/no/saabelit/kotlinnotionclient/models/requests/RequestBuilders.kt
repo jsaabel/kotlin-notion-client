@@ -7,6 +7,7 @@ import no.saabelit.kotlinnotionclient.models.base.TextContent
 import no.saabelit.kotlinnotionclient.models.databases.CreateDatabaseProperty
 import no.saabelit.kotlinnotionclient.models.databases.CreateDatabaseRequest
 import no.saabelit.kotlinnotionclient.models.pages.CreatePageRequest
+import no.saabelit.kotlinnotionclient.models.pages.PageIcon
 import no.saabelit.kotlinnotionclient.models.pages.PagePropertyValue
 
 /**
@@ -115,5 +116,29 @@ object RequestBuilders {
             annotations = Annotations(),
             plainText = content,
             href = null,
+        )
+
+    /**
+     * Creates an emoji icon for pages and databases.
+     *
+     * @param emoji The emoji character (e.g., "🗄️", "📄", "✅")
+     * @return Configured PageIcon for emoji
+     */
+    fun createEmojiIcon(emoji: String): PageIcon =
+        PageIcon(
+            type = "emoji",
+            emoji = emoji,
+        )
+
+    /**
+     * Creates an external file icon for pages and databases.
+     *
+     * @param url The URL of the external icon file
+     * @return Configured PageIcon for external file
+     */
+    fun createExternalIcon(url: String): PageIcon =
+        PageIcon(
+            type = "external",
+            url = url,
         )
 }

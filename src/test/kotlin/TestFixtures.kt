@@ -121,5 +121,4 @@ object TestFixtures {
 /**
  * Extension function to easily decode JsonElement to a specific type
  */
-inline fun <reified T> JsonElement.decode(): T =
-    TestFixtures.json.decodeFromJsonElement(serializer<T>(), this)
+inline fun <reified T> JsonElement.decode(): T = TestFixtures.json.decodeFromJsonElement(serializer<T>(), this)
