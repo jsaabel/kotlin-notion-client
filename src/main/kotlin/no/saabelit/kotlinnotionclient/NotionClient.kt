@@ -13,6 +13,8 @@ import io.ktor.client.plugins.logging.Logger
 import io.ktor.client.plugins.logging.Logging
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.serialization.json.Json
+import no.saabelit.kotlinnotionclient.api.BlocksApi
+import no.saabelit.kotlinnotionclient.api.CommentsApi
 import no.saabelit.kotlinnotionclient.api.DatabasesApi
 import no.saabelit.kotlinnotionclient.api.PagesApi
 import no.saabelit.kotlinnotionclient.api.UsersApi
@@ -32,8 +34,12 @@ import no.saabelit.kotlinnotionclient.config.NotionConfig
  *     NotionConfig(token = "your-token-here")
  * )
  *
- * // Use the client
+ * // Access different API areas
  * val user = client.users.getCurrentUser()
+ * val page = client.pages.retrieve("page-id")
+ * val database = client.databases.retrieve("db-id")
+ * val block = client.blocks.retrieve("block-id")
+ * val comments = client.comments.retrieve("block-id")
  *
  * // Don't forget to close when done
  * client.close()
@@ -47,9 +53,8 @@ class NotionClient private constructor(
     val users = UsersApi(httpClient, config)
     val pages = PagesApi(httpClient, config)
     val databases = DatabasesApi(httpClient, config)
-
-    // TODO: Add remaining API delegates as we implement them
-    // val blocks = BlocksApi(httpClient)
+    val blocks = BlocksApi(httpClient, config)
+    val comments = CommentsApi(httpClient, config)
 
     companion object {
         /**
