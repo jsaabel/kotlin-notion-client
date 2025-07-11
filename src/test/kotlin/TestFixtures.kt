@@ -1,14 +1,15 @@
-package no.saabelit.kotlinnotionclient
+@file:Suppress("unused")
 
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.serializer
 
 /**
  * Utility class for loading official Notion API sample responses for testing.
  * All sample responses are from the official Notion API documentation.
  */
 object TestFixtures {
-    private val json =
+    val json =
         Json {
             ignoreUnknownKeys = true
             prettyPrint = true
@@ -121,6 +122,4 @@ object TestFixtures {
  * Extension function to easily decode JsonElement to a specific type
  */
 inline fun <reified T> JsonElement.decode(): T =
-    Json {
-        ignoreUnknownKeys = true
-    }.decodeFromJsonElement(kotlinx.serialization.serializer<T>(), this)
+    TestFixtures.json.decodeFromJsonElement(serializer<T>(), this)
