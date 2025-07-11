@@ -7,9 +7,9 @@ import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import mockClient
 import no.saabelit.kotlinnotionclient.NotionClient
-import no.saabelit.kotlinnotionclient.TestFixtures
+import TestFixtures
 import no.saabelit.kotlinnotionclient.config.NotionConfig
-import no.saabelit.kotlinnotionclient.decode
+import decode
 import no.saabelit.kotlinnotionclient.models.databases.DatabaseQueryRequest
 import no.saabelit.kotlinnotionclient.models.databases.DatabaseQueryResponse
 

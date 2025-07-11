@@ -5,9 +5,16 @@ import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
-import no.saabelit.kotlinnotionclient.TestFixtures
-import no.saabelit.kotlinnotionclient.decode
-import no.saabelit.kotlinnotionclient.models.pages.*
+import no.saabelit.kotlinnotionclient.models.pages.Page
+import no.saabelit.kotlinnotionclient.models.pages.PageProperty
+import no.saabelit.kotlinnotionclient.models.pages.getMultiSelectProperty
+import no.saabelit.kotlinnotionclient.models.pages.getMultiSelectPropertyNames
+import no.saabelit.kotlinnotionclient.models.pages.getNumberProperty
+import no.saabelit.kotlinnotionclient.models.pages.getPlainTextForProperty
+import no.saabelit.kotlinnotionclient.models.pages.getProperty
+import no.saabelit.kotlinnotionclient.models.pages.getSelectPropertyName
+
+// import no.saabelit.kotlinnotionclient.models.pages.*
 
 /**
  * Unit tests for type-safe page property access system.

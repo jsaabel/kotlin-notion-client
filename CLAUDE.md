@@ -41,6 +41,7 @@ and best practices in Kotlin.
 - Rate limits vary by endpoint
 - Archived objects need special handling
 - Rich text arrays can be empty
+- **Implement good validations for cases such as a date property with timezone missing a time component**
 
 ### Debugging
 - Enable Ktor logging for HTTP details

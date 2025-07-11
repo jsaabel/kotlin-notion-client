@@ -3,12 +3,12 @@ package no.saabelit.kotlinnotionclient.models.pages
 import no.saabelit.kotlinnotionclient.models.base.RichText
 import no.saabelit.kotlinnotionclient.models.users.User
 
-/**
- * Extension functions for easier property access on Page objects.
- *
- * These provide type-safe alternatives to manual JSON parsing while preserving
- * the ability to access full rich text objects when needed.
- */
+// /**
+// * Extension functions for easier property access on Page objects.
+// *
+// * These provide type-safe alternatives to manual JSON parsing while preserving
+// * the ability to access full rich text objects when needed.
+// */
 
 /**
  * Get a typed property from the page properties.

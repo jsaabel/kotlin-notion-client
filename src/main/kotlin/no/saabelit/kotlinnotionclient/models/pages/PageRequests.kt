@@ -76,7 +76,24 @@ sealed class PagePropertyValue {
     data class TitleValue(
         @SerialName("title")
         val title: List<RichText>,
-    ) : PagePropertyValue()
+    ) : PagePropertyValue() {
+        companion object {
+            /**
+             * Creates a title value from plain text.
+             *
+             * @param text The title text
+             * @return TitleValue with simple rich text
+             */
+            fun fromPlainText(text: String): TitleValue =
+                TitleValue(
+                    title =
+                        listOf(
+                            no.saabelit.kotlinnotionclient.models.requests.RequestBuilders
+                                .createSimpleRichText(text),
+                        ),
+                )
+        }
+    }
 
     /**
      * Rich text property value for formatted text content.
@@ -87,7 +104,24 @@ sealed class PagePropertyValue {
     data class RichTextValue(
         @SerialName("rich_text")
         val richText: List<no.saabelit.kotlinnotionclient.models.base.RichText>,
-    ) : PagePropertyValue()
+    ) : PagePropertyValue() {
+        companion object {
+            /**
+             * Creates a rich text value from plain text.
+             *
+             * @param text The text content
+             * @return RichTextValue with simple rich text
+             */
+            fun fromPlainText(text: String): RichTextValue =
+                RichTextValue(
+                    richText =
+                        listOf(
+                            no.saabelit.kotlinnotionclient.models.requests.RequestBuilders
+                                .createSimpleRichText(text),
+                        ),
+                )
+        }
+    }
 
     /**
      * Number property value for numeric values.
@@ -147,7 +181,17 @@ sealed class PagePropertyValue {
     data class SelectValue(
         @SerialName("select")
         val select: SelectOption?,
-    ) : PagePropertyValue()
+    ) : PagePropertyValue() {
+        companion object {
+            /**
+             * Creates a select value by option name.
+             *
+             * @param name The option name
+             * @return SelectValue with option
+             */
+            fun byName(name: String): SelectValue = SelectValue(select = SelectOption(name = name))
+        }
+    }
 
     /**
      * Multi-select property value for multiple-choice dropdown.
@@ -157,7 +201,25 @@ sealed class PagePropertyValue {
     data class MultiSelectValue(
         @SerialName("multi_select")
         val multiSelect: List<SelectOption>,
-    ) : PagePropertyValue()
+    ) : PagePropertyValue() {
+        companion object {
+            /**
+             * Creates a multi-select value by option names.
+             *
+             * @param names The option names
+             * @return MultiSelectValue with options
+             */
+            fun byNames(vararg names: String): MultiSelectValue = MultiSelectValue(multiSelect = names.map { SelectOption(name = it) })
+
+            /**
+             * Creates a multi-select value by option names list.
+             *
+             * @param names The option names
+             * @return MultiSelectValue with options
+             */
+            fun byNames(names: List<String>): MultiSelectValue = MultiSelectValue(multiSelect = names.map { SelectOption(name = it) })
+        }
+    }
 
     /**
      * Status property value for status workflows.
@@ -177,7 +239,73 @@ sealed class PagePropertyValue {
     data class DateValue(
         @SerialName("date")
         val date: DateData?,
-    ) : PagePropertyValue()
+    ) : PagePropertyValue() {
+        companion object {
+            /**
+             * Creates a date value from a date string.
+             *
+             * @param dateString The date string in ISO format (YYYY-MM-DD)
+             * @return DateValue with date
+             */
+            fun fromDateString(dateString: String): DateValue = DateValue(date = DateData(start = dateString))
+
+            /**
+             * Creates a datetime value from a datetime string.
+             *
+             * @param datetimeString The datetime string in ISO format (YYYY-MM-DDTHH:MM:SS or with timezone)
+             * @return DateValue with datetime
+             */
+            fun fromDateTimeString(datetimeString: String): DateValue = DateValue(date = DateData(start = datetimeString))
+
+            /**
+             * Creates a date range value.
+             *
+             * @param startDate The start date string in ISO format (YYYY-MM-DD)
+             * @param endDate The end date string in ISO format (YYYY-MM-DD)
+             * @return DateValue with date range
+             */
+            fun fromDateRange(
+                startDate: String,
+                endDate: String,
+            ): DateValue = DateValue(date = DateData(start = startDate, end = endDate))
+
+            /**
+             * Creates a datetime range value.
+             *
+             * @param startDateTime The start datetime string in ISO format
+             * @param endDateTime The end datetime string in ISO format
+             * @return DateValue with datetime range
+             */
+            fun fromDateTimeRange(
+                startDateTime: String,
+                endDateTime: String,
+            ): DateValue = DateValue(date = DateData(start = startDateTime, end = endDateTime))
+
+            /**
+             * Creates a date value with timezone.
+             *
+             * @param dateString The date string in ISO format (YYYY-MM-DD)
+             * @param timeZone The timezone (e.g., "America/Los_Angeles", "UTC")
+             * @return DateValue with date and timezone
+             */
+            fun fromDateWithTimeZone(
+                dateString: String,
+                timeZone: String,
+            ): DateValue = DateValue(date = DateData(start = dateString, timeZone = timeZone))
+
+            /**
+             * Creates a datetime value with timezone.
+             *
+             * @param datetimeString The datetime string in ISO format
+             * @param timeZone The timezone (e.g., "America/Los_Angeles", "UTC")
+             * @return DateValue with datetime and timezone
+             */
+            fun fromDateTimeWithTimeZone(
+                datetimeString: String,
+                timeZone: String,
+            ): DateValue = DateValue(date = DateData(start = datetimeString, timeZone = timeZone))
+        }
+    }
 
     /**
      * People property value for user references.

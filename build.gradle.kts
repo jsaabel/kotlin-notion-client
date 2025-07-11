@@ -36,6 +36,8 @@ tasks.test {
 // Task for running only integration tests
 tasks.register<Test>("integrationTest") {
     useJUnitPlatform()
+    testClassesDirs = sourceSets.test.get().output.classesDirs
+    classpath = sourceSets.test.get().runtimeClasspath
     systemProperty("kotest.tags.include", "Integration") 
     group = "verification"
     description = "Runs integration tests against live Notion API (requires NOTION_API_TOKEN and NOTION_PARENT_PAGE_ID)"
@@ -44,6 +46,8 @@ tasks.register<Test>("integrationTest") {
 // Task for running all tests (unit + integration)
 tasks.register<Test>("testAll") {
     useJUnitPlatform()
+    testClassesDirs = sourceSets.test.get().output.classesDirs
+    classpath = sourceSets.test.get().runtimeClasspath
     group = "verification"  
     description = "Runs all tests including integration tests"
 }

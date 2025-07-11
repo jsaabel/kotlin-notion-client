@@ -11,7 +11,6 @@ import io.ktor.http.HttpStatusCode
 import io.ktor.http.headersOf
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.serialization.json.Json
-import no.saabelit.kotlinnotionclient.TestFixtures
 
 /**
  * DSL function for easily building mock clients with official Notion API sample data.
