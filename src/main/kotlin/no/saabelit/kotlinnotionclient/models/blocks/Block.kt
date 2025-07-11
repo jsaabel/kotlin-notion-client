@@ -44,6 +44,7 @@ sealed class Block : NotionObject {
     ) : Block() {
         @SerialName("object")
         override val objectType: String = "block"
+
         @SerialName("type")
         override val type: String = "heading_2"
     }
@@ -72,6 +73,7 @@ sealed class Block : NotionObject {
     ) : Block() {
         @SerialName("object")
         override val objectType: String = "block"
+
         @SerialName("type")
         override val type: String = "paragraph"
     }

@@ -3,23 +3,20 @@ import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.mock.MockEngine
-import io.ktor.client.engine.mock.respond
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
-import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpMethod
 import io.ktor.http.HttpStatusCode
-import io.ktor.http.headersOf
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.serialization.json.Json
-import no.saabelit.kotlinnotionclient.*
+import no.saabelit.kotlinnotionclient.TestFixtures
 import no.saabelit.kotlinnotionclient.api.BlocksApi
 import no.saabelit.kotlinnotionclient.api.CommentsApi
 import no.saabelit.kotlinnotionclient.api.DatabasesApi
 import no.saabelit.kotlinnotionclient.api.PagesApi
 import no.saabelit.kotlinnotionclient.config.NotionConfig
+import no.saabelit.kotlinnotionclient.decode
 import no.saabelit.kotlinnotionclient.exceptions.NotionException
 import no.saabelit.kotlinnotionclient.models.blocks.Block
-import no.saabelit.kotlinnotionclient.models.blocks.BlockList
 import no.saabelit.kotlinnotionclient.models.comments.CommentList
 import no.saabelit.kotlinnotionclient.models.databases.Database
 import no.saabelit.kotlinnotionclient.models.pages.Page
@@ -32,9 +29,10 @@ class MockedApiTest :
     StringSpec({
 
         "Pages API should parse official sample response correctly" {
-            val httpClient = mockClient {
-                addPageRetrieveResponse()
-            }
+            val httpClient =
+                mockClient {
+                    addPageRetrieveResponse()
+                }
 
             val config = NotionConfig(token = "test-token")
             val pagesApi = PagesApi(httpClient, config)
@@ -50,7 +48,7 @@ class MockedApiTest :
             page.lastEditedBy?.id shouldBe "0c3e9826-b8f7-4f73-927d-2caaf86f1103"
             page.icon shouldNotBe null
             page.cover shouldNotBe null
-            
+
             // Test complex properties from official sample - verify they exist
             page.properties.containsKey("Name") shouldBe true
             page.properties.containsKey("Food group") shouldBe true
@@ -64,9 +62,10 @@ class MockedApiTest :
         }
 
         "Databases API should parse official sample response correctly" {
-            val httpClient = mockClient {
-                addDatabaseRetrieveResponse()
-            }
+            val httpClient =
+                mockClient {
+                    addDatabaseRetrieveResponse()
+                }
 
             val config = NotionConfig(token = "test-token")
             val databasesApi = DatabasesApi(httpClient, config)
@@ -81,7 +80,7 @@ class MockedApiTest :
             database.isInline shouldBe false
             database.title.first().plainText shouldBe "Grocery List"
             database.description.first().plainText shouldBe "Grocery list for just kale 🥬"
-            
+
             // Test comprehensive property schema from official sample - verify they exist
             database.properties.containsKey("+1") shouldBe true
             database.properties.containsKey("In stock") shouldBe true
@@ -94,7 +93,7 @@ class MockedApiTest :
             database.properties.containsKey("Photo") shouldBe true
             database.properties.containsKey("Food group") shouldBe true
             database.properties.containsKey("Name") shouldBe true
-            
+
             // Test that we have all the complex properties
             database.properties.size shouldBe 11
 
@@ -102,14 +101,15 @@ class MockedApiTest :
         }
 
         "Pages API should handle 404 error correctly" {
-            val httpClient = mockClient {
-                addErrorResponse(
-                    HttpMethod.Get,
-                    "*/v1/pages/*",
-                    HttpStatusCode.NotFound,
-                    "Could not find page with ID: invalid-id"
-                )
-            }
+            val httpClient =
+                mockClient {
+                    addErrorResponse(
+                        HttpMethod.Get,
+                        "*/v1/pages/*",
+                        HttpStatusCode.NotFound,
+                        "Could not find page with ID: invalid-id",
+                    )
+                }
 
             val config = NotionConfig(token = "test-token")
             val pagesApi = PagesApi(httpClient, config)
@@ -129,14 +129,15 @@ class MockedApiTest :
         }
 
         "Databases API should handle 400 error correctly" {
-            val httpClient = mockClient {
-                addErrorResponse(
-                    HttpMethod.Get,
-                    "*/v1/databases/*",
-                    HttpStatusCode.BadRequest,
-                    "Invalid database ID format"
-                )
-            }
+            val httpClient =
+                mockClient {
+                    addErrorResponse(
+                        HttpMethod.Get,
+                        "*/v1/databases/*",
+                        HttpStatusCode.BadRequest,
+                        "Invalid database ID format",
+                    )
+                }
 
             val config = NotionConfig(token = "test-token")
             val databasesApi = DatabasesApi(httpClient, config)
@@ -203,9 +204,10 @@ class MockedApiTest :
         }
 
         "Blocks API should parse official sample response correctly" {
-            val httpClient = mockClient {
-                addBlockRetrieveResponse()
-            }
+            val httpClient =
+                mockClient {
+                    addBlockRetrieveResponse()
+                }
 
             val config = NotionConfig(token = "test-token")
             val blocksApi = BlocksApi(httpClient, config)
@@ -218,10 +220,12 @@ class MockedApiTest :
             block.type shouldBe "heading_2"
             block.hasChildren shouldBe false
             block.archived shouldBe false
-            
+
             // Test specific heading_2 content
             if (block is Block.Heading2) {
-                block.heading2.richText.first().plainText shouldBe "Lacinato kale"
+                block.heading2.richText
+                    .first()
+                    .plainText shouldBe "Lacinato kale"
                 block.heading2.color shouldBe "default"
                 block.heading2.isToggleable shouldBe false
             }
@@ -230,9 +234,10 @@ class MockedApiTest :
         }
 
         "Blocks API should retrieve children correctly" {
-            val httpClient = mockClient {
-                addBlockChildrenRetrieveResponse()
-            }
+            val httpClient =
+                mockClient {
+                    addBlockChildrenRetrieveResponse()
+                }
 
             val config = NotionConfig(token = "test-token")
             val blocksApi = BlocksApi(httpClient, config)
@@ -248,7 +253,7 @@ class MockedApiTest :
             // Test first block (heading_2)
             val heading = blockList.results[0]
             heading.type shouldBe "heading_2"
-            
+
             // Test second block (paragraph)
             val paragraph = blockList.results[1]
             paragraph.type shouldBe "paragraph"
@@ -257,9 +262,10 @@ class MockedApiTest :
         }
 
         "Comments API should parse official sample response correctly" {
-            val httpClient = mockClient {
-                addCommentsRetrieveResponse()
-            }
+            val httpClient =
+                mockClient {
+                    addCommentsRetrieveResponse()
+                }
 
             val config = NotionConfig(token = "test-token")
             val commentsApi = CommentsApi(httpClient, config)

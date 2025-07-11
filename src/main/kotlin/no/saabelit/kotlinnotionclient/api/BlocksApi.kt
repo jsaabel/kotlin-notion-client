@@ -69,18 +69,19 @@ class BlocksApi(
     suspend fun retrieveChildren(
         blockId: String,
         startCursor: String? = null,
-        pageSize: Int? = null
+        pageSize: Int? = null,
     ): BlockList =
         try {
-            val url = buildString {
-                append("${config.baseUrl}/blocks/$blockId/children")
-                val params = mutableListOf<String>()
-                startCursor?.let { params.add("start_cursor=$it") }
-                pageSize?.let { params.add("page_size=$it") }
-                if (params.isNotEmpty()) {
-                    append("?${params.joinToString("&")}")
+            val url =
+                buildString {
+                    append("${config.baseUrl}/blocks/$blockId/children")
+                    val params = mutableListOf<String>()
+                    startCursor?.let { params.add("start_cursor=$it") }
+                    pageSize?.let { params.add("page_size=$it") }
+                    if (params.isNotEmpty()) {
+                        append("?${params.joinToString("&")}")
+                    }
                 }
-            }
 
             val response: HttpResponse = httpClient.get(url)
 

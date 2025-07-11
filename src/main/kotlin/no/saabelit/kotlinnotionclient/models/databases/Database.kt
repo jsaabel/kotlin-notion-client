@@ -61,6 +61,13 @@ data class Database(
  * Represents a property definition in a database.
  *
  * Database properties define the schema and data types for columns in the database.
+ * These are different from PagePropertyValue classes which represent actual values
+ * that can be set when creating/updating pages.
+ *
+ * Naming convention:
+ * - DatabaseProperty: Property definitions/schemas (this file)
+ * - PagePropertyValue: Property values for requests (PageRequests.kt)
+ * - base.RichText: Actual rich text content structure (base package)
  */
 @Serializable
 sealed class DatabaseProperty {

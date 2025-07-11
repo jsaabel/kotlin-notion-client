@@ -68,10 +68,13 @@ class NotionClient private constructor(
                 HttpClient(CIO) {
                     // Install JSON serialization
                     install(ContentNegotiation) {
+                        // TODO: Consider adding info on why these options are chosen
                         json(
                             Json {
                                 ignoreUnknownKeys = true
                                 prettyPrint = config.prettyPrint
+                                encodeDefaults = true
+                                explicitNulls = false
                             },
                         )
                     }

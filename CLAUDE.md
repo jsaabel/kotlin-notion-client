@@ -33,6 +33,7 @@ and best practices in Kotlin.
 3. Check Notion API docs for endpoint details
 4. Write tests first (TDD approach)
 5. Implement incrementally with refactoring
+6. **When considering options, remember to also check the existing implementations in the subfolders of @reference/ . They shouldn't be understood as the "right" solution, but critically evaluated in terms of their features/approaches and what they might add to our own implementation.**
 
 ### Common Pitfalls
 - Notion IDs can be UUIDs with or without hyphens

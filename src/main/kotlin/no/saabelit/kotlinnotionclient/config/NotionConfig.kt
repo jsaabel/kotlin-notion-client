@@ -21,7 +21,7 @@ import kotlin.time.Duration.Companion.seconds
  * @param prettyPrint Whether to format JSON responses for debugging
  */
 data class NotionConfig(
-    val token: String,
+    val token: String = System.getenv("NOTION_API_TOKEN"),
     val baseUrl: String = "https://api.notion.com/v1",
     val apiVersion: String = "2022-06-28",
     val userAgent: String = "kotlin-notion-client/0.0.1",
