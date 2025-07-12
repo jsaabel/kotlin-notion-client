@@ -3,6 +3,7 @@
 package no.saabelit.kotlinnotionclient.models.requests
 
 import no.saabelit.kotlinnotionclient.models.base.Annotations
+import no.saabelit.kotlinnotionclient.models.base.Mention
 import no.saabelit.kotlinnotionclient.models.base.Parent
 import no.saabelit.kotlinnotionclient.models.base.RichText
 import no.saabelit.kotlinnotionclient.models.base.TextContent
@@ -11,6 +12,7 @@ import no.saabelit.kotlinnotionclient.models.databases.CreateDatabaseRequest
 import no.saabelit.kotlinnotionclient.models.pages.CreatePageRequest
 import no.saabelit.kotlinnotionclient.models.pages.PageIcon
 import no.saabelit.kotlinnotionclient.models.pages.PagePropertyValue
+import no.saabelit.kotlinnotionclient.models.users.User
 
 /**
  * Builder utilities for creating common request objects.
@@ -117,6 +119,28 @@ object RequestBuilders {
                 ),
             annotations = Annotations(),
             plainText = content,
+            href = null,
+        )
+
+    /**
+     * Creates a rich text object with a user mention.
+     *
+     * @param userId The ID of the user to mention
+     * @param userName The display name of the user (used as plain text)
+     * @return Configured RichText object with user mention
+     */
+    fun createUserMention(
+        userId: String,
+        userName: String = "User",
+    ): RichText =
+        RichText(
+            type = "mention",
+            mention =
+                Mention.User(
+                    user = User(id = userId, objectType = "user"),
+                ),
+            annotations = Annotations(),
+            plainText = "@$userName",
             href = null,
         )
 
