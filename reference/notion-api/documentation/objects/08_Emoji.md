@@ -1,6 +1,7 @@
 # Emoji
 
-An emoji object contains information about an emoji character. It is most often used to represent an emoji that is rendered as a page icon in the Notion UI.
+An emoji object contains information about an emoji character. It is most often used to represent an emoji that is
+rendered as a page icon in the Notion UI.
 
 **Example emoji object**
 
@@ -13,10 +14,10 @@ An emoji object contains information about an emoji character. It is most often 
 
 The object contains the following fields:
 
-| Type | Description | Example value |
-|------|-------------|---------------|
-| `type` | The constant string "emoji" that represents the object type. | `"emoji"` |
-| `emoji` | The emoji character. | `"😻"` |
+| Type    | Description                                                  | Example value |
+|---------|--------------------------------------------------------------|---------------|
+| `type`  | The constant string "emoji" that represents the object type. | `"emoji"`     |
+| `emoji` | The emoji character.                                         | `"😻"`        |
 
 To use the Notion API to render an emoji object as a page icon, set a page's icon property field to an emoji object.
 
@@ -71,10 +72,10 @@ Custom emojis are icons uploaded and managed in your own workspace.
 
 The object contains the following fields:
 
-| Type | Description | Example value |
-|------|-------------|---------------|
-| `type` | The constant string "emoji" that represents the object type. | `"emoji"` |
-| `custom_emoji` | Custom emoji object, containing id, name, url | `{ "id": "45ce454c-d427-4f53-9489-e5d0f3d1db6b", "name": "bufo", "url": "https://s3-us-west-2.amazonaws.com/public.notion-static.com/865e85fc-7442-44d3-b323-9b03a2111720/3c6796979c50f4aa.png" }` |
+| Type           | Description                                                  | Example value                                                                                                                                                                                      |
+|----------------|--------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `type`         | The constant string "emoji" that represents the object type. | `"emoji"`                                                                                                                                                                                          |
+| `custom_emoji` | Custom emoji object, containing id, name, url                | `{ "id": "45ce454c-d427-4f53-9489-e5d0f3d1db6b", "name": "bufo", "url": "https://s3-us-west-2.amazonaws.com/public.notion-static.com/865e85fc-7442-44d3-b323-9b03a2111720/3c6796979c50f4aa.png" }` |
 
 ## Example: custom emoji in page icon response:
 

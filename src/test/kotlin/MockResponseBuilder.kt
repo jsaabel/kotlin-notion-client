@@ -1,3 +1,5 @@
+@file:Suppress("unused")
+
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.MockRequestHandler
@@ -215,6 +217,28 @@ class MockClientBuilder {
             if (request.method == method && request.url.toString().contains(urlPattern.replace("*", ""))) {
                 respond(
                     content = """{"object": "error", "status": ${statusCode.value}, "code": "test_error", "message": "$errorMessage"}""",
+                    status = statusCode,
+                    headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString()),
+                )
+            } else {
+                respondError(HttpStatusCode.NotFound, "No mock response configured")
+            }
+        }
+    }
+
+    /**
+     * Add a custom JSON response for any endpoint.
+     */
+    fun addJsonResponse(
+        method: HttpMethod,
+        path: String,
+        responseBody: String,
+        statusCode: HttpStatusCode = HttpStatusCode.OK,
+    ) {
+        handlers.add { request ->
+            if (request.method == method && request.url.toString().contains(path)) {
+                respond(
+                    content = responseBody,
                     status = statusCode,
                     headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString()),
                 )

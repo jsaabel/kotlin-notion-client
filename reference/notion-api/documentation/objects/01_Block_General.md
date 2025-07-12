@@ -1,6 +1,7 @@
 # Block
 
-A **block object** represents a piece of content in Notion. The API translates headings, toggles, paragraphs, lists, media, and more into different block types.
+A **block object** represents a piece of content in Notion. The API translates headings, toggles, paragraphs, lists,
+media, and more into different block types.
 
 Use the `Retrieve block children` endpoint to list all blocks on a page.
 

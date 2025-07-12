@@ -1,8 +1,10 @@
 # File
 
-Files, images, and other media bring Notion pages to life — from rich visuals in image blocks to downloadable attachments in databases, or branded page icons and covers.
+Files, images, and other media bring Notion pages to life — from rich visuals in image blocks to downloadable
+attachments in databases, or branded page icons and covers.
 
-This guide introduces how file objects work in the Notion API, the different types of file sources you can work with, and how to choose the right type for your integration.
+This guide introduces how file objects work in the Notion API, the different types of file sources you can work with,
+and how to choose the right type for your integration.
 
 You'll learn about:
 
@@ -12,47 +14,69 @@ You'll learn about:
 
 ## What is a file object?
 
-In the Notion API, any media asset is represented as a file object. A file object stores metadata about the file and indicates where and how the file is hosted.
+In the Notion API, any media asset is represented as a file object. A file object stores metadata about the file and
+indicates where and how the file is hosted.
 
 Each file object has a required type field that determines the structure of its contents:
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `type` | string (enum) | The type of the file object. Possible type values are: "file", "file_upload", "external". |
-| `file`\|`file_upload`\|`external` | object | An object containing type-specific configuration.<br><br>Refer to the type sections below for details on type-specific values. |
+| Field                             | Type          | Description                                                                                                                    |
+|-----------------------------------|---------------|--------------------------------------------------------------------------------------------------------------------------------|
+| `type`                            | string (enum) | The type of the file object. Possible type values are: "file", "file_upload", "external".                                      |
+| `file`\|`file_upload`\|`external` | object        | An object containing type-specific configuration.<br><br>Refer to the type sections below for details on type-specific values. |
 
 Here's what each type looks like:
 
 ```javascript
 // Notion-hosted file (uploaded via UI)
 {
-  "type": "file",
-  "file": {
-    "url": "https://s3.us-west-2.amazonaws.com/...",
-    "expiry_time": "2025-04-24T22:49:22.765Z"
-  }
+    "type"
+:
+    "file",
+        "file"
+:
+    {
+        "url"
+    :
+        "https://s3.us-west-2.amazonaws.com/...",
+            "expiry_time"
+    :
+        "2025-04-24T22:49:22.765Z"
+    }
 }
 
 // File uploaded via the Notion API
 {
-  "type": "file_upload",
-  "file_upload": {
-    "id": "43833259-72ae-404e-8441-b6577f3159b4"
-  }
+    "type"
+:
+    "file_upload",
+        "file_upload"
+:
+    {
+        "id"
+    :
+        "43833259-72ae-404e-8441-b6577f3159b4"
+    }
 }
 
 // External file
 {
-  "type": "external",
-  "external": {
-    "url": "https://example.com/image.png"
-  }
+    "type"
+:
+    "external",
+        "external"
+:
+    {
+        "url"
+    :
+        "https://example.com/image.png"
+    }
 }
 ```
 
 ## Notion-hosted files (type: file)
 
-These are files that users upload manually through the Notion app — such as dragging an image into a page, adding a PDF block, or setting a page cover.
+These are files that users upload manually through the Notion app — such as dragging an image into a page, adding a PDF
+block, or setting a page cover.
 
 **When to use:**
 
@@ -66,10 +90,10 @@ These are files that users upload manually through the Notion app — such as dr
 
 These corresponding file objects contain the following fields:
 
-| Field | Type | Description | Example value |
-|-------|------|-------------|---------------|
-| `url` | string | An authenticated HTTP GET URL to the file.<br><br>The URL is valid for one hour. If the link expires, send an API request to get an updated URL. | `"https://s3.us-west-2.amazonaws.com/secure.notion-static.com/9bc6c6e0-32b8-4d55-8c12-3ae931f43a01/brocolli.jpeg?..."` |
-| `expiry_time` | string (ISO 8601 date time) | The date and time when the link expires. | `"2020-03-17T19:10:04.968Z"` |
+| Field         | Type                        | Description                                                                                                                                      | Example value                                                                                                          |
+|---------------|-----------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------|
+| `url`         | string                      | An authenticated HTTP GET URL to the file.<br><br>The URL is valid for one hour. If the link expires, send an API request to get an updated URL. | `"https://s3.us-west-2.amazonaws.com/secure.notion-static.com/9bc6c6e0-32b8-4d55-8c12-3ae931f43a01/brocolli.jpeg?..."` |
+| `expiry_time` | string (ISO 8601 date time) | The date and time when the link expires.                                                                                                         | `"2020-03-17T19:10:04.968Z"`                                                                                           |
 
 **Example snippet:**
 
@@ -85,7 +109,8 @@ These corresponding file objects contain the following fields:
 
 ## Files uploaded in the API (type: file_upload)
 
-These are files uploaded using the File Upload API. You first create a File Upload, send file content, and then reference it by ID to attach it.
+These are files uploaded using the File Upload API. You first create a File Upload, send file content, and then
+reference it by ID to attach it.
 
 **When to use:**
 
@@ -99,9 +124,9 @@ These are files uploaded using the File Upload API. You first create a File Uplo
 
 These corresponding file objects contain the following fields:
 
-| Field | Type | Description | Example Value |
-|-------|------|-------------|---------------|
-| `id` | UUID | ID of a File Upload object that has a status of "uploaded" | `"43833259-72ae-404e-8441-b6577f3159b4"` |
+| Field | Type | Description                                                | Example Value                            |
+|-------|------|------------------------------------------------------------|------------------------------------------|
+| `id`  | UUID | ID of a File Upload object that has a status of "uploaded" | `"43833259-72ae-404e-8441-b6577f3159b4"` |
 
 **Example snippet:**
 
@@ -116,7 +141,8 @@ These corresponding file objects contain the following fields:
 
 ## External files (type: external)
 
-Use this approach if you have already hosted your files elsewhere (e.g., S3, Dropbox, CDN) and want Notion to link to them.
+Use this approach if you have already hosted your files elsewhere (e.g., S3, Dropbox, CDN) and want Notion to link to
+them.
 
 **When to use:**
 
@@ -132,8 +158,8 @@ Use this approach if you have already hosted your files elsewhere (e.g., S3, Dro
 
 These corresponding file objects contain the following fields:
 
-| Field | Type | Description | Example value |
-|-------|------|-------------|---------------|
+| Field | Type   | Description                              | Example value                            |
+|-------|--------|------------------------------------------|------------------------------------------|
 | `url` | string | A link to the externally hosted content. | `"https://website.domain/files/doc.txt"` |
 
 **Example snippet:**

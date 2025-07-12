@@ -1,3 +1,5 @@
+@file:Suppress("unused")
+
 package no.saabelit.kotlinnotionclient.models.requests
 
 import no.saabelit.kotlinnotionclient.models.base.Annotations

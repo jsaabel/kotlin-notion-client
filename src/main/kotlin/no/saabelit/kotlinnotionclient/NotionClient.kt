@@ -1,3 +1,5 @@
+@file:Suppress("unused")
+
 package no.saabelit.kotlinnotionclient
 
 import io.ktor.client.HttpClient
@@ -16,6 +18,7 @@ import kotlinx.serialization.json.Json
 import no.saabelit.kotlinnotionclient.api.BlocksApi
 import no.saabelit.kotlinnotionclient.api.CommentsApi
 import no.saabelit.kotlinnotionclient.api.DatabasesApi
+import no.saabelit.kotlinnotionclient.api.FileUploadApi
 import no.saabelit.kotlinnotionclient.api.PagesApi
 import no.saabelit.kotlinnotionclient.api.UsersApi
 import no.saabelit.kotlinnotionclient.config.NotionConfig
@@ -55,6 +58,7 @@ class NotionClient private constructor(
     val databases = DatabasesApi(httpClient, config)
     val blocks = BlocksApi(httpClient, config)
     val comments = CommentsApi(httpClient, config)
+    val fileUploads = FileUploadApi(httpClient, config)
 
     companion object {
         /**
@@ -136,7 +140,7 @@ class NotionClient private constructor(
      * Closes the HTTP client and releases associated resources.
      * Call this when you're done using the client.
      */
-    suspend fun close() {
+    fun close() {
         httpClient.close()
     }
 }

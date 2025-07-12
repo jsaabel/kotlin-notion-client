@@ -1,8 +1,10 @@
 # Rich Text
 
-Notion uses **rich text** to support formatted, styled content like links, colors, bold text, code spans, and inline mentions (e.g., pages, users, dates).
+Notion uses **rich text** to support formatted, styled content like links, colors, bold text, code spans, and inline
+mentions (e.g., pages, users, dates).
 
-Blocks that support rich text include a `rich_text` array in their block object. Each entry is a **rich text object** with plain text and optional formatting or metadata.
+Blocks that support rich text include a `rich_text` array in their block object. Each entry is a **rich text object**
+with plain text and optional formatting or metadata.
 
 ---
 

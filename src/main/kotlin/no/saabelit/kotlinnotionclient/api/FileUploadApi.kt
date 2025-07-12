@@ -1,11 +1,20 @@
+@file:Suppress("UastIncorrectHttpHeaderInspection")
+
 package no.saabelit.kotlinnotionclient.api
 
-import io.ktor.client.*
-import io.ktor.client.call.*
-import io.ktor.client.request.*
-import io.ktor.client.request.forms.*
-import io.ktor.http.*
-import io.ktor.utils.io.core.*
+import io.ktor.client.HttpClient
+import io.ktor.client.call.body
+import io.ktor.client.request.forms.formData
+import io.ktor.client.request.forms.submitFormWithBinaryData
+import io.ktor.client.request.get
+import io.ktor.client.request.parameter
+import io.ktor.client.request.post
+import io.ktor.client.request.setBody
+import io.ktor.http.ContentType
+import io.ktor.http.Headers
+import io.ktor.http.HttpHeaders
+import io.ktor.http.contentType
+import io.ktor.http.headers
 import no.saabelit.kotlinnotionclient.config.NotionConfig
 import no.saabelit.kotlinnotionclient.models.files.CreateFileUploadRequest
 import no.saabelit.kotlinnotionclient.models.files.FileUpload
@@ -20,13 +29,11 @@ import no.saabelit.kotlinnotionclient.models.files.FileUploadList
  * @property client The HTTP client used for making API requests
  * @property config The Notion client configuration
  */
+@Suppress("unused")
 class FileUploadApi(
     private val client: HttpClient,
     private val config: NotionConfig,
 ) {
-    companion object {
-    }
-
     /**
      * Creates a file upload.
      *
@@ -36,16 +43,16 @@ class FileUploadApi(
      * @param request The file upload creation request
      * @return The created FileUpload object
      */
-    suspend fun createFileUpload(request: CreateFileUploadRequest): FileUpload {
-        return client.post("${config.baseUrl}/file_uploads") {
-            headers {
-                append(HttpHeaders.Authorization, "Bearer ${config.token}")
-                append("Notion-Version", config.apiVersion)
-            }
-            contentType(ContentType.Application.Json)
-            setBody(request)
-        }.body()
-    }
+    suspend fun createFileUpload(request: CreateFileUploadRequest): FileUpload =
+        client
+            .post("${config.baseUrl}/file_uploads") {
+                headers {
+                    append(HttpHeaders.Authorization, "Bearer ${config.token}")
+                    append("Notion-Version", config.apiVersion)
+                }
+                contentType(ContentType.Application.Json)
+                setBody(request)
+            }.body()
 
     /**
      * Sends file content to a file upload.
@@ -62,24 +69,29 @@ class FileUploadApi(
         fileUploadId: String,
         fileContent: ByteArray,
         partNumber: Int? = null,
-    ): FileUpload {
-        return client.submitFormWithBinaryData(
-            url = "${config.baseUrl}/file_uploads/$fileUploadId/send",
-            formData = formData {
-                append("file", fileContent, Headers.build {
-                    append(HttpHeaders.ContentDisposition, "filename=\"file\"")
-                })
-                partNumber?.let {
-                    append("part_number", it.toString())
+    ): FileUpload =
+        client
+            .submitFormWithBinaryData(
+                url = "${config.baseUrl}/file_uploads/$fileUploadId/send",
+                formData =
+                    formData {
+                        append(
+                            "file",
+                            fileContent,
+                            Headers.build {
+                                append(HttpHeaders.ContentDisposition, "filename=\"file\"")
+                            },
+                        )
+                        partNumber?.let {
+                            append("part_number", it.toString())
+                        }
+                    },
+            ) {
+                headers {
+                    append(HttpHeaders.Authorization, "Bearer ${config.token}")
+                    append("Notion-Version", config.apiVersion)
                 }
-            }
-        ) {
-            headers {
-                append(HttpHeaders.Authorization, "Bearer ${config.token}")
-                append("Notion-Version", config.apiVersion)
-            }
-        }.body()
-    }
+            }.body()
 
     /**
      * Completes a multi-part file upload.
@@ -89,16 +101,16 @@ class FileUploadApi(
      * @param fileUploadId The ID of the file upload to complete
      * @return The completed FileUpload object
      */
-    suspend fun completeFileUpload(fileUploadId: String): FileUpload {
-        return client.post("${config.baseUrl}/file_uploads/$fileUploadId/complete") {
-            headers {
-                append(HttpHeaders.Authorization, "Bearer ${config.token}")
-                append("Notion-Version", config.apiVersion)
-            }
-            contentType(ContentType.Application.Json)
-            setBody(emptyMap<String, String>()) // Empty body for completion
-        }.body()
-    }
+    suspend fun completeFileUpload(fileUploadId: String): FileUpload =
+        client
+            .post("${config.baseUrl}/file_uploads/$fileUploadId/complete") {
+                headers {
+                    append(HttpHeaders.Authorization, "Bearer ${config.token}")
+                    append("Notion-Version", config.apiVersion)
+                }
+                contentType(ContentType.Application.Json)
+                setBody(emptyMap<String, String>()) // Empty body for completion
+            }.body()
 
     /**
      * Retrieves a file upload.
@@ -108,14 +120,14 @@ class FileUploadApi(
      * @param fileUploadId The ID of the file upload to retrieve
      * @return The FileUpload object
      */
-    suspend fun retrieveFileUpload(fileUploadId: String): FileUpload {
-        return client.get("${config.baseUrl}/file_uploads/$fileUploadId") {
-            headers {
-                append(HttpHeaders.Authorization, "Bearer ${config.token}")
-                append("Notion-Version", config.apiVersion)
-            }
-        }.body()
-    }
+    suspend fun retrieveFileUpload(fileUploadId: String): FileUpload =
+        client
+            .get("${config.baseUrl}/file_uploads/$fileUploadId") {
+                headers {
+                    append(HttpHeaders.Authorization, "Bearer ${config.token}")
+                    append("Notion-Version", config.apiVersion)
+                }
+            }.body()
 
     /**
      * Lists file uploads.
@@ -129,16 +141,16 @@ class FileUploadApi(
     suspend fun listFileUploads(
         startCursor: String? = null,
         pageSize: Int? = null,
-    ): FileUploadList {
-        return client.get("${config.baseUrl}/file_uploads") {
-            headers {
-                append(HttpHeaders.Authorization, "Bearer ${config.token}")
-                append("Notion-Version", config.apiVersion)
-            }
-            startCursor?.let { parameter("start_cursor", it) }
-            pageSize?.let { parameter("page_size", it) }
-        }.body()
-    }
+    ): FileUploadList =
+        client
+            .get("${config.baseUrl}/file_uploads") {
+                headers {
+                    append(HttpHeaders.Authorization, "Bearer ${config.token}")
+                    append("Notion-Version", config.apiVersion)
+                }
+                startCursor?.let { parameter("start_cursor", it) }
+                pageSize?.let { parameter("page_size", it) }
+            }.body()
 
     /**
      * Convenience method to upload a file in a single operation.
@@ -159,12 +171,13 @@ class FileUploadApi(
         fileContent: ByteArray,
     ): FileUpload {
         // Create the file upload
-        val upload = createFileUpload(
-            CreateFileUploadRequest(
-                filename = filename,
-                contentType = contentType,
+        val upload =
+            createFileUpload(
+                CreateFileUploadRequest(
+                    filename = filename,
+                    contentType = contentType,
+                ),
             )
-        )
 
         // Send the file content
         return sendFileUpload(
@@ -192,14 +205,15 @@ class FileUploadApi(
         parts: List<ByteArray>,
     ): FileUpload {
         // Create the multi-part file upload
-        val upload = createFileUpload(
-            CreateFileUploadRequest(
-                mode = no.saabelit.kotlinnotionclient.models.files.FileUploadMode.MULTI_PART,
-                filename = filename,
-                contentType = contentType,
-                numberOfParts = parts.size,
+        val upload =
+            createFileUpload(
+                CreateFileUploadRequest(
+                    mode = no.saabelit.kotlinnotionclient.models.files.FileUploadMode.MULTI_PART,
+                    filename = filename,
+                    contentType = contentType,
+                    numberOfParts = parts.size,
+                ),
             )
-        )
 
         // Send each part
         parts.forEachIndexed { index, partContent ->
@@ -228,14 +242,13 @@ class FileUploadApi(
         filename: String,
         externalUrl: String,
         contentType: String? = null,
-    ): FileUpload {
-        return createFileUpload(
+    ): FileUpload =
+        createFileUpload(
             CreateFileUploadRequest(
                 mode = no.saabelit.kotlinnotionclient.models.files.FileUploadMode.EXTERNAL_URL,
                 filename = filename,
                 contentType = contentType,
                 externalUrl = externalUrl,
-            )
+            ),
         )
-    }
 }

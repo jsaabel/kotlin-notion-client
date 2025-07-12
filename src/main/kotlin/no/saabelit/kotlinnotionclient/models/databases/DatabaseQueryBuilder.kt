@@ -1,3 +1,5 @@
+@file:Suppress("unused")
+
 package no.saabelit.kotlinnotionclient.models.databases
 
 import no.saabelit.kotlinnotionclient.models.base.EmptyObject

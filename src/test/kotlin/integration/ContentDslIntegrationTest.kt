@@ -162,7 +162,7 @@ class ContentDslIntegrationTest :
                     println("- Children count: ${bulletBlock.bulletedListItem.children?.size ?: 0}")
                     println("- Rich text: ${bulletBlock.bulletedListItem.richText}")
                     println("- Color: ${bulletBlock.bulletedListItem.color}")
-                    
+
                     // Step 5: Append content to Notion page
                     println("📤 Appending DSL-generated content to Notion page...")
                     val appendResponse = client.blocks.appendChildren(createdPage.id, pageContent)

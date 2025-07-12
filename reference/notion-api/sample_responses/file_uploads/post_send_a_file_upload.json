@@ -1,0 +1,13 @@
+{
+  "id": "b52b8ed6-e029-4707-a671-832549c09de3",
+  "object": "file_upload",
+  "created_time": "2025-03-15T20:53:00.000Z",
+  "last_edited_time": "2025-03-15T20:57:00.000Z",
+  "expiry_time": "2025-03-15T21:53:00.000Z",
+  "upload_url": null,
+  "archived": false,
+  "status": "uploaded",
+  "filename": "test.txt",
+  "content_type": "text/plain",
+  "content_length": 1024
+}

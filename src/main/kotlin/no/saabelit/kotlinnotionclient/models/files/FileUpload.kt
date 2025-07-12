@@ -1,3 +1,5 @@
+@file:Suppress("unused")
+
 package no.saabelit.kotlinnotionclient.models.files
 
 import kotlinx.serialization.SerialName
@@ -43,8 +45,10 @@ data class FileUpload(
 enum class FileUploadStatus {
     @SerialName("pending")
     PENDING,
+
     @SerialName("uploaded")
     UPLOADED,
+
     @SerialName("failed")
     FAILED,
 }
@@ -56,8 +60,10 @@ enum class FileUploadStatus {
 enum class FileUploadMode {
     @SerialName("single_part")
     SINGLE_PART,
+
     @SerialName("multi_part")
     MULTI_PART,
+
     @SerialName("external_url")
     EXTERNAL_URL,
 }

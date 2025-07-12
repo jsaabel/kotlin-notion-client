@@ -1,7 +1,8 @@
 # Page Properties
 
 > 👍 **Tip**
-> Page properties are most useful when interacting with a page that is an entry in a database, represented as a row in the Notion UI.
+> Page properties are most useful when interacting with a page that is an entry in a database, represented as a row in
+> the Notion UI.
 
 If a page is not part of a database, then its only available property is its title.
 
@@ -9,31 +10,34 @@ A page object is made up of page properties that contain data about the page.
 
 When you send a request to Create a page, you set the page properties in the properties object body param.
 
-Retrieve a page gets the identifier, type, and value of a page's properties. Retrieve a page property item returns information about a single property ID.
+Retrieve a page gets the identifier, type, and value of a page's properties. Retrieve a page property item returns
+information about a single property ID.
 
 An Update page query modifies the page property values specified in the properties object body param.
 
 Each page property value object contains the following fields:
 
-| Field | Type | Description | Example value |
-|-------|------|-------------|---------------|
-| `id` | string | An underlying identifier for the property.<br><br>`id` may be used in place of name when creating or updating pages.<br><br>`id` remains constant when the property name changes. | `"f%5C%5C%3Ap"` |
-| `type` | string (enum) | The type of the property in the page object. Possible type values are:<br><br>- checkbox<br>- created_by<br>- created_time<br>- date<br>- email<br>- files<br>- formula<br>- last_edited_by<br>- last_edited_time<br>- multi_select<br>- number<br>- people<br>- phone_number<br>- relation<br>- rollup<br>- rich_text<br>- select<br>- status<br>- title<br>- url<br>- unique_id<br>- verification<br><br>Refer to specific type sections below for details on type-specific values. | `"rich_text"` |
-| `checkbox`<br>`created_by`<br>`created_time`<br>`date`<br>`email`<br>`files`<br>`formula`<br>`last_edited_by`<br>`last_edited_time`<br>`multi_select`<br>`number`<br>`people`<br>`phone_number`<br>`relation`<br>`rollup`<br>`rich_text`<br>`select`<br>`status`<br>`title`<br>`url`<br>`unique_id`<br>`verification` | object | A type object that contains data specific to the page property type, including the page property value.<br><br>Refer to the type objects section for descriptions and examples of each type. | `"checkbox": true` |
+| Field                                                                                                                                                                                                                                                                                                                 | Type          | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                           | Example value      |
+|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|---------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|--------------------|
+| `id`                                                                                                                                                                                                                                                                                                                  | string        | An underlying identifier for the property.<br><br>`id` may be used in place of name when creating or updating pages.<br><br>`id` remains constant when the property name changes.                                                                                                                                                                                                                                                                                                     | `"f%5C%5C%3Ap"`    |
+| `type`                                                                                                                                                                                                                                                                                                                | string (enum) | The type of the property in the page object. Possible type values are:<br><br>- checkbox<br>- created_by<br>- created_time<br>- date<br>- email<br>- files<br>- formula<br>- last_edited_by<br>- last_edited_time<br>- multi_select<br>- number<br>- people<br>- phone_number<br>- relation<br>- rollup<br>- rich_text<br>- select<br>- status<br>- title<br>- url<br>- unique_id<br>- verification<br><br>Refer to specific type sections below for details on type-specific values. | `"rich_text"`      |
+| `checkbox`<br>`created_by`<br>`created_time`<br>`date`<br>`email`<br>`files`<br>`formula`<br>`last_edited_by`<br>`last_edited_time`<br>`multi_select`<br>`number`<br>`people`<br>`phone_number`<br>`relation`<br>`rollup`<br>`rich_text`<br>`select`<br>`status`<br>`title`<br>`url`<br>`unique_id`<br>`verification` | object        | A type object that contains data specific to the page property type, including the page property value.<br><br>Refer to the type objects section for descriptions and examples of each type.                                                                                                                                                                                                                                                                                          | `"checkbox": true` |
 
 > 📘 **Size limits for page property values**
-> 
-> For information about size limitations for specific page property objects, refer to the limits for property values documentation.
+>
+> For information about size limitations for specific page property objects, refer to the limits for property values
+> documentation.
 
 ## Type objects
 
 ### Checkbox
 
-| Field | Type | Description | Example value |
-|-------|------|-------------|---------------|
-| `checkbox` | boolean | Whether the checkbox is checked (true) or unchecked (false). | `true` |
+| Field      | Type    | Description                                                  | Example value |
+|------------|---------|--------------------------------------------------------------|---------------|
+| `checkbox` | boolean | Whether the checkbox is checked (true) or unchecked (false). | `true`        |
 
-**Example properties body param for a POST or PATCH page request that creates or updates a checkbox page property value**
+**Example properties body param for a POST or PATCH page request that creates or updates a checkbox page property value
+**
 
 ```json
 {
@@ -59,8 +63,8 @@ Each page property value object contains the following fields:
 
 ### Created by
 
-| Field | Type | Description | Example value |
-|-------|------|-------------|---------------|
+| Field        | Type   | Description                                                                                                     | Example value                                |
+|--------------|--------|-----------------------------------------------------------------------------------------------------------------|----------------------------------------------|
 | `created_by` | object | A user object containing information about the user who created the page.<br><br>`created_by` can't be updated. | Refer to the example response objects below. |
 
 **Example created_by page property value as returned in a GET page request**
@@ -76,8 +80,8 @@ Each page property value object contains the following fields:
 
 ### Created time
 
-| Field | Type | Description | Example value |
-|-------|------|-------------|---------------|
+| Field          | Type                            | Description                                                                                    | Example value                |
+|----------------|---------------------------------|------------------------------------------------------------------------------------------------|------------------------------|
 | `created_time` | string (ISO 8601 date and time) | The date and time that the page was created.<br><br>The `created_time` value can't be updated. | `"2022-10-12T16:34:00.000Z"` |
 
 **Example created_time page property value as returned in a GET page request**
@@ -94,12 +98,13 @@ Each page property value object contains the following fields:
 
 ### Date
 
-If the type of a page property value is "date", then the property value contains a "date" object with the following fields:
+If the type of a page property value is "date", then the property value contains a "date" object with the following
+fields:
 
-| Field | Type | Description | Example value |
-|-------|------|-------------|---------------|
-| `end` | string (ISO 8601 date and time) | (Optional) A string representing the end of a date range.<br><br>If the value is null, then the date value is not a range. | `"2020-12-08T12:00:00Z"` |
-| `start` | string (ISO 8601 date and time) | A date, with an optional time.<br><br>If the date value is a range, then start represents the start of the range. | `"2020-12-08T12:00:00Z"` |
+| Field   | Type                            | Description                                                                                                                | Example value            |
+|---------|---------------------------------|----------------------------------------------------------------------------------------------------------------------------|--------------------------|
+| `end`   | string (ISO 8601 date and time) | (Optional) A string representing the end of a date range.<br><br>If the value is null, then the date value is not a range. | `"2020-12-08T12:00:00Z"` |
+| `start` | string (ISO 8601 date and time) | A date, with an optional time.<br><br>If the date value is a range, then start represents the start of the range.          | `"2020-12-08T12:00:00Z"` |
 
 **Example properties body param for a POST or PATCH page request that creates or updates a date page property value**
 
@@ -133,8 +138,8 @@ If the type of a page property value is "date", then the property value contains
 
 ### Email
 
-| Field | Type | Description | Example value |
-|-------|------|-------------|---------------|
+| Field   | Type   | Description                           | Example value          |
+|---------|--------|---------------------------------------|------------------------|
 | `email` | string | A string describing an email address. | `"ada@makenotion.com"` |
 
 **Example properties body param for a POST or PATCH page request that creates or updates an email page property value**
@@ -163,13 +168,14 @@ If the type of a page property value is "date", then the property value contains
 
 ### Files
 
-| Field | Type | Description | Example value |
-|-------|------|-------------|---------------|
+| Field   | Type                  | Description                                                 | Example value                                |
+|---------|-----------------------|-------------------------------------------------------------|----------------------------------------------|
 | `files` | array of file objects | An array of objects containing information about the files. | Refer to the example response objects below. |
 
 **Example creation or update of files property**
 
-The following is an example properties body parameter for a POST or PATCH page request that creates or updates a files page property value.
+The following is an example properties body parameter for a POST or PATCH page request that creates or updates a files
+page property value.
 
 When providing an external URL, the name parameter is required.
 
@@ -213,21 +219,23 @@ When providing a file_upload, the name is optional and defaults to the filename 
 ```
 
 > 📘 **Array parameter overwrites the entire existing value**
-> 
+>
 > When updating a files page property value, the value is overwritten by the new array of files passed.
-> 
-> If you pass a file object containing a file hosted by Notion, it remains one of the files. To remove any file, don't pass it in the update request.
+>
+> If you pass a file object containing a file hosted by Notion, it remains one of the files. To remove any file, don't
+> pass it in the update request.
 
 ### Formula
 
 Formula property value objects represent the result of evaluating a formula described in the database's properties.
 
-If the type of a page property value is "formula", then the property value contains a "formula" object with the following fields:
+If the type of a page property value is "formula", then the property value contains a "formula" object with the
+following fields:
 
-| Field | Type | Description | Example value |
-|-------|------|-------------|---------------|
-| `boolean \|\| date \|\| number \|\| string` | boolean \|\| date \|\| number \|\| string | The value of the result of the formula.<br><br>The value can't be updated directly via the API. | `42` |
-| `type` | string (enum) | A string indicating the data type of the result of the formula. Possible type values are:<br><br>- boolean<br>- date<br>- number<br>- string | `"number"` |
+| Field                                       | Type                                      | Description                                                                                                                                  | Example value |
+|---------------------------------------------|-------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------|---------------|
+| `boolean \|\| date \|\| number \|\| string` | boolean \|\| date \|\| number \|\| string | The value of the result of the formula.<br><br>The value can't be updated directly via the API.                                              | `42`          |
+| `type`                                      | string (enum)                             | A string indicating the data type of the result of the formula. Possible type values are:<br><br>- boolean<br>- date<br>- number<br>- string | `"number"`    |
 
 **Example formula page property value as returned in a GET page request**
 
@@ -245,16 +253,19 @@ If the type of a page property value is "formula", then the property value conta
 ```
 
 > 📘 **Note**
-> The Retrieve a page endpoint returns a maximum of 25 inline page or person references for a formula property. If a formula property includes more than 25 references, then you can use the Retrieve a page property item endpoint for the specific formula property to get its complete list of references.
+> The Retrieve a page endpoint returns a maximum of 25 inline page or person references for a formula property. If a
+> formula property includes more than 25 references, then you can use the Retrieve a page property item endpoint for the
+> specific formula property to get its complete list of references.
 
 ### Icon
 
 > 📘 **Page icon and cover are not nested under properties**
-> 
-> The icon and cover parameters and fields in the Create a page and Update page properties APIs are top-level are not nested under properties.
+>
+> The icon and cover parameters and fields in the Create a page and Update page properties APIs are top-level are not
+> nested under properties.
 
-| Field | Type | Description | Example value |
-|-------|------|-------------|---------------|
+| Field  | Type      | Description | Example value                                |
+|--------|-----------|-------------|----------------------------------------------|
 | `icon` | an object | Icon object | Refer to the example response objects below. |
 
 **Example emoji icon property value as returned in GET page request**
@@ -263,7 +274,7 @@ If the type of a page property value is "formula", then the property value conta
 {
   "icon": {
     "type": "emoji",
-    "emoji":"😀"
+    "emoji": "😀"
   }
 }
 ```
@@ -273,7 +284,7 @@ If the type of a page property value is "formula", then the property value conta
 ```json
 {
   "icon": {
-    "type":"file",
+    "type": "file",
     "file": {
       "url": "https://local-files-secure.s3.us-west-2.amazonaws.com/13950b26-c203-4f3b-b97d-93ec06319565/a7084c4c-3e9a-4324-af99-34e0cb7f8fe7/notion.jpg?...",
       "expiry_time": "2024-12-03T19:44:56.932Z"
@@ -284,7 +295,8 @@ If the type of a page property value is "formula", then the property value conta
 
 **Example updating a page icon to an uploaded file**
 
-After uploading an image using the File Upload API, use the File Upload's ID in the Create a page or Update page properties API to attach it as a page icon. For example:
+After uploading an image using the File Upload API, use the File Upload's ID in the Create a page or Update page
+properties API to attach it as a page icon. For example:
 
 ```json
 {
@@ -297,12 +309,13 @@ After uploading an image using the File Upload API, use the File Upload's ID in 
 }
 ```
 
-To attach a file upload as a page cover rather than an icon, use the create or update page APIs with the cover parameter, nesting a file_upload parameter the same way as the icon example.
+To attach a file upload as a page cover rather than an icon, use the create or update page APIs with the cover
+parameter, nesting a file_upload parameter the same way as the icon example.
 
 ### Last edited by
 
-| Field | Type | Description | Example value |
-|-------|------|-------------|---------------|
+| Field            | Type   | Description                                                                                                              | Example value                                |
+|------------------|--------|--------------------------------------------------------------------------------------------------------------------------|----------------------------------------------|
 | `last_edited_by` | object | A user object containing information about the user who last updated the page.<br><br>`last_edited_by` can't be updated. | Refer to the example response objects below. |
 
 **Example last_edited_by page property value as returned in a GET page request**
@@ -326,8 +339,8 @@ To attach a file upload as a page cover rather than an icon, use the create or u
 
 ### Last edited time
 
-| Field | Type | Description | Example value |
-|-------|------|-------------|---------------|
+| Field              | Type                            | Description                                                                                            | Example value                |
+|--------------------|---------------------------------|--------------------------------------------------------------------------------------------------------|------------------------------|
 | `last_edited_time` | string (ISO 8601 date and time) | The date and time that the page was last edited.<br><br>The `last_edited_time` value can't be updated. | `"2022-10-12T16:34:00.000Z"` |
 
 **Example last_edited_time page property value as returned in a GET page request**
@@ -344,15 +357,17 @@ To attach a file upload as a page cover rather than an icon, use the create or u
 
 ### Multi-select
 
-If the type of a page property value is "multi_select", then the property value contains a "multi_select" array with the following fields:
+If the type of a page property value is "multi_select", then the property value contains a "multi_select" array with the
+following fields:
 
-| Field | Type | Description | Example value |
-|-------|------|-------------|---------------|
-| `color` | string (enum) | Color of the option. Possible "color" values are:<br><br>- blue<br>- brown<br>- default<br>- gray<br>- green<br>- orange<br>- pink<br>- purple<br>- red<br>- yellow<br><br>Defaults to default. The color value can't be updated via the API. | `"red"` |
-| `id` | string | The ID of the option.<br><br>You can use id or name to update a multi-select property. | `"b3d773ca-b2c9-47d8-ae98-3c2ce3b2bffb"` |
-| `name` | string | The name of the option as it appears in Notion.<br><br>If the multi-select database property does not yet have an option by that name, then the name will be added to the database schema if the integration also has write access to the parent database.<br><br>Note: Commas (",") are not valid for select values. | `"JavaScript"` |
+| Field   | Type          | Description                                                                                                                                                                                                                                                                                                           | Example value                            |
+|---------|---------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|------------------------------------------|
+| `color` | string (enum) | Color of the option. Possible "color" values are:<br><br>- blue<br>- brown<br>- default<br>- gray<br>- green<br>- orange<br>- pink<br>- purple<br>- red<br>- yellow<br><br>Defaults to default. The color value can't be updated via the API.                                                                         | `"red"`                                  |
+| `id`    | string        | The ID of the option.<br><br>You can use id or name to update a multi-select property.                                                                                                                                                                                                                                | `"b3d773ca-b2c9-47d8-ae98-3c2ce3b2bffb"` |
+| `name`  | string        | The name of the option as it appears in Notion.<br><br>If the multi-select database property does not yet have an option by that name, then the name will be added to the database schema if the integration also has write access to the parent database.<br><br>Note: Commas (",") are not valid for select values. | `"JavaScript"`                           |
 
-**Example properties body param for a POST or PATCH page request that creates or updates a multi_select page property value**
+**Example properties body param for a POST or PATCH page request that creates or updates a multi_select page property
+value**
 
 ```json
 {
@@ -401,13 +416,14 @@ If the type of a page property value is "multi_select", then the property value 
 ```
 
 > 📘 **Note**
-> If you want to add a new option to a multi-select property via the Update page or Update database endpoint, then your integration needs write access to the parent database.
+> If you want to add a new option to a multi-select property via the Update page or Update database endpoint, then your
+> integration needs write access to the parent database.
 
 ### Number
 
-| Field | Type | Description | Example value |
-|-------|------|-------------|---------------|
-| `number` | number | A number representing some value. | `1234` |
+| Field    | Type   | Description                       | Example value |
+|----------|--------|-----------------------------------|---------------|
+| `number` | number | A number representing some value. | `1234`        |
 
 **Example properties body param for a POST or PATCH page request that creates or updates a number page property value**
 
@@ -438,8 +454,8 @@ If the type of a page property value is "multi_select", then the property value 
 
 ### People
 
-| Field | Type | Description | Example value |
-|-------|------|-------------|---------------|
+| Field    | Type                  | Description               | Example value                                |
+|----------|-----------------------|---------------------------|----------------------------------------------|
 | `people` | array of user objects | An array of user objects. | Refer to the example response objects below. |
 
 **Example properties body param for a POST or PATCH page request that creates or updates a people page property value**
@@ -448,10 +464,12 @@ If the type of a page property value is "multi_select", then the property value 
 {
   "properties": {
     "Stakeholders": {
-      "people": [{
-        "object": "user",
-        "id": "c2f20311-9e54-4d11-8c79-7398424ae41e"
-      }]
+      "people": [
+        {
+          "object": "user",
+          "id": "c2f20311-9e54-4d11-8c79-7398424ae41e"
+        }
+      ]
     }
   }
 }
@@ -481,15 +499,18 @@ If the type of a page property value is "multi_select", then the property value 
 ```
 
 > 📘 **Note**
-> The Retrieve a page endpoint can't be guaranteed to return more than 25 people per people page property. If a people page property includes more than 25 people, then you can use the Retrieve a page property item endpoint for the specific people property to get a complete list of people.
+> The Retrieve a page endpoint can't be guaranteed to return more than 25 people per people page property. If a people
+> page property includes more than 25 people, then you can use the Retrieve a page property item endpoint for the specific
+> people property to get a complete list of people.
 
 ### Phone number
 
-| Field | Type | Description | Example value |
-|-------|------|-------------|---------------|
+| Field          | Type   | Description                                                               | Example value    |
+|----------------|--------|---------------------------------------------------------------------------|------------------|
 | `phone_number` | string | A string representing a phone number. No phone number format is enforced. | `"415-867-5309"` |
 
-**Example properties body param for a POST or PATCH page request that creates or updates a phone_number page property value**
+**Example properties body param for a POST or PATCH page request that creates or updates a phone_number page property
+value**
 
 ```json
 {
@@ -516,12 +537,13 @@ If the type of a page property value is "multi_select", then the property value 
 
 ### Relation
 
-| Field | Type | Description | Example value |
-|-------|------|-------------|---------------|
-| `has_more` | boolean | If a relation has more than 25 references, then the `has_more` value for the relation in the response object is true. If a relation doesn't exceed the limit, then `has_more` is false. | Refer to the example response objects below. |
-| `relation` | an array of page references | An array of related page references. A page reference is an object with an id key and a string value corresponding to a page ID in another database. | Refer to the example response objects below. |
+| Field      | Type                        | Description                                                                                                                                                                             | Example value                                |
+|------------|-----------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------|
+| `has_more` | boolean                     | If a relation has more than 25 references, then the `has_more` value for the relation in the response object is true. If a relation doesn't exceed the limit, then `has_more` is false. | Refer to the example response objects below. |
+| `relation` | an array of page references | An array of related page references. A page reference is an object with an id key and a string value corresponding to a page ID in another database.                                    | Refer to the example response objects below. |
 
-**Example properties body param for a POST or PATCH page request that creates or updates a relation page property value**
+**Example properties body param for a POST or PATCH page request that creates or updates a relation page property value
+**
 
 ```json
 {
@@ -562,17 +584,19 @@ If the type of a page property value is "multi_select", then the property value 
 
 > 📘 **Notes**
 > - To update a relation property value via the API, share the related parent database with the integration.
-> - If a relation property value is unexpectedly empty, then make sure that you have shared the original source database that the relation points to with the integration.
+> - If a relation property value is unexpectedly empty, then make sure that you have shared the original source database
+    that the relation points to with the integration.
 
 ### Rollup
 
-If the type of a page property value is "rollup", then the property value contains a "rollup" object with the following fields:
+If the type of a page property value is "rollup", then the property value contains a "rollup" object with the following
+fields:
 
-| Field | Type | Description | Example value |
-|-------|------|-------------|---------------|
-| `array \|\| date \|\| incomplete \|\| number \|\| unsupported` | Corresponds to the field.<br><br>For example, if the field is number, then the type of the value is number. | The value of the calculated rollup.<br><br>The value can't be directly updated via the API. | `1234` |
-| `function` | string (enum) | The function that is evaluated for every page in the relation of the rollup. Possible "function" values are:<br><br>- average<br>- checked<br>- count<br>- count_per_group<br>- count_values<br>- date_range<br>- earliest_date<br>- empty<br>- latest_date<br>- max<br>- median<br>- min<br>- not_empty<br>- percent_checked<br>- percent_empty<br>- percent_not_empty<br>- percent_per_group<br>- percent_unchecked<br>- range<br>- show_original<br>- show_unique<br>- sum<br>- unchecked<br>- unique | `"sum"` |
-| `type` | array \|\| date \|\| incomplete \|\| number \|\| unsupported | The value type of the calculated rollup. | `number` |
+| Field                                                          | Type                                                                                                        | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              | Example value |
+|----------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|---------------|
+| `array \|\| date \|\| incomplete \|\| number \|\| unsupported` | Corresponds to the field.<br><br>For example, if the field is number, then the type of the value is number. | The value of the calculated rollup.<br><br>The value can't be directly updated via the API.                                                                                                                                                                                                                                                                                                                                                                                                              | `1234`        |
+| `function`                                                     | string (enum)                                                                                               | The function that is evaluated for every page in the relation of the rollup. Possible "function" values are:<br><br>- average<br>- checked<br>- count<br>- count_per_group<br>- count_values<br>- date_range<br>- earliest_date<br>- empty<br>- latest_date<br>- max<br>- median<br>- min<br>- not_empty<br>- percent_checked<br>- percent_empty<br>- percent_not_empty<br>- percent_per_group<br>- percent_unchecked<br>- range<br>- show_original<br>- show_unique<br>- sum<br>- unchecked<br>- unique | `"sum"`       |
+| `type`                                                         | array \|\| date \|\| incomplete \|\| number \|\| unsupported                                                | The value type of the calculated rollup.                                                                                                                                                                                                                                                                                                                                                                                                                                                                 | `number`      |
 
 **Example rollup page property value as returned in a GET page request**
 
@@ -591,22 +615,25 @@ If the type of a page property value is "rollup", then the property value contai
 ```
 
 > 🚧 **For rollup properties with more than 25 references, use the Retrieve a page property endpoint**
-> 
-> Both the Retrieve a page and Retrieve a page property endpoints will return information related to the page properties. In cases where a rollup property has more than 25 references, the Retrieve a page property endpoint must but used.
-> 
+>
+> Both the Retrieve a page and Retrieve a page property endpoints will return information related to the page
+> properties. In cases where a rollup property has more than 25 references, the Retrieve a page property endpoint must but
+> used.
+>
 > Learn more about rollup properties in Notion's Help Center.
 
 > 🚧 **The API does not support updating rollup page property values.**
-> 
+>
 > To change a page's rollup property, use the Notion UI.
 
 ### Rich text
 
-| Field | Type | Description | Example value |
-|-------|------|-------------|---------------|
+| Field       | Type                          | Description                   | Example value                                |
+|-------------|-------------------------------|-------------------------------|----------------------------------------------|
 | `rich_text` | an array of rich text objects | An array of rich text objects | Refer to the example response objects below. |
 
-**Example properties body param for a POST or PATCH page request that creates or updates a rich_text page property value**
+**Example properties body param for a POST or PATCH page request that creates or updates a rich_text page property value
+**
 
 ```json
 {
@@ -735,17 +762,20 @@ If the type of a page property value is "rollup", then the property value contai
 ```
 
 > 📘 **Note**
-> The Retrieve a page endpoint returns a maximum of 25 populated inline page or person references for a rich_text property. If a rich_text property includes more than 25 references, then you can use the Retrieve a page property item endpoint for the specific rich_text property to get its complete list of references.
+> The Retrieve a page endpoint returns a maximum of 25 populated inline page or person references for a rich_text
+> property. If a rich_text property includes more than 25 references, then you can use the Retrieve a page property item
+> endpoint for the specific rich_text property to get its complete list of references.
 
 ### Select
 
-If the type of a page property value is select, then the property value contains a select object with the following fields:
+If the type of a page property value is select, then the property value contains a select object with the following
+fields:
 
-| Property | Type | Description | Example value |
-|----------|------|-------------|---------------|
-| `color` | string (enum) | The color of the option. Possible "color" values are:<br><br>- blue<br>- brown<br>- default<br>- gray<br>- green<br>- orange<br>- pink<br>- purple<br>- red<br>- yellow<br><br>Defaults to default. The color value can't be updated via the API. | `red` |
-| `id` | string | The ID of the option.<br><br>You can use id or name to update a select property. | `"b3d773ca-b2c9-47d8-ae98-3c2ce3b2bffb"` |
-| `name` | string | The name of the option as it appears in Notion.<br><br>If the select database property doesn't have an option by that name yet, then the name is added to the database schema if the integration also has write access to the parent database.<br><br>Note: Commas (",") are not valid for select values. | `"jQuery"` |
+| Property | Type          | Description                                                                                                                                                                                                                                                                                               | Example value                            |
+|----------|---------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|------------------------------------------|
+| `color`  | string (enum) | The color of the option. Possible "color" values are:<br><br>- blue<br>- brown<br>- default<br>- gray<br>- green<br>- orange<br>- pink<br>- purple<br>- red<br>- yellow<br><br>Defaults to default. The color value can't be updated via the API.                                                         | `red`                                    |
+| `id`     | string        | The ID of the option.<br><br>You can use id or name to update a select property.                                                                                                                                                                                                                          | `"b3d773ca-b2c9-47d8-ae98-3c2ce3b2bffb"` |
+| `name`   | string        | The name of the option as it appears in Notion.<br><br>If the select database property doesn't have an option by that name yet, then the name is added to the database schema if the integration also has write access to the parent database.<br><br>Note: Commas (",") are not valid for select values. | `"jQuery"`                               |
 
 **Example properties body param for a POST or PATCH page request that creates or updates a select page property value**
 
@@ -779,13 +809,14 @@ If the type of a page property value is select, then the property value contains
 
 ### Status
 
-If the type of a page property value is status, then the property value contains a status object with the following fields:
+If the type of a page property value is status, then the property value contains a status object with the following
+fields:
 
-| Property | Type | Description | Example value |
-|----------|------|-------------|---------------|
-| `color` | string (enum) | The color of the option. Possible "color" values are:<br><br>- blue<br>- brown<br>- default<br>- gray<br>- green<br>- orange<br>- pink<br>- purple<br>- red<br>- yellow<br><br>Defaults to default. The color value can't be updated via the API. | `"red"` |
-| `id` | string | string | `"b3d773ca-b2c9-47d8-ae98-3c2ce3b2bffb"` |
-| `name` | string | The name of the option as it appears in Notion. | `"In progress"` |
+| Property | Type          | Description                                                                                                                                                                                                                                       | Example value                            |
+|----------|---------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|------------------------------------------|
+| `color`  | string (enum) | The color of the option. Possible "color" values are:<br><br>- blue<br>- brown<br>- default<br>- gray<br>- green<br>- orange<br>- pink<br>- purple<br>- red<br>- yellow<br><br>Defaults to default. The color value can't be updated via the API. | `"red"`                                  |
+| `id`     | string        | string                                                                                                                                                                                                                                            | `"b3d773ca-b2c9-47d8-ae98-3c2ce3b2bffb"` |
+| `name`   | string        | The name of the option as it appears in Notion.                                                                                                                                                                                                   | `"In progress"`                          |
 
 **Example properties body param for a POST or PATCH page request that creates or updates a status page property value**
 
@@ -819,8 +850,8 @@ If the type of a page property value is status, then the property value contains
 
 ### Title
 
-| Field | Type | Description | Example value |
-|-------|------|-------------|---------------|
+| Field   | Type                          | Description                    | Example value                                |
+|---------|-------------------------------|--------------------------------|----------------------------------------------|
 | `title` | an array of rich text objects | An array of rich text objects. | Refer to the example response objects below. |
 
 **Example properties body param for a POST or PATCH page request that creates or updates a title page property value**
@@ -886,12 +917,14 @@ If the type of a page property value is status, then the property value contains
 ```
 
 > 📘 **Note**
-> The Retrieve a page endpoint returns a maximum of 25 inline page or person references for a title property. If a title property includes more than 25 references, then you can use the Retrieve a page property item endpoint for the specific title property to get its complete list of references.
+> The Retrieve a page endpoint returns a maximum of 25 inline page or person references for a title property. If a title
+> property includes more than 25 references, then you can use the Retrieve a page property item endpoint for the specific
+> title property to get its complete list of references.
 
 ### URL
 
-| Field | Type | Description | Example value |
-|-------|------|-------------|---------------|
+| Field | Type   | Description                            | Example value                      |
+|-------|--------|----------------------------------------|------------------------------------|
 | `url` | string | A string that describes a web address. | `"https://developers.notion.com/"` |
 
 **Example properties body param for a POST or PATCH page request that creates or updates a url page property value**
@@ -920,13 +953,14 @@ If the type of a page property value is status, then the property value contains
 
 ### Unique ID
 
-| Field | Type | Description | Example value |
-|-------|------|-------------|---------------|
-| `number` | number | The ID count (auto-incrementing). | `3` |
-| `prefix` | string or null | An optional prefix to be applied to the unique ID. | `"RL"` |
+| Field    | Type           | Description                                        | Example value |
+|----------|----------------|----------------------------------------------------|---------------|
+| `number` | number         | The ID count (auto-incrementing).                  | `3`           |
+| `prefix` | string or null | An optional prefix to be applied to the unique ID. | `"RL"`        |
 
 > 👍 **Note**
-> Unique IDs can be read using the API with a GET page request, but they cannot be updated with the API, since they are auto-incrementing.
+> Unique IDs can be read using the API with a GET page request, but they cannot be updated with the API, since they are
+> auto-incrementing.
 
 **Example url page property value as returned in a GET page request**
 
@@ -937,26 +971,28 @@ If the type of a page property value is status, then the property value contains
     "type": "unique_id",
     "unique_id": {
       "number": 3,
-      "prefix": "RL",
-    },
-  },
+      "prefix": "RL"
+    }
+  }
 }
 ```
 
 ### Verification
 
-The verification status of a page in a wiki database. Pages can be verified or unverified, and verifications can have an optional expiration date set.
+The verification status of a page in a wiki database. Pages can be verified or unverified, and verifications can have an
+optional expiration date set.
 
 The verification status cannot currently be set or updated via the public API.
 
 > 📘 **Note**
-> The verification property is only available for pages that are part of a wiki database. To learn more about wiki databases and verifying pages, see our Help Center article.
+> The verification property is only available for pages that are part of a wiki database. To learn more about wiki
+> databases and verifying pages, see our Help Center article.
 
-| Field | Type | Description | Example value |
-|-------|------|-------------|---------------|
-| `state` | string | The verification state of the page. "verified" or "unverified". | `"unverified"` |
-| `verified_by` | User object or null | If the page if verified, a User object will be included to indicate the user who verified the page. | Refer to the example response objects below. |
-| `date` | Object or null | If the page is verified, the date object will include the date the verification started (start). If an expiration date is set for the verification, an end date (end) will be included. (ISO 8601 date and time.) | Refer to the example response objects below. |
+| Field         | Type                | Description                                                                                                                                                                                                       | Example value                                |
+|---------------|---------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------|
+| `state`       | string              | The verification state of the page. "verified" or "unverified".                                                                                                                                                   | `"unverified"`                               |
+| `verified_by` | User object or null | If the page if verified, a User object will be included to indicate the user who verified the page.                                                                                                               | Refer to the example response objects below. |
+| `date`        | Object or null      | If the page is verified, the date object will include the date the verification started (start). If an expiration date is set for the verification, an end date (end) will be included. (ISO 8601 date and time.) | Refer to the example response objects below. |
 
 **Example verification page property values as returned in a GET page request**
 
@@ -967,8 +1003,12 @@ The verification status cannot currently be set or updated via the public API.
   Verification: {
     id: "fpVq",
     type: "verification",
-    verification: { state: "unverified", verified_by: null, date: null },
-  },
+    verification: {
+      state: "unverified",
+      verified_by: null,
+      date: null
+    }
+  }
 }
 ```
 
@@ -987,11 +1027,15 @@ The verification status cannot currently be set or updated via the public API.
         name: "User Name",
         avatar_url: null,
         type: "person",
-        person: {},
+        person: {}
       },
-      date: { start: "2023-08-01T04:00:00.000Z", end: null, time_zone: null },
-    },
-  },
+      date: {
+        start: "2023-08-01T04:00:00.000Z",
+        end: null,
+        time_zone: null
+      }
+    }
+  }
 }
 ```
 
@@ -1002,27 +1046,31 @@ The verification status cannot currently be set or updated via the public API.
   Verification: {
     id: "fpVq",
     type: "verification",
-    verification: {...},
-      date: {
-        start: "2023-08-01T04:00:00.000Z",
-        end: "2023-10-30T04:00:00.000Z",
-        time_zone: null,
-      },
+    verification: {
+      ...
     },
-  },
+    date: {
+      start: "2023-08-01T04:00:00.000Z",
+      end: "2023-10-30T04:00:00.000Z",
+      time_zone: null
+    }
+  }
+},
 }
 ```
 
 ## Paginated page properties
 
-The title, rich_text, relation and people page properties are returned as a paginated list object of individual property_item objects.
+The title, rich_text, relation and people page properties are returned as a paginated list object of individual
+property_item objects.
 
-An abridged set of the the properties found in the list object is below. Refer to the pagination documentation for additional information.
+An abridged set of the the properties found in the list object is below. Refer to the pagination documentation for
+additional information.
 
-| Field | Type | Description | Example value |
-|-------|------|-------------|---------------|
-| `object` | "list" | Always "list". | `"list"` |
-| `type` | "property_item" | Always "property_item". | `"property_item"` |
-| `results` | list | List of property_item objects. | `[{"object": "property_item", "id": "vYdV", "type": "relation", "relation": { "id": "535c3fb2-95e6-4b37-a696-036e5eac5cf6"}}... ]` |
-| `property_item` | object | A property_item object that describes the property. | `{"id": "title", "next_url": null, "type": "title", "title": {}}` |
-| `next_url` | string or null | The URL the user can request to get the next page of results. | `"http://api.notion.com/v1/pages/0e5235bf86aa4efb93aa772cce7eab71/properties/vYdV?start_cursor=LYxaUO&page_size=25"` |
+| Field           | Type            | Description                                                   | Example value                                                                                                                      |
+|-----------------|-----------------|---------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------|
+| `object`        | "list"          | Always "list".                                                | `"list"`                                                                                                                           |
+| `type`          | "property_item" | Always "property_item".                                       | `"property_item"`                                                                                                                  |
+| `results`       | list            | List of property_item objects.                                | `[{"object": "property_item", "id": "vYdV", "type": "relation", "relation": { "id": "535c3fb2-95e6-4b37-a696-036e5eac5cf6"}}... ]` |
+| `property_item` | object          | A property_item object that describes the property.           | `{"id": "title", "next_url": null, "type": "title", "title": {}}`                                                                  |
+| `next_url`      | string or null  | The URL the user can request to get the next page of results. | `"http://api.notion.com/v1/pages/0e5235bf86aa4efb93aa772cce7eab71/properties/vYdV?start_cursor=LYxaUO&page_size=25"`               |

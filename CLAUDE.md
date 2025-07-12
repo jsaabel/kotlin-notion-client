@@ -51,6 +51,7 @@ and best practices in Kotlin.
 
 ### Development Workflow Reminder
 - Always lint/format code using gradlew before trying to build
+- Remember to lint and format code before committing. Don't commit code before having checked that the project can be built without errors.
 
 ### Testing Commands
 The project uses Kotest with tag-based test organization for efficient development workflows:
@@ -165,3 +166,4 @@ This testing approach ensures our models can handle the complexity of real Notio
 - Always refer to these files before relying on other mechanisms to retrieve information about the Notion API
 - Sample responses from the official API documentation are available under `@reference/notion-api/sample_responses/` and its subfolders
 - These sample responses can and should be used for mock responses and in other cases where appropriate
+```

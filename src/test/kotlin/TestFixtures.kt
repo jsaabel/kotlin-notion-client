@@ -13,7 +13,9 @@ object TestFixtures {
         Json {
             ignoreUnknownKeys = true
             prettyPrint = true
-            encodeDefaults = true
+            encodeDefaults = false
+            explicitNulls = false
+            coerceInputValues = true
         }
 
     /**
@@ -43,6 +45,33 @@ object TestFixtures {
         val resourcePath = "/api/$category/$filename.json"
         return this::class.java.getResource(resourcePath)?.readText()
             ?: throw IllegalArgumentException("Sample response not found: $resourcePath")
+    }
+
+    /**
+     * Load a sample response from the reference directory (for newer samples).
+     * This reads directly from the reference/notion-api/sample_responses directory.
+     * @param category The API category (file_uploads, etc.)
+     * @param filename The filename without extension
+     * @return JsonElement containing the parsed response
+     */
+    fun loadReferenceSampleResponse(
+        category: String,
+        filename: String,
+    ): JsonElement {
+        val file = java.io.File("reference/notion-api/sample_responses/$category/$filename.json")
+        val content = file.readText()
+        return json.parseToJsonElement(content)
+    }
+
+    /**
+     * Load reference sample response as raw JSON string.
+     */
+    fun loadReferenceSampleResponseAsString(
+        category: String,
+        filename: String,
+    ): String {
+        val file = java.io.File("reference/notion-api/sample_responses/$category/$filename.json")
+        return file.readText()
     }
 
     // Database-specific helpers
@@ -115,6 +144,29 @@ object TestFixtures {
         fun retrieveCommentsAsString() = loadSampleResponseAsString("comments", "get_retrieve_comments")
 
         fun createCommentAsString() = loadSampleResponseAsString("comments", "post_create_comment")
+    }
+
+    // FileUpload-specific helpers (using reference directory)
+    object FileUploads {
+        fun createFileUpload() = loadReferenceSampleResponse("file_uploads", "post_create_a_file_upload")
+
+        fun retrieveFileUpload() = loadReferenceSampleResponse("file_uploads", "get_retrieve_a_file_upload")
+
+        fun completeFileUpload() = loadReferenceSampleResponse("file_uploads", "post_complete_a_file_upload")
+
+        fun listFileUploads() = loadReferenceSampleResponse("file_uploads", "get_list_file_uploads")
+
+        fun sendFileUpload() = loadReferenceSampleResponse("file_uploads", "post_send_a_file_upload")
+
+        fun createFileUploadAsString() = loadReferenceSampleResponseAsString("file_uploads", "post_create_a_file_upload")
+
+        fun retrieveFileUploadAsString() = loadReferenceSampleResponseAsString("file_uploads", "get_retrieve_a_file_upload")
+
+        fun completeFileUploadAsString() = loadReferenceSampleResponseAsString("file_uploads", "post_complete_a_file_upload")
+
+        fun listFileUploadsAsString() = loadReferenceSampleResponseAsString("file_uploads", "get_list_file_uploads")
+
+        fun sendFileUploadAsString() = loadReferenceSampleResponseAsString("file_uploads", "post_send_a_file_upload")
     }
 }
 

@@ -1,3 +1,5 @@
+@file:Suppress("unused")
+
 package no.saabelit.kotlinnotionclient.models.pages
 
 import kotlinx.serialization.SerialName
@@ -103,7 +105,7 @@ sealed class PagePropertyValue {
     @SerialName("rich_text")
     data class RichTextValue(
         @SerialName("rich_text")
-        val richText: List<no.saabelit.kotlinnotionclient.models.base.RichText>,
+        val richText: List<RichText>,
     ) : PagePropertyValue() {
         companion object {
             /**

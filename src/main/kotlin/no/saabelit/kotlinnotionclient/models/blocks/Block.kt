@@ -1,3 +1,5 @@
+@file:Suppress("unused")
+
 package no.saabelit.kotlinnotionclient.models.blocks
 
 import kotlinx.serialization.SerialName
@@ -347,6 +349,153 @@ sealed class Block : NotionObject {
         override val type: String = "toggle"
     }
 
+    // MEDIA BLOCKS
+
+    @Serializable
+    @SerialName("image")
+    data class Image(
+        @SerialName("id")
+        override val id: String,
+        @SerialName("created_time")
+        override val createdTime: String,
+        @SerialName("last_edited_time")
+        override val lastEditedTime: String,
+        @SerialName("created_by")
+        override val createdBy: User? = null,
+        @SerialName("last_edited_by")
+        override val lastEditedBy: User? = null,
+        @SerialName("archived")
+        override val archived: Boolean,
+        @SerialName("parent")
+        override val parent: Parent,
+        @SerialName("has_children")
+        override val hasChildren: Boolean,
+        @SerialName("image")
+        val image: ImageContent,
+    ) : Block() {
+        @SerialName("object")
+        override val objectType: String = "block"
+
+        @SerialName("type")
+        override val type: String = "image"
+    }
+
+    @Serializable
+    @SerialName("video")
+    data class Video(
+        @SerialName("id")
+        override val id: String,
+        @SerialName("created_time")
+        override val createdTime: String,
+        @SerialName("last_edited_time")
+        override val lastEditedTime: String,
+        @SerialName("created_by")
+        override val createdBy: User? = null,
+        @SerialName("last_edited_by")
+        override val lastEditedBy: User? = null,
+        @SerialName("archived")
+        override val archived: Boolean,
+        @SerialName("parent")
+        override val parent: Parent,
+        @SerialName("has_children")
+        override val hasChildren: Boolean,
+        @SerialName("video")
+        val video: VideoContent,
+    ) : Block() {
+        @SerialName("object")
+        override val objectType: String = "block"
+
+        @SerialName("type")
+        override val type: String = "video"
+    }
+
+    @Serializable
+    @SerialName("audio")
+    data class Audio(
+        @SerialName("id")
+        override val id: String,
+        @SerialName("created_time")
+        override val createdTime: String,
+        @SerialName("last_edited_time")
+        override val lastEditedTime: String,
+        @SerialName("created_by")
+        override val createdBy: User? = null,
+        @SerialName("last_edited_by")
+        override val lastEditedBy: User? = null,
+        @SerialName("archived")
+        override val archived: Boolean,
+        @SerialName("parent")
+        override val parent: Parent,
+        @SerialName("has_children")
+        override val hasChildren: Boolean,
+        @SerialName("audio")
+        val audio: AudioContent,
+    ) : Block() {
+        @SerialName("object")
+        override val objectType: String = "block"
+
+        @SerialName("type")
+        override val type: String = "audio"
+    }
+
+    @Serializable
+    @SerialName("file")
+    data class File(
+        @SerialName("id")
+        override val id: String,
+        @SerialName("created_time")
+        override val createdTime: String,
+        @SerialName("last_edited_time")
+        override val lastEditedTime: String,
+        @SerialName("created_by")
+        override val createdBy: User? = null,
+        @SerialName("last_edited_by")
+        override val lastEditedBy: User? = null,
+        @SerialName("archived")
+        override val archived: Boolean,
+        @SerialName("parent")
+        override val parent: Parent,
+        @SerialName("has_children")
+        override val hasChildren: Boolean,
+        @SerialName("file")
+        val file: FileContent,
+    ) : Block() {
+        @SerialName("object")
+        override val objectType: String = "block"
+
+        @SerialName("type")
+        override val type: String = "file"
+    }
+
+    @Serializable
+    @SerialName("pdf")
+    data class PDF(
+        @SerialName("id")
+        override val id: String,
+        @SerialName("created_time")
+        override val createdTime: String,
+        @SerialName("last_edited_time")
+        override val lastEditedTime: String,
+        @SerialName("created_by")
+        override val createdBy: User? = null,
+        @SerialName("last_edited_by")
+        override val lastEditedBy: User? = null,
+        @SerialName("archived")
+        override val archived: Boolean,
+        @SerialName("parent")
+        override val parent: Parent,
+        @SerialName("has_children")
+        override val hasChildren: Boolean,
+        @SerialName("pdf")
+        val pdf: PDFContent,
+    ) : Block() {
+        @SerialName("object")
+        override val objectType: String = "block"
+
+        @SerialName("type")
+        override val type: String = "pdf"
+    }
+
     // LAYOUT/FORMATTING BLOCKS
 
     @Serializable
@@ -515,6 +664,93 @@ data class ToggleContent(
 )
 
 /**
+ * Represents the content of an image block.
+ */
+@Serializable
+data class ImageContent(
+    @SerialName("caption")
+    val caption: List<RichText> = emptyList(),
+    @SerialName("type")
+    val type: String, // "external", "file", or "file_upload"
+    @SerialName("external")
+    val external: ExternalFile? = null,
+    @SerialName("file")
+    val file: FileReference? = null,
+    @SerialName("file_upload")
+    val fileUpload: FileUpload? = null,
+)
+
+/**
+ * Represents the content of a video block.
+ */
+@Serializable
+data class VideoContent(
+    @SerialName("caption")
+    val caption: List<RichText> = emptyList(),
+    @SerialName("type")
+    val type: String, // "external", "file", or "file_upload"
+    @SerialName("external")
+    val external: ExternalFile? = null,
+    @SerialName("file")
+    val file: FileReference? = null,
+    @SerialName("file_upload")
+    val fileUpload: FileUpload? = null,
+)
+
+/**
+ * Represents the content of an audio block.
+ */
+@Serializable
+data class AudioContent(
+    @SerialName("caption")
+    val caption: List<RichText> = emptyList(),
+    @SerialName("type")
+    val type: String, // "external", "file", or "file_upload"
+    @SerialName("external")
+    val external: ExternalFile? = null,
+    @SerialName("file")
+    val file: FileReference? = null,
+    @SerialName("file_upload")
+    val fileUpload: FileUpload? = null,
+)
+
+/**
+ * Represents the content of a file block.
+ */
+@Serializable
+data class FileContent(
+    @SerialName("caption")
+    val caption: List<RichText> = emptyList(),
+    @SerialName("name")
+    val name: String? = null,
+    @SerialName("type")
+    val type: String, // "external", "file", or "file_upload"
+    @SerialName("external")
+    val external: ExternalFile? = null,
+    @SerialName("file")
+    val file: FileReference? = null,
+    @SerialName("file_upload")
+    val fileUpload: FileUpload? = null,
+)
+
+/**
+ * Represents the content of a PDF block.
+ */
+@Serializable
+data class PDFContent(
+    @SerialName("caption")
+    val caption: List<RichText> = emptyList(),
+    @SerialName("type")
+    val type: String, // "external", "file", or "file_upload"
+    @SerialName("external")
+    val external: ExternalFile? = null,
+    @SerialName("file")
+    val file: FileReference? = null,
+    @SerialName("file_upload")
+    val fileUpload: FileUpload? = null,
+)
+
+/**
  * Represents the content of a divider block.
  */
 @Serializable
@@ -555,6 +791,15 @@ data class FileReference(
     val url: String,
     @SerialName("expiry_time")
     val expiryTime: String,
+)
+
+/**
+ * Represents a file upload reference for API-uploaded files.
+ */
+@Serializable
+data class FileUpload(
+    @SerialName("id")
+    val id: String,
 )
 
 // API RESPONSE CLASSES

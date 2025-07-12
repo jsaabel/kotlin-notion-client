@@ -3,6 +3,7 @@ package no.saabelit.kotlinnotionclient.models.blocks
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import no.saabelit.kotlinnotionclient.models.base.RichText
+import no.saabelit.kotlinnotionclient.models.files.FileUploadReference
 
 /**
  * Represents a block creation request for the Notion API.
@@ -131,6 +132,61 @@ sealed class BlockRequest {
     data class Callout(
         @SerialName("callout")
         val callout: CalloutRequestContent,
+    ) : BlockRequest()
+
+    /**
+     * Image block request.
+     * Image with optional caption.
+     */
+    @Serializable
+    @SerialName("image")
+    data class Image(
+        @SerialName("image")
+        val image: ImageRequestContent,
+    ) : BlockRequest()
+
+    /**
+     * Video block request.
+     * Video with optional caption.
+     */
+    @Serializable
+    @SerialName("video")
+    data class Video(
+        @SerialName("video")
+        val video: VideoRequestContent,
+    ) : BlockRequest()
+
+    /**
+     * Audio block request.
+     * Audio file with optional caption.
+     */
+    @Serializable
+    @SerialName("audio")
+    data class Audio(
+        @SerialName("audio")
+        val audio: AudioRequestContent,
+    ) : BlockRequest()
+
+    /**
+     * File block request.
+     * Generic file with optional caption and name.
+     */
+    @Serializable
+    @SerialName("file")
+    data class File(
+        @SerialName("file")
+        val file: FileRequestContent,
+    ) : BlockRequest()
+
+    /**
+     * PDF block request.
+     * PDF file with optional caption.
+     */
+    @Serializable
+    @SerialName("pdf")
+    data class PDF(
+        @SerialName("pdf")
+        val pdf: PDFRequestContent,
     ) : BlockRequest()
 
     /**
@@ -298,6 +354,93 @@ data class CalloutRequestContent(
     val color: String = "default",
     @SerialName("children")
     val children: List<BlockRequest>? = null,
+)
+
+/**
+ * Content for image block requests.
+ */
+@Serializable
+data class ImageRequestContent(
+    @SerialName("caption")
+    val caption: List<RichText> = emptyList(),
+    @SerialName("type")
+    val type: String, // "external", "file", or "file_upload"
+    @SerialName("external")
+    val external: ExternalFile? = null,
+    @SerialName("file")
+    val file: FileReference? = null,
+    @SerialName("file_upload")
+    val fileUpload: FileUploadReference? = null,
+)
+
+/**
+ * Content for video block requests.
+ */
+@Serializable
+data class VideoRequestContent(
+    @SerialName("caption")
+    val caption: List<RichText> = emptyList(),
+    @SerialName("type")
+    val type: String, // "external", "file", or "file_upload"
+    @SerialName("external")
+    val external: ExternalFile? = null,
+    @SerialName("file")
+    val file: FileReference? = null,
+    @SerialName("file_upload")
+    val fileUpload: FileUploadReference? = null,
+)
+
+/**
+ * Content for audio block requests.
+ */
+@Serializable
+data class AudioRequestContent(
+    @SerialName("caption")
+    val caption: List<RichText> = emptyList(),
+    @SerialName("type")
+    val type: String, // "external", "file", or "file_upload"
+    @SerialName("external")
+    val external: ExternalFile? = null,
+    @SerialName("file")
+    val file: FileReference? = null,
+    @SerialName("file_upload")
+    val fileUpload: FileUploadReference? = null,
+)
+
+/**
+ * Content for file block requests.
+ */
+@Serializable
+data class FileRequestContent(
+    @SerialName("caption")
+    val caption: List<RichText> = emptyList(),
+    @SerialName("name")
+    val name: String? = null,
+    @SerialName("type")
+    val type: String, // "external", "file", or "file_upload"
+    @SerialName("external")
+    val external: ExternalFile? = null,
+    @SerialName("file")
+    val file: FileReference? = null,
+    @SerialName("file_upload")
+    val fileUpload: FileUploadReference? = null,
+)
+
+/**
+ * Content for PDF block requests.
+ */
+@Serializable
+data class PDFRequestContent(
+    @SerialName("caption")
+    val caption: List<RichText> = emptyList(),
+    @SerialName("type")
+    val type: String, // "external", "file", or "file_upload"
+    @SerialName("external")
+    val external: ExternalFile? = null,
+    @SerialName("file")
+    val file: FileReference? = null,
+    @SerialName("file_upload")
+    val fileUpload: FileUploadReference? = null,
 )
 
 /**

@@ -1,6 +1,7 @@
 # Block Types
 
-A block object represents a piece of content within Notion. The API translates the headings, toggles, paragraphs, lists, media, and more that you can interact with in the Notion UI as different block type objects.
+A block object represents a piece of content within Notion. The API translates the headings, toggles, paragraphs, lists,
+media, and more that you can interact with in the Notion UI as different block type objects.
 
 For example, the following block object represents a Heading 2 in the Notion UI:
 
@@ -58,22 +59,23 @@ Use the Retrieve block children endpoint to list all of the blocks on a page.
 
 ## Keys
 
-> 📘 Fields marked with an * are available to integrations with any capabilities. Other properties require read content capabilities in order to be returned from the Notion API. Consult the integration capabilities reference for details.
+> 📘 Fields marked with an * are available to integrations with any capabilities. Other properties require read content
+> capabilities in order to be returned from the Notion API. Consult the integration capabilities reference for details.
 
-| Field | Type | Description | Example value |
-|-------|------|-------------|---------------|
-| object* | string | Always "block". | "block" |
-| id* | string (UUIDv4) | Identifier for the block. | "7af38973-3787-41b3-bd75-0ed3a1edfac9" |
-| parent | object | Information about the block's parent. See Parent object. | `{ "type": "block_id", "block_id": "7d50a184-5bbe-4d90-8f29-6bec57ed817b" }` |
-| type | string (enum) | Type of block. Possible values are:<br/>- "bookmark"<br/>- "breadcrumb"<br/>- "bulleted_list_item"<br/>- "callout"<br/>- "child_database"<br/>- "child_page"<br/>- "column"<br/>- "column_list"<br/>- "divider"<br/>- "embed"<br/>- "equation"<br/>- "file"<br/>- "heading_1"<br/>- "heading_2"<br/>- "heading_3"<br/>- "image"<br/>- "link_preview"<br/>- "numbered_list_item"<br/>- "paragraph"<br/>- "pdf"<br/>- "quote"<br/>- "synced_block"<br/>- "table"<br/>- "table_of_contents"<br/>- "table_row"<br/>- "template"<br/>- "to_do"<br/>- "toggle"<br/>- "unsupported"<br/>- "video" | "paragraph" |
-| created_time | string (ISO 8601 date time) | Date and time when this block was created. Formatted as an ISO 8601 date time string. | "2020-03-17T19:10:04.968Z" |
-| created_by | Partial User | User who created the block. | `{"object": "user","id": "45ee8d13-687b-47ce-a5ca-6e2e45548c4b"}` |
-| last_edited_time | string (ISO 8601 date time) | Date and time when this block was last updated. Formatted as an ISO 8601 date time string. | "2020-03-17T19:10:04.968Z" |
-| last_edited_by | Partial User | User who last edited the block. | `{"object": "user","id": "45ee8d13-687b-47ce-a5ca-6e2e45548c4b"}` |
-| archived | boolean | The archived status of the block. | false |
-| in_trash | boolean | Whether the block has been deleted. | false |
-| has_children | boolean | Whether or not the block has children blocks nested within it. | true |
-| {type} | block type object | An object containing type-specific block information. | Refer to the block type object section for examples of each block type. |
+| Field            | Type                        | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                | Example value                                                                |
+|------------------|-----------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------|
+| object*          | string                      | Always "block".                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            | "block"                                                                      |
+| id*              | string (UUIDv4)             | Identifier for the block.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  | "7af38973-3787-41b3-bd75-0ed3a1edfac9"                                       |
+| parent           | object                      | Information about the block's parent. See Parent object.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   | `{ "type": "block_id", "block_id": "7d50a184-5bbe-4d90-8f29-6bec57ed817b" }` |
+| type             | string (enum)               | Type of block. Possible values are:<br/>- "bookmark"<br/>- "breadcrumb"<br/>- "bulleted_list_item"<br/>- "callout"<br/>- "child_database"<br/>- "child_page"<br/>- "column"<br/>- "column_list"<br/>- "divider"<br/>- "embed"<br/>- "equation"<br/>- "file"<br/>- "heading_1"<br/>- "heading_2"<br/>- "heading_3"<br/>- "image"<br/>- "link_preview"<br/>- "numbered_list_item"<br/>- "paragraph"<br/>- "pdf"<br/>- "quote"<br/>- "synced_block"<br/>- "table"<br/>- "table_of_contents"<br/>- "table_row"<br/>- "template"<br/>- "to_do"<br/>- "toggle"<br/>- "unsupported"<br/>- "video" | "paragraph"                                                                  |
+| created_time     | string (ISO 8601 date time) | Date and time when this block was created. Formatted as an ISO 8601 date time string.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      | "2020-03-17T19:10:04.968Z"                                                   |
+| created_by       | Partial User                | User who created the block.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                | `{"object": "user","id": "45ee8d13-687b-47ce-a5ca-6e2e45548c4b"}`            |
+| last_edited_time | string (ISO 8601 date time) | Date and time when this block was last updated. Formatted as an ISO 8601 date time string.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 | "2020-03-17T19:10:04.968Z"                                                   |
+| last_edited_by   | Partial User                | User who last edited the block.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            | `{"object": "user","id": "45ee8d13-687b-47ce-a5ca-6e2e45548c4b"}`            |
+| archived         | boolean                     | The archived status of the block.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          | false                                                                        |
+| in_trash         | boolean                     | Whether the block has been deleted.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        | false                                                                        |
+| has_children     | boolean                     | Whether or not the block has children blocks nested within it.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             | true                                                                         |
+| {type}           | block type object           | An object containing type-specific block information.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      | Refer to the block type object section for examples of each block type.      |
 
 ## Block types that support child blocks
 
@@ -98,13 +100,17 @@ Some block types contain nested blocks. The following block types support child 
 
 > 📘 The API does not support all block types.
 >
-> Only the block type objects listed in the reference below are supported. Any unsupported block types appear in the structure, but contain a type set to "unsupported".
+> Only the block type objects listed in the reference below are supported. Any unsupported block types appear in the
+> structure, but contain a type set to "unsupported".
 
 ## Block type objects
 
-Every block object has a key corresponding to the value of type. Under the key is an object with type-specific block information.
+Every block object has a key corresponding to the value of type. Under the key is an object with type-specific block
+information.
 
-> 📘 Many block types support rich text. In cases where it is supported, a rich_text object will be included in the block type object. All rich_text objects will include a plain_text property, which provides a convenient way for developers to access unformatted text from the Notion block.
+> 📘 Many block types support rich text. In cases where it is supported, a rich_text object will be included in the block
+> type object. All rich_text objects will include a plain_text property, which provides a convenient way for developers to
+> access unformatted text from the Notion block.
 
 ### Audio
 
@@ -139,7 +145,8 @@ A wider set of audio files is supported in the File Upload API and can be attach
 
 **Supported file upload types**
 
-See the file upload reference for a list of supported file extensions and content types when attaching a File Upload to a block.
+See the file upload reference for a list of supported file extensions and content types when attaching a File Upload to
+a block.
 
 Audio blocks only support file types in the "audio" section of the table.
 
@@ -147,10 +154,10 @@ Audio blocks only support file types in the "audio" section of the table.
 
 Bookmark block objects contain the following information within the bookmark property:
 
-| Field | Type | Description |
-|-------|------|-------------|
+| Field   | Type                            | Description                   |
+|---------|---------------------------------|-------------------------------|
 | caption | array of rich text objects text | The caption for the bookmark. |
-| url | string | The link for the bookmark. |
+| url     | string                          | The link for the bookmark.    |
 
 **Example Bookmark block object**
 
@@ -185,11 +192,11 @@ Breadcrumb block objects do not contain any information within the breadcrumb pr
 
 Bulleted list item block objects contain the following information within the bulleted_list_item property:
 
-| Field | Type | Description |
-|-------|------|-------------|
-| rich_text | array of rich text objects | The rich text in the bulleted_list_item block. |
-| color | string (enum) | The color of the block. Possible values are: "blue", "blue_background", "brown", "brown_background", "default", "gray", "gray_background", "green", "green_background", "orange", "orange_background", "yellow", "green", "pink", "pink_background", "purple", "purple_background", "red", "red_background", "yellow_background" |
-| children | array of block objects | The nested child blocks (if any) of the bulleted_list_item block. |
+| Field     | Type                       | Description                                                                                                                                                                                                                                                                                                                      |
+|-----------|----------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| rich_text | array of rich text objects | The rich text in the bulleted_list_item block.                                                                                                                                                                                                                                                                                   |
+| color     | string (enum)              | The color of the block. Possible values are: "blue", "blue_background", "brown", "brown_background", "default", "gray", "gray_background", "green", "green_background", "orange", "orange_background", "yellow", "green", "pink", "pink_background", "purple", "purple_background", "red", "red_background", "yellow_background" |
+| children  | array of block objects     | The nested child blocks (if any) of the bulleted_list_item block.                                                                                                                                                                                                                                                                |
 
 **Example Bulleted list item block object**
 
@@ -220,11 +227,11 @@ Bulleted list item block objects contain the following information within the bu
 
 Callout block objects contain the following information within the callout property:
 
-| Field | Type | Description |
-|-------|------|-------------|
-| rich_text | array of rich text objects | The rich text in the callout block. |
-| icon | object | An emoji or file object that represents the callout's icon. If the callout does not have an icon. |
-| color | string (enum) | The color of the block. Possible values are: "blue", "blue_background", "brown", "brown_background", "default", "gray", "gray_background", "green", "green_background", "orange", "orange_background", "yellow", "green", "pink", "pink_background", "purple", "purple_background", "red", "red_background", "yellow_background" |
+| Field     | Type                       | Description                                                                                                                                                                                                                                                                                                                      |
+|-----------|----------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| rich_text | array of rich text objects | The rich text in the callout block.                                                                                                                                                                                                                                                                                              |
+| icon      | object                     | An emoji or file object that represents the callout's icon. If the callout does not have an icon.                                                                                                                                                                                                                                |
+| color     | string (enum)              | The color of the block. Possible values are: "blue", "blue_background", "brown", "brown_background", "default", "gray", "gray_background", "green", "green_background", "orange", "orange_background", "yellow", "green", "pink", "pink_background", "purple", "purple_background", "red", "red_background", "yellow_background" |
 
 **Example Callout block object**
 
@@ -254,8 +261,8 @@ Callout block objects contain the following information within the callout prope
 
 Child database block objects contain the following information within the child_database property:
 
-| Field | Type | Description |
-|-------|------|-------------|
+| Field | Type   | Description                           |
+|-------|--------|---------------------------------------|
 | title | string | The plain text title of the database. |
 
 **Example Child database block**
@@ -273,14 +280,15 @@ Child database block objects contain the following information within the child_
 
 > 📘 **Creating and updating child_database blocks**
 >
-> To create or update child_database type blocks, use the Create a database and the Update a database endpoints, specifying the ID of the parent page in the parent body param.
+> To create or update child_database type blocks, use the Create a database and the Update a database endpoints,
+> specifying the ID of the parent page in the parent body param.
 
 ### Child page
 
 Child page block objects contain the following information within the child_page property:
 
-| Field | Type | Description |
-|-------|------|-------------|
+| Field | Type   | Description                       |
+|-------|--------|-----------------------------------|
 | title | string | The plain text title of the page. |
 
 **Example Child page block object**
@@ -298,17 +306,18 @@ Child page block objects contain the following information within the child_page
 
 > 📘 **Creating and updating child_page blocks**
 >
-> To create or update child_page type blocks, use the Create a page and the Update page endpoints, specifying the ID of the parent page in the parent body param.
+> To create or update child_page type blocks, use the Create a page and the Update page endpoints, specifying the ID of
+> the parent page in the parent body param.
 
 ### Code
 
 Code block objects contain the following information within the code property:
 
-| Field | Type | Description |
-|-------|------|-------------|
-| caption | array of Rich text object text objects | The rich text in the caption of the code block. |
-| rich_text | array of Rich text object text objects | The rich text in the code block. |
-| language | string (enum) | The language of the code contained in the code block. Possible values include: "abap", "arduino", "bash", "basic", "c", "clojure", "coffeescript", "c++", "c#", "css", "dart", "diff", "docker", "elixir", "elm", "erlang", "flow", "fortran", "f#", "gherkin", "glsl", "go", "graphql", "groovy", "haskell", "html", "java", "javascript", "json", "julia", "kotlin", "latex", "less", "lisp", "livescript", "lua", "makefile", "markdown", "markup", "matlab", "mermaid", "nix", "objective-c", "ocaml", "pascal", "perl", "php", "plain text", "powershell", "prolog", "protobuf", "python", "r", "reason", "ruby", "rust", "sass", "scala", "scheme", "scss", "shell", "sql", "swift", "typescript", "vb.net", "verilog", "vhdl", "visual basic", "webassembly", "xml", "yaml", "java/c/c++/c#" |
+| Field     | Type                                   | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+|-----------|----------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| caption   | array of Rich text object text objects | The rich text in the caption of the code block.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| rich_text | array of Rich text object text objects | The rich text in the code block.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| language  | string (enum)                          | The language of the code contained in the code block. Possible values include: "abap", "arduino", "bash", "basic", "c", "clojure", "coffeescript", "c++", "c#", "css", "dart", "diff", "docker", "elixir", "elm", "erlang", "flow", "fortran", "f#", "gherkin", "glsl", "go", "graphql", "groovy", "haskell", "html", "java", "javascript", "json", "julia", "kotlin", "latex", "less", "lisp", "livescript", "lua", "makefile", "markdown", "markup", "matlab", "mermaid", "nix", "objective-c", "ocaml", "pascal", "perl", "php", "plain text", "powershell", "prolog", "protobuf", "python", "r", "reason", "ruby", "rust", "sass", "scala", "scheme", "scss", "shell", "sql", "swift", "typescript", "vb.net", "verilog", "vhdl", "visual basic", "webassembly", "xml", "yaml", "java/c/c++/c#" |
 
 **Example Code block object**
 
@@ -345,7 +354,10 @@ Column lists are parent blocks for columns. They do not contain any information 
 }
 ```
 
-Columns are parent blocks for any block types listed in this reference except for other columns. They do not require any information within the column property, but a width_ratio number between 0 and 1 can be provided to customize the width of a column relative to others in the same column list. When omitted, the default is to use equal widths for all columns. When provided, width_ratios should add up to 1.
+Columns are parent blocks for any block types listed in this reference except for other columns. They do not require any
+information within the column property, but a width_ratio number between 0 and 1 can be provided to customize the width
+of a column relative to others in the same column list. When omitted, the default is to use equal widths for all
+columns. When provided, width_ratios should add up to 1.
 
 Columns can only be appended to column_lists.
 
@@ -362,7 +374,8 @@ Columns can only be appended to column_lists.
 }
 ```
 
-When creating a column_list block via Append block children, the column_list must have at least two columns, and each column must have at least one child.
+When creating a column_list block via Append block children, the column_list must have at least two columns, and each
+column must have at least one child.
 
 **Retrieve the content in a column list**
 
@@ -389,11 +402,12 @@ Divider block objects do not contain any information within the divider property
 
 ### Embed
 
-Embed block objects include information about another website displayed within the Notion UI. The embed property contains the following information:
+Embed block objects include information about another website displayed within the Notion UI. The embed property
+contains the following information:
 
-| Field | Type | Description |
-|-------|------|-------------|
-| url | string | The link to the website that the embed block displays. |
+| Field | Type   | Description                                            |
+|-------|--------|--------------------------------------------------------|
+| url   | string | The link to the website that the embed block displays. |
 
 **Example Embed block object**
 
@@ -410,11 +424,17 @@ Embed block objects include information about another website displayed within t
 
 > 🚧 **Differences in embed blocks between the Notion app and the API**
 >
-> The Notion app uses a 3rd-party service, iFramely, to validate and request metadata for embeds given a URL. This works well in a web app because Notion can kick off an asynchronous request for URL information, which might take seconds or longer to complete, and then update the block with the metadata in the UI after receiving a response from iFramely.
+> The Notion app uses a 3rd-party service, iFramely, to validate and request metadata for embeds given a URL. This works
+> well in a web app because Notion can kick off an asynchronous request for URL information, which might take seconds or
+> longer to complete, and then update the block with the metadata in the UI after receiving a response from iFramely.
 >
-> We chose not to call iFramely when creating embed blocks in the API because the API needs to be able to return faster than the UI, and because the response from iFramely could actually cause us to change the block type. This would result in a slow and potentially confusing experience as the block in the response would not match the block sent in the request.
+> We chose not to call iFramely when creating embed blocks in the API because the API needs to be able to return faster
+> than the UI, and because the response from iFramely could actually cause us to change the block type. This would result
+> in a slow and potentially confusing experience as the block in the response would not match the block sent in the
+> request.
 >
-> The result is that embed blocks created via the API may not look exactly like their counterparts created in the Notion app.
+> The result is that embed blocks created via the API may not look exactly like their counterparts created in the Notion
+> app.
 
 > 👍 Vimeo video links can be embedded in a Notion page via the public API using the embed block type.
 >
@@ -436,10 +456,11 @@ Embed block objects include information about another website displayed within t
 
 ### Equation
 
-Equation block objects are represented as children of paragraph blocks. They are nested within a rich text object and contain the following information within the equation property:
+Equation block objects are represented as children of paragraph blocks. They are nested within a rich text object and
+contain the following information within the equation property:
 
-| Field | Type | Description |
-|-------|------|-------------|
+| Field      | Type   | Description                |
+|------------|--------|----------------------------|
 | expression | string | A KaTeX compatible string. |
 
 **Example Equation object**
@@ -459,14 +480,14 @@ Equation block objects are represented as children of paragraph blocks. They are
 
 File block objects contain the following information within the file property:
 
-| Field | Type | Description |
-|-------|------|-------------|
-| caption | array of rich text objects | The caption of the file block. |
-| type | One of: "file", "external", "file_upload" | Type of file. This enum value indicates which of the following three objects are populated. |
-| file | Notion-hosted file object | A file object that details information about the file contained in the block: a temporary download url and expiry_time. After the expiry_time, fetch the block again from the API to get a new url. Only valid as a parameter if copied verbatim from the file field of a recent block API response from Notion. To attach a file, provide a type of file_upload instead. |
-| external | External file object | An object with a url property, identifying a publicly accessible URL. |
-| file_upload | File upload object | An object with the id of a FileUpload to attach to the block. After attaching, the API response responds with a type of file, not file_upload, so your integration can access a download url. |
-| name | string | The name of the file, as shown in the Notion UI. Note that the UI may auto-append .pdf or other extensions. When attaching a file_upload, the name parameter is not required. |
+| Field       | Type                                      | Description                                                                                                                                                                                                                                                                                                                                                               |
+|-------------|-------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| caption     | array of rich text objects                | The caption of the file block.                                                                                                                                                                                                                                                                                                                                            |
+| type        | One of: "file", "external", "file_upload" | Type of file. This enum value indicates which of the following three objects are populated.                                                                                                                                                                                                                                                                               |
+| file        | Notion-hosted file object                 | A file object that details information about the file contained in the block: a temporary download url and expiry_time. After the expiry_time, fetch the block again from the API to get a new url. Only valid as a parameter if copied verbatim from the file field of a recent block API response from Notion. To attach a file, provide a type of file_upload instead. |
+| external    | External file object                      | An object with a url property, identifying a publicly accessible URL.                                                                                                                                                                                                                                                                                                     |
+| file_upload | File upload object                        | An object with the id of a FileUpload to attach to the block. After attaching, the API response responds with a type of file, not file_upload, so your integration can access a download url.                                                                                                                                                                             |
+| name        | string                                    | The name of the file, as shown in the Notion UI. Note that the UI may auto-append .pdf or other extensions. When attaching a file_upload, the name parameter is not required.                                                                                                                                                                                             |
 
 **Example File block**
 
@@ -488,13 +509,14 @@ File block objects contain the following information within the file property:
 
 ### Headings
 
-All heading block objects, heading_1, heading_2, and heading_3, contain the following information within their corresponding objects:
+All heading block objects, heading_1, heading_2, and heading_3, contain the following information within their
+corresponding objects:
 
-| Field | Type | Description |
-|-------|------|-------------|
-| rich_text | array of rich text objects | The rich text of the heading. |
-| color | string (enum) | The color of the block. Possible values are: "blue", "blue_background", "brown", "brown_background", "default", "gray", "gray_background", "green", "green_background", "orange", "orange_background", "yellow", "green", "pink", "pink_background", "purple", "purple_background", "red", "red_background", "yellow_background" |
-| is_toggleable | boolean | Whether or not the heading block is a toggle heading or not. If true, then the heading block toggles and can support children. If false, then the heading block is a static heading block. |
+| Field         | Type                       | Description                                                                                                                                                                                                                                                                                                                      |
+|---------------|----------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| rich_text     | array of rich text objects | The rich text of the heading.                                                                                                                                                                                                                                                                                                    |
+| color         | string (enum)              | The color of the block. Possible values are: "blue", "blue_background", "brown", "brown_background", "default", "gray", "gray_background", "green", "green_background", "orange", "orange_background", "yellow", "green", "pink", "pink_background", "purple", "purple_background", "red", "red_background", "yellow_background" |
+| is_toggleable | boolean                    | Whether or not the heading block is a toggle heading or not. If true, then the heading block toggles and can support children. If false, then the heading block is a static heading block.                                                                                                                                       |
 
 **Example Heading 1 block object**
 
@@ -581,7 +603,8 @@ Image block objects contain a file object detailing information about the image.
 
 **Supported external image types**
 
-The image must be directly hosted. In other words, the url cannot point to a service that retrieves the image. The following image types are supported:
+The image must be directly hosted. In other words, the url cannot point to a service that retrieves the image. The
+following image types are supported:
 
 - .bmp
 - .gif
@@ -595,7 +618,8 @@ The image must be directly hosted. In other words, the url cannot point to a ser
 
 **Supported file upload types**
 
-See the file upload reference for a list of supported file extensions and content types when attaching a File Upload to a block.
+See the file upload reference for a list of supported file extensions and content types when attaching a File Upload to
+a block.
 
 Image blocks only support file types in the "image" section of the table.
 
@@ -616,18 +640,21 @@ Link Preview block objects contain the originally pasted url:
 }
 ```
 
-> 🚧 The link_preview block can only be returned as part of a response. The API does not support creating or appending link_preview blocks.
+> 🚧 The link_preview block can only be returned as part of a response. The API does not support creating or appending
+> link_preview blocks.
 
 ### Mention
 
-A mention block object is a child of a rich text object that is nested within a paragraph block object. This block type represents any @ tag in the Notion UI, for a user, date, Notion page, Notion database, or a miniaturized version of a Link Preview.
+A mention block object is a child of a rich text object that is nested within a paragraph block object. This block type
+represents any @ tag in the Notion UI, for a user, date, Notion page, Notion database, or a miniaturized version of a
+Link Preview.
 
 A mention block object contains the following fields:
 
-| Field | Type | Description |
-|-------|------|-------------|
-| type | "database", "date", "link_preview", "page", "user" | A constant string representing the type of the mention. |
-| {type} | object | An object with type-specific information about the mention. |
+| Field  | Type                                               | Description                                                 |
+|--------|----------------------------------------------------|-------------------------------------------------------------|
+| type   | "database", "date", "link_preview", "page", "user" | A constant string representing the type of the mention.     |
+| {type} | object                                             | An object with type-specific information about the mention. |
 
 **Example Mention object**
 
@@ -645,11 +672,11 @@ A mention block object contains the following fields:
 
 Numbered list item block objects contain the following information within the numbered_list_item property:
 
-| Field | Type | Description |
-|-------|------|-------------|
-| rich_text | array of rich text objects | The rich text displayed in the numbered_list_item block. |
-| color | string (enum) | The color of the block. Possible values are: "blue", "blue_background", "brown", "brown_background", "default", "gray", "gray_background", "green", "green_background", "orange", "orange_background", "yellow", "green", "pink", "pink_background", "purple", "purple_background", "red", "red_background", "yellow_background" |
-| children | array of block objects | The nested child blocks (if any) of the numbered_list_item block. |
+| Field     | Type                       | Description                                                                                                                                                                                                                                                                                                                      |
+|-----------|----------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| rich_text | array of rich text objects | The rich text displayed in the numbered_list_item block.                                                                                                                                                                                                                                                                         |
+| color     | string (enum)              | The color of the block. Possible values are: "blue", "blue_background", "brown", "brown_background", "default", "gray", "gray_background", "green", "green_background", "orange", "orange_background", "yellow", "green", "pink", "pink_background", "purple", "purple_background", "red", "red_background", "yellow_background" |
+| children  | array of block objects     | The nested child blocks (if any) of the numbered_list_item block.                                                                                                                                                                                                                                                                |
 
 **Example Numbered list item block**
 
@@ -676,11 +703,11 @@ Numbered list item block objects contain the following information within the nu
 
 Paragraph block objects contain the following information within the paragraph property:
 
-| Field | Type | Description |
-|-------|------|-------------|
-| rich_text | array of rich text objects | The rich text displayed in the paragraph block. |
-| color | string (enum) | The color of the block. Possible values are: "blue", "blue_background", "brown", "brown_background", "default", "gray", "gray_background", "green", "green_background", "orange", "orange_background", "yellow", "green", "pink", "pink_background", "purple", "purple_background", "red", "red_background", "yellow_background" |
-| children | array of block objects | The nested child blocks (if any) of the paragraph block. |
+| Field     | Type                       | Description                                                                                                                                                                                                                                                                                                                      |
+|-----------|----------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| rich_text | array of rich text objects | The rich text displayed in the paragraph block.                                                                                                                                                                                                                                                                                  |
+| color     | string (enum)              | The color of the block. Possible values are: "blue", "blue_background", "brown", "brown_background", "default", "gray", "gray_background", "green", "green_background", "orange", "orange_background", "yellow", "green", "pink", "pink_background", "purple", "purple_background", "red", "red_background", "yellow_background" |
+| children  | array of block objects     | The nested child blocks (if any) of the paragraph block.                                                                                                                                                                                                                                                                         |
 
 **Example Paragraph block object**
 
@@ -757,11 +784,11 @@ Paragraph block objects contain the following information within the paragraph p
 
 A PDF block object represents a PDF that has been embedded within a Notion page. It contains the following fields:
 
-| Property | Type | Description |
-|----------|------|-------------|
-| caption | array of rich text objects | A caption, if provided, for the PDF block. |
-| type | One of: "file", "external", "file_upload" | A constant string representing the type of PDF. file indicates a Notion-hosted file, and external represents a third-party link. file_upload is only valid when providing parameters to attach a File Upload to a PDF block. |
-| external, file, file_upload | file object | An object containing type-specific information about the PDF. |
+| Property                    | Type                                      | Description                                                                                                                                                                                                                  |
+|-----------------------------|-------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| caption                     | array of rich text objects                | A caption, if provided, for the PDF block.                                                                                                                                                                                   |
+| type                        | One of: "file", "external", "file_upload" | A constant string representing the type of PDF. file indicates a Notion-hosted file, and external represents a third-party link. file_upload is only valid when providing parameters to attach a File Upload to a PDF block. |
+| external, file, file_upload | file object                               | An object containing type-specific information about the PDF.                                                                                                                                                                |
 
 ```json
 {
@@ -779,7 +806,8 @@ A PDF block object represents a PDF that has been embedded within a Notion page.
 
 **Supported file upload types**
 
-See the file upload reference for a list of supported file extensions and content types when attaching a File Upload to a block.
+See the file upload reference for a list of supported file extensions and content types when attaching a File Upload to
+a block.
 
 PDF blocks only support a type of .pdf.
 
@@ -787,11 +815,11 @@ PDF blocks only support a type of .pdf.
 
 Quote block objects contain the following information within the quote property:
 
-| Field | Type | Description |
-|-------|------|-------------|
-| rich_text | array of rich text objects | The rich text displayed in the quote block. |
-| color | string (enum) | The color of the block. Possible values are: "blue", "blue_background", "brown", "brown_background", "default", "gray", "gray_background", "green", "green_background", "orange", "orange_background", "yellow", "green", "pink", "pink_background", "purple", "purple_background", "red", "red_background", "yellow_background" |
-| children | array of block objects | The nested child blocks, if any, of the quote block. |
+| Field     | Type                       | Description                                                                                                                                                                                                                                                                                                                      |
+|-----------|----------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| rich_text | array of rich text objects | The rich text displayed in the quote block.                                                                                                                                                                                                                                                                                      |
+| color     | string (enum)              | The color of the block. Possible values are: "blue", "blue_background", "brown", "brown_background", "default", "gray", "gray_background", "green", "green_background", "orange", "orange_background", "yellow", "green", "pink", "pink_background", "purple", "purple_background", "red", "red_background", "yellow_background" |
+| children  | array of block objects     | The nested child blocks, if any, of the quote block.                                                                                                                                                                                                                                                                             |
 
 **Example Quote block**
 
@@ -817,7 +845,8 @@ Quote block objects contain the following information within the quote property:
 
 ### Synced block
 
-Similar to the Notion UI, there are two versions of a synced_block object: the original block that was created first and doesn't yet sync with anything else, and the duplicate block or blocks synced to the original.
+Similar to the Notion UI, there are two versions of a synced_block object: the original block that was created first and
+doesn't yet sync with anything else, and the duplicate block or blocks synced to the original.
 
 > 📘 An original synced block must be created before corresponding duplicate block or blocks can be made.
 
@@ -825,10 +854,10 @@ Similar to the Notion UI, there are two versions of a synced_block object: the o
 
 Original synced block objects contain the following information within the synced_block property:
 
-| Field | Type | Description |
-|-------|------|-------------|
-| synced_from | null | The value is always null to signify that this is an original synced block that does not refer to another block. |
-| children | array of block objects | The nested child blocks, if any, of the synced_block block. These blocks will be mirrored in the duplicate synced_block. |
+| Field       | Type                   | Description                                                                                                              |
+|-------------|------------------------|--------------------------------------------------------------------------------------------------------------------------|
+| synced_from | null                   | The value is always null to signify that this is an original synced block that does not refer to another block.          |
+| children    | array of block objects | The nested child blocks, if any, of the synced_block block. These blocks will be mirrored in the duplicate synced_block. |
 
 **Example Original synced block**
 
@@ -860,10 +889,10 @@ Original synced block objects contain the following information within the synce
 
 Duplicate synced block objects contain the following information within the synced_from object:
 
-| Field | Type | Description |
-|-------|------|-------------|
-| type | string (enum) | The type of the synced from object. Possible values are: "block_id" |
-| block_id | string (UUIDv4) | An identifier for the original synced_block. |
+| Field    | Type            | Description                                                         |
+|----------|-----------------|---------------------------------------------------------------------|
+| type     | string (enum)   | The type of the synced from object. Possible values are: "block_id" |
+| block_id | string (UUIDv4) | An identifier for the original synced_block.                        |
 
 **Example Duplicate synced block object**
 
@@ -883,13 +912,14 @@ Duplicate synced block objects contain the following information within the sync
 
 ### Table
 
-Table block objects are parent blocks for table row children. Table block objects contain the following fields within the table property:
+Table block objects are parent blocks for table row children. Table block objects contain the following fields within
+the table property:
 
-| Field | Type | Description |
-|-------|------|-------------|
-| table_width | integer | The number of columns in the table. Note that this cannot be changed via the public API once a table is created. |
-| has_column_header | boolean | Whether the table has a column header. If true, then the first row in the table appears visually distinct from the other rows. |
-| has_row_header | boolean | Whether the table has a header row. If true, then the first column in the table appears visually distinct from the other columns. |
+| Field             | Type    | Description                                                                                                                       |
+|-------------------|---------|-----------------------------------------------------------------------------------------------------------------------------------|
+| table_width       | integer | The number of columns in the table. Note that this cannot be changed via the public API once a table is created.                  |
+| has_column_header | boolean | Whether the table has a column header. If true, then the first row in the table appears visually distinct from the other rows.    |
+| has_row_header    | boolean | Whether the table has a header row. If true, then the first column in the table appears visually distinct from the other columns. |
 
 **Example Table block object**
 
@@ -907,7 +937,8 @@ Table block objects are parent blocks for table row children. Table block object
 
 > 🚧 table_width can only be set when the table is first created.
 >
-> Note that the number of columns in a table can only be set when the table is first created. Calls to the Update block endpoint to update table_width fail.
+> Note that the number of columns in a table can only be set when the table is first created. Calls to the Update block
+> endpoint to update table_width fail.
 
 **Table rows**
 
@@ -918,9 +949,9 @@ Follow these steps to fetch the table_rows of a table:
 
 A table_row block object contains the following fields within the table_row property:
 
-| Property | Type | Description |
-|----------|------|-------------|
-| cells | array of array of rich text objects | An array of cell contents in horizontal display order. Each cell is an array of rich text objects. |
+| Property | Type                                | Description                                                                                        |
+|----------|-------------------------------------|----------------------------------------------------------------------------------------------------|
+| cells    | array of array of rich text objects | An array of cell contents in horizontal display order. Each cell is an array of rich text objects. |
 
 **Example Table row block object**
 
@@ -992,15 +1023,16 @@ A table_row block object contains the following fields within the table_row prop
 }
 ```
 
-> 📘 When creating a table block via the Append block children endpoint, the table must have at least one table_row whose cells array has the same length as the table_width.
+> 📘 When creating a table block via the Append block children endpoint, the table must have at least one table_row whose
+> cells array has the same length as the table_width.
 
 ### Table of contents
 
 Table of contents block objects contain the following information within the table_of_contents property:
 
-| Property | Type | Description |
-|----------|------|-------------|
-| color | string (enum) | The color of the block. Possible values are: "blue", "blue_background", "brown", "brown_background", "default", "gray", "gray_background", "green", "green_background", "orange", "orange_background", "yellow", "green", "pink", "pink_background", "purple", "purple_background", "red", "red_background", "yellow_background" |
+| Property | Type          | Description                                                                                                                                                                                                                                                                                                                      |
+|----------|---------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| color    | string (enum) | The color of the block. Possible values are: "blue", "blue_background", "brown", "brown_background", "default", "gray", "gray_background", "green", "green_background", "orange", "orange_background", "yellow", "green", "pink", "pink_background", "purple", "purple_background", "red", "red_background", "yellow_background" |
 
 **Example Table of contents block object**
 
@@ -1024,10 +1056,10 @@ Template blocks represent template buttons in the Notion UI.
 
 Template block objects contain the following information within the template property:
 
-| Field | Type | Description |
-|-------|------|-------------|
-| rich_text | array of rich text objects | The rich text displayed in the title of the template. |
-| children | array of block objects | The nested child blocks, if any, of the template block. These blocks are duplicated when the template block is used in the UI. |
+| Field     | Type                       | Description                                                                                                                    |
+|-----------|----------------------------|--------------------------------------------------------------------------------------------------------------------------------|
+| rich_text | array of rich text objects | The rich text displayed in the title of the template.                                                                          |
+| children  | array of block objects     | The nested child blocks, if any, of the template block. These blocks are duplicated when the template block is used in the UI. |
 
 **Example Template block object**
 
@@ -1057,12 +1089,12 @@ Template block objects contain the following information within the template pro
 
 To do block objects contain the following information within the to_do property:
 
-| Field | Type | Description |
-|-------|------|-------------|
-| rich_text | array of rich text objects | The rich text displayed in the To do block. |
-| checked | boolean (optional) | Whether the To do is checked. |
-| color | string (enum) | The color of the block. Possible values are: "blue", "blue_background", "brown", "brown_background", "default", "gray", "gray_background", "green", "green_background", "orange", "orange_background", "yellow", "green", "pink", "pink_background", "purple", "purple_background", "red", "red_background", "yellow_background" |
-| children | array of block objects | The nested child blocks, if any, of the To do block. |
+| Field     | Type                       | Description                                                                                                                                                                                                                                                                                                                      |
+|-----------|----------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| rich_text | array of rich text objects | The rich text displayed in the To do block.                                                                                                                                                                                                                                                                                      |
+| checked   | boolean (optional)         | Whether the To do is checked.                                                                                                                                                                                                                                                                                                    |
+| color     | string (enum)              | The color of the block. Possible values are: "blue", "blue_background", "brown", "brown_background", "default", "gray", "gray_background", "green", "green_background", "orange", "orange_background", "yellow", "green", "pink", "pink_background", "purple", "purple_background", "red", "red_background", "yellow_background" |
+| children  | array of block objects     | The nested child blocks, if any, of the To do block.                                                                                                                                                                                                                                                                             |
 
 **Example To do block object**
 
@@ -1092,11 +1124,11 @@ To do block objects contain the following information within the to_do property:
 
 Toggle block objects contain the following information within the toggle property:
 
-| Field | Type | Description |
-|-------|------|-------------|
-| rich_text | array of rich text objects | The rich text displayed in the Toggle block. |
-| color | string (enum) | The color of the block. Possible values are: "blue", "blue_background", "brown", "brown_background", "default", "gray", "gray_background", "green", "green_background", "orange", "orange_background", "yellow", "green", "pink", "pink_background", "purple", "purple_background", "red", "red_background", "yellow_background" |
-| children | array of block objects | The nested child blocks, if any, of the Toggle block. |
+| Field     | Type                       | Description                                                                                                                                                                                                                                                                                                                      |
+|-----------|----------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| rich_text | array of rich text objects | The rich text displayed in the Toggle block.                                                                                                                                                                                                                                                                                     |
+| color     | string (enum)              | The color of the block. Possible values are: "blue", "blue_background", "brown", "brown_background", "default", "gray", "gray_background", "green", "green_background", "orange", "orange_background", "yellow", "green", "pink", "pink_background", "purple", "purple_background", "red", "red_background", "yellow_background" |
+| children  | array of block objects     | The nested child blocks, if any, of the Toggle block.                                                                                                                                                                                                                                                                            |
 
 **Toggle Block**
 
@@ -1161,10 +1193,12 @@ Video block objects contain a file object detailing information about the video.
 - YouTube video links that include embed or watch.
   E.g. https://www.youtube.com/watch?v=[id], https://www.youtube.com/embed/[id]
 
-> 📘 Vimeo video links are not currently supported by the video block type. However, they can be embedded in Notion pages using the embed block type. See Embed for more information.
+> 📘 Vimeo video links are not currently supported by the video block type. However, they can be embedded in Notion pages
+> using the embed block type. See Embed for more information.
 
 **Supported file upload types**
 
-See the file upload reference for a list of supported file extensions and content types when attaching a File Upload to a block.
+See the file upload reference for a list of supported file extensions and content types when attaching a File Upload to
+a block.
 
 Video blocks only support file types in the "video" section of the table.
