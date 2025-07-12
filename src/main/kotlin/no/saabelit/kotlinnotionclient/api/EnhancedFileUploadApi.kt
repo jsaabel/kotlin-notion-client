@@ -247,21 +247,21 @@ class EnhancedFileUploadApi(
         checkIntervalMs: Long = 500,
     ): FileUpload {
         val startTime = System.currentTimeMillis()
-        
+
         while (System.currentTimeMillis() - startTime < maxWaitTimeMs) {
             val fileUpload = basicApi.retrieveFileUpload(fileUploadId)
-            
+
             if (fileUpload.status == FileUploadStatus.UPLOADED) {
                 return fileUpload
             }
-            
+
             if (fileUpload.status == FileUploadStatus.FAILED) {
                 throw FileUploadError.UnknownError(Exception("File upload failed: ${fileUpload.id}"))
             }
-            
+
             delay(checkIntervalMs)
         }
-        
+
         throw FileUploadError.TimeoutError("waitForFileReady")
     }
 
