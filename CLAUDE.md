@@ -74,6 +74,7 @@ export NOTION_PARENT_PAGE_ID="12345678-1234-1234-1234-123456789abc"
 #### Advanced Usage
 - Run specific tag combinations: `./gradlew test -Dkotest.tags.include="Unit & !Slow"`
 - Exclude specific tags: `./gradlew test -Dkotest.tags.exclude="RequiresApi"`
+- **Remember that you need to call gradlew test with the correct arguments if you're testing real life API integration tests.**
 
 ### Version Management
 - Use `libs.toml` for centralized dependency version management
