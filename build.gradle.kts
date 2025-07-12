@@ -1,3 +1,5 @@
+import com.github.benmanes.gradle.versions.updates.DependencyUpdatesTask
+
 plugins {
     application
     alias(libs.plugins.ben.manes.versions)
@@ -50,4 +52,21 @@ tasks.register<Test>("testAll") {
     classpath = sourceSets.test.get().runtimeClasspath
     group = "verification"  
     description = "Runs all tests including integration tests"
+}
+
+fun isNonStable(version: String): Boolean {
+    val stableKeyword = listOf("RELEASE", "FINAL", "GA").any { version.uppercase().contains(it) }
+    val regex = "^[0-9,.v-]+(-r)?$".toRegex()
+    val isStable = stableKeyword || regex.matches(version)
+    return isStable.not()
+}
+
+tasks.withType<DependencyUpdatesTask> {
+    // ignore release candidates when checking for new gradle version
+    gradleReleaseChannel = "current"
+
+    // ignore release candidates as upgradable versions from stable versions for all other gradle dependencies
+    rejectVersionIf {
+        isNonStable(candidate.version) && !isNonStable(currentVersion)
+    }
 }

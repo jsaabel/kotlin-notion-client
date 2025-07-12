@@ -18,6 +18,7 @@ import kotlinx.serialization.json.Json
 import no.saabelit.kotlinnotionclient.api.BlocksApi
 import no.saabelit.kotlinnotionclient.api.CommentsApi
 import no.saabelit.kotlinnotionclient.api.DatabasesApi
+import no.saabelit.kotlinnotionclient.api.EnhancedFileUploadApi
 import no.saabelit.kotlinnotionclient.api.FileUploadApi
 import no.saabelit.kotlinnotionclient.api.PagesApi
 import no.saabelit.kotlinnotionclient.api.UsersApi
@@ -59,6 +60,12 @@ class NotionClient private constructor(
     val blocks = BlocksApi(httpClient, config)
     val comments = CommentsApi(httpClient, config)
     val fileUploads = FileUploadApi(httpClient, config)
+
+    /**
+     * Enhanced file upload API with advanced features like progress tracking,
+     * automatic chunking, retry logic, and comprehensive error handling.
+     */
+    val enhancedFileUploads = EnhancedFileUploadApi(httpClient, config, fileUploads)
 
     companion object {
         /**
