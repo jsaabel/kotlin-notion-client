@@ -8,6 +8,7 @@ import io.ktor.http.isSuccess
 import no.saabelit.kotlinnotionclient.config.NotionConfig
 import no.saabelit.kotlinnotionclient.exceptions.NotionException
 import no.saabelit.kotlinnotionclient.models.users.User
+import no.saabelit.kotlinnotionclient.ratelimit.executeWithRateLimit
 
 /**
  * API client for Notion Users endpoints.
@@ -31,28 +32,30 @@ class UsersApi(
      * @throws NotionException.AuthenticationError for authentication failures
      */
     suspend fun getCurrentUser(): User =
-        try {
-            val response: HttpResponse = httpClient.get("${config.baseUrl}/users/me")
+        httpClient.executeWithRateLimit {
+            try {
+                val response: HttpResponse = httpClient.get("${config.baseUrl}/users/me")
 
-            if (response.status.isSuccess()) {
-                response.body<User>()
-            } else {
-                val errorBody =
-                    try {
-                        response.body<String>()
-                    } catch (e: Exception) {
-                        "Could not read error response body"
-                    }
+                if (response.status.isSuccess()) {
+                    response.body<User>()
+                } else {
+                    val errorBody =
+                        try {
+                            response.body<String>()
+                        } catch (e: Exception) {
+                            "Could not read error response body"
+                        }
 
-                throw NotionException.ApiError(
-                    code = response.status.value.toString(),
-                    status = response.status.value,
-                    details = "HTTP ${response.status.value}: ${response.status.description}. Response: $errorBody",
-                )
+                    throw NotionException.ApiError(
+                        code = response.status.value.toString(),
+                        status = response.status.value,
+                        details = "HTTP ${response.status.value}: ${response.status.description}. Response: $errorBody",
+                    )
+                }
+            } catch (e: NotionException) {
+                throw e // Re-throw our own exceptions
+            } catch (e: Exception) {
+                throw NotionException.NetworkError(e)
             }
-        } catch (e: NotionException) {
-            throw e // Re-throw our own exceptions
-        } catch (e: Exception) {
-            throw NotionException.NetworkError(e)
         }
 }

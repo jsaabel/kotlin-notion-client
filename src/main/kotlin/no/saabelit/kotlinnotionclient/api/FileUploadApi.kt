@@ -47,7 +47,7 @@ class FileUploadApi(
         client
             .post("${config.baseUrl}/file_uploads") {
                 headers {
-                    append(HttpHeaders.Authorization, "Bearer ${config.token}")
+                    append(HttpHeaders.Authorization, "Bearer ${config.apiToken}")
                     append("Notion-Version", config.apiVersion)
                 }
                 contentType(ContentType.Application.Json)
@@ -88,7 +88,7 @@ class FileUploadApi(
                     },
             ) {
                 headers {
-                    append(HttpHeaders.Authorization, "Bearer ${config.token}")
+                    append(HttpHeaders.Authorization, "Bearer ${config.apiToken}")
                     append("Notion-Version", config.apiVersion)
                 }
             }.body()
@@ -105,7 +105,7 @@ class FileUploadApi(
         client
             .post("${config.baseUrl}/file_uploads/$fileUploadId/complete") {
                 headers {
-                    append(HttpHeaders.Authorization, "Bearer ${config.token}")
+                    append(HttpHeaders.Authorization, "Bearer ${config.apiToken}")
                     append("Notion-Version", config.apiVersion)
                 }
                 contentType(ContentType.Application.Json)
@@ -124,7 +124,7 @@ class FileUploadApi(
         client
             .get("${config.baseUrl}/file_uploads/$fileUploadId") {
                 headers {
-                    append(HttpHeaders.Authorization, "Bearer ${config.token}")
+                    append(HttpHeaders.Authorization, "Bearer ${config.apiToken}")
                     append("Notion-Version", config.apiVersion)
                 }
             }.body()
@@ -145,7 +145,7 @@ class FileUploadApi(
         client
             .get("${config.baseUrl}/file_uploads") {
                 headers {
-                    append(HttpHeaders.Authorization, "Bearer ${config.token}")
+                    append(HttpHeaders.Authorization, "Bearer ${config.apiToken}")
                     append("Notion-Version", config.apiVersion)
                 }
                 startCursor?.let { parameter("start_cursor", it) }

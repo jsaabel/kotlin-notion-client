@@ -4,6 +4,7 @@ package no.saabelit.kotlinnotionclient.api
 
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
+import io.ktor.client.plugins.ClientRequestException
 import io.ktor.client.request.get
 import io.ktor.client.request.patch
 import io.ktor.client.request.post
@@ -18,6 +19,7 @@ import no.saabelit.kotlinnotionclient.models.pages.ArchivePageRequest
 import no.saabelit.kotlinnotionclient.models.pages.CreatePageRequest
 import no.saabelit.kotlinnotionclient.models.pages.Page
 import no.saabelit.kotlinnotionclient.models.pages.UpdatePageRequest
+import no.saabelit.kotlinnotionclient.ratelimit.executeWithRateLimit
 
 /**
  * API client for Notion Pages endpoints.
@@ -39,29 +41,47 @@ class PagesApi(
      * @throws NotionException.AuthenticationError for authentication failures
      */
     suspend fun retrieve(pageId: String): Page =
-        try {
-            val response: HttpResponse = httpClient.get("${config.baseUrl}/pages/$pageId")
+        httpClient.executeWithRateLimit {
+            try {
+                val response: HttpResponse = httpClient.get("${config.baseUrl}/pages/$pageId")
 
-            if (response.status.isSuccess()) {
-                response.body<Page>()
-            } else {
+                if (response.status.isSuccess()) {
+                    response.body<Page>()
+                } else {
+                    val errorBody =
+                        try {
+                            response.body<String>()
+                        } catch (e: Exception) {
+                            "Could not read error response body"
+                        }
+
+                    throw NotionException.ApiError(
+                        code = response.status.value.toString(),
+                        status = response.status.value,
+                        details = "HTTP ${response.status.value}: ${response.status.description}. Response: $errorBody",
+                    )
+                }
+            } catch (e: NotionException) {
+                throw e // Re-throw our own exceptions
+            } catch (e: ClientRequestException) {
+                // Handle HTTP client errors (4xx)
                 val errorBody =
                     try {
-                        response.body<String>()
-                    } catch (e: Exception) {
+                        e.response.body<String>()
+                    } catch (ex: Exception) {
                         "Could not read error response body"
                     }
 
                 throw NotionException.ApiError(
-                    code = response.status.value.toString(),
-                    status = response.status.value,
-                    details = "HTTP ${response.status.value}: ${response.status.description}. Response: $errorBody",
+                    code =
+                        e.response.status.value
+                            .toString(),
+                    status = e.response.status.value,
+                    details = "HTTP ${e.response.status.value}: ${e.response.status.description}. Response: $errorBody",
                 )
+            } catch (e: Exception) {
+                throw NotionException.NetworkError(e)
             }
-        } catch (e: NotionException) {
-            throw e // Re-throw our own exceptions
-        } catch (e: Exception) {
-            throw NotionException.NetworkError(e)
         }
 
     /**
@@ -77,33 +97,51 @@ class PagesApi(
      * @throws NotionException.AuthenticationError for authentication failures
      */
     suspend fun create(request: CreatePageRequest): Page =
-        try {
-            val response: HttpResponse =
-                httpClient.post("${config.baseUrl}/pages") {
-                    contentType(ContentType.Application.Json)
-                    setBody(request)
-                }
+        httpClient.executeWithRateLimit {
+            try {
+                val response: HttpResponse =
+                    httpClient.post("${config.baseUrl}/pages") {
+                        contentType(ContentType.Application.Json)
+                        setBody(request)
+                    }
 
-            if (response.status.isSuccess()) {
-                response.body<Page>()
-            } else {
+                if (response.status.isSuccess()) {
+                    response.body<Page>()
+                } else {
+                    val errorBody =
+                        try {
+                            response.body<String>()
+                        } catch (e: Exception) {
+                            "Could not read error response body"
+                        }
+
+                    throw NotionException.ApiError(
+                        code = response.status.value.toString(),
+                        status = response.status.value,
+                        details = "HTTP ${response.status.value}: ${response.status.description}. Response: $errorBody",
+                    )
+                }
+            } catch (e: NotionException) {
+                throw e // Re-throw our own exceptions
+            } catch (e: ClientRequestException) {
+                // Handle HTTP client errors (4xx)
                 val errorBody =
                     try {
-                        response.body<String>()
-                    } catch (e: Exception) {
+                        e.response.body<String>()
+                    } catch (ex: Exception) {
                         "Could not read error response body"
                     }
 
                 throw NotionException.ApiError(
-                    code = response.status.value.toString(),
-                    status = response.status.value,
-                    details = "HTTP ${response.status.value}: ${response.status.description}. Response: $errorBody",
+                    code =
+                        e.response.status.value
+                            .toString(),
+                    status = e.response.status.value,
+                    details = "HTTP ${e.response.status.value}: ${e.response.status.description}. Response: $errorBody",
                 )
+            } catch (e: Exception) {
+                throw NotionException.NetworkError(e)
             }
-        } catch (e: NotionException) {
-            throw e // Re-throw our own exceptions
-        } catch (e: Exception) {
-            throw NotionException.NetworkError(e)
         }
 
     /**
@@ -120,33 +158,51 @@ class PagesApi(
         pageId: String,
         request: UpdatePageRequest,
     ): Page =
-        try {
-            val response: HttpResponse =
-                httpClient.patch("${config.baseUrl}/pages/$pageId") {
-                    contentType(ContentType.Application.Json)
-                    setBody(request)
-                }
+        httpClient.executeWithRateLimit {
+            try {
+                val response: HttpResponse =
+                    httpClient.patch("${config.baseUrl}/pages/$pageId") {
+                        contentType(ContentType.Application.Json)
+                        setBody(request)
+                    }
 
-            if (response.status.isSuccess()) {
-                response.body<Page>()
-            } else {
+                if (response.status.isSuccess()) {
+                    response.body<Page>()
+                } else {
+                    val errorBody =
+                        try {
+                            response.body<String>()
+                        } catch (e: Exception) {
+                            "Could not read error response body"
+                        }
+
+                    throw NotionException.ApiError(
+                        code = response.status.value.toString(),
+                        status = response.status.value,
+                        details = "HTTP ${response.status.value}: ${response.status.description}. Response: $errorBody",
+                    )
+                }
+            } catch (e: NotionException) {
+                throw e // Re-throw our own exceptions
+            } catch (e: ClientRequestException) {
+                // Handle HTTP client errors (4xx)
                 val errorBody =
                     try {
-                        response.body<String>()
-                    } catch (e: Exception) {
+                        e.response.body<String>()
+                    } catch (ex: Exception) {
                         "Could not read error response body"
                     }
 
                 throw NotionException.ApiError(
-                    code = response.status.value.toString(),
-                    status = response.status.value,
-                    details = "HTTP ${response.status.value}: ${response.status.description}. Response: $errorBody",
+                    code =
+                        e.response.status.value
+                            .toString(),
+                    status = e.response.status.value,
+                    details = "HTTP ${e.response.status.value}: ${e.response.status.description}. Response: $errorBody",
                 )
+            } catch (e: Exception) {
+                throw NotionException.NetworkError(e)
             }
-        } catch (e: NotionException) {
-            throw e // Re-throw our own exceptions
-        } catch (e: Exception) {
-            throw NotionException.NetworkError(e)
         }
 
     /**
@@ -163,34 +219,52 @@ class PagesApi(
      * @throws NotionException.AuthenticationError for authentication failures
      */
     suspend fun archive(pageId: String): Page =
-        try {
-            val request = ArchivePageRequest()
+        httpClient.executeWithRateLimit {
+            try {
+                val request = ArchivePageRequest()
 
-            val response: HttpResponse =
-                httpClient.patch("${config.baseUrl}/pages/$pageId") {
-                    contentType(ContentType.Application.Json)
-                    setBody(request)
+                val response: HttpResponse =
+                    httpClient.patch("${config.baseUrl}/pages/$pageId") {
+                        contentType(ContentType.Application.Json)
+                        setBody(request)
+                    }
+
+                if (response.status.isSuccess()) {
+                    response.body<Page>()
+                } else {
+                    val errorBody =
+                        try {
+                            response.body<String>()
+                        } catch (e: Exception) {
+                            "Could not read error response body"
+                        }
+
+                    throw NotionException.ApiError(
+                        code = response.status.value.toString(),
+                        status = response.status.value,
+                        details = "HTTP ${response.status.value}: ${response.status.description}. Response: $errorBody",
+                    )
                 }
-
-            if (response.status.isSuccess()) {
-                response.body<Page>()
-            } else {
+            } catch (e: NotionException) {
+                throw e // Re-throw our own exceptions
+            } catch (e: ClientRequestException) {
+                // Handle HTTP client errors (4xx)
                 val errorBody =
                     try {
-                        response.body<String>()
-                    } catch (e: Exception) {
+                        e.response.body<String>()
+                    } catch (ex: Exception) {
                         "Could not read error response body"
                     }
 
                 throw NotionException.ApiError(
-                    code = response.status.value.toString(),
-                    status = response.status.value,
-                    details = "HTTP ${response.status.value}: ${response.status.description}. Response: $errorBody",
+                    code =
+                        e.response.status.value
+                            .toString(),
+                    status = e.response.status.value,
+                    details = "HTTP ${e.response.status.value}: ${e.response.status.description}. Response: $errorBody",
                 )
+            } catch (e: Exception) {
+                throw NotionException.NetworkError(e)
             }
-        } catch (e: NotionException) {
-            throw e // Re-throw our own exceptions
-        } catch (e: Exception) {
-            throw NotionException.NetworkError(e)
         }
 }

@@ -17,6 +17,7 @@ import no.saabelit.kotlinnotionclient.models.databases.CreateDatabaseRequest
 import no.saabelit.kotlinnotionclient.models.databases.Database
 import no.saabelit.kotlinnotionclient.models.databases.DatabaseQueryRequest
 import no.saabelit.kotlinnotionclient.models.databases.DatabaseQueryResponse
+import no.saabelit.kotlinnotionclient.ratelimit.executeWithRateLimit
 
 /**
  * API client for Notion Databases endpoints.
@@ -38,29 +39,31 @@ class DatabasesApi(
      * @throws NotionException.AuthenticationError for authentication failures
      */
     suspend fun retrieve(databaseId: String): Database =
-        try {
-            val response: HttpResponse = httpClient.get("${config.baseUrl}/databases/$databaseId")
+        httpClient.executeWithRateLimit {
+            try {
+                val response: HttpResponse = httpClient.get("${config.baseUrl}/databases/$databaseId")
 
-            if (response.status.isSuccess()) {
-                response.body<Database>()
-            } else {
-                val errorBody =
-                    try {
-                        response.body<String>()
-                    } catch (e: Exception) {
-                        "Could not read error response body"
-                    }
+                if (response.status.isSuccess()) {
+                    response.body<Database>()
+                } else {
+                    val errorBody =
+                        try {
+                            response.body<String>()
+                        } catch (e: Exception) {
+                            "Could not read error response body"
+                        }
 
-                throw NotionException.ApiError(
-                    code = response.status.value.toString(),
-                    status = response.status.value,
-                    details = "HTTP ${response.status.value}: ${response.status.description}. Response: $errorBody",
-                )
+                    throw NotionException.ApiError(
+                        code = response.status.value.toString(),
+                        status = response.status.value,
+                        details = "HTTP ${response.status.value}: ${response.status.description}. Response: $errorBody",
+                    )
+                }
+            } catch (e: NotionException) {
+                throw e // Re-throw our own exceptions
+            } catch (e: Exception) {
+                throw NotionException.NetworkError(e)
             }
-        } catch (e: NotionException) {
-            throw e // Re-throw our own exceptions
-        } catch (e: Exception) {
-            throw NotionException.NetworkError(e)
         }
 
     /**
@@ -73,33 +76,35 @@ class DatabasesApi(
      * @throws NotionException.AuthenticationError for authentication failures
      */
     suspend fun create(request: CreateDatabaseRequest): Database =
-        try {
-            val response: HttpResponse =
-                httpClient.post("${config.baseUrl}/databases") {
-                    contentType(ContentType.Application.Json)
-                    setBody(request)
-                }
-
-            if (response.status.isSuccess()) {
-                response.body<Database>()
-            } else {
-                val errorBody =
-                    try {
-                        response.body<String>()
-                    } catch (e: Exception) {
-                        "Could not read error response body"
+        httpClient.executeWithRateLimit {
+            try {
+                val response: HttpResponse =
+                    httpClient.post("${config.baseUrl}/databases") {
+                        contentType(ContentType.Application.Json)
+                        setBody(request)
                     }
 
-                throw NotionException.ApiError(
-                    code = response.status.value.toString(),
-                    status = response.status.value,
-                    details = "HTTP ${response.status.value}: ${response.status.description}. Response: $errorBody",
-                )
+                if (response.status.isSuccess()) {
+                    response.body<Database>()
+                } else {
+                    val errorBody =
+                        try {
+                            response.body<String>()
+                        } catch (e: Exception) {
+                            "Could not read error response body"
+                        }
+
+                    throw NotionException.ApiError(
+                        code = response.status.value.toString(),
+                        status = response.status.value,
+                        details = "HTTP ${response.status.value}: ${response.status.description}. Response: $errorBody",
+                    )
+                }
+            } catch (e: NotionException) {
+                throw e // Re-throw our own exceptions
+            } catch (e: Exception) {
+                throw NotionException.NetworkError(e)
             }
-        } catch (e: NotionException) {
-            throw e // Re-throw our own exceptions
-        } catch (e: Exception) {
-            throw NotionException.NetworkError(e)
         }
 
     /**
@@ -116,34 +121,36 @@ class DatabasesApi(
      * @throws NotionException.AuthenticationError for authentication failures
      */
     suspend fun archive(databaseId: String): Database =
-        try {
-            val request = ArchiveDatabaseRequest(archived = true)
-            val response: HttpResponse =
-                httpClient.patch("${config.baseUrl}/databases/$databaseId") {
-                    contentType(ContentType.Application.Json)
-                    setBody(request)
-                }
-
-            if (response.status.isSuccess()) {
-                response.body<Database>()
-            } else {
-                val errorBody =
-                    try {
-                        response.body<String>()
-                    } catch (e: Exception) {
-                        "Could not read error response body"
+        httpClient.executeWithRateLimit {
+            try {
+                val request = ArchiveDatabaseRequest(archived = true)
+                val response: HttpResponse =
+                    httpClient.patch("${config.baseUrl}/databases/$databaseId") {
+                        contentType(ContentType.Application.Json)
+                        setBody(request)
                     }
 
-                throw NotionException.ApiError(
-                    code = response.status.value.toString(),
-                    status = response.status.value,
-                    details = "HTTP ${response.status.value}: ${response.status.description}. Response: $errorBody",
-                )
+                if (response.status.isSuccess()) {
+                    response.body<Database>()
+                } else {
+                    val errorBody =
+                        try {
+                            response.body<String>()
+                        } catch (e: Exception) {
+                            "Could not read error response body"
+                        }
+
+                    throw NotionException.ApiError(
+                        code = response.status.value.toString(),
+                        status = response.status.value,
+                        details = "HTTP ${response.status.value}: ${response.status.description}. Response: $errorBody",
+                    )
+                }
+            } catch (e: NotionException) {
+                throw e // Re-throw our own exceptions
+            } catch (e: Exception) {
+                throw NotionException.NetworkError(e)
             }
-        } catch (e: NotionException) {
-            throw e // Re-throw our own exceptions
-        } catch (e: Exception) {
-            throw NotionException.NetworkError(e)
         }
 
     /**
@@ -163,32 +170,34 @@ class DatabasesApi(
         databaseId: String,
         request: DatabaseQueryRequest = DatabaseQueryRequest(),
     ): DatabaseQueryResponse =
-        try {
-            val response: HttpResponse =
-                httpClient.post("${config.baseUrl}/databases/$databaseId/query") {
-                    contentType(ContentType.Application.Json)
-                    setBody(request)
-                }
-
-            if (response.status.isSuccess()) {
-                response.body<DatabaseQueryResponse>()
-            } else {
-                val errorBody =
-                    try {
-                        response.body<String>()
-                    } catch (e: Exception) {
-                        "Could not read error response body"
+        httpClient.executeWithRateLimit {
+            try {
+                val response: HttpResponse =
+                    httpClient.post("${config.baseUrl}/databases/$databaseId/query") {
+                        contentType(ContentType.Application.Json)
+                        setBody(request)
                     }
 
-                throw NotionException.ApiError(
-                    code = response.status.value.toString(),
-                    status = response.status.value,
-                    details = "HTTP ${response.status.value}: ${response.status.description}. Response: $errorBody",
-                )
+                if (response.status.isSuccess()) {
+                    response.body<DatabaseQueryResponse>()
+                } else {
+                    val errorBody =
+                        try {
+                            response.body<String>()
+                        } catch (e: Exception) {
+                            "Could not read error response body"
+                        }
+
+                    throw NotionException.ApiError(
+                        code = response.status.value.toString(),
+                        status = response.status.value,
+                        details = "HTTP ${response.status.value}: ${response.status.description}. Response: $errorBody",
+                    )
+                }
+            } catch (e: NotionException) {
+                throw e // Re-throw our own exceptions
+            } catch (e: Exception) {
+                throw NotionException.NetworkError(e)
             }
-        } catch (e: NotionException) {
-            throw e // Re-throw our own exceptions
-        } catch (e: Exception) {
-            throw NotionException.NetworkError(e)
         }
 }

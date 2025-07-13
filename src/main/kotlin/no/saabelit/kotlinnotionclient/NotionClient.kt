@@ -23,6 +23,7 @@ import no.saabelit.kotlinnotionclient.api.FileUploadApi
 import no.saabelit.kotlinnotionclient.api.PagesApi
 import no.saabelit.kotlinnotionclient.api.UsersApi
 import no.saabelit.kotlinnotionclient.config.NotionConfig
+import no.saabelit.kotlinnotionclient.ratelimit.NotionRateLimit
 
 /**
  * Main entry point for the Notion API client.
@@ -94,7 +95,7 @@ class NotionClient private constructor(
                     install(Auth) {
                         bearer {
                             loadTokens {
-                                BearerTokens(config.token, "")
+                                BearerTokens(config.apiToken, "")
                             }
                         }
                     }
@@ -109,6 +110,18 @@ class NotionClient private constructor(
                                     }
                                 }
                             level = config.logLevel
+                        }
+                    }
+
+                    // Install rate limiting if enabled
+                    if (config.enableRateLimit) {
+                        install(NotionRateLimit) {
+                            strategy = config.rateLimitConfig.strategy
+                            maxRetries = config.rateLimitConfig.maxRetries
+                            baseDelayMs = config.rateLimitConfig.baseDelayMs
+                            maxDelayMs = config.rateLimitConfig.maxDelayMs
+                            jitterFactor = config.rateLimitConfig.jitterFactor
+                            respectRetryAfter = config.rateLimitConfig.respectRetryAfter
                         }
                     }
 

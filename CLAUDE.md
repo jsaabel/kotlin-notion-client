@@ -52,13 +52,14 @@ and best practices in Kotlin.
 ### Development Workflow Reminder
 - Always lint/format code using gradlew before trying to build
 - Remember to lint and format code before committing. Don't commit code before having checked that the project can be built without errors.
+- **Run ./gradlew formatKotlin frequently -- i.e. after .kt files are created or modified, but especially BEFORE trying to build code or run tests.**
 
 ### Testing Commands
 The project uses Kotest with tag-based test organization for efficient development workflows:
 
 #### Standard Commands
 - `./gradlew test` - Run only unit tests (fast, no API calls, ~32 tests in ~200ms)
-- `./gradlew integrationTest` - Run only integration tests (requires NOTION_API_TOKEN and NOTION_PARENT_PAGE_ID)  
+- `./gradlew integrationTest` - Run only integration tests (requires NOTION_API_TOKEN and NOTION_TEST_PAGE_ID)  
 - `./gradlew testAll` - Run all tests (unit + integration)
 
 #### Test Organization
@@ -69,7 +70,7 @@ The project uses Kotest with tag-based test organization for efficient developme
 #### Environment Variables for Integration Tests
 ```bash
 export NOTION_API_TOKEN="secret_..."
-export NOTION_PARENT_PAGE_ID="12345678-1234-1234-1234-123456789abc"
+export NOTION_TEST_PAGE_ID="12345678-1234-1234-1234-123456789abc"
 ```
 
 #### Advanced Usage
@@ -166,4 +167,3 @@ This testing approach ensures our models can handle the complexity of real Notio
 - Always refer to these files before relying on other mechanisms to retrieve information about the Notion API
 - Sample responses from the official API documentation are available under `@reference/notion-api/sample_responses/` and its subfolders
 - These sample responses can and should be used for mock responses and in other cases where appropriate
-```

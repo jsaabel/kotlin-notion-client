@@ -31,8 +31,8 @@ dependencies {
 
 tasks.test {
     useJUnitPlatform()
-    // Exclude integration tests by default for fast unit test runs
-    systemProperty("kotest.tags.exclude", "Integration")
+    // Exclude integration and manual tests by default for fast unit test runs
+    systemProperty("kotest.tags.exclude", "Integration | Manual")
 }
 
 // Task for running only integration tests
@@ -42,7 +42,7 @@ tasks.register<Test>("integrationTest") {
     classpath = sourceSets.test.get().runtimeClasspath
     systemProperty("kotest.tags.include", "Integration") 
     group = "verification"
-    description = "Runs integration tests against live Notion API (requires NOTION_API_TOKEN and NOTION_PARENT_PAGE_ID)"
+    description = "Runs integration tests against live Notion API (requires NOTION_API_TOKEN and NOTION_TEST_PAGE_ID)"
 }
 
 // Task for running all tests (unit + integration)
