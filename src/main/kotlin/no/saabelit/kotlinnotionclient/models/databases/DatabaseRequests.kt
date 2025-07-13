@@ -149,6 +149,16 @@ sealed class CreateDatabaseProperty {
         @SerialName("phone_number")
         val phoneNumber: EmptyObject = EmptyObject(),
     ) : CreateDatabaseProperty()
+
+    /**
+     * Relation property for linking to pages in another database.
+     */
+    @Serializable
+    @SerialName("relation")
+    data class Relation(
+        @SerialName("relation")
+        val relation: RelationConfiguration,
+    ) : CreateDatabaseProperty()
 }
 
 /**
@@ -178,4 +188,87 @@ data class CreateSelectOption(
     val name: String,
     @SerialName("color")
     val color: String = "default",
+)
+
+/**
+ * Configuration for relation properties.
+ *
+ * Relation properties connect pages to other databases. The target database
+ * must be shared with your integration for the relation to work.
+ */
+@Serializable
+data class RelationConfiguration(
+    @SerialName("database_id")
+    val databaseId: String,
+    @SerialName("single_property")
+    val singleProperty: EmptyObject? = null,
+    @SerialName("dual_property")
+    val dualProperty: DualPropertyConfiguration? = null,
+    @SerialName("synced_property_name")
+    val syncedPropertyName: String? = null,
+    @SerialName("synced_property_id")
+    val syncedPropertyId: String? = null,
+) {
+    companion object {
+        /**
+         * Creates a simple unidirectional relation to another database.
+         *
+         * @param databaseId The ID of the target database
+         * @return RelationConfiguration for a single property relation
+         */
+        fun singleProperty(databaseId: String): RelationConfiguration =
+            RelationConfiguration(
+                databaseId = databaseId,
+                singleProperty = EmptyObject(),
+            )
+
+        /**
+         * Creates a bidirectional relation with a specific synced property.
+         *
+         * @param databaseId The ID of the target database
+         * @param syncedPropertyName The name of the property in the target database
+         * @param syncedPropertyId The ID of the property in the target database (optional)
+         * @return RelationConfiguration for a dual property relation
+         */
+        fun dualProperty(
+            databaseId: String,
+            syncedPropertyName: String,
+            syncedPropertyId: String? = null,
+        ): RelationConfiguration =
+            RelationConfiguration(
+                databaseId = databaseId,
+                dualProperty =
+                    DualPropertyConfiguration(
+                        syncedPropertyName = syncedPropertyName,
+                        syncedPropertyId = syncedPropertyId,
+                    ),
+            )
+
+        /**
+         * Creates a simple synced relation (legacy format).
+         *
+         * @param databaseId The ID of the target database
+         * @param syncedPropertyName The name of the synced property
+         * @return RelationConfiguration for a synced relation
+         */
+        fun synced(
+            databaseId: String,
+            syncedPropertyName: String,
+        ): RelationConfiguration =
+            RelationConfiguration(
+                databaseId = databaseId,
+                syncedPropertyName = syncedPropertyName,
+            )
+    }
+}
+
+/**
+ * Configuration for dual/bidirectional relation properties.
+ */
+@Serializable
+data class DualPropertyConfiguration(
+    @SerialName("synced_property_name")
+    val syncedPropertyName: String,
+    @SerialName("synced_property_id")
+    val syncedPropertyId: String? = null,
 )
