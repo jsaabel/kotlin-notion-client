@@ -10,6 +10,7 @@ import io.ktor.client.statement.HttpResponse
 import io.ktor.http.ContentType
 import io.ktor.http.contentType
 import io.ktor.http.isSuccess
+import no.saabelit.kotlinnotionclient.config.NotionApiLimits
 import no.saabelit.kotlinnotionclient.config.NotionConfig
 import no.saabelit.kotlinnotionclient.exceptions.NotionException
 import no.saabelit.kotlinnotionclient.models.databases.ArchiveDatabaseRequest
@@ -154,14 +155,14 @@ class DatabasesApi(
         }
 
     /**
-     * Queries a database with optional filtering, sorting, and pagination.
+     * Queries a database with optional filtering and sorting.
      *
-     * Returns pages that are children of the database, filtered and sorted according
-     * to the query parameters. This is the primary method for retrieving database content.
+     * Automatically fetches all pages that match the query criteria by handling
+     * pagination transparently. Returns all matching pages in a single list.
      *
      * @param databaseId The ID of the database to query
-     * @param request The query request with filters, sorts, and pagination parameters
-     * @return DatabaseQueryResponse containing matching pages and pagination info
+     * @param request The query request with filters and sorts
+     * @return List of all matching pages across all result pages
      * @throws NotionException.NetworkError for network-related failures
      * @throws NotionException.ApiError for API-related errors (4xx, 5xx responses)
      * @throws NotionException.AuthenticationError for authentication failures
@@ -169,6 +170,54 @@ class DatabasesApi(
     suspend fun query(
         databaseId: String,
         request: DatabaseQueryRequest = DatabaseQueryRequest(),
+    ): List<no.saabelit.kotlinnotionclient.models.pages.Page> {
+        val allPages = mutableListOf<no.saabelit.kotlinnotionclient.models.pages.Page>()
+        var currentCursor: String? = null
+        var pageCount = 0
+
+        do {
+            val paginatedRequest =
+                request.copy(
+                    startCursor = currentCursor,
+                    pageSize = NotionApiLimits.Response.MAX_PAGE_SIZE,
+                )
+
+            val response = querySinglePage(databaseId, paginatedRequest)
+            allPages.addAll(response.results)
+
+            currentCursor = response.nextCursor
+            pageCount++
+
+            // Safety check to prevent infinite loops
+            val maxPages = 1000 // 100,000 records max (100 per page * 1000 pages)
+            if (pageCount >= maxPages) {
+                throw NotionException.ApiError(
+                    code = "PAGINATION_LIMIT_EXCEEDED",
+                    status = 500,
+                    details =
+                        "Database query exceeded $maxPages pages " +
+                            "(${maxPages * NotionApiLimits.Response.MAX_PAGE_SIZE} records). " +
+                            "This may indicate an infinite loop or an extremely large database.",
+                )
+            }
+        } while (response.hasMore)
+
+        return allPages
+    }
+
+    /**
+     * Queries a single page of database results.
+     *
+     * This is the low-level method that handles a single API request. Most users should
+     * use the `query` method instead, which automatically handles pagination.
+     *
+     * @param databaseId The ID of the database to query
+     * @param request The query request with filters, sorts, and pagination parameters
+     * @return DatabaseQueryResponse containing a single page of results
+     */
+    private suspend fun querySinglePage(
+        databaseId: String,
+        request: DatabaseQueryRequest,
     ): DatabaseQueryResponse =
         httpClient.executeWithRateLimit {
             try {

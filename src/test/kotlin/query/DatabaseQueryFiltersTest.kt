@@ -3,7 +3,6 @@ package query
 import io.kotest.core.annotation.Tags
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.collections.shouldNotBeEmpty
-import io.kotest.matchers.shouldBe
 import mockClient
 import no.saabelit.kotlinnotionclient.NotionClient
 import no.saabelit.kotlinnotionclient.config.NotionConfig
@@ -36,10 +35,9 @@ class DatabaseQueryFiltersTest :
                         )
                     }.build()
 
-            val result = client.databases.query("test-database-id", query)
+            val pages = client.databases.query("test-database-id", query)
 
-            result.objectType shouldBe "list"
-            result.results.shouldNotBeEmpty()
+            pages.shouldNotBeEmpty()
         }
 
         "Should build query with OR conditions" {
@@ -55,10 +53,9 @@ class DatabaseQueryFiltersTest :
                         )
                     }.build()
 
-            val result = client.databases.query("test-database-id", query)
+            val pages = client.databases.query("test-database-id", query)
 
-            result.objectType shouldBe "list"
-            result.results.shouldNotBeEmpty()
+            pages.shouldNotBeEmpty()
         }
 
         "Should build query with complex nested conditions" {
@@ -79,10 +76,9 @@ class DatabaseQueryFiltersTest :
                         )
                     }.build()
 
-            val result = client.databases.query("test-database-id", query)
+            val pages = client.databases.query("test-database-id", query)
 
-            result.objectType shouldBe "list"
-            result.results.shouldNotBeEmpty()
+            pages.shouldNotBeEmpty()
         }
 
         "Should build query with text property filters" {
@@ -100,10 +96,9 @@ class DatabaseQueryFiltersTest :
                         )
                     }.build()
 
-            val result = client.databases.query("test-database-id", query)
+            val pages = client.databases.query("test-database-id", query)
 
-            result.objectType shouldBe "list"
-            result.results.shouldNotBeEmpty()
+            pages.shouldNotBeEmpty()
         }
 
         "Should build query with number property filters" {
@@ -120,10 +115,9 @@ class DatabaseQueryFiltersTest :
                         )
                     }.build()
 
-            val result = client.databases.query("test-database-id", query)
+            val pages = client.databases.query("test-database-id", query)
 
-            result.objectType shouldBe "list"
-            result.results.shouldNotBeEmpty()
+            pages.shouldNotBeEmpty()
         }
 
         "Should build query with select property filters" {
@@ -139,10 +133,9 @@ class DatabaseQueryFiltersTest :
                         )
                     }.build()
 
-            val result = client.databases.query("test-database-id", query)
+            val pages = client.databases.query("test-database-id", query)
 
-            result.objectType shouldBe "list"
-            result.results.shouldNotBeEmpty()
+            pages.shouldNotBeEmpty()
         }
 
         "Should build query with date property filters" {
@@ -158,10 +151,9 @@ class DatabaseQueryFiltersTest :
                         )
                     }.build()
 
-            val result = client.databases.query("test-database-id", query)
+            val pages = client.databases.query("test-database-id", query)
 
-            result.objectType shouldBe "list"
-            result.results.shouldNotBeEmpty()
+            pages.shouldNotBeEmpty()
         }
 
         "Should build query with relative date filters" {
@@ -177,10 +169,9 @@ class DatabaseQueryFiltersTest :
                         )
                     }.build()
 
-            val result = client.databases.query("test-database-id", query)
+            val pages = client.databases.query("test-database-id", query)
 
-            result.objectType shouldBe "list"
-            result.results.shouldNotBeEmpty()
+            pages.shouldNotBeEmpty()
         }
 
         "Should build query with empty and not empty filters" {
@@ -197,10 +188,9 @@ class DatabaseQueryFiltersTest :
                         )
                     }.build()
 
-            val result = client.databases.query("test-database-id", query)
+            val pages = client.databases.query("test-database-id", query)
 
-            result.objectType shouldBe "list"
-            result.results.shouldNotBeEmpty()
+            pages.shouldNotBeEmpty()
         }
 
         "Should build query with checkbox filters" {
@@ -215,9 +205,8 @@ class DatabaseQueryFiltersTest :
                         )
                     }.build()
 
-            val result = client.databases.query("test-database-id", query)
+            val pages = client.databases.query("test-database-id", query)
 
-            result.objectType shouldBe "list"
-            result.results.shouldNotBeEmpty()
+            pages.shouldNotBeEmpty()
         }
     })

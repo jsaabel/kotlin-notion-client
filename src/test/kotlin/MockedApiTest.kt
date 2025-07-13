@@ -34,7 +34,7 @@ class MockedApiTest :
                     addPageRetrieveResponse()
                 }
 
-            val config = NotionConfig(token = "test-token")
+            val config = NotionConfig(apiToken = "test-token")
             val pagesApi = PagesApi(httpClient, config)
 
             val page = pagesApi.retrieve("59833787-2cf9-4fdf-8782-e53db20768a5")
@@ -67,7 +67,7 @@ class MockedApiTest :
                     addDatabaseRetrieveResponse()
                 }
 
-            val config = NotionConfig(token = "test-token")
+            val config = NotionConfig(apiToken = "test-token")
             val databasesApi = DatabasesApi(httpClient, config)
 
             val database = databasesApi.retrieve("bc1211ca-e3f1-4939-ae34-5260b16f627c")
@@ -111,7 +111,7 @@ class MockedApiTest :
                     )
                 }
 
-            val config = NotionConfig(token = "test-token")
+            val config = NotionConfig(apiToken = "test-token")
             val pagesApi = PagesApi(httpClient, config)
 
             var caughtException: NotionException.ApiError? = null
@@ -139,7 +139,7 @@ class MockedApiTest :
                     )
                 }
 
-            val config = NotionConfig(token = "test-token")
+            val config = NotionConfig(apiToken = "test-token")
             val databasesApi = DatabasesApi(httpClient, config)
 
             var caughtException: NotionException.ApiError? = null
@@ -169,7 +169,7 @@ class MockedApiTest :
                     }
                 }
 
-            val config = NotionConfig(token = "test-token")
+            val config = NotionConfig(apiToken = "test-token")
             val pagesApi = PagesApi(httpClient, config)
 
             var caughtException: NotionException.NetworkError? = null
@@ -189,7 +189,7 @@ class MockedApiTest :
             // Test the standard CRUD operations preset
             val httpClient = MockPresets.standardCrudOperations()
 
-            val config = NotionConfig(token = "test-token")
+            val config = NotionConfig(apiToken = "test-token")
             val pagesApi = PagesApi(httpClient, config)
             val databasesApi = DatabasesApi(httpClient, config)
 
@@ -209,7 +209,7 @@ class MockedApiTest :
                     addBlockRetrieveResponse()
                 }
 
-            val config = NotionConfig(token = "test-token")
+            val config = NotionConfig(apiToken = "test-token")
             val blocksApi = BlocksApi(httpClient, config)
 
             val block = blocksApi.retrieve("c02fc1d3-db8b-45c5-a222-27595b15aea7")
@@ -239,23 +239,20 @@ class MockedApiTest :
                     addBlockChildrenRetrieveResponse()
                 }
 
-            val config = NotionConfig(token = "test-token")
+            val config = NotionConfig(apiToken = "test-token")
             val blocksApi = BlocksApi(httpClient, config)
 
-            val blockList = blocksApi.retrieveChildren("parent-block-id")
+            val blocks = blocksApi.retrieveChildren("parent-block-id")
 
             // Test using official sample data
-            blockList.objectType shouldBe "list"
-            blockList.type shouldBe "block"
-            blockList.hasMore shouldBe false
-            blockList.results.size shouldBe 2 // heading_2 and paragraph
+            blocks.size shouldBe 2 // heading_2 and paragraph
 
             // Test first block (heading_2)
-            val heading = blockList.results[0]
+            val heading = blocks[0]
             heading.type shouldBe "heading_2"
 
             // Test second block (paragraph)
-            val paragraph = blockList.results[1]
+            val paragraph = blocks[1]
             paragraph.type shouldBe "paragraph"
 
             httpClient.close()
@@ -267,18 +264,16 @@ class MockedApiTest :
                     addCommentsRetrieveResponse()
                 }
 
-            val config = NotionConfig(token = "test-token")
+            val config = NotionConfig(apiToken = "test-token")
             val commentsApi = CommentsApi(httpClient, config)
 
-            val commentList = commentsApi.retrieve("block-id")
+            val comments = commentsApi.retrieve("block-id")
 
             // Test using official sample data
-            commentList.objectType shouldBe "list"
-            commentList.hasMore shouldBe false
-            commentList.results.isNotEmpty() shouldBe true
+            comments.isNotEmpty() shouldBe true
 
             // Test first comment
-            val comment = commentList.results.first()
+            val comment = comments.first()
             comment.objectType shouldBe "comment"
             comment.id shouldBe "94cc56ab-9f02-409d-9f99-1037e9fe502f"
             comment.discussionId shouldBe "f1407351-36f5-4c49-a13c-49f8ba11776d"

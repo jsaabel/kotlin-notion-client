@@ -34,7 +34,7 @@ class EnhancedFileUploadApiTest :
         lateinit var config: NotionConfig
 
         beforeTest {
-            config = NotionConfig(token = "test-token")
+            config = NotionConfig(apiToken = "test-token")
         }
 
         context("File upload utilities") {

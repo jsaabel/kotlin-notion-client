@@ -30,22 +30,19 @@ class DatabaseQueryBasicTest :
         "Should query database with no parameters and return all pages" {
             val client = NotionClient.createWithClient(createMockClient(), NotionConfig("test-token"))
 
-            val result = client.databases.query("test-database-id")
+            val pages = client.databases.query("test-database-id")
 
-            result.objectType shouldBe "list"
-            result.results.shouldNotBeEmpty()
-            result.type shouldBe "page_or_database"
-            result.hasMore shouldNotBe null
+            pages.shouldNotBeEmpty()
+            // The API now handles pagination automatically and returns all pages
         }
 
         "Should query database with basic pagination" {
             val client = NotionClient.createWithClient(createMockClient(), NotionConfig("test-token"))
 
             val query = DatabaseQueryRequest(pageSize = 50)
-            val result = client.databases.query("test-database-id", query)
+            val pages = client.databases.query("test-database-id", query)
 
-            result.objectType shouldBe "list"
-            result.results.shouldNotBeEmpty()
+            pages.shouldNotBeEmpty()
         }
 
         "Should query database with start cursor for pagination" {
@@ -56,10 +53,9 @@ class DatabaseQueryBasicTest :
                     startCursor = "test-cursor-123",
                     pageSize = 25,
                 )
-            val result = client.databases.query("test-database-id", query)
+            val pages = client.databases.query("test-database-id", query)
 
-            result.objectType shouldBe "list"
-            result.results.shouldNotBeEmpty()
+            pages.shouldNotBeEmpty()
         }
 
         "Should deserialize official sample response correctly" {
@@ -75,11 +71,11 @@ class DatabaseQueryBasicTest :
         "Should handle pagination structure from API response" {
             val client = NotionClient.createWithClient(createMockClient(), NotionConfig("test-token"))
 
-            val result = client.databases.query("test-database-id")
+            val pages = client.databases.query("test-database-id")
 
-            // Verify pagination structure matches official API
-            result.hasMore shouldNotBe null
-            // nextCursor can be null if there are no more pages
+            // Verify we get pages back
+            pages.shouldNotBeEmpty()
+            // The API now handles pagination automatically
         }
 
         "Should create empty query request with all null optional fields" {

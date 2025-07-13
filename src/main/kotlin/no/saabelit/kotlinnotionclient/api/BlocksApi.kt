@@ -10,6 +10,7 @@ import io.ktor.http.ContentType
 import io.ktor.http.contentType
 import io.ktor.http.isSuccess
 import kotlinx.serialization.Serializable
+import no.saabelit.kotlinnotionclient.config.NotionApiLimits
 import no.saabelit.kotlinnotionclient.config.NotionConfig
 import no.saabelit.kotlinnotionclient.exceptions.NotionException
 import no.saabelit.kotlinnotionclient.models.blocks.Block
@@ -65,17 +66,57 @@ class BlocksApi(
         }
 
     /**
-     * Retrieves a list of all child blocks for the specified block.
+     * Retrieves all child blocks for the specified block.
+     *
+     * Automatically fetches all child blocks by handling pagination transparently.
+     * Returns all child blocks in a single list.
      *
      * @param blockId The ID of the parent block
-     * @param startCursor Pagination cursor for retrieving next page of results
-     * @param pageSize Number of blocks to return (max 100)
-     * @return BlockList containing child blocks
+     * @return List of all child blocks across all result pages
      * @throws NotionException.NetworkError for network-related failures
      * @throws NotionException.ApiError for API-related errors (4xx, 5xx responses)
      * @throws NotionException.AuthenticationError for authentication failures
      */
-    suspend fun retrieveChildren(
+    suspend fun retrieveChildren(blockId: String): List<Block> {
+        val allBlocks = mutableListOf<Block>()
+        var currentCursor: String? = null
+        var pageCount = 0
+
+        do {
+            val response = retrieveChildrenPage(blockId, currentCursor, NotionApiLimits.Response.MAX_PAGE_SIZE)
+            allBlocks.addAll(response.results)
+
+            currentCursor = response.nextCursor
+            pageCount++
+
+            // Safety check to prevent infinite loops
+            val maxPages = 100 // Should be plenty for block children
+            if (pageCount >= maxPages) {
+                throw NotionException.ApiError(
+                    code = "PAGINATION_LIMIT_EXCEEDED",
+                    status = 500,
+                    details =
+                        "Block children retrieval exceeded $maxPages pages. " +
+                            "This may indicate an infinite loop or an extremely large block structure.",
+                )
+            }
+        } while (response.hasMore)
+
+        return allBlocks
+    }
+
+    /**
+     * Retrieves a single page of child blocks.
+     *
+     * This is the low-level method that handles a single API request. Most users should
+     * use the `retrieveChildren` method instead, which automatically handles pagination.
+     *
+     * @param blockId The ID of the parent block
+     * @param startCursor Pagination cursor for retrieving next page of results
+     * @param pageSize Number of blocks to return (max 100)
+     * @return BlockList containing a single page of child blocks
+     */
+    private suspend fun retrieveChildrenPage(
         blockId: String,
         startCursor: String? = null,
         pageSize: Int? = null,

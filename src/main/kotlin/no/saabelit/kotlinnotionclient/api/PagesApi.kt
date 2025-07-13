@@ -18,6 +18,8 @@ import no.saabelit.kotlinnotionclient.exceptions.NotionException
 import no.saabelit.kotlinnotionclient.models.pages.ArchivePageRequest
 import no.saabelit.kotlinnotionclient.models.pages.CreatePageRequest
 import no.saabelit.kotlinnotionclient.models.pages.Page
+import no.saabelit.kotlinnotionclient.models.pages.PagePropertyItemResponse
+import no.saabelit.kotlinnotionclient.models.pages.PropertyItem
 import no.saabelit.kotlinnotionclient.models.pages.UpdatePageRequest
 import no.saabelit.kotlinnotionclient.ratelimit.executeWithRateLimit
 
@@ -231,6 +233,106 @@ class PagesApi(
 
                 if (response.status.isSuccess()) {
                     response.body<Page>()
+                } else {
+                    val errorBody =
+                        try {
+                            response.body<String>()
+                        } catch (e: Exception) {
+                            "Could not read error response body"
+                        }
+
+                    throw NotionException.ApiError(
+                        code = response.status.value.toString(),
+                        status = response.status.value,
+                        details = "HTTP ${response.status.value}: ${response.status.description}. Response: $errorBody",
+                    )
+                }
+            } catch (e: NotionException) {
+                throw e // Re-throw our own exceptions
+            } catch (e: ClientRequestException) {
+                // Handle HTTP client errors (4xx)
+                val errorBody =
+                    try {
+                        e.response.body<String>()
+                    } catch (ex: Exception) {
+                        "Could not read error response body"
+                    }
+
+                throw NotionException.ApiError(
+                    code =
+                        e.response.status.value
+                            .toString(),
+                    status = e.response.status.value,
+                    details = "HTTP ${e.response.status.value}: ${e.response.status.description}. Response: $errorBody",
+                )
+            } catch (e: Exception) {
+                throw NotionException.NetworkError(e)
+            }
+        }
+
+    /**
+     * Retrieves all items for a specific page property that may be paginated.
+     *
+     * This method automatically handles pagination for properties like relations
+     * that may have more items than the API returns by default (e.g., >20 relations).
+     * Returns all property items in a single list.
+     *
+     * @param pageId The ID of the page containing the property
+     * @param propertyId The ID of the property to retrieve items for
+     * @return List of all property items across all pages
+     * @throws NotionException.NetworkError for network-related failures
+     * @throws NotionException.ApiError for API-related errors (4xx, 5xx responses)
+     * @throws NotionException.AuthenticationError for authentication failures
+     */
+    suspend fun retrievePropertyItems(
+        pageId: String,
+        propertyId: String,
+    ): List<PropertyItem> {
+        val allItems = mutableListOf<PropertyItem>()
+        var currentCursor: String? = null
+        var pageCount = 0
+
+        do {
+            val url =
+                buildString {
+                    append("${config.baseUrl}/pages/$pageId/properties/$propertyId")
+                    if (currentCursor != null) {
+                        append("?start_cursor=$currentCursor")
+                    }
+                }
+
+            val response = retrievePropertyItemsPage(url)
+            allItems.addAll(response.results)
+
+            currentCursor = response.nextCursor
+            pageCount++
+
+            // Safety check to prevent infinite loops
+            val maxPages = 100 // Should be plenty for relation properties
+            if (pageCount >= maxPages) {
+                throw NotionException.ApiError(
+                    code = "PAGINATION_LIMIT_EXCEEDED",
+                    status = 500,
+                    details =
+                        "Property retrieval exceeded $maxPages pages. " +
+                            "This may indicate an infinite loop or an extremely large property.",
+                )
+            }
+        } while (response.hasMore)
+
+        return allItems
+    }
+
+    /**
+     * Retrieves a single page of property items.
+     */
+    private suspend fun retrievePropertyItemsPage(url: String): PagePropertyItemResponse =
+        httpClient.executeWithRateLimit {
+            try {
+                val response: HttpResponse = httpClient.get(url)
+
+                if (response.status.isSuccess()) {
+                    response.body<PagePropertyItemResponse>()
                 } else {
                     val errorBody =
                         try {

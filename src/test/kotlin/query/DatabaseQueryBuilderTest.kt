@@ -33,10 +33,9 @@ class DatabaseQueryBuilderTest :
                         title("Name").contains("Important")
                     }.build()
 
-            val result = client.databases.query("test-database-id", query)
+            val pages = client.databases.query("test-database-id", query)
 
-            result.objectType shouldBe "list"
-            result.results.shouldNotBeEmpty()
+            pages.shouldNotBeEmpty()
         }
 
         "Should build query with sorting" {
@@ -48,10 +47,9 @@ class DatabaseQueryBuilderTest :
                     .sortBy("Name", SortDirection.ASCENDING)
                     .build()
 
-            val result = client.databases.query("test-database-id", query)
+            val pages = client.databases.query("test-database-id", query)
 
-            result.objectType shouldBe "list"
-            result.results.shouldNotBeEmpty()
+            pages.shouldNotBeEmpty()
         }
 
         "Should build query with timestamp sorting" {
@@ -63,10 +61,9 @@ class DatabaseQueryBuilderTest :
                     .sortByTimestamp("last_edited_time", SortDirection.ASCENDING)
                     .build()
 
-            val result = client.databases.query("test-database-id", query)
+            val pages = client.databases.query("test-database-id", query)
 
-            result.objectType shouldBe "list"
-            result.results.shouldNotBeEmpty()
+            pages.shouldNotBeEmpty()
         }
 
         "Should build query with pagination parameters" {
@@ -78,10 +75,9 @@ class DatabaseQueryBuilderTest :
                     .pageSize(10)
                     .build()
 
-            val result = client.databases.query("test-database-id", query)
+            val pages = client.databases.query("test-database-id", query)
 
-            result.objectType shouldBe "list"
-            result.results.shouldNotBeEmpty()
+            pages.shouldNotBeEmpty()
         }
 
         "Should clamp page size to valid limits" {
@@ -111,9 +107,8 @@ class DatabaseQueryBuilderTest :
                     .pageSize(25)
                     .build()
 
-            val result = client.databases.query("test-database-id", query)
+            val pages = client.databases.query("test-database-id", query)
 
-            result.objectType shouldBe "list"
-            result.results.shouldNotBeEmpty()
+            pages.shouldNotBeEmpty()
         }
     })

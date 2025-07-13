@@ -5,9 +5,6 @@ package no.saabelit.kotlinnotionclient.models.users
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
-// TODO: It might not make a whole lot of sense to represent BOTH the "rich" object returned by calls to /Users endpoint
-//  as well as simple "user references" (as in createdBy:...) through this data class. We should find an alternative approach.
-
 /**
  * Represents a User in the Notion API.
  *

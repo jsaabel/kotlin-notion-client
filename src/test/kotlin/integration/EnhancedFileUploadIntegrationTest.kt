@@ -34,7 +34,7 @@ import kotlin.io.path.createTempFile
  *
  * Prerequisites:
  * 1. Set environment variable: export NOTION_API_TOKEN="your_token_here"
- * 2. Set environment variable: export NOTION_PARENT_PAGE_ID="your_parent_page_id"
+ * 2. Set environment variable: export NOTION_TEST_PAGE_ID="your_parent_page_id"
  * 3. Optional: Set NOTION_CLEANUP_AFTER_TEST="false" to keep test objects
  */
 @Tags("Integration", "RequiresApi")
@@ -45,10 +45,10 @@ class EnhancedFileUploadIntegrationTest :
 
         "Should upload small file with progress tracking" {
             val token = System.getenv("NOTION_API_TOKEN")
-            val parentPageId = System.getenv("NOTION_PARENT_PAGE_ID")
+            val parentPageId = System.getenv("NOTION_TEST_PAGE_ID")
 
             if (token != null && parentPageId != null) {
-                val client = NotionClient.create(NotionConfig(token = token))
+                val client = NotionClient.create(NotionConfig(apiToken = token))
 
                 try {
                     println("📤 Testing small file upload with progress tracking...")
@@ -162,10 +162,10 @@ class EnhancedFileUploadIntegrationTest :
 
         "Should handle large file multi-part upload simulation" {
             val token = System.getenv("NOTION_API_TOKEN")
-            val parentPageId = System.getenv("NOTION_PARENT_PAGE_ID")
+            val parentPageId = System.getenv("NOTION_TEST_PAGE_ID")
 
             if (token != null && parentPageId != null) {
-                val client = NotionClient.create(NotionConfig(token = token))
+                val client = NotionClient.create(NotionConfig(apiToken = token))
 
                 try {
                     println("📤 Testing large file upload simulation...")
@@ -332,10 +332,10 @@ class EnhancedFileUploadIntegrationTest :
 
         "Should import external file with validation" {
             val token = System.getenv("NOTION_API_TOKEN")
-            val parentPageId = System.getenv("NOTION_PARENT_PAGE_ID")
+            val parentPageId = System.getenv("NOTION_TEST_PAGE_ID")
 
             if (token != null && parentPageId != null) {
-                val client = NotionClient.create(NotionConfig(token = token))
+                val client = NotionClient.create(NotionConfig(apiToken = token))
 
                 try {
                     println("🌐 Testing external file import...")

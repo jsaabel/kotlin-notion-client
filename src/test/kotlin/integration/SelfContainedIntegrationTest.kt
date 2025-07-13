@@ -33,7 +33,7 @@ import no.saabelit.kotlinnotionclient.models.requests.RequestBuilders
  *
  * Prerequisites:
  * 1. Set environment variable: export NOTION_API_TOKEN="your_token_here"
- * 2. Set environment variable: export NOTION_PARENT_PAGE_ID="your_parent_page_id"
+ * 2. Set environment variable: export NOTION_TEST_PAGE_ID="your_parent_page_id"
  *    (This should be a page where test databases can be created)
  * 3. Your integration should have permissions to create/read/update pages and databases
  * 4. Optional: Set NOTION_CLEANUP_AFTER_TEST="false" to keep test objects for manual inspection
@@ -52,10 +52,10 @@ class SelfContainedIntegrationTest :
 
         "Should create database, create page, retrieve both, then clean up" {
             val token = System.getenv("NOTION_API_TOKEN")
-            val parentPageId = System.getenv("NOTION_PARENT_PAGE_ID") // TODO: This should have a better name.
+            val testPageId = System.getenv("NOTION_TEST_PAGE_ID")
 
-            if (token != null && parentPageId != null) {
-                val client = NotionClient.create(NotionConfig(token = token))
+            if (token != null && testPageId != null) {
+                val client = NotionClient.create(NotionConfig(apiToken = token))
 
                 try {
                     // Step 1: Create a test database with multiple property types
@@ -65,7 +65,7 @@ class SelfContainedIntegrationTest :
                             parent =
                                 Parent(
                                     type = "page_id",
-                                    pageId = parentPageId,
+                                    pageId = testPageId,
                                 ),
                             title = listOf(RequestBuilders.createSimpleRichText("Test Database - Kotlin Client")),
                             icon = RequestBuilders.createEmojiIcon("🗄️"),
@@ -240,19 +240,19 @@ class SelfContainedIntegrationTest :
                 println("⏭️ Skipping self-contained integration test")
                 println("   Required environment variables:")
                 println("   - NOTION_API_TOKEN: Your integration API token")
-                println("   - NOTION_PARENT_PAGE_ID: Page where test database will be created")
+                println("   - NOTION_TEST_PAGE_ID: Page where test database will be created")
                 println(
-                    "   Example: export NOTION_API_TOKEN='secret_...' && export NOTION_PARENT_PAGE_ID='12345678-1234-1234-1234-123456789abc'",
+                    "   Example: export NOTION_API_TOKEN='secret_...' && export NOTION_TEST_PAGE_ID='12345678-1234-1234-1234-123456789abc'",
                 )
             }
         }
 
         "Should create standalone page, retrieve it, then clean up" {
             val token = System.getenv("NOTION_API_TOKEN")
-            val parentPageId = System.getenv("NOTION_PARENT_PAGE_ID")
+            val parentPageId = System.getenv("NOTION_TEST_PAGE_ID")
 
             if (token != null && parentPageId != null) {
-                val client = NotionClient.create(NotionConfig(token = token))
+                val client = NotionClient.create(NotionConfig(apiToken = token))
 
                 try {
                     // Create a standalone page (not in a database)
@@ -317,10 +317,10 @@ class SelfContainedIntegrationTest :
 
         "Should demonstrate comprehensive property types in database" {
             val token = System.getenv("NOTION_API_TOKEN")
-            val parentPageId = System.getenv("NOTION_PARENT_PAGE_ID")
+            val parentPageId = System.getenv("NOTION_TEST_PAGE_ID")
 
             if (token != null && parentPageId != null) {
-                val client = NotionClient.create(NotionConfig(token = token))
+                val client = NotionClient.create(NotionConfig(apiToken = token))
 
                 try {
                     // Create database with many property types

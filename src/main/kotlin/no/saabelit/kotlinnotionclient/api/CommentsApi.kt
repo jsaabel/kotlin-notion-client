@@ -9,11 +9,13 @@ import io.ktor.client.statement.HttpResponse
 import io.ktor.http.ContentType
 import io.ktor.http.contentType
 import io.ktor.http.isSuccess
+import no.saabelit.kotlinnotionclient.config.NotionApiLimits
 import no.saabelit.kotlinnotionclient.config.NotionConfig
 import no.saabelit.kotlinnotionclient.exceptions.NotionException
 import no.saabelit.kotlinnotionclient.models.comments.Comment
 import no.saabelit.kotlinnotionclient.models.comments.CommentList
 import no.saabelit.kotlinnotionclient.models.comments.CreateCommentRequest
+import no.saabelit.kotlinnotionclient.ratelimit.executeWithRateLimit
 
 /**
  * API client for Notion Comments endpoints.
@@ -26,54 +28,96 @@ class CommentsApi(
     private val config: NotionConfig,
 ) {
     /**
-     * Retrieves a list of comments for a specified page or block.
+     * Retrieves all comments for a specified page or block.
+     *
+     * Automatically fetches all comments by handling pagination transparently.
+     * Returns all comments in a single list.
      *
      * @param blockId The ID of the block to retrieve comments for
-     * @param startCursor Pagination cursor for retrieving next page of results
-     * @param pageSize Number of comments to return (max 100)
-     * @return CommentList containing comments
+     * @return List of all comments across all result pages
      * @throws NotionException.NetworkError for network-related failures
      * @throws NotionException.ApiError for API-related errors (4xx, 5xx responses)
      * @throws NotionException.AuthenticationError for authentication failures
      */
-    suspend fun retrieve(
+    suspend fun retrieve(blockId: String): List<Comment> {
+        val allComments = mutableListOf<Comment>()
+        var currentCursor: String? = null
+        var pageCount = 0
+
+        do {
+            val response = retrievePage(blockId, currentCursor, NotionApiLimits.Response.MAX_PAGE_SIZE)
+            allComments.addAll(response.results)
+
+            currentCursor = response.nextCursor
+            pageCount++
+
+            // Safety check to prevent infinite loops
+            val maxPages = 50 // Should be plenty for comments
+            if (pageCount >= maxPages) {
+                throw NotionException.ApiError(
+                    code = "PAGINATION_LIMIT_EXCEEDED",
+                    status = 500,
+                    details =
+                        "Comments retrieval exceeded $maxPages pages. " +
+                            "This may indicate an infinite loop or an extremely large comment thread.",
+                )
+            }
+        } while (response.hasMore)
+
+        return allComments
+    }
+
+    /**
+     * Retrieves a single page of comments.
+     *
+     * This is the low-level method that handles a single API request. Most users should
+     * use the `retrieve` method instead, which automatically handles pagination.
+     *
+     * @param blockId The ID of the block to retrieve comments for
+     * @param startCursor Pagination cursor for retrieving next page of results
+     * @param pageSize Number of comments to return (max 100)
+     * @return CommentList containing a single page of comments
+     */
+    private suspend fun retrievePage(
         blockId: String,
         startCursor: String? = null,
         pageSize: Int? = null,
     ): CommentList =
-        try {
-            val url =
-                buildString {
-                    append("${config.baseUrl}/comments")
-                    val params = mutableListOf<String>()
-                    params.add("block_id=$blockId")
-                    startCursor?.let { params.add("start_cursor=$it") }
-                    pageSize?.let { params.add("page_size=$it") }
-                    append("?${params.joinToString("&")}")
-                }
-
-            val response: HttpResponse = httpClient.get(url)
-
-            if (response.status.isSuccess()) {
-                response.body<CommentList>()
-            } else {
-                val errorBody =
-                    try {
-                        response.body<String>()
-                    } catch (e: Exception) {
-                        "Could not read error response body"
+        httpClient.executeWithRateLimit {
+            try {
+                val url =
+                    buildString {
+                        append("${config.baseUrl}/comments")
+                        val params = mutableListOf<String>()
+                        params.add("block_id=$blockId")
+                        startCursor?.let { params.add("start_cursor=$it") }
+                        pageSize?.let { params.add("page_size=$it") }
+                        append("?${params.joinToString("&")}")
                     }
 
-                throw NotionException.ApiError(
-                    code = response.status.value.toString(),
-                    status = response.status.value,
-                    details = "HTTP ${response.status.value}: ${response.status.description}. Response: $errorBody",
-                )
+                val response: HttpResponse = httpClient.get(url)
+
+                if (response.status.isSuccess()) {
+                    response.body<CommentList>()
+                } else {
+                    val errorBody =
+                        try {
+                            response.body<String>()
+                        } catch (e: Exception) {
+                            "Could not read error response body"
+                        }
+
+                    throw NotionException.ApiError(
+                        code = response.status.value.toString(),
+                        status = response.status.value,
+                        details = "HTTP ${response.status.value}: ${response.status.description}. Response: $errorBody",
+                    )
+                }
+            } catch (e: NotionException) {
+                throw e // Re-throw our own exceptions
+            } catch (e: Exception) {
+                throw NotionException.NetworkError(e)
             }
-        } catch (e: NotionException) {
-            throw e // Re-throw our own exceptions
-        } catch (e: Exception) {
-            throw NotionException.NetworkError(e)
         }
 
     /**

@@ -27,7 +27,7 @@ interface NotionObject {
 @Serializable
 data class Parent(
     @SerialName("type")
-    val type: String,
+    val type: String, // TODO: Use enums here and for other "type" fields!?
     @SerialName("database_id")
     val databaseId: String? = null,
     @SerialName("page_id")
@@ -97,7 +97,7 @@ data class Annotations(
     @SerialName("code")
     val code: Boolean = false,
     @SerialName("color")
-    val color: String = "default",
+    val color: String = "default", // TODO: Use color enum
 )
 
 /**

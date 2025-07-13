@@ -1,0 +1,64 @@
+package no.saabelit.kotlinnotionclient.models.pages
+
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
+import no.saabelit.kotlinnotionclient.models.base.PageReference
+import no.saabelit.kotlinnotionclient.models.base.RichText
+
+/**
+ * Response model for paginated property item retrieval.
+ *
+ * When a property contains more items than can be returned in a single response
+ * (e.g., relation properties with >20 items), this structure is used for pagination.
+ */
+@Serializable
+data class PagePropertyItemResponse(
+    @SerialName("object")
+    val objectType: String, // Always "list"
+    @SerialName("results")
+    val results: List<PropertyItem>,
+    @SerialName("next_cursor")
+    val nextCursor: String? = null,
+    @SerialName("has_more")
+    val hasMore: Boolean,
+    @SerialName("next_url")
+    val nextUrl: String? = null,
+    @SerialName("property_item")
+    val propertyItem: PropertyItemMetadata,
+)
+
+/**
+ * Individual property item within a paginated response.
+ */
+@Serializable
+data class PropertyItem(
+    @SerialName("object")
+    val objectType: String, // Always "property_item"
+    @SerialName("id")
+    val id: String,
+    @SerialName("type")
+    val type: String,
+    @SerialName("rich_text")
+    val richText: RichText? = null,
+    @SerialName("title")
+    val title: RichText? = null,
+    @SerialName("relation")
+    val relation: PageReference? = null,
+    @SerialName("people")
+    val people: no.saabelit.kotlinnotionclient.models.users.User? = null,
+    // Add other property types as needed
+)
+
+/**
+ * Metadata about the property being paginated.
+ */
+@Serializable
+data class PropertyItemMetadata(
+    @SerialName("id")
+    val id: String,
+    @SerialName("type")
+    val type: String,
+    @SerialName("next_url")
+    val nextUrl: String? = null,
+    // Add type-specific metadata as needed
+)

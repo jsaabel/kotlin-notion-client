@@ -26,7 +26,7 @@ import no.saabelit.kotlinnotionclient.models.requests.RequestBuilders
  *
  * Prerequisites:
  * 1. Set environment variable: export NOTION_API_TOKEN="your_token_here"
- * 2. Set environment variable: export NOTION_PARENT_PAGE_ID="your_parent_page_id"
+ * 2. Set environment variable: export NOTION_TEST_PAGE_ID="your_parent_page_id"
  *    (This should be a page where test pages can be created)
  * 3. Your integration should have permissions to create/read pages and comments
  * 4. Optional: Set NOTION_CLEANUP_AFTER_TEST="false" to keep test objects for manual inspection
@@ -43,20 +43,20 @@ class CommentsIntegrationTest :
 
         Given("a real Notion API token and test page") {
             val token = System.getenv("NOTION_API_TOKEN")
-            val parentPageId = System.getenv("NOTION_PARENT_PAGE_ID")
+            val parentPageId = System.getenv("NOTION_TEST_PAGE_ID")
 
             When("environment variables are not set") {
                 Then("skip the test") {
                     if (token.isNullOrBlank() || parentPageId.isNullOrBlank()) {
                         println("⏭️ Skipping comments integration test - environment variables not set")
-                        println("   Required: NOTION_API_TOKEN and NOTION_PARENT_PAGE_ID")
+                        println("   Required: NOTION_API_TOKEN and NOTION_TEST_PAGE_ID")
                         return@Then
                     }
                 }
             }
 
             When("creating a test page and testing comments workflow") {
-                val client = NotionClient.create(NotionConfig(token = token!!))
+                val client = NotionClient.create(NotionConfig(apiToken = token!!))
 
                 Then("should successfully create page, create comments, retrieve them, and clean up") {
                     var createdPageId: String? = null
@@ -97,8 +97,7 @@ class CommentsIntegrationTest :
                         println("📚 Retrieving existing comments...")
                         val initialComments = client.comments.retrieve(createdPage.id)
 
-                        println("✅ Retrieved ${initialComments.results.size} existing comments")
-                        initialComments.objectType shouldBe "list"
+                        println("✅ Retrieved ${initialComments.size} existing comments")
                         // New page should have no comments initially
 
                         // Step 3: Create first test comment
@@ -164,20 +163,16 @@ class CommentsIntegrationTest :
 
                         val allComments = client.comments.retrieve(createdPage.id)
 
-                        println("✅ Retrieved ${allComments.results.size} comments after creation")
-                        allComments.objectType shouldBe "list"
+                        println("✅ Retrieved ${allComments.size} comments after creation")
                         // Note: Comments might not appear immediately due to eventual consistency,
                         // but we've verified creation through the API responses
 
                         // Step 6: Test comment pagination if there are many comments
                         println("📄 Testing comment pagination...")
-                        val paginatedComments =
-                            client.comments.retrieve(
-                                createdPage.id,
-                                pageSize = 10, // Small page size to test pagination
-                            )
+                        // Pagination is now handled automatically by the API
+                        val allCommentsWithPagination = client.comments.retrieve(createdPage.id)
 
-                        paginatedComments.objectType shouldBe "list"
+                        // The API fetches all comments automatically
                         println("✅ Pagination test completed")
 
                         println("🎉 Comments workflow test completed successfully!")
@@ -219,7 +214,7 @@ class CommentsIntegrationTest :
             }
 
             When("testing comment validation") {
-                val client = NotionClient.create(NotionConfig(token = token!!))
+                val client = NotionClient.create(NotionConfig(apiToken = token!!))
 
                 Then("should handle validation errors correctly") {
                     try {
@@ -280,7 +275,7 @@ class CommentsIntegrationTest :
             }
 
             When("testing comments on blocks") {
-                val client = NotionClient.create(NotionConfig(token = token!!))
+                val client = NotionClient.create(NotionConfig(apiToken = token!!))
 
                 Then("should successfully create comments on individual blocks") {
                     var createdPageId: String? = null
@@ -364,8 +359,7 @@ class CommentsIntegrationTest :
                         delay(500)
 
                         val blockComments = client.comments.retrieve(firstBlock.id)
-                        println("✅ Retrieved ${blockComments.results.size} comments for the block")
-                        blockComments.objectType shouldBe "list"
+                        println("✅ Retrieved ${blockComments.size} comments for the block")
 
                         // Step 6: Create another comment on a different block
                         val secondBlock = blockChildren.results[2] // The second paragraph
@@ -415,7 +409,7 @@ class CommentsIntegrationTest :
             }
 
             When("testing comments with file attachments") {
-                val client = NotionClient.create(NotionConfig(token = token!!))
+                val client = NotionClient.create(NotionConfig(apiToken = token!!))
 
                 Then("should successfully create comments with file attachments") {
                     var createdPageId: String? = null
@@ -547,7 +541,7 @@ class CommentsIntegrationTest :
             }
 
             When("testing user mentions in comments") {
-                val client = NotionClient.create(NotionConfig(token = token!!))
+                val client = NotionClient.create(NotionConfig(apiToken = token!!))
 
                 Then("should successfully create comments with user mentions") {
                     var createdPageId: String? = null
@@ -578,7 +572,6 @@ class CommentsIntegrationTest :
                         println("💬 Creating comment with user mention...")
                         delay(500)
 
-                        // TODO: This should be retrieved from env var NOTION_TEST_USER_ID
                         val testUserId = System.getenv("NOTION_TEST_USER_ID")
                         val commentWithMention =
                             CreateCommentRequest(
@@ -662,7 +655,7 @@ class CommentsIntegrationTest :
             }
 
             When("testing error handling with invalid page ID") {
-                val client = NotionClient.create(NotionConfig(token = token!!))
+                val client = NotionClient.create(NotionConfig(apiToken = token!!))
 
                 Then("should handle API errors gracefully") {
                     try {

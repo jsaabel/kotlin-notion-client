@@ -38,7 +38,7 @@ class CommentsApiTest :
         lateinit var config: NotionConfig
 
         beforeTest {
-            config = NotionConfig(token = "test-token")
+            config = NotionConfig(apiToken = "test-token")
         }
 
         context("Comment model serialization") {
@@ -136,28 +136,29 @@ class CommentsApiTest :
                     }
 
                 api = CommentsApi(client, config)
-                val result = api.retrieve("test-block-id")
+                val comments = api.retrieve("test-block-id")
 
-                result.shouldBeInstanceOf<CommentList>()
-                result.results.size shouldBe 1
-                result.results[0].id shouldBe "94cc56ab-9f02-409d-9f99-1037e9fe502f"
+                comments.shouldBeInstanceOf<List<Comment>>()
+                comments.size shouldBe 1
+                comments[0].id shouldBe "94cc56ab-9f02-409d-9f99-1037e9fe502f"
             }
 
-            test("should retrieve comments with pagination parameters") {
+            test("should handle automatic pagination when retrieving comments") {
                 val client =
                     mockClient {
+                        // First page
                         addJsonResponse(
                             method = HttpMethod.Get,
-                            path = "/v1/comments?block_id=test-block-id&start_cursor=cursor123&page_size=50",
+                            path = "/v1/comments?block_id=test-block-id&page_size=100",
                             responseBody = TestFixtures.Comments.retrieveCommentsAsString(),
                         )
                     }
 
                 api = CommentsApi(client, config)
-                val result = api.retrieve("test-block-id", startCursor = "cursor123", pageSize = 50)
+                val comments = api.retrieve("test-block-id")
 
-                result.shouldBeInstanceOf<CommentList>()
-                result.results.size shouldBe 1
+                comments.shouldBeInstanceOf<List<Comment>>()
+                comments.size shouldBe 1
             }
 
             test("should handle API error when retrieving comments") {

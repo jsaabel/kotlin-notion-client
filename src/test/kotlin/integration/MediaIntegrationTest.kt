@@ -30,7 +30,7 @@ import no.saabelit.kotlinnotionclient.models.requests.RequestBuilders
  *
  * Prerequisites:
  * 1. Set environment variable: export NOTION_API_TOKEN="your_token_here"
- * 2. Set environment variable: export NOTION_PARENT_PAGE_ID="your_parent_page_id"
+ * 2. Set environment variable: export NOTION_TEST_PAGE_ID="your_parent_page_id"
  * 3. Your integration should have permissions to create/read/update pages and blocks
  * 4. Optional: Set NOTION_CLEANUP_AFTER_TEST="false" to keep test objects for manual inspection
  *
@@ -54,10 +54,10 @@ class MediaIntegrationTest :
 
         "Should create media blocks using external URLs" {
             val token = System.getenv("NOTION_API_TOKEN")
-            val parentPageId = System.getenv("NOTION_PARENT_PAGE_ID")
+            val parentPageId = System.getenv("NOTION_TEST_PAGE_ID")
 
             if (token != null && parentPageId != null) {
-                val client = NotionClient.create(NotionConfig(token = token))
+                val client = NotionClient.create(NotionConfig(apiToken = token))
 
                 try {
                     // Step 1: Create test page
@@ -141,8 +141,7 @@ class MediaIntegrationTest :
                     delay(1000)
                     println("🔍 Verifying media blocks in Notion...")
 
-                    val blockChildren = client.blocks.retrieveChildren(createdPage.id)
-                    val blocks = blockChildren.results
+                    val blocks = client.blocks.retrieveChildren(createdPage.id)
 
                     // Find media blocks by type
                     val imageBlocks = blocks.filterIsInstance<Block.Image>()
@@ -185,10 +184,10 @@ class MediaIntegrationTest :
 
         "Should upload file and create media blocks from uploads" {
             val token = System.getenv("NOTION_API_TOKEN")
-            val parentPageId = System.getenv("NOTION_PARENT_PAGE_ID")
+            val parentPageId = System.getenv("NOTION_TEST_PAGE_ID")
 
             if (token != null && parentPageId != null) {
-                val client = NotionClient.create(NotionConfig(token = token))
+                val client = NotionClient.create(NotionConfig(apiToken = token))
 
                 try {
                     // Step 1: Create test page
@@ -282,8 +281,8 @@ class MediaIntegrationTest :
 
                     // Step 5: Verify the file block was created correctly
                     delay(1000)
-                    val blockChildren = client.blocks.retrieveChildren(createdPage.id)
-                    val fileBlocks = blockChildren.results.filterIsInstance<Block.File>()
+                    val blocks = client.blocks.retrieveChildren(createdPage.id)
+                    val fileBlocks = blocks.filterIsInstance<Block.File>()
 
                     fileBlocks shouldHaveSize 1
                     val fileBlock = fileBlocks[0]
@@ -319,10 +318,10 @@ class MediaIntegrationTest :
 
         "Should demonstrate complete media workflow with mixed sources" {
             val token = System.getenv("NOTION_API_TOKEN")
-            val parentPageId = System.getenv("NOTION_PARENT_PAGE_ID")
+            val parentPageId = System.getenv("NOTION_TEST_PAGE_ID")
 
             if (token != null && parentPageId != null) {
-                val client = NotionClient.create(NotionConfig(token = token))
+                val client = NotionClient.create(NotionConfig(apiToken = token))
 
                 try {
                     // Create a comprehensive test page showing all media capabilities
@@ -462,8 +461,7 @@ class MediaIntegrationTest :
 
                     // Verify the showcase was created correctly
                     delay(1000)
-                    val blockChildren = client.blocks.retrieveChildren(createdPage.id)
-                    val blocks = blockChildren.results
+                    val blocks = client.blocks.retrieveChildren(createdPage.id)
 
                     // Count different block types to verify diversity
                     val headingCount = blocks.count { it is Block.Heading1 || it is Block.Heading2 || it is Block.Heading3 }
@@ -506,7 +504,7 @@ class MediaIntegrationTest :
                 }
             } else {
                 println("⏭️ Skipping comprehensive media test - missing environment variables")
-                println("   Required: NOTION_API_TOKEN and NOTION_PARENT_PAGE_ID")
+                println("   Required: NOTION_API_TOKEN and NOTION_TEST_PAGE_ID")
             }
         }
     })

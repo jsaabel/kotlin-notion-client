@@ -24,7 +24,7 @@ import no.saabelit.kotlinnotionclient.models.requests.RequestBuilders
  *
  * Prerequisites:
  * 1. Set environment variable: export NOTION_API_TOKEN="your_token_here"
- * 2. Set environment variable: export NOTION_PARENT_PAGE_ID="your_parent_page_id"
+ * 2. Set environment variable: export NOTION_TEST_PAGE_ID="your_parent_page_id"
  * 3. Your integration should have permissions to create/read/update pages and blocks
  * 4. Optional: Set NOTION_CLEANUP_AFTER_TEST="false" to keep test objects for manual inspection
  *
@@ -39,10 +39,10 @@ class ContentDslIntegrationTest :
 
         "Should create page with DSL content, append to Notion, and verify with precise counts" {
             val token = System.getenv("NOTION_API_TOKEN")
-            val parentPageId = System.getenv("NOTION_PARENT_PAGE_ID")
+            val parentPageId = System.getenv("NOTION_TEST_PAGE_ID")
 
             if (token != null && parentPageId != null) {
-                val client = NotionClient.create(NotionConfig(token = token))
+                val client = NotionClient.create(NotionConfig(apiToken = token))
 
                 try {
                     // Step 1: Create initial page
@@ -176,12 +176,10 @@ class ContentDslIntegrationTest :
                     delay(1000) // Give Notion time to process
                     println("🔍 Retrieving content from Notion to verify...")
 
-                    val blockChildren = client.blocks.retrieveChildren(createdPage.id)
-                    blockChildren.objectType shouldBe "list"
-                    blockChildren.results shouldHaveSize expectedTopLevelBlocks
+                    val blocks = client.blocks.retrieveChildren(createdPage.id)
+                    blocks shouldHaveSize expectedTopLevelBlocks
 
                     // Step 7: Verify specific block type from Notion response
-                    val blocks = blockChildren.results
                     blocks[0].shouldBeInstanceOf<Block.Heading1>()
 
                     println("✅ Block type verified in Notion response")
@@ -195,7 +193,7 @@ class ContentDslIntegrationTest :
                     println("✅ Content DSL integration test completed successfully!")
                     println("   - DSL created: $expectedTopLevelBlocks blocks")
                     println("   - Notion received: ${appendResponse.results.size} blocks")
-                    println("   - Notion stored: ${blockChildren.results.size} blocks")
+                    println("   - Notion stored: ${blocks.size} blocks")
                     println("   - All block types working: ✅")
                     println("   - Nested content working: ✅")
 
@@ -218,9 +216,9 @@ class ContentDslIntegrationTest :
                 println("⏭️ Skipping Content DSL integration test")
                 println("   Required environment variables:")
                 println("   - NOTION_API_TOKEN: Your integration API token")
-                println("   - NOTION_PARENT_PAGE_ID: Page where test content will be created")
+                println("   - NOTION_TEST_PAGE_ID: Page where test content will be created")
                 println(
-                    "   Example: export NOTION_API_TOKEN='secret_...' && export NOTION_PARENT_PAGE_ID='12345678-1234-1234-1234-123456789abc'",
+                    "   Example: export NOTION_API_TOKEN='secret_...' && export NOTION_TEST_PAGE_ID='12345678-1234-1234-1234-123456789abc'",
                 )
             }
         }

@@ -4,7 +4,6 @@ import io.kotest.core.annotation.Tags
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.collections.shouldNotBeEmpty
 import io.kotest.matchers.shouldBe
-import io.kotest.matchers.shouldNotBe
 import kotlinx.coroutines.delay
 import no.saabelit.kotlinnotionclient.NotionClient
 import no.saabelit.kotlinnotionclient.config.NotionConfig
@@ -33,10 +32,10 @@ class DatabaseQueryIntegrationTest :
 
         "Should query database and return created pages with real API" {
             val token = System.getenv("NOTION_API_TOKEN")
-            val parentPageId = System.getenv("NOTION_PARENT_PAGE_ID")
+            val parentPageId = System.getenv("NOTION_TEST_PAGE_ID")
 
             if (token != null && parentPageId != null) {
-                val client = NotionClient.create(NotionConfig(token = token))
+                val client = NotionClient.create(NotionConfig(apiToken = token))
 
                 try {
                     // Create test database
@@ -108,10 +107,8 @@ class DatabaseQueryIntegrationTest :
                     // Test 1: Query all pages (no filter)
                     println("🔍 Testing query all pages...")
                     val allPages = client.databases.query(database.id)
-                    allPages.results.size shouldBe 3
-                    allPages.objectType shouldBe "list"
-                    allPages.type shouldBe "page_or_database"
-                    println("✅ Query all pages: ${allPages.results.size} results")
+                    allPages.size shouldBe 3
+                    println("✅ Query all pages: ${allPages.size} results")
 
                     // Test 2: Query with checkbox filter
                     println("🔍 Testing checkbox filter...")
@@ -122,8 +119,8 @@ class DatabaseQueryIntegrationTest :
                             }.build()
 
                     val completedPages = client.databases.query(database.id, completedQuery)
-                    completedPages.results.size shouldBe 1
-                    println("✅ Checkbox filter: ${completedPages.results.size} completed tasks")
+                    completedPages.size shouldBe 1
+                    println("✅ Checkbox filter: ${completedPages.size} completed tasks")
 
                     // Test 3: Query with number filter
                     println("🔍 Testing number filter...")
@@ -134,8 +131,8 @@ class DatabaseQueryIntegrationTest :
                             }.build()
 
                     val highScorePages = client.databases.query(database.id, highScoreQuery)
-                    highScorePages.results.size shouldBe 1
-                    println("✅ Number filter: ${highScorePages.results.size} high score tasks")
+                    highScorePages.size shouldBe 1
+                    println("✅ Number filter: ${highScorePages.size} high score tasks")
 
                     // Test 4: Query with title filter
                     println("🔍 Testing title filter...")
@@ -146,8 +143,8 @@ class DatabaseQueryIntegrationTest :
                             }.build()
 
                     val priorityPages = client.databases.query(database.id, titleQuery)
-                    priorityPages.results.size shouldBe 1
-                    println("✅ Title filter: ${priorityPages.results.size} priority tasks")
+                    priorityPages.size shouldBe 1
+                    println("✅ Title filter: ${priorityPages.size} priority tasks")
 
                     // Test 5: Query with AND filter
                     println("🔍 Testing AND filter...")
@@ -161,13 +158,13 @@ class DatabaseQueryIntegrationTest :
                             }.build()
 
                     val andResults = client.databases.query(database.id, andQuery)
-                    andResults.results.size shouldBe 1 // Only "High Priority Task" matches (Score=95, Completed=false)
+                    andResults.size shouldBe 1 // Only "High Priority Task" matches (Score=95, Completed=false)
 
                     // Verify the correct page was returned
-                    val resultPage = andResults.results.first()
+                    val resultPage = andResults.first()
                     val title = resultPage.getTitleAsPlainText("Name")
                     title shouldBe "High Priority Task"
-                    println("✅ AND filter: ${andResults.results.size} results - correct page: '$title'")
+                    println("✅ AND filter: ${andResults.size} results - correct page: '$title'")
 
                     // Test 6: Query with sorting
                     println("🔍 Testing sorting...")
@@ -177,16 +174,16 @@ class DatabaseQueryIntegrationTest :
                             .build()
 
                     val sortedResults = client.databases.query(database.id, sortQuery)
-                    sortedResults.results.shouldNotBeEmpty()
-                    sortedResults.results.size shouldBe 3
+                    sortedResults.shouldNotBeEmpty()
+                    sortedResults.size shouldBe 3
 
                     // Verify results are actually sorted by Score in descending order
                     val scores =
-                        sortedResults.results.map { page ->
+                        sortedResults.map { page ->
                             page.getNumberProperty("Score") ?: 0.0
                         }
                     scores shouldBe listOf(95.0, 75.0, 45.0) // Expected descending order
-                    println("✅ Sorting: ${sortedResults.results.size} results correctly sorted by Score (${scores.joinToString(" → ")})")
+                    println("✅ Sorting: ${sortedResults.size} results correctly sorted by Score (${scores.joinToString(" → ")})")
 
                     // Test 7: Query with pagination
                     println("🔍 Testing pagination...")
@@ -196,12 +193,9 @@ class DatabaseQueryIntegrationTest :
                             .build()
 
                     val pagedResults = client.databases.query(database.id, pageQuery)
-                    pagedResults.results.size shouldBe 2
-
-                    // With 3 total pages and page size 2, we should have more pages available
-                    pagedResults.hasMore shouldBe true
-                    pagedResults.nextCursor shouldNotBe null
-                    println("✅ Pagination: ${pagedResults.results.size} results per page, hasMore=${pagedResults.hasMore}")
+                    // The API now automatically fetches all pages
+                    pagedResults.size shouldBe 3 // All pages fetched automatically
+                    println("✅ Pagination: API automatically fetched all ${pagedResults.size} results")
 
                     // Cleanup
                     println("🧹 Cleaning up test data...")
@@ -220,16 +214,16 @@ class DatabaseQueryIntegrationTest :
                 println("⏭️ Skipping database query integration test")
                 println("   Required environment variables:")
                 println("   - NOTION_API_TOKEN: Your integration API token")
-                println("   - NOTION_PARENT_PAGE_ID: Page where test database will be created")
+                println("   - NOTION_TEST_PAGE_ID: Page where test database will be created")
             }
         }
 
         "Should handle empty query results gracefully" {
             val token = System.getenv("NOTION_API_TOKEN")
-            val parentPageId = System.getenv("NOTION_PARENT_PAGE_ID")
+            val parentPageId = System.getenv("NOTION_TEST_PAGE_ID")
 
             if (token != null && parentPageId != null) {
-                val client = NotionClient.create(NotionConfig(token = token))
+                val client = NotionClient.create(NotionConfig(apiToken = token))
 
                 try {
                     // Create empty database (no pages)
@@ -249,9 +243,7 @@ class DatabaseQueryIntegrationTest :
 
                     // Query empty database
                     val results = client.databases.query(emptyDb.id)
-                    results.objectType shouldBe "list"
-                    results.results.size shouldBe 0
-                    results.hasMore shouldBe false
+                    results.size shouldBe 0
 
                     // Query with filter that matches nothing
                     val noMatchQuery =
@@ -261,7 +253,7 @@ class DatabaseQueryIntegrationTest :
                             }.build()
 
                     val noResults = client.databases.query(emptyDb.id, noMatchQuery)
-                    noResults.results.size shouldBe 0
+                    noResults.size shouldBe 0
 
                     // Cleanup
                     client.databases.archive(emptyDb.id)

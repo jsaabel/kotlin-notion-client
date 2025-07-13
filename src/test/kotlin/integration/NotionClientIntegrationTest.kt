@@ -39,7 +39,7 @@ class NotionClientIntegrationTest :
                 val client =
                     NotionClient.create(
                         NotionConfig(
-                            token = token!!,
+                            apiToken = token!!,
                             logLevel = LogLevel.INFO,
                         ),
                     )
