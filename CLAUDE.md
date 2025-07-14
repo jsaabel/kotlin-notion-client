@@ -77,6 +77,7 @@ export NOTION_TEST_PAGE_ID="12345678-1234-1234-1234-123456789abc"
 - Run specific tag combinations: `./gradlew test -Dkotest.tags.include="Unit & !Slow"`
 - Exclude specific tags: `./gradlew test -Dkotest.tags.exclude="RequiresApi"`
 - **Remember that you need to call gradlew test with the correct arguments if you're testing real life API integration tests.**
+- **Specific test command for individual tests**: Bash(./gradlew test -Dkotest.tags.include="Unit" --tests "*.ApiOverloadsTest")
 
 ### Version Management
 - Use `libs.toml` for centralized dependency version management
@@ -167,3 +168,8 @@ This testing approach ensures our models can handle the complexity of real Notio
 - Always refer to these files before relying on other mechanisms to retrieve information about the Notion API
 - Sample responses from the official API documentation are available under `@reference/notion-api/sample_responses/` and its subfolders
 - These sample responses can and should be used for mock responses and in other cases where appropriate
+
+## Important Reminders
+
+### Test Execution Guidelines
+- **Never run all integration tests unless explicitly told to do so.** Integration tests use the real life API and take a long time to finish. In certain cases it's acceptable to run individual real life integration tests, but never all of them at once.

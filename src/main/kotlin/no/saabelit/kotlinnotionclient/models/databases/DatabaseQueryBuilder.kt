@@ -5,6 +5,32 @@ package no.saabelit.kotlinnotionclient.models.databases
 import no.saabelit.kotlinnotionclient.models.base.EmptyObject
 
 /**
+ * Top-level DSL function for creating database queries with a fluent API.
+ *
+ * This function provides a convenient entry point for building database queries
+ * using Kotlin's DSL syntax, making query construction more natural and readable.
+ *
+ * Example usage:
+ * ```kotlin
+ * val request = databaseQuery {
+ *     filter {
+ *         and(
+ *             title("Task Name").contains("Important"),
+ *             checkbox("Completed").equals(false),
+ *             date("Due Date").after("2024-01-01")
+ *         )
+ *     }
+ *     sortBy("Priority", SortDirection.DESCENDING)
+ *     pageSize(50)
+ * }
+ * ```
+ *
+ * @param builder DSL builder lambda for constructing the query
+ * @return DatabaseQueryRequest ready for API execution
+ */
+fun databaseQuery(builder: DatabaseQueryBuilder.() -> Unit): DatabaseQueryRequest = DatabaseQueryBuilder().apply(builder).build()
+
+/**
  * Builder for constructing database queries with a fluent API.
  *
  * This builder provides a type-safe, readable way to construct complex database queries

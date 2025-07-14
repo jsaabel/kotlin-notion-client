@@ -16,9 +16,11 @@ import no.saabelit.kotlinnotionclient.exceptions.NotionException
 import no.saabelit.kotlinnotionclient.models.databases.ArchiveDatabaseRequest
 import no.saabelit.kotlinnotionclient.models.databases.CreateDatabaseRequest
 import no.saabelit.kotlinnotionclient.models.databases.Database
+import no.saabelit.kotlinnotionclient.models.databases.DatabaseQueryBuilder
 import no.saabelit.kotlinnotionclient.models.databases.DatabaseQueryRequest
 import no.saabelit.kotlinnotionclient.models.databases.DatabaseQueryResponse
 import no.saabelit.kotlinnotionclient.models.databases.DatabaseRequestBuilder
+import no.saabelit.kotlinnotionclient.models.databases.databaseQuery
 import no.saabelit.kotlinnotionclient.models.databases.databaseRequest
 import no.saabelit.kotlinnotionclient.ratelimit.executeWithRateLimit
 import no.saabelit.kotlinnotionclient.validation.RequestValidator
@@ -183,6 +185,42 @@ class DatabasesApi(
                 throw NotionException.NetworkError(e)
             }
         }
+
+    /**
+     * Queries a database using a fluent DSL builder.
+     *
+     * This is a convenience method that accepts a DSL builder lambda for more natural
+     * Kotlin-style API usage. The builder provides type-safe construction of database queries
+     * with filtering, sorting, and pagination.
+     *
+     * Example usage:
+     * ```kotlin
+     * val pages = client.databases.query("database-id") {
+     *     filter {
+     *         and(
+     *             title("Task").contains("Important"),
+     *             checkbox("Completed").equals(false)
+     *         )
+     *     }
+     *     sortBy("Priority", SortDirection.DESCENDING)
+     *     pageSize(50)
+     * }
+     * ```
+     *
+     * @param databaseId The ID of the database to query
+     * @param builder DSL builder lambda for constructing the query
+     * @return List of all matching pages across all result pages
+     * @throws NotionException.NetworkError for network-related failures
+     * @throws NotionException.ApiError for API-related errors (4xx, 5xx responses)
+     * @throws NotionException.AuthenticationError for authentication failures
+     */
+    suspend fun query(
+        databaseId: String,
+        builder: DatabaseQueryBuilder.() -> Unit,
+    ): List<no.saabelit.kotlinnotionclient.models.pages.Page> {
+        val request = databaseQuery(builder)
+        return query(databaseId, request)
+    }
 
     /**
      * Queries a database with optional filtering and sorting.
