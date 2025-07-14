@@ -19,8 +19,10 @@ import no.saabelit.kotlinnotionclient.models.pages.ArchivePageRequest
 import no.saabelit.kotlinnotionclient.models.pages.CreatePageRequest
 import no.saabelit.kotlinnotionclient.models.pages.Page
 import no.saabelit.kotlinnotionclient.models.pages.PagePropertyItemResponse
+import no.saabelit.kotlinnotionclient.models.pages.PageRequestBuilder
 import no.saabelit.kotlinnotionclient.models.pages.PropertyItem
 import no.saabelit.kotlinnotionclient.models.pages.UpdatePageRequest
+import no.saabelit.kotlinnotionclient.models.pages.pageRequest
 import no.saabelit.kotlinnotionclient.ratelimit.executeWithRateLimit
 import no.saabelit.kotlinnotionclient.validation.RequestValidator
 import no.saabelit.kotlinnotionclient.validation.ValidationConfig
@@ -94,6 +96,24 @@ class PagesApi(
                 throw NotionException.NetworkError(e)
             }
         }
+
+    /**
+     * Creates a new page using a fluent DSL builder.
+     *
+     * This is a convenience method that accepts a DSL builder lambda for more natural
+     * Kotlin-style API usage. The builder provides type-safe construction of page requests.
+     *
+     * @param builder DSL builder lambda for constructing the page request
+     * @return Page object representing the created page
+     * @throws NotionException.NetworkError for network-related failures
+     * @throws NotionException.ApiError for API-related errors (4xx, 5xx responses)
+     * @throws NotionException.AuthenticationError for authentication failures
+     * @throws ValidationException if validation fails for non-fixable violations
+     */
+    suspend fun create(builder: PageRequestBuilder.() -> Unit): Page {
+        val request = pageRequest(builder)
+        return create(request)
+    }
 
     /**
      * Creates a new page in the specified parent.

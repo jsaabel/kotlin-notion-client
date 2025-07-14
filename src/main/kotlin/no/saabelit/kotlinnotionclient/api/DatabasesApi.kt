@@ -18,6 +18,8 @@ import no.saabelit.kotlinnotionclient.models.databases.CreateDatabaseRequest
 import no.saabelit.kotlinnotionclient.models.databases.Database
 import no.saabelit.kotlinnotionclient.models.databases.DatabaseQueryRequest
 import no.saabelit.kotlinnotionclient.models.databases.DatabaseQueryResponse
+import no.saabelit.kotlinnotionclient.models.databases.DatabaseRequestBuilder
+import no.saabelit.kotlinnotionclient.models.databases.databaseRequest
 import no.saabelit.kotlinnotionclient.ratelimit.executeWithRateLimit
 import no.saabelit.kotlinnotionclient.validation.RequestValidator
 import no.saabelit.kotlinnotionclient.validation.ValidationConfig
@@ -72,6 +74,24 @@ class DatabasesApi(
                 throw NotionException.NetworkError(e)
             }
         }
+
+    /**
+     * Creates a new database using a fluent DSL builder.
+     *
+     * This is a convenience method that accepts a DSL builder lambda for more natural
+     * Kotlin-style API usage. The builder provides type-safe construction of database requests.
+     *
+     * @param builder DSL builder lambda for constructing the database request
+     * @return Database object representing the created database
+     * @throws NotionException.NetworkError for network-related failures
+     * @throws NotionException.ApiError for API-related errors (4xx, 5xx responses)
+     * @throws NotionException.AuthenticationError for authentication failures
+     * @throws ValidationException if validation fails for non-fixable violations
+     */
+    suspend fun create(builder: DatabaseRequestBuilder.() -> Unit): Database {
+        val request = databaseRequest(builder)
+        return create(request)
+    }
 
     /**
      * Creates a new database in the specified parent page.

@@ -16,6 +16,8 @@ import no.saabelit.kotlinnotionclient.exceptions.NotionException
 import no.saabelit.kotlinnotionclient.models.blocks.Block
 import no.saabelit.kotlinnotionclient.models.blocks.BlockList
 import no.saabelit.kotlinnotionclient.models.blocks.BlockRequest
+import no.saabelit.kotlinnotionclient.models.blocks.PageContentBuilder
+import no.saabelit.kotlinnotionclient.models.blocks.pageContent
 import no.saabelit.kotlinnotionclient.ratelimit.executeWithRateLimit
 import no.saabelit.kotlinnotionclient.validation.RequestValidator
 import no.saabelit.kotlinnotionclient.validation.ValidationConfig
@@ -167,6 +169,28 @@ class BlocksApi(
                 throw NotionException.NetworkError(e)
             }
         }
+
+    /**
+     * Appends child blocks to a parent block or page using a fluent DSL builder.
+     *
+     * This is a convenience method that accepts a DSL builder lambda for more natural
+     * Kotlin-style API usage. The builder provides a fluent API for constructing blocks.
+     *
+     * @param blockId The ID of the parent block or page
+     * @param builder DSL builder lambda for constructing the block content
+     * @return BlockList containing the created child blocks
+     * @throws NotionException.NetworkError for network-related failures
+     * @throws NotionException.ApiError for API-related errors (4xx, 5xx responses)
+     * @throws NotionException.AuthenticationError for authentication failures
+     * @throws ValidationException if validation fails in strict mode
+     */
+    suspend fun appendChildren(
+        blockId: String,
+        builder: PageContentBuilder.() -> Unit,
+    ): BlockList {
+        val children = pageContent(builder)
+        return appendChildren(blockId, children)
+    }
 
     /**
      * Appends child blocks to a parent block or page.
