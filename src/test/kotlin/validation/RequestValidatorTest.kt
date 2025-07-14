@@ -49,11 +49,10 @@ class RequestValidatorTest :
 
         fun createLargeArray(size: Int): List<Any> = (1..size).map { "item$it" }
 
-        @Suppress("UNCHECKED_CAST")
         fun createTestPageRequest(
             title: String = "Test Page",
             richTextContent: List<RichText> = listOf(createRichText()),
-            children: List<Any>? = null,
+            children: List<BlockRequest>? = null,
         ): CreatePageRequest =
             CreatePageRequest(
                 parent = Parent(type = "page_id", pageId = "test-parent-id"),
@@ -62,7 +61,7 @@ class RequestValidatorTest :
                         "title" to PagePropertyValue.TitleValue(title = listOf(createRichText(title))),
                         "Description" to PagePropertyValue.RichTextValue(richText = richTextContent),
                     ),
-                children = children as? List<no.saabelit.kotlinnotionclient.models.blocks.Block>, // TODO: warning
+                children = children,
             )
 
         fun createParagraphBlock(content: String = "Normal paragraph"): BlockRequest.Paragraph =

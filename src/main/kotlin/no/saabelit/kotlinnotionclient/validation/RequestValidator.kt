@@ -47,7 +47,7 @@ class RequestValidator(
 
         // Validate children blocks if present
         request.children?.let { children ->
-            violations.addAll(validateBlockArrayForBlocks("children", children))
+            violations.addAll(validateBlockArray("children", children))
         }
 
         return ValidationResult(violations)

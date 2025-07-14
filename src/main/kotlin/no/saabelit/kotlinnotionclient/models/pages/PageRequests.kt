@@ -6,7 +6,7 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import no.saabelit.kotlinnotionclient.models.base.Parent
 import no.saabelit.kotlinnotionclient.models.base.RichText
-import no.saabelit.kotlinnotionclient.models.blocks.Block
+import no.saabelit.kotlinnotionclient.models.blocks.BlockRequest
 
 /**
  * Request model for creating a new page.
@@ -26,7 +26,7 @@ data class CreatePageRequest(
     @SerialName("cover")
     val cover: PageCover? = null,
     @SerialName("children")
-    val children: List<Block>? = null,
+    val children: List<BlockRequest>? = null,
 )
 
 /**
