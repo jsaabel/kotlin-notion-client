@@ -59,7 +59,28 @@ data class RichText(
     val plainText: String,
     @SerialName("href")
     val href: String? = null,
-)
+) {
+    companion object {
+        /**
+         * Creates a simple RichText object from plain text.
+         *
+         * @param content The plain text content
+         * @return A RichText object with default formatting
+         */
+        fun fromPlainText(content: String): RichText =
+            RichText(
+                type = "text",
+                text =
+                    TextContent(
+                        content = content,
+                        link = null,
+                    ),
+                annotations = Annotations(),
+                plainText = content,
+                href = null,
+            )
+    }
+}
 
 /**
  * Represents the text content of a rich text element.
