@@ -17,17 +17,26 @@ import no.saabelit.kotlinnotionclient.models.blocks.Block
 import no.saabelit.kotlinnotionclient.models.blocks.BlockList
 import no.saabelit.kotlinnotionclient.models.blocks.BlockRequest
 import no.saabelit.kotlinnotionclient.ratelimit.executeWithRateLimit
+import no.saabelit.kotlinnotionclient.validation.RequestValidator
+import no.saabelit.kotlinnotionclient.validation.ValidationConfig
+import no.saabelit.kotlinnotionclient.validation.ValidationException
 
 /**
  * API client for Notion Blocks endpoints.
  *
  * Handles operations related to blocks in Notion pages,
  * including retrieving block information and managing block content.
+ *
+ * Features proactive validation to prevent API errors and provide helpful feedback
+ * about content that exceeds Notion's API limits before making HTTP requests.
  */
 class BlocksApi(
     private val httpClient: HttpClient,
     private val config: NotionConfig,
+    private val validationConfig: ValidationConfig = ValidationConfig.default(),
 ) {
+    private val validator = RequestValidator(validationConfig)
+
     /**
      * Retrieves a block object using the ID specified.
      *
@@ -162,18 +171,25 @@ class BlocksApi(
     /**
      * Appends child blocks to a parent block or page.
      *
+     * This method performs proactive validation to check for content that exceeds
+     * Notion's API limits before making the HTTP request. Depending on the validation
+     * configuration, violations will either cause an exception or be automatically fixed.
+     *
      * @param blockId The ID of the parent block or page
      * @param children List of BlockRequest objects to append as children
      * @return BlockList containing the created child blocks
      * @throws NotionException.NetworkError for network-related failures
      * @throws NotionException.ApiError for API-related errors (4xx, 5xx responses)
      * @throws NotionException.AuthenticationError for authentication failures
+     * @throws ValidationException if validation fails in strict mode
      */
     suspend fun appendChildren(
         blockId: String,
         children: List<BlockRequest>,
-    ): BlockList =
-        httpClient.executeWithRateLimit {
+    ): BlockList {
+        validator.validateOrThrow("children", children)
+
+        return httpClient.executeWithRateLimit {
             try {
                 val request = AppendBlockChildrenRequest(children = children)
                 val response: HttpResponse =
@@ -204,6 +220,7 @@ class BlocksApi(
                 throw NotionException.NetworkError(e)
             }
         }
+    }
 }
 
 /**

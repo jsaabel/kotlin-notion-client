@@ -2,6 +2,7 @@ package no.saabelit.kotlinnotionclient.config
 
 import io.ktor.client.plugins.logging.LogLevel
 import no.saabelit.kotlinnotionclient.ratelimit.RateLimitConfig
+import no.saabelit.kotlinnotionclient.validation.ValidationConfig
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 
@@ -22,6 +23,7 @@ import kotlin.time.Duration.Companion.seconds
  * @param prettyPrint Whether to format JSON responses for debugging
  * @param rateLimitConfig Configuration for rate limiting behavior
  * @param enableRateLimit Whether to enable automatic rate limiting
+ * @param validationConfig Configuration for request validation behavior
  */
 data class NotionConfig(
     val apiToken: String = System.getenv("NOTION_API_TOKEN"),
@@ -35,6 +37,7 @@ data class NotionConfig(
     val prettyPrint: Boolean = false,
     val rateLimitConfig: RateLimitConfig = RateLimitConfig.BALANCED,
     val enableRateLimit: Boolean = true,
+    val validationConfig: ValidationConfig = ValidationConfig.default(),
 ) {
     init {
         require(apiToken.isNotBlank()) { "API token cannot be blank" }

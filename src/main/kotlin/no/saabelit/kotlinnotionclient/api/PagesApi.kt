@@ -22,17 +22,26 @@ import no.saabelit.kotlinnotionclient.models.pages.PagePropertyItemResponse
 import no.saabelit.kotlinnotionclient.models.pages.PropertyItem
 import no.saabelit.kotlinnotionclient.models.pages.UpdatePageRequest
 import no.saabelit.kotlinnotionclient.ratelimit.executeWithRateLimit
+import no.saabelit.kotlinnotionclient.validation.RequestValidator
+import no.saabelit.kotlinnotionclient.validation.ValidationConfig
+import no.saabelit.kotlinnotionclient.validation.ValidationException
 
 /**
  * API client for Notion Pages endpoints.
  *
  * Handles operations related to pages in Notion workspaces,
  * including retrieving page information and content.
+ *
+ * Features proactive validation to prevent API errors and provide helpful feedback
+ * about content that exceeds Notion's API limits before making HTTP requests.
  */
 class PagesApi(
     private val httpClient: HttpClient,
     private val config: NotionConfig,
+    private val validationConfig: ValidationConfig = ValidationConfig.default(),
 ) {
+    private val validator = RequestValidator(validationConfig)
+
     /**
      * Retrieves a page object using the ID specified.
      *
@@ -92,19 +101,26 @@ class PagesApi(
      * Pages can be created as children of other pages or as entries in databases.
      * The properties must conform to the parent database schema if the parent is a database.
      *
+     * This method performs proactive validation to check for content that exceeds
+     * Notion's API limits before making the HTTP request. Depending on the validation
+     * configuration, violations will either cause an exception or be automatically fixed.
+     *
      * @param request The page creation request with parent, properties, and optional content
      * @return Page object representing the created page
      * @throws NotionException.NetworkError for network-related failures
      * @throws NotionException.ApiError for API-related errors (4xx, 5xx responses)
      * @throws NotionException.AuthenticationError for authentication failures
+     * @throws ValidationException if validation fails for non-fixable violations
      */
-    suspend fun create(request: CreatePageRequest): Page =
-        httpClient.executeWithRateLimit {
+    suspend fun create(request: CreatePageRequest): Page {
+        val finalRequest = validator.validateOrFix(request)
+
+        return httpClient.executeWithRateLimit {
             try {
                 val response: HttpResponse =
                     httpClient.post("${config.baseUrl}/pages") {
                         contentType(ContentType.Application.Json)
-                        setBody(request)
+                        setBody(finalRequest)
                     }
 
                 if (response.status.isSuccess()) {
@@ -145,9 +161,14 @@ class PagesApi(
                 throw NotionException.NetworkError(e)
             }
         }
+    }
 
     /**
      * Updates an existing page's properties, icon, cover, or archived status.
+     *
+     * This method performs proactive validation to check for content that exceeds
+     * Notion's API limits before making the HTTP request. Depending on the validation
+     * configuration, violations will either cause an exception or be automatically fixed.
      *
      * @param pageId The ID of the page to update
      * @param request The update request with modified properties
@@ -155,17 +176,20 @@ class PagesApi(
      * @throws NotionException.NetworkError for network-related failures
      * @throws NotionException.ApiError for API-related errors (4xx, 5xx responses)
      * @throws NotionException.AuthenticationError for authentication failures
+     * @throws ValidationException if validation fails for non-fixable violations
      */
     suspend fun update(
         pageId: String,
         request: UpdatePageRequest,
-    ): Page =
-        httpClient.executeWithRateLimit {
+    ): Page {
+        val finalRequest = validator.validateOrFix(request)
+
+        return httpClient.executeWithRateLimit {
             try {
                 val response: HttpResponse =
                     httpClient.patch("${config.baseUrl}/pages/$pageId") {
                         contentType(ContentType.Application.Json)
-                        setBody(request)
+                        setBody(finalRequest)
                     }
 
                 if (response.status.isSuccess()) {
@@ -206,6 +230,7 @@ class PagesApi(
                 throw NotionException.NetworkError(e)
             }
         }
+    }
 
     /**
      * Archives a page by setting its archived property to true.

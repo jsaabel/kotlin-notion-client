@@ -19,6 +19,9 @@ import no.saabelit.kotlinnotionclient.models.databases.Database
 import no.saabelit.kotlinnotionclient.models.databases.DatabaseQueryRequest
 import no.saabelit.kotlinnotionclient.models.databases.DatabaseQueryResponse
 import no.saabelit.kotlinnotionclient.ratelimit.executeWithRateLimit
+import no.saabelit.kotlinnotionclient.validation.RequestValidator
+import no.saabelit.kotlinnotionclient.validation.ValidationConfig
+import no.saabelit.kotlinnotionclient.validation.ValidationException
 
 /**
  * API client for Notion Databases endpoints.
@@ -29,7 +32,10 @@ import no.saabelit.kotlinnotionclient.ratelimit.executeWithRateLimit
 class DatabasesApi(
     private val httpClient: HttpClient,
     private val config: NotionConfig,
+    private val validationConfig: ValidationConfig = ValidationConfig.default(),
 ) {
+    private val validator = RequestValidator(validationConfig)
+
     /**
      * Retrieves a database object using the ID specified.
      *
@@ -75,14 +81,17 @@ class DatabasesApi(
      * @throws NotionException.NetworkError for network-related failures
      * @throws NotionException.ApiError for API-related errors (4xx, 5xx responses)
      * @throws NotionException.AuthenticationError for authentication failures
+     * @throws ValidationException if validation fails for non-fixable violations
      */
-    suspend fun create(request: CreateDatabaseRequest): Database =
-        httpClient.executeWithRateLimit {
+    suspend fun create(request: CreateDatabaseRequest): Database {
+        val finalRequest = validator.validateOrFix(request)
+
+        return httpClient.executeWithRateLimit {
             try {
                 val response: HttpResponse =
                     httpClient.post("${config.baseUrl}/databases") {
                         contentType(ContentType.Application.Json)
-                        setBody(request)
+                        setBody(finalRequest)
                     }
 
                 if (response.status.isSuccess()) {
@@ -107,6 +116,7 @@ class DatabasesApi(
                 throw NotionException.NetworkError(e)
             }
         }
+    }
 
     /**
      * Archives a database by setting its archived property to true.
