@@ -320,6 +320,212 @@ class ApiOverloadsIntegrationTest :
             }
         }
 
+        "BlocksApi update overload should work with live API" {
+            val token = System.getenv("NOTION_API_TOKEN")
+            val parentPageId = System.getenv("NOTION_TEST_PAGE_ID")
+
+            if (token != null && parentPageId != null) {
+                val client = NotionClient.create(NotionConfig(apiToken = token))
+
+                try {
+                    println("🔄 Testing BlocksApi.update() overload with live API...")
+
+                    // First create a test page with initial content
+                    val testPage =
+                        client.pages.create {
+                            parent.page(parentPageId)
+                            title("Block Update Test Page")
+                            content {
+                                heading2("Original Heading")
+                                paragraph("Original paragraph content")
+                                bullet("Original bullet point")
+                            }
+                        }
+
+                    delay(1000) // Wait for page creation to complete
+
+                    // Get the blocks to update
+                    val blocks = client.blocks.retrieveChildren(testPage.id)
+                    val headingBlock = blocks[0] // First block is the heading
+                    val paragraphBlock = blocks[1] // Second block is the paragraph
+
+                    println("✅ Created test page with initial content")
+
+                    // Test updating the heading using the DSL overload
+                    val updatedHeading =
+                        client.blocks.update(headingBlock.id) {
+                            heading2("Updated Heading via DSL", color = "blue")
+                        }
+
+                    // Verify the heading was updated
+                    updatedHeading.shouldBeInstanceOf<Block.Heading2>()
+                    updatedHeading.type shouldBe "heading_2"
+                    updatedHeading.heading2.richText[0].plainText shouldBe "Updated Heading via DSL"
+                    updatedHeading.heading2.color shouldBe "blue"
+
+                    println("✅ Heading updated successfully using DSL overload")
+
+                    // Test updating the paragraph using direct request
+                    val updatedParagraph =
+                        client.blocks.update(
+                            paragraphBlock.id,
+                            no.saabelit.kotlinnotionclient.models.blocks.BlockRequest.Paragraph(
+                                paragraph =
+                                    no.saabelit.kotlinnotionclient.models.blocks.ParagraphRequestContent(
+                                        richText =
+                                            listOf(
+                                                no.saabelit.kotlinnotionclient.models.requests.RequestBuilders.createSimpleRichText(
+                                                    "Updated paragraph content via direct request",
+                                                ),
+                                            ),
+                                        color = "green",
+                                    ),
+                            ),
+                        )
+
+                    // Verify the paragraph was updated
+                    updatedParagraph.shouldBeInstanceOf<Block.Paragraph>()
+                    updatedParagraph.type shouldBe "paragraph"
+                    updatedParagraph.paragraph.richText[0].plainText shouldBe "Updated paragraph content via direct request"
+                    updatedParagraph.paragraph.color shouldBe "green"
+
+                    println("✅ Paragraph updated successfully using direct request")
+
+                    // Verify the full page content shows the updates
+                    delay(1000)
+                    val allBlocks = client.blocks.retrieveChildren(testPage.id)
+                    allBlocks shouldHaveSize 3 // heading, paragraph, bullet
+
+                    val firstBlock = allBlocks[0] as Block.Heading2
+                    firstBlock.heading2.richText[0].plainText shouldBe "Updated Heading via DSL"
+                    firstBlock.heading2.color shouldBe "blue"
+
+                    val secondBlock = allBlocks[1] as Block.Paragraph
+                    secondBlock.paragraph.richText[0].plainText shouldBe "Updated paragraph content via direct request"
+                    secondBlock.paragraph.color shouldBe "green"
+
+                    println("✅ Full page content verified with updates")
+                    println("✅ BlocksApi.update() overload test completed!")
+
+                    // Cleanup
+                    if (shouldCleanupAfterTest()) {
+                        delay(500)
+                        println("🧹 Cleaning up test page...")
+                        val archivedPage = client.pages.archive(testPage.id)
+                        archivedPage.archived shouldBe true
+                        println("✅ Test page archived successfully")
+                    } else {
+                        println("🔧 Cleanup skipped (NOTION_CLEANUP_AFTER_TEST=false)")
+                        println("   Created page: ${testPage.id} (\"Block Update Test Page\")")
+                    }
+                } finally {
+                    client.close()
+                }
+            } else {
+                println("⏭️ Skipping BlocksApi update integration test")
+                println("   Required environment variables:")
+                println("   - NOTION_API_TOKEN: Your integration API token")
+                println("   - NOTION_TEST_PAGE_ID: Page where test content will be created")
+            }
+        }
+
+        "BlocksApi delete should work with live API" {
+            val token = System.getenv("NOTION_API_TOKEN")
+            val parentPageId = System.getenv("NOTION_TEST_PAGE_ID")
+
+            if (token != null && parentPageId != null) {
+                val client = NotionClient.create(NotionConfig(apiToken = token))
+
+                try {
+                    println("🗑️ Testing BlocksApi.delete() with live API...")
+
+                    // First create a test page with content to delete
+                    val testPage =
+                        client.pages.create {
+                            parent.page(parentPageId)
+                            title("Block Delete Test Page")
+                            content {
+                                heading2("This heading will be deleted")
+                                paragraph("This paragraph will remain")
+                                bullet("This bullet will be deleted")
+                                divider()
+                                quote("This quote will remain")
+                            }
+                        }
+
+                    delay(1000) // Wait for page creation to complete
+
+                    // Get the blocks to delete
+                    val blocks = client.blocks.retrieveChildren(testPage.id)
+                    blocks shouldHaveSize 5 // heading, paragraph, bullet, divider, quote
+
+                    val headingBlock = blocks[0] // First block is the heading
+                    val bulletBlock = blocks[2] // Third block is the bullet
+
+                    println("✅ Created test page with initial content (${blocks.size} blocks)")
+
+                    // Test deleting the heading block
+                    val deletedHeading = client.blocks.delete(headingBlock.id)
+
+                    // Verify the heading was archived (not permanently deleted)
+                    deletedHeading.shouldBeInstanceOf<Block.Heading2>()
+                    deletedHeading.id shouldBe headingBlock.id
+                    deletedHeading.archived shouldBe true
+                    deletedHeading.type shouldBe "heading_2"
+
+                    println("✅ Heading block deleted (archived) successfully")
+
+                    // Test deleting the bullet block
+                    val deletedBullet = client.blocks.delete(bulletBlock.id)
+
+                    // Verify the bullet was archived
+                    deletedBullet.shouldBeInstanceOf<Block.BulletedListItem>()
+                    deletedBullet.id shouldBe bulletBlock.id
+                    deletedBullet.archived shouldBe true
+                    deletedBullet.type shouldBe "bulleted_list_item"
+
+                    println("✅ Bullet block deleted (archived) successfully")
+
+                    // Verify the remaining blocks are still present
+                    delay(1000)
+                    val remainingBlocks = client.blocks.retrieveChildren(testPage.id)
+                    remainingBlocks shouldHaveSize 3 // paragraph, divider, quote (2 blocks were archived)
+
+                    // Verify the remaining blocks are the correct ones
+                    val firstRemaining = remainingBlocks[0] as Block.Paragraph
+                    firstRemaining.paragraph.richText[0].plainText shouldBe "This paragraph will remain"
+
+                    val secondRemaining = remainingBlocks[1] as Block.Divider
+                    secondRemaining.type shouldBe "divider"
+
+                    val thirdRemaining = remainingBlocks[2] as Block.Quote
+                    thirdRemaining.quote.richText[0].plainText shouldBe "This quote will remain"
+
+                    println("✅ Remaining blocks verified (${remainingBlocks.size} blocks left)")
+                    println("✅ BlocksApi.delete() test completed!")
+
+                    // Cleanup
+                    if (shouldCleanupAfterTest()) {
+                        delay(500)
+                        println("🧹 Cleaning up test page...")
+                        val archivedPage = client.pages.archive(testPage.id)
+                        archivedPage.archived shouldBe true
+                        println("✅ Test page archived successfully")
+                    } else {
+                        println("🔧 Cleanup skipped (NOTION_CLEANUP_AFTER_TEST=false)")
+                        println("   Created page: ${testPage.id} (\"Block Delete Test Page\")")
+                    }
+                } finally {
+                    client.close()
+                }
+            } else {
+                println("⏭️ Skipping BlocksApi delete integration test")
+                println("   Required environment variables:")
+                println("   - NOTION_API_TOKEN: Your integration API token")
+                println("   - NOTION_TEST_PAGE_ID: Page where test content will be created")
+            }
+        }
+
         "Combined API overloads workflow should work end-to-end" {
             val token = System.getenv("NOTION_API_TOKEN")
             val parentPageId = System.getenv("NOTION_TEST_PAGE_ID")

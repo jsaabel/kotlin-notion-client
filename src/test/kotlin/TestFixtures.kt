@@ -133,6 +133,20 @@ object TestFixtures {
         fun updateBlockAsString() = loadSampleResponseAsString("blocks", "patch_update_a_block")
 
         fun deleteBlockAsString() = loadSampleResponseAsString("blocks", "delete_delete_a_block")
+
+        // Helper methods for testing
+        fun retrieveChildrenPaginated() = retrieveBlockChildren()
+
+        fun appendChildrenResponse() = appendBlockChildren()
+    }
+
+    // Helper method to read API response files directly
+    fun readApiResponse(path: String): JsonElement {
+        val resourcePath = "/api/$path"
+        val content =
+            this::class.java.getResource(resourcePath)?.readText()
+                ?: throw IllegalArgumentException("API response not found: $resourcePath")
+        return json.parseToJsonElement(content)
     }
 
     // Comment-specific helpers

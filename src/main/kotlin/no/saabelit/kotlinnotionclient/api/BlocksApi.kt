@@ -245,6 +245,132 @@ class BlocksApi(
             }
         }
     }
+
+    /**
+     * Updates the content of an existing block using a fluent DSL builder.
+     *
+     * This is a convenience method for updating a single block type. The builder provides
+     * a fluent API for constructing the block update, but it must result in exactly one block.
+     *
+     * Note: You cannot change a block's type. The block type in the builder must match
+     * the existing block's type.
+     *
+     * @param blockId The ID of the block to update
+     * @param builder DSL builder lambda for constructing the block update
+     * @return The updated Block object
+     * @throws NotionException.NetworkError for network-related failures
+     * @throws NotionException.ApiError for API-related errors (4xx, 5xx responses)
+     * @throws NotionException.AuthenticationError for authentication failures
+     * @throws ValidationException if validation fails in strict mode
+     * @throws IllegalArgumentException if the builder produces zero or multiple blocks
+     */
+    suspend fun update(
+        blockId: String,
+        builder: PageContentBuilder.() -> Unit,
+    ): Block {
+        val blocks = pageContent(builder)
+        require(blocks.size == 1) {
+            "Block update builder must produce exactly one block, but produced ${blocks.size} blocks"
+        }
+        return update(blockId, blocks.first())
+    }
+
+    /**
+     * Updates the content of an existing block.
+     *
+     * Note: You cannot change a block's type. Attempting to update a block with a different
+     * type will result in an error. Only the content properties of the block can be updated.
+     *
+     * @param blockId The ID of the block to update
+     * @param request The block request with updated content
+     * @return The updated Block object
+     * @throws NotionException.NetworkError for network-related failures
+     * @throws NotionException.ApiError for API-related errors (4xx, 5xx responses)
+     * @throws NotionException.AuthenticationError for authentication failures
+     * @throws ValidationException if validation fails in strict mode
+     */
+    suspend fun update(
+        blockId: String,
+        request: BlockRequest,
+    ): Block {
+        validator.validateOrThrow("block", listOf(request))
+
+        return httpClient.executeWithRateLimit {
+            try {
+                val response: HttpResponse =
+                    httpClient.patch("${config.baseUrl}/blocks/$blockId") {
+                        contentType(ContentType.Application.Json)
+                        setBody(request)
+                    }
+
+                if (response.status.isSuccess()) {
+                    response.body<Block>()
+                } else {
+                    val errorBody =
+                        try {
+                            response.body<String>()
+                        } catch (e: Exception) {
+                            "Could not read error response body"
+                        }
+
+                    throw NotionException.ApiError(
+                        code = response.status.value.toString(),
+                        status = response.status.value,
+                        details = "HTTP ${response.status.value}: ${response.status.description}. Response: $errorBody",
+                    )
+                }
+            } catch (e: NotionException) {
+                throw e // Re-throw our own exceptions
+            } catch (e: Exception) {
+                throw NotionException.NetworkError(e)
+            }
+        }
+    }
+
+    /**
+     * Deletes a block by archiving it.
+     *
+     * In the Notion API, blocks are not permanently deleted but are instead archived.
+     * The block will have its `archived` property set to true and can potentially be restored.
+     *
+     * @param blockId The ID of the block to delete/archive
+     * @return The archived Block object with `archived = true`
+     * @throws NotionException.NetworkError for network-related failures
+     * @throws NotionException.ApiError for API-related errors (4xx, 5xx responses)
+     * @throws NotionException.AuthenticationError for authentication failures
+     */
+    suspend fun delete(blockId: String): Block =
+        httpClient.executeWithRateLimit {
+            try {
+                val request = ArchiveBlockRequest(archived = true)
+                val response: HttpResponse =
+                    httpClient.patch("${config.baseUrl}/blocks/$blockId") {
+                        contentType(ContentType.Application.Json)
+                        setBody(request)
+                    }
+
+                if (response.status.isSuccess()) {
+                    response.body<Block>()
+                } else {
+                    val errorBody =
+                        try {
+                            response.body<String>()
+                        } catch (e: Exception) {
+                            "Could not read error response body"
+                        }
+
+                    throw NotionException.ApiError(
+                        code = response.status.value.toString(),
+                        status = response.status.value,
+                        details = "HTTP ${response.status.value}: ${response.status.description}. Response: $errorBody",
+                    )
+                }
+            } catch (e: NotionException) {
+                throw e // Re-throw our own exceptions
+            } catch (e: Exception) {
+                throw NotionException.NetworkError(e)
+            }
+        }
 }
 
 /**
@@ -253,4 +379,12 @@ class BlocksApi(
 @Serializable
 private data class AppendBlockChildrenRequest(
     val children: List<BlockRequest>,
+)
+
+/**
+ * Request body for archiving/deleting a block.
+ */
+@Serializable
+private data class ArchiveBlockRequest(
+    val archived: Boolean,
 )
