@@ -200,6 +200,28 @@ sealed class BlockRequest {
         @SerialName("divider")
         val divider: DividerRequestContent = DividerRequestContent(),
     ) : BlockRequest()
+
+    /**
+     * Table block request.
+     * Table container with configurable width and headers.
+     */
+    @Serializable
+    @SerialName("table")
+    data class Table(
+        @SerialName("table")
+        val table: TableRequestContent,
+    ) : BlockRequest()
+
+    /**
+     * Table row block request.
+     * Row of cells within a table.
+     */
+    @Serializable
+    @SerialName("table_row")
+    data class TableRow(
+        @SerialName("table_row")
+        val tableRow: TableRowRequestContent,
+    ) : BlockRequest()
 }
 
 // REQUEST CONTENT CLASSES
@@ -449,5 +471,29 @@ data class PDFRequestContent(
  */
 @Serializable
 class DividerRequestContent
+
+/**
+ * Content for table block requests.
+ */
+@Serializable
+data class TableRequestContent(
+    @SerialName("table_width")
+    val tableWidth: Int,
+    @SerialName("has_column_header")
+    val hasColumnHeader: Boolean = false,
+    @SerialName("has_row_header")
+    val hasRowHeader: Boolean = false,
+    @SerialName("children")
+    val children: List<BlockRequest>? = null,
+)
+
+/**
+ * Content for table_row block requests.
+ */
+@Serializable
+data class TableRowRequestContent(
+    @SerialName("cells")
+    val cells: List<List<RichText>>,
+)
 
 // Note: CalloutIcon is defined in Block.kt to avoid duplication

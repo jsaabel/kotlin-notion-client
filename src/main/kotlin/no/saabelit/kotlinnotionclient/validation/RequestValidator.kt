@@ -421,9 +421,6 @@ class RequestValidator(
      */
     private fun extractTextContent(richText: RichText): String =
         richText.plainText
-            ?: richText.text?.content
-            ?: richText.equation?.expression
-            ?: ""
 
     /**
      * Extracts rich text arrays from different block types.
@@ -483,6 +480,15 @@ class RequestValidator(
             }
             is BlockRequest.Divider -> {
                 // Divider blocks don't have rich text content
+            }
+            is BlockRequest.Table -> {
+                // Table blocks don't have rich text content directly
+            }
+            is BlockRequest.TableRow -> {
+                // Extract rich text from table row cells
+                block.tableRow.cells.forEachIndexed { cellIndex, cell ->
+                    richTextArrays["tableRow.cells[$cellIndex]"] = cell
+                }
             }
         }
 
@@ -689,7 +695,7 @@ class RequestValidator(
         // Create new RichText objects for each chunk, preserving all formatting and annotations
         return chunks.map { chunk ->
             richText.copy(
-                text = richText.text?.copy(content = chunk),
+                text = richText.text.copy(content = chunk),
                 plainText = chunk,
                 annotations = richText.annotations, // Preserve formatting
                 href = richText.href, // Preserve links

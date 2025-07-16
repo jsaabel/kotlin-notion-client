@@ -144,6 +144,21 @@ class PageContentBuilder {
                 is BlockRequest.Divider -> {
                     // Dividers don't need validation
                 }
+                is BlockRequest.Table -> {
+                    // Tables need valid width and at least one row
+                    if (block.table.tableWidth <= 0) {
+                        errors.add("Table width must be positive")
+                    }
+                    if (block.table.children.isNullOrEmpty()) {
+                        errors.add("Tables must have at least one row")
+                    }
+                }
+                is BlockRequest.TableRow -> {
+                    // Table rows need cells
+                    if (block.tableRow.cells.isEmpty()) {
+                        errors.add("Table rows must have at least one cell")
+                    }
+                }
             }
         }
 
@@ -888,6 +903,96 @@ class PageContentBuilder {
      * @return This builder for chaining
      */
     fun divider(): PageContentBuilder = addBlock(BlockRequest.Divider())
+
+    /**
+     * Adds a table block with specified structure.
+     *
+     * @param tableWidth The number of columns in the table
+     * @param hasColumnHeader Whether the first row is a header
+     * @param hasRowHeader Whether the first column is a header
+     * @param rows Builder for table rows
+     * @return This builder for chaining
+     */
+    fun table(
+        tableWidth: Int,
+        hasColumnHeader: Boolean = false,
+        hasRowHeader: Boolean = false,
+        rows: TableRowBuilder.() -> Unit,
+    ): PageContentBuilder {
+        val tableRows = TableRowBuilder().apply(rows).build()
+        return addBlock(
+            BlockRequest.Table(
+                table =
+                    TableRequestContent(
+                        tableWidth = tableWidth,
+                        hasColumnHeader = hasColumnHeader,
+                        hasRowHeader = hasRowHeader,
+                        children = tableRows,
+                    ),
+            ),
+        )
+    }
+
+    /**
+     * Adds a single table row.
+     *
+     * @param cells The cell contents (list of list of rich text)
+     * @return This builder for chaining
+     */
+    fun tableRow(cells: List<List<RichText>>): PageContentBuilder =
+        addBlock(
+            BlockRequest.TableRow(
+                tableRow = TableRowRequestContent(cells = cells),
+            ),
+        )
+
+    /**
+     * Adds a simple table row with string cell contents.
+     *
+     * @param cellTexts The cell contents as simple strings
+     * @return This builder for chaining
+     */
+    fun tableRow(vararg cellTexts: String): PageContentBuilder =
+        tableRow(
+            cells = cellTexts.map { listOf(RequestBuilders.createSimpleRichText(it)) },
+        )
+}
+
+/**
+ * DSL builder for table rows within a table block.
+ */
+class TableRowBuilder {
+    private val rows = mutableListOf<BlockRequest.TableRow>()
+
+    /**
+     * Adds a table row with specified cell contents.
+     *
+     * @param cells The cell contents (list of list of rich text)
+     * @return This builder for chaining
+     */
+    fun row(cells: List<List<RichText>>): TableRowBuilder {
+        rows.add(
+            BlockRequest.TableRow(
+                tableRow = TableRowRequestContent(cells = cells),
+            ),
+        )
+        return this
+    }
+
+    /**
+     * Adds a simple table row with string cell contents.
+     *
+     * @param cellTexts The cell contents as simple strings
+     * @return This builder for chaining
+     */
+    fun row(vararg cellTexts: String): TableRowBuilder = row(cells = cellTexts.map { listOf(RequestBuilders.createSimpleRichText(it)) })
+
+    /**
+     * Builds the immutable list of table row blocks.
+     *
+     * @return List of table row block requests
+     */
+    internal fun build(): List<BlockRequest> = rows.toList()
 }
 
 /**

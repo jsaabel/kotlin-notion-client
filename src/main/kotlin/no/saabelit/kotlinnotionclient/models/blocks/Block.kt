@@ -527,6 +527,66 @@ sealed class Block : NotionObject {
         @SerialName("type")
         override val type: String = "divider"
     }
+
+    // TABLE BLOCKS
+
+    @Serializable
+    @SerialName("table")
+    data class Table(
+        @SerialName("id")
+        override val id: String,
+        @SerialName("created_time")
+        override val createdTime: String,
+        @SerialName("last_edited_time")
+        override val lastEditedTime: String,
+        @SerialName("created_by")
+        override val createdBy: User? = null,
+        @SerialName("last_edited_by")
+        override val lastEditedBy: User? = null,
+        @SerialName("archived")
+        override val archived: Boolean,
+        @SerialName("parent")
+        override val parent: Parent,
+        @SerialName("has_children")
+        override val hasChildren: Boolean,
+        @SerialName("table")
+        val table: TableContent,
+    ) : Block() {
+        @SerialName("object")
+        override val objectType: String = "block"
+
+        @SerialName("type")
+        override val type: String = "table"
+    }
+
+    @Serializable
+    @SerialName("table_row")
+    data class TableRow(
+        @SerialName("id")
+        override val id: String,
+        @SerialName("created_time")
+        override val createdTime: String,
+        @SerialName("last_edited_time")
+        override val lastEditedTime: String,
+        @SerialName("created_by")
+        override val createdBy: User? = null,
+        @SerialName("last_edited_by")
+        override val lastEditedBy: User? = null,
+        @SerialName("archived")
+        override val archived: Boolean,
+        @SerialName("parent")
+        override val parent: Parent,
+        @SerialName("has_children")
+        override val hasChildren: Boolean,
+        @SerialName("table_row")
+        val tableRow: TableRowContent,
+    ) : Block() {
+        @SerialName("object")
+        override val objectType: String = "block"
+
+        @SerialName("type")
+        override val type: String = "table_row"
+    }
 }
 
 // CONTENT CLASSES (ordered to match block order above)
@@ -756,6 +816,28 @@ data class PDFContent(
  */
 @Serializable
 class DividerContent
+
+/**
+ * Represents the content of a table block.
+ */
+@Serializable
+data class TableContent(
+    @SerialName("table_width")
+    val tableWidth: Int,
+    @SerialName("has_column_header")
+    val hasColumnHeader: Boolean = false,
+    @SerialName("has_row_header")
+    val hasRowHeader: Boolean = false,
+)
+
+/**
+ * Represents the content of a table_row block.
+ */
+@Serializable
+data class TableRowContent(
+    @SerialName("cells")
+    val cells: List<List<RichText>>,
+)
 
 // SUPPORT CLASSES (alphabetically ordered)
 
