@@ -13,6 +13,8 @@ import io.kotest.matchers.types.shouldBeInstanceOf
 import kotlinx.coroutines.delay
 import no.saabelit.kotlinnotionclient.NotionClient
 import no.saabelit.kotlinnotionclient.config.NotionConfig
+import no.saabelit.kotlinnotionclient.models.base.Color
+import no.saabelit.kotlinnotionclient.models.base.SelectOptionColor
 import no.saabelit.kotlinnotionclient.models.blocks.Block
 import no.saabelit.kotlinnotionclient.models.blocks.BlockList
 import no.saabelit.kotlinnotionclient.models.databases.Database
@@ -145,14 +147,14 @@ class ApiOverloadsIntegrationTest :
                                 number("Priority", format = "number")
                                 checkbox("Completed")
                                 select("Status") {
-                                    option("To Do", "red")
-                                    option("In Progress", "yellow")
-                                    option("Done", "green")
+                                    option("To Do", SelectOptionColor.RED)
+                                    option("In Progress", SelectOptionColor.YELLOW)
+                                    option("Done", SelectOptionColor.GREEN)
                                 }
                                 multiSelect("Tags") {
-                                    option("Important", "red")
-                                    option("Urgent", "orange")
-                                    option("Review", "blue")
+                                    option("Important", SelectOptionColor.RED)
+                                    option("Urgent", SelectOptionColor.ORANGE)
+                                    option("Review", SelectOptionColor.BLUE)
                                 }
                                 date("Due Date")
                                 url("Reference URL")
@@ -354,14 +356,14 @@ class ApiOverloadsIntegrationTest :
                     // Test updating the heading using the DSL overload
                     val updatedHeading =
                         client.blocks.update(headingBlock.id) {
-                            heading2("Updated Heading via DSL", color = "blue")
+                            heading2("Updated Heading via DSL", color = Color.BLUE)
                         }
 
                     // Verify the heading was updated
                     updatedHeading.shouldBeInstanceOf<Block.Heading2>()
                     updatedHeading.type shouldBe "heading_2"
                     updatedHeading.heading2.richText[0].plainText shouldBe "Updated Heading via DSL"
-                    updatedHeading.heading2.color shouldBe "blue"
+                    updatedHeading.heading2.color shouldBe Color.BLUE
 
                     println("✅ Heading updated successfully using DSL overload")
 
@@ -378,7 +380,7 @@ class ApiOverloadsIntegrationTest :
                                                     "Updated paragraph content via direct request",
                                                 ),
                                             ),
-                                        color = "green",
+                                        color = Color.GREEN,
                                     ),
                             ),
                         )
@@ -387,7 +389,7 @@ class ApiOverloadsIntegrationTest :
                     updatedParagraph.shouldBeInstanceOf<Block.Paragraph>()
                     updatedParagraph.type shouldBe "paragraph"
                     updatedParagraph.paragraph.richText[0].plainText shouldBe "Updated paragraph content via direct request"
-                    updatedParagraph.paragraph.color shouldBe "green"
+                    updatedParagraph.paragraph.color shouldBe Color.GREEN
 
                     println("✅ Paragraph updated successfully using direct request")
 
@@ -398,11 +400,11 @@ class ApiOverloadsIntegrationTest :
 
                     val firstBlock = allBlocks[0] as Block.Heading2
                     firstBlock.heading2.richText[0].plainText shouldBe "Updated Heading via DSL"
-                    firstBlock.heading2.color shouldBe "blue"
+                    firstBlock.heading2.color shouldBe Color.BLUE
 
                     val secondBlock = allBlocks[1] as Block.Paragraph
                     secondBlock.paragraph.richText[0].plainText shouldBe "Updated paragraph content via direct request"
-                    secondBlock.paragraph.color shouldBe "green"
+                    secondBlock.paragraph.color shouldBe Color.GREEN
 
                     println("✅ Full page content verified with updates")
                     println("✅ BlocksApi.update() overload test completed!")

@@ -15,6 +15,7 @@ import no.saabelit.kotlinnotionclient.api.DatabasesApi
 import no.saabelit.kotlinnotionclient.api.PagesApi
 import no.saabelit.kotlinnotionclient.config.NotionConfig
 import no.saabelit.kotlinnotionclient.exceptions.NotionException
+import no.saabelit.kotlinnotionclient.models.base.Color
 import no.saabelit.kotlinnotionclient.models.blocks.Block
 import no.saabelit.kotlinnotionclient.models.comments.CommentList
 import no.saabelit.kotlinnotionclient.models.databases.Database
@@ -226,7 +227,7 @@ class MockedApiTest :
                 block.heading2.richText
                     .first()
                     .plainText shouldBe "Lacinato kale"
-                block.heading2.color shouldBe "default"
+                block.heading2.color shouldBe Color.DEFAULT
                 block.heading2.isToggleable shouldBe false
             }
 

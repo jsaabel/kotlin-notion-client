@@ -12,6 +12,7 @@ import io.kotest.matchers.types.shouldBeInstanceOf
 import kotlinx.coroutines.delay
 import no.saabelit.kotlinnotionclient.NotionClient
 import no.saabelit.kotlinnotionclient.config.NotionConfig
+import no.saabelit.kotlinnotionclient.models.base.SelectOptionColor
 import no.saabelit.kotlinnotionclient.models.databases.DatabaseProperty
 import no.saabelit.kotlinnotionclient.models.databases.databaseRequest
 
@@ -60,13 +61,13 @@ class DatabaseRequestBuilderIntegrationTest :
                                 number("Priority", format = "number")
                                 checkbox("Completed")
                                 select("Status") {
-                                    option("To Do", "red")
-                                    option("In Progress", "yellow")
-                                    option("Done", "green")
+                                    option("To Do", SelectOptionColor.RED)
+                                    option("In Progress", SelectOptionColor.YELLOW)
+                                    option("Done", SelectOptionColor.GREEN)
                                 }
                                 multiSelect("Tags") {
-                                    option("Important", "red")
-                                    option("Urgent", "orange")
+                                    option("Important", SelectOptionColor.RED)
+                                    option("Urgent", SelectOptionColor.ORANGE)
                                 }
                                 date("Due Date")
                                 url("Reference URL")

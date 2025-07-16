@@ -2,6 +2,7 @@ package no.saabelit.kotlinnotionclient.models.blocks
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import no.saabelit.kotlinnotionclient.models.base.Color
 import no.saabelit.kotlinnotionclient.models.base.RichText
 import no.saabelit.kotlinnotionclient.models.files.FileUploadReference
 
@@ -211,7 +212,7 @@ data class ParagraphRequestContent(
     @SerialName("rich_text")
     val richText: List<RichText>,
     @SerialName("color")
-    val color: String = "default",
+    val color: Color = Color.DEFAULT,
     @SerialName("children")
     val children: List<BlockRequest>? = null,
 )
@@ -224,7 +225,7 @@ data class Heading1RequestContent(
     @SerialName("rich_text")
     val richText: List<RichText>,
     @SerialName("color")
-    val color: String = "default",
+    val color: Color = Color.DEFAULT,
     @SerialName("is_toggleable")
     val isToggleable: Boolean = false,
     @SerialName("children")
@@ -239,7 +240,7 @@ data class Heading2RequestContent(
     @SerialName("rich_text")
     val richText: List<RichText>,
     @SerialName("color")
-    val color: String = "default",
+    val color: Color = Color.DEFAULT,
     @SerialName("is_toggleable")
     val isToggleable: Boolean = false,
     @SerialName("children")
@@ -254,7 +255,7 @@ data class Heading3RequestContent(
     @SerialName("rich_text")
     val richText: List<RichText>,
     @SerialName("color")
-    val color: String = "default",
+    val color: Color = Color.DEFAULT,
     @SerialName("is_toggleable")
     val isToggleable: Boolean = false,
     @SerialName("children")
@@ -269,7 +270,7 @@ data class BulletedListItemRequestContent(
     @SerialName("rich_text")
     val richText: List<RichText>,
     @SerialName("color")
-    val color: String = "default",
+    val color: Color = Color.DEFAULT,
     @SerialName("children")
     val children: List<BlockRequest>? = null,
 )
@@ -282,7 +283,7 @@ data class NumberedListItemRequestContent(
     @SerialName("rich_text")
     val richText: List<RichText>,
     @SerialName("color")
-    val color: String = "default",
+    val color: Color = Color.DEFAULT,
     @SerialName("children")
     val children: List<BlockRequest>? = null,
 )
@@ -297,7 +298,7 @@ data class ToDoRequestContent(
     @SerialName("checked")
     val checked: Boolean = false,
     @SerialName("color")
-    val color: String = "default",
+    val color: Color = Color.DEFAULT,
     @SerialName("children")
     val children: List<BlockRequest>? = null,
 )
@@ -310,7 +311,7 @@ data class ToggleRequestContent(
     @SerialName("rich_text")
     val richText: List<RichText>,
     @SerialName("color")
-    val color: String = "default",
+    val color: Color = Color.DEFAULT,
     @SerialName("children")
     val children: List<BlockRequest>? = null,
 )
@@ -336,7 +337,7 @@ data class QuoteRequestContent(
     @SerialName("rich_text")
     val richText: List<RichText>,
     @SerialName("color")
-    val color: String = "default",
+    val color: Color = Color.DEFAULT,
     @SerialName("children")
     val children: List<BlockRequest>? = null,
 )
@@ -351,7 +352,7 @@ data class CalloutRequestContent(
     @SerialName("icon")
     val icon: CalloutIcon? = null,
     @SerialName("color")
-    val color: String = "default",
+    val color: Color = Color.DEFAULT,
     @SerialName("children")
     val children: List<BlockRequest>? = null,
 )

@@ -6,7 +6,8 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 /**
- * Common color values used throughout Notion blocks and text.
+ * Color values for rich text annotations and block content.
+ * Supports both foreground and background color variants.
  */
 @Serializable
 enum class Color {
@@ -66,6 +67,42 @@ enum class Color {
 
     @SerialName("red_background")
     RED_BACKGROUND,
+}
+
+/**
+ * Color values for select and multi-select database property options.
+ */
+@Serializable
+enum class SelectOptionColor {
+    @SerialName("blue")
+    BLUE,
+
+    @SerialName("brown")
+    BROWN,
+
+    @SerialName("default")
+    DEFAULT,
+
+    @SerialName("gray")
+    GRAY,
+
+    @SerialName("green")
+    GREEN,
+
+    @SerialName("orange")
+    ORANGE,
+
+    @SerialName("pink")
+    PINK,
+
+    @SerialName("purple")
+    PURPLE,
+
+    @SerialName("red")
+    RED,
+
+    @SerialName("yellow")
+    YELLOW,
 }
 
 /**

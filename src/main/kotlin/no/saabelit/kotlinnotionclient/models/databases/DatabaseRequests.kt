@@ -5,6 +5,7 @@ import kotlinx.serialization.Serializable
 import no.saabelit.kotlinnotionclient.models.base.EmptyObject
 import no.saabelit.kotlinnotionclient.models.base.Parent
 import no.saabelit.kotlinnotionclient.models.base.RichText
+import no.saabelit.kotlinnotionclient.models.base.SelectOptionColor
 import no.saabelit.kotlinnotionclient.models.pages.PageCover
 import no.saabelit.kotlinnotionclient.models.pages.PageIcon
 
@@ -187,7 +188,7 @@ data class CreateSelectOption(
     @SerialName("name")
     val name: String,
     @SerialName("color")
-    val color: String = "default",
+    val color: SelectOptionColor = SelectOptionColor.DEFAULT,
 )
 
 /**

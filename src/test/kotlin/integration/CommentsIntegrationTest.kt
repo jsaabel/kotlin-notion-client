@@ -169,8 +169,6 @@ class CommentsIntegrationTest :
 
                         // Step 6: Test comment pagination if there are many comments
                         println("📄 Testing comment pagination...")
-                        // Pagination is now handled automatically by the API
-                        val allCommentsWithPagination = client.comments.retrieve(createdPage.id)
 
                         // The API fetches all comments automatically
                         println("✅ Pagination test completed")

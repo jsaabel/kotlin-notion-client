@@ -6,6 +6,7 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import no.saabelit.kotlinnotionclient.models.base.Parent
 import no.saabelit.kotlinnotionclient.models.base.RichText
+import no.saabelit.kotlinnotionclient.models.base.SelectOptionColor
 import no.saabelit.kotlinnotionclient.models.blocks.BlockRequest
 
 /**
@@ -350,7 +351,7 @@ data class SelectOption(
     @SerialName("name")
     val name: String,
     @SerialName("color")
-    val color: String = "default",
+    val color: SelectOptionColor = SelectOptionColor.DEFAULT,
 )
 
 @Serializable
@@ -360,7 +361,7 @@ data class StatusOption(
     @SerialName("name")
     val name: String,
     @SerialName("color")
-    val color: String = "default",
+    val color: SelectOptionColor = SelectOptionColor.DEFAULT,
 )
 
 @Serializable

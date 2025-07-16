@@ -118,7 +118,7 @@ data class Annotations(
     @SerialName("code")
     val code: Boolean = false,
     @SerialName("color")
-    val color: String = "default", // TODO: Use color enum
+    val color: Color = Color.DEFAULT,
 )
 
 /**

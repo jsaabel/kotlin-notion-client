@@ -19,6 +19,7 @@ import no.saabelit.kotlinnotionclient.config.NotionConfig
 import no.saabelit.kotlinnotionclient.models.base.Annotations
 import no.saabelit.kotlinnotionclient.models.base.Parent
 import no.saabelit.kotlinnotionclient.models.base.RichText
+import no.saabelit.kotlinnotionclient.models.base.SelectOptionColor
 import no.saabelit.kotlinnotionclient.models.base.TextContent
 import no.saabelit.kotlinnotionclient.models.blocks.BlockRequest
 import no.saabelit.kotlinnotionclient.models.blocks.ParagraphRequestContent
@@ -166,7 +167,7 @@ class ValidationMockIntegrationTest :
                         no.saabelit.kotlinnotionclient.models.pages.SelectOption(
                             id = "option-$it",
                             name = "Option $it",
-                            color = "default",
+                            color = SelectOptionColor.DEFAULT,
                         )
                     }
                 val request =

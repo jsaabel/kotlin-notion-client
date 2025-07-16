@@ -17,6 +17,7 @@ import no.saabelit.kotlinnotionclient.config.NotionConfig
 import no.saabelit.kotlinnotionclient.models.base.Annotations
 import no.saabelit.kotlinnotionclient.models.base.Parent
 import no.saabelit.kotlinnotionclient.models.base.RichText
+import no.saabelit.kotlinnotionclient.models.base.SelectOptionColor
 import no.saabelit.kotlinnotionclient.models.base.TextContent
 import no.saabelit.kotlinnotionclient.models.blocks.BlockRequest
 import no.saabelit.kotlinnotionclient.models.blocks.BulletedListItemRequestContent
@@ -98,7 +99,7 @@ class ValidationIntegrationTest :
                         no.saabelit.kotlinnotionclient.models.pages.SelectOption(
                             id = "option-$it",
                             name = "Option $it",
-                            color = "default",
+                            color = SelectOptionColor.DEFAULT,
                         )
                     }
                 val request =
@@ -371,7 +372,7 @@ class ValidationIntegrationTest :
                     val segment1 = createLongRichText(1800) // Under limit
                     val segment2 = createLongRichText(1800) // Under limit
                     val segment3 = createNormalRichText("Final segment") // Small
-                    // Total: 1800 + 1800 + 13 = 3613 characters - well over 2000 limit
+                    // Total: 1800 + 1800 + 13 = 3613 characters - well over the 2000 limit
 
                     val multipleSegments = listOf(segment1, segment2, segment3)
 

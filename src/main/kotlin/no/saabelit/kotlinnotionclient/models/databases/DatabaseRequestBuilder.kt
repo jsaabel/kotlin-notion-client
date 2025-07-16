@@ -4,6 +4,7 @@ package no.saabelit.kotlinnotionclient.models.databases
 
 import no.saabelit.kotlinnotionclient.models.base.Parent
 import no.saabelit.kotlinnotionclient.models.base.RichText
+import no.saabelit.kotlinnotionclient.models.base.SelectOptionColor
 import no.saabelit.kotlinnotionclient.models.pages.ExternalFile
 import no.saabelit.kotlinnotionclient.models.pages.NotionFile
 import no.saabelit.kotlinnotionclient.models.pages.PageCover
@@ -414,7 +415,7 @@ class SelectBuilder {
      */
     fun option(
         name: String,
-        color: String = "default",
+        color: SelectOptionColor = SelectOptionColor.DEFAULT,
     ) {
         options.add(CreateSelectOption(name = name, color = color))
     }

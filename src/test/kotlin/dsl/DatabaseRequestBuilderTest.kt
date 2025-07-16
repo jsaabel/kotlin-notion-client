@@ -10,6 +10,7 @@ import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.types.shouldBeInstanceOf
 import no.saabelit.kotlinnotionclient.models.base.Parent
 import no.saabelit.kotlinnotionclient.models.base.RichText
+import no.saabelit.kotlinnotionclient.models.base.SelectOptionColor
 import no.saabelit.kotlinnotionclient.models.databases.CreateDatabaseProperty
 import no.saabelit.kotlinnotionclient.models.databases.CreateSelectOption
 import no.saabelit.kotlinnotionclient.models.databases.RelationConfiguration
@@ -282,18 +283,18 @@ class DatabaseRequestBuilderTest :
                             title("Test Database")
                             properties {
                                 select("Status") {
-                                    option("To Do", "red")
-                                    option("In Progress", "yellow")
-                                    option("Done", "green")
+                                    option("To Do", SelectOptionColor.RED)
+                                    option("In Progress", SelectOptionColor.YELLOW)
+                                    option("Done", SelectOptionColor.GREEN)
                                 }
                             }
                         }
 
                     val selectProperty = request.properties["Status"] as CreateDatabaseProperty.Select
                     selectProperty.select.options shouldHaveSizeList 3
-                    selectProperty.select.options[0] shouldBe CreateSelectOption("To Do", "red")
-                    selectProperty.select.options[1] shouldBe CreateSelectOption("In Progress", "yellow")
-                    selectProperty.select.options[2] shouldBe CreateSelectOption("Done", "green")
+                    selectProperty.select.options[0] shouldBe CreateSelectOption("To Do", SelectOptionColor.RED)
+                    selectProperty.select.options[1] shouldBe CreateSelectOption("In Progress", SelectOptionColor.YELLOW)
+                    selectProperty.select.options[2] shouldBe CreateSelectOption("Done", SelectOptionColor.GREEN)
                 }
 
                 "select without options" {
@@ -317,16 +318,16 @@ class DatabaseRequestBuilderTest :
                             title("Test Database")
                             properties {
                                 multiSelect("Tags") {
-                                    option("Important", "red")
-                                    option("Urgent", "orange")
+                                    option("Important", SelectOptionColor.RED)
+                                    option("Urgent", SelectOptionColor.ORANGE)
                                 }
                             }
                         }
 
                     val multiSelectProperty = request.properties["Tags"] as CreateDatabaseProperty.MultiSelect
                     multiSelectProperty.multiSelect.options shouldHaveSizeList 2
-                    multiSelectProperty.multiSelect.options[0] shouldBe CreateSelectOption("Important", "red")
-                    multiSelectProperty.multiSelect.options[1] shouldBe CreateSelectOption("Urgent", "orange")
+                    multiSelectProperty.multiSelect.options[0] shouldBe CreateSelectOption("Important", SelectOptionColor.RED)
+                    multiSelectProperty.multiSelect.options[1] shouldBe CreateSelectOption("Urgent", SelectOptionColor.ORANGE)
                 }
 
                 "relation with single property" {
@@ -411,13 +412,13 @@ class DatabaseRequestBuilderTest :
                             richText("Description")
                             number("Score", format = "number")
                             select("Status") {
-                                option("To Do", "red")
-                                option("In Progress", "yellow")
-                                option("Done", "green")
+                                option("To Do", SelectOptionColor.RED)
+                                option("In Progress", SelectOptionColor.YELLOW)
+                                option("Done", SelectOptionColor.GREEN)
                             }
                             multiSelect("Tags") {
-                                option("Important", "red")
-                                option("Urgent", "orange")
+                                option("Important", SelectOptionColor.RED)
+                                option("Urgent", SelectOptionColor.ORANGE)
                             }
                             date("Due Date")
                             checkbox("Completed")
@@ -507,7 +508,7 @@ class DatabaseRequestBuilderTest :
                         }
 
                     val selectProperty = request.properties["Status"] as CreateDatabaseProperty.Select
-                    selectProperty.select.options[0].color shouldBe "default"
+                    selectProperty.select.options[0].color shouldBe SelectOptionColor.DEFAULT
                 }
 
                 "number with default format" {
@@ -533,13 +534,13 @@ class DatabaseRequestBuilderTest :
                             title("Test Database")
                             properties {
                                 select("Priority") {
-                                    option("High", "red")
-                                    option("Medium", "yellow")
-                                    option("Low", "green")
+                                    option("High", SelectOptionColor.RED)
+                                    option("Medium", SelectOptionColor.YELLOW)
+                                    option("Low", SelectOptionColor.GREEN)
                                 }
                                 multiSelect("Categories") {
-                                    option("Work", "blue")
-                                    option("Personal", "purple")
+                                    option("Work", SelectOptionColor.BLUE)
+                                    option("Personal", SelectOptionColor.PURPLE)
                                 }
                             }
                         }
@@ -591,9 +592,9 @@ class DatabaseRequestBuilderTest :
                             title("Name")
                             richText("Notes")
                             select("Status") {
-                                option("New", "gray")
-                                option("Active", "green")
-                                option("Closed", "red")
+                                option("New", SelectOptionColor.GRAY)
+                                option("Active", SelectOptionColor.GREEN)
+                                option("Closed", SelectOptionColor.RED)
                             }
                             relation("Dependencies", "deps-db-id") {
                                 dual("Dependents", "dep-prop-id")

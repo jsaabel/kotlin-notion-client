@@ -11,6 +11,7 @@ import io.ktor.http.HttpStatusCode
 import mockClient
 import no.saabelit.kotlinnotionclient.config.NotionConfig
 import no.saabelit.kotlinnotionclient.exceptions.NotionException
+import no.saabelit.kotlinnotionclient.models.base.Color
 import no.saabelit.kotlinnotionclient.models.blocks.Block
 import no.saabelit.kotlinnotionclient.models.blocks.BlockRequest
 import no.saabelit.kotlinnotionclient.models.blocks.Heading2RequestContent
@@ -60,7 +61,7 @@ class BlocksApiTest :
                         block.heading2.richText
                             .first()
                             .plainText shouldBe "Lacinato kale"
-                        block.heading2.color shouldBe "default"
+                        block.heading2.color shouldBe Color.DEFAULT
                     }
                     else -> throw AssertionError("Expected Heading2 block")
                 }
@@ -191,7 +192,7 @@ class BlocksApiTest :
                         heading2 =
                             Heading2RequestContent(
                                 richText = listOf(RequestBuilders.createSimpleRichText("Lacinato kale")),
-                                color = "green",
+                                color = Color.GREEN,
                             ),
                     )
 
@@ -207,7 +208,7 @@ class BlocksApiTest :
                         updatedBlock.heading2.richText
                             .first()
                             .annotations
-                            .color shouldBe "green"
+                            .color shouldBe Color.GREEN
                     }
                     else -> throw AssertionError("Expected Heading2 block")
                 }
@@ -230,7 +231,7 @@ class BlocksApiTest :
 
                 val updatedBlock =
                     blocksApi.update(blockId) {
-                        heading2("Lacinato kale", color = "green")
+                        heading2("Lacinato kale", color = Color.GREEN)
                     }
 
                 updatedBlock.id shouldBe blockId

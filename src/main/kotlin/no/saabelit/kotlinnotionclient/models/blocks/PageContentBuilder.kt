@@ -2,6 +2,7 @@
 
 package no.saabelit.kotlinnotionclient.models.blocks
 
+import no.saabelit.kotlinnotionclient.models.base.Color
 import no.saabelit.kotlinnotionclient.models.base.RichText
 import no.saabelit.kotlinnotionclient.models.files.FileUploadReference
 import no.saabelit.kotlinnotionclient.models.requests.RequestBuilders
@@ -162,7 +163,7 @@ class PageContentBuilder {
      */
     fun heading1(
         text: String,
-        color: String = "default",
+        color: Color = Color.DEFAULT,
         isToggleable: Boolean = false,
         children: (PageContentBuilder.() -> Unit)? = null,
     ): PageContentBuilder =
@@ -184,7 +185,7 @@ class PageContentBuilder {
      */
     fun heading1(
         richText: List<RichText>,
-        color: String = "default",
+        color: Color = Color.DEFAULT,
         isToggleable: Boolean = false,
         children: (PageContentBuilder.() -> Unit)? = null,
     ): PageContentBuilder {
@@ -213,7 +214,7 @@ class PageContentBuilder {
      */
     fun heading2(
         text: String,
-        color: String = "default",
+        color: Color = Color.DEFAULT,
         isToggleable: Boolean = false,
         children: (PageContentBuilder.() -> Unit)? = null,
     ): PageContentBuilder =
@@ -235,7 +236,7 @@ class PageContentBuilder {
      */
     fun heading2(
         richText: List<RichText>,
-        color: String = "default",
+        color: Color = Color.DEFAULT,
         isToggleable: Boolean = false,
         children: (PageContentBuilder.() -> Unit)? = null,
     ): PageContentBuilder {
@@ -264,7 +265,7 @@ class PageContentBuilder {
      */
     fun heading3(
         text: String,
-        color: String = "default",
+        color: Color = Color.DEFAULT,
         isToggleable: Boolean = false,
         children: (PageContentBuilder.() -> Unit)? = null,
     ): PageContentBuilder =
@@ -286,7 +287,7 @@ class PageContentBuilder {
      */
     fun heading3(
         richText: List<RichText>,
-        color: String = "default",
+        color: Color = Color.DEFAULT,
         isToggleable: Boolean = false,
         children: (PageContentBuilder.() -> Unit)? = null,
     ): PageContentBuilder {
@@ -314,7 +315,7 @@ class PageContentBuilder {
      */
     fun paragraph(
         text: String,
-        color: String = "default",
+        color: Color = Color.DEFAULT,
         children: (PageContentBuilder.() -> Unit)? = null,
     ): PageContentBuilder =
         paragraph(
@@ -333,7 +334,7 @@ class PageContentBuilder {
      */
     fun paragraph(
         richText: List<RichText>,
-        color: String = "default",
+        color: Color = Color.DEFAULT,
         children: (PageContentBuilder.() -> Unit)? = null,
     ): PageContentBuilder {
         val childBlocks = children?.let { pageContent(it) }?.takeIf { it.isNotEmpty() }
@@ -359,7 +360,7 @@ class PageContentBuilder {
      */
     fun bullet(
         text: String,
-        color: String = "default",
+        color: Color = Color.DEFAULT,
         children: (PageContentBuilder.() -> Unit)? = null,
     ): PageContentBuilder =
         bullet(
@@ -378,7 +379,7 @@ class PageContentBuilder {
      */
     fun bullet(
         richText: List<RichText>,
-        color: String = "default",
+        color: Color = Color.DEFAULT,
         children: (PageContentBuilder.() -> Unit)? = null,
     ): PageContentBuilder {
         val childBlocks = children?.let { pageContent(it) }?.takeIf { it.isNotEmpty() }
@@ -404,7 +405,7 @@ class PageContentBuilder {
      */
     fun number(
         text: String,
-        color: String = "default",
+        color: Color = Color.DEFAULT,
         children: (PageContentBuilder.() -> Unit)? = null,
     ): PageContentBuilder =
         number(
@@ -423,7 +424,7 @@ class PageContentBuilder {
      */
     fun number(
         richText: List<RichText>,
-        color: String = "default",
+        color: Color = Color.DEFAULT,
         children: (PageContentBuilder.() -> Unit)? = null,
     ): PageContentBuilder {
         val childBlocks = children?.let { pageContent(it) }?.takeIf { it.isNotEmpty() }
@@ -451,7 +452,7 @@ class PageContentBuilder {
     fun toDo(
         text: String,
         checked: Boolean = false,
-        color: String = "default",
+        color: Color = Color.DEFAULT,
         children: (PageContentBuilder.() -> Unit)? = null,
     ): PageContentBuilder =
         toDo(
@@ -473,7 +474,7 @@ class PageContentBuilder {
     fun toDo(
         richText: List<RichText>,
         checked: Boolean = false,
-        color: String = "default",
+        color: Color = Color.DEFAULT,
         children: (PageContentBuilder.() -> Unit)? = null,
     ): PageContentBuilder {
         val childBlocks = children?.let { pageContent(it) }?.takeIf { it.isNotEmpty() }
@@ -500,7 +501,7 @@ class PageContentBuilder {
      */
     fun toggle(
         text: String,
-        color: String = "default",
+        color: Color = Color.DEFAULT,
         children: (PageContentBuilder.() -> Unit)? = null,
     ): PageContentBuilder =
         toggle(
@@ -519,7 +520,7 @@ class PageContentBuilder {
      */
     fun toggle(
         richText: List<RichText>,
-        color: String = "default",
+        color: Color = Color.DEFAULT,
         children: (PageContentBuilder.() -> Unit)? = null,
     ): PageContentBuilder {
         val childBlocks = children?.let { pageContent(it) }?.takeIf { it.isNotEmpty() }
@@ -569,7 +570,7 @@ class PageContentBuilder {
      */
     fun quote(
         text: String,
-        color: String = "default",
+        color: Color = Color.DEFAULT,
         children: (PageContentBuilder.() -> Unit)? = null,
     ): PageContentBuilder =
         quote(
@@ -588,7 +589,7 @@ class PageContentBuilder {
      */
     fun quote(
         richText: List<RichText>,
-        color: String = "default",
+        color: Color = Color.DEFAULT,
         children: (PageContentBuilder.() -> Unit)? = null,
     ): PageContentBuilder {
         val childBlocks = children?.let { pageContent(it) }?.takeIf { it.isNotEmpty() }
@@ -616,7 +617,7 @@ class PageContentBuilder {
     fun callout(
         emoji: String,
         text: String,
-        color: String = "default",
+        color: Color = Color.DEFAULT,
         children: (PageContentBuilder.() -> Unit)? = null,
     ): PageContentBuilder =
         callout(
@@ -638,7 +639,7 @@ class PageContentBuilder {
     fun callout(
         icon: CalloutIcon? = null,
         richText: List<RichText>,
-        color: String = "default",
+        color: Color = Color.DEFAULT,
         children: (PageContentBuilder.() -> Unit)? = null,
     ): PageContentBuilder {
         val childBlocks = children?.let { pageContent(it) }?.takeIf { it.isNotEmpty() }

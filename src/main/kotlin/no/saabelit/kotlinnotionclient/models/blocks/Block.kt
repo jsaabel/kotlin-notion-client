@@ -5,6 +5,7 @@ package no.saabelit.kotlinnotionclient.models.blocks
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonObject
+import no.saabelit.kotlinnotionclient.models.base.Color
 import no.saabelit.kotlinnotionclient.models.base.NotionObject
 import no.saabelit.kotlinnotionclient.models.base.Parent
 import no.saabelit.kotlinnotionclient.models.base.RichText
@@ -538,7 +539,7 @@ data class Heading1Content(
     @SerialName("rich_text")
     val richText: List<RichText>,
     @SerialName("color")
-    val color: String = "default",
+    val color: Color = Color.DEFAULT,
     @SerialName("is_toggleable")
     val isToggleable: Boolean = false,
 )
@@ -551,7 +552,7 @@ data class Heading2Content(
     @SerialName("rich_text")
     val richText: List<RichText>,
     @SerialName("color")
-    val color: String = "default",
+    val color: Color = Color.DEFAULT,
     @SerialName("is_toggleable")
     val isToggleable: Boolean = false,
 )
@@ -564,7 +565,7 @@ data class Heading3Content(
     @SerialName("rich_text")
     val richText: List<RichText>,
     @SerialName("color")
-    val color: String = "default",
+    val color: Color = Color.DEFAULT,
     @SerialName("is_toggleable")
     val isToggleable: Boolean = false,
 )
@@ -577,7 +578,7 @@ data class ParagraphContent(
     @SerialName("rich_text")
     val richText: List<RichText>,
     @SerialName("color")
-    val color: String = "default",
+    val color: Color = Color.DEFAULT,
 )
 
 /**
@@ -588,7 +589,7 @@ data class QuoteContent(
     @SerialName("rich_text")
     val richText: List<RichText>,
     @SerialName("color")
-    val color: String = "default",
+    val color: Color = Color.DEFAULT,
 )
 
 /**
@@ -599,7 +600,7 @@ data class BulletedListItemContent(
     @SerialName("rich_text")
     val richText: List<RichText>,
     @SerialName("color")
-    val color: String = "default",
+    val color: Color = Color.DEFAULT,
 )
 
 /**
@@ -610,7 +611,7 @@ data class NumberedListItemContent(
     @SerialName("rich_text")
     val richText: List<RichText>,
     @SerialName("color")
-    val color: String = "default",
+    val color: Color = Color.DEFAULT,
 )
 
 /**
@@ -621,7 +622,7 @@ data class ToDoContent(
     @SerialName("rich_text")
     val richText: List<RichText>,
     @SerialName("color")
-    val color: String = "default",
+    val color: Color = Color.DEFAULT,
     @SerialName("checked")
     val checked: Boolean = false,
 )
@@ -634,7 +635,7 @@ data class CalloutContent(
     @SerialName("rich_text")
     val richText: List<RichText>,
     @SerialName("color")
-    val color: String = "default",
+    val color: Color = Color.DEFAULT,
     @SerialName("icon")
     val icon: CalloutIcon? = null,
 )
@@ -660,7 +661,7 @@ data class ToggleContent(
     @SerialName("rich_text")
     val richText: List<RichText>,
     @SerialName("color")
-    val color: String = "default",
+    val color: Color = Color.DEFAULT,
 )
 
 /**

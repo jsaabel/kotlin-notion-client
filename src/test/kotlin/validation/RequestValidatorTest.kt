@@ -1,5 +1,6 @@
-package no.saabelit.kotlinnotionclient.validation
+package validation
 
+import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.annotation.Tags
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.booleans.shouldBeFalse
@@ -11,14 +12,26 @@ import io.kotest.matchers.comparables.shouldBeLessThanOrEqualTo
 import io.kotest.matchers.shouldBe
 import no.saabelit.kotlinnotionclient.config.NotionApiLimits
 import no.saabelit.kotlinnotionclient.models.base.Annotations
+import no.saabelit.kotlinnotionclient.models.base.Color
 import no.saabelit.kotlinnotionclient.models.base.Parent
 import no.saabelit.kotlinnotionclient.models.base.RichText
+import no.saabelit.kotlinnotionclient.models.base.SelectOptionColor
 import no.saabelit.kotlinnotionclient.models.base.TextContent
 import no.saabelit.kotlinnotionclient.models.blocks.BlockRequest
 import no.saabelit.kotlinnotionclient.models.blocks.ParagraphRequestContent
+import no.saabelit.kotlinnotionclient.models.databases.CreateDatabaseRequest
 import no.saabelit.kotlinnotionclient.models.pages.CreatePageRequest
 import no.saabelit.kotlinnotionclient.models.pages.PagePropertyValue
+import no.saabelit.kotlinnotionclient.models.pages.PageReference
+import no.saabelit.kotlinnotionclient.models.pages.SelectOption
 import no.saabelit.kotlinnotionclient.models.pages.UpdatePageRequest
+import no.saabelit.kotlinnotionclient.models.pages.UserReference
+import no.saabelit.kotlinnotionclient.validation.RequestValidator
+import no.saabelit.kotlinnotionclient.validation.ValidationConfig
+import no.saabelit.kotlinnotionclient.validation.ValidationException
+import no.saabelit.kotlinnotionclient.validation.ValidationResult
+import no.saabelit.kotlinnotionclient.validation.ValidationViolation
+import no.saabelit.kotlinnotionclient.validation.ViolationType
 
 @Tags("Unit")
 class RequestValidatorTest :
@@ -137,10 +150,10 @@ class RequestValidatorTest :
                     PagePropertyValue.MultiSelectValue(
                         multiSelect =
                             createLargeArray(150).map {
-                                no.saabelit.kotlinnotionclient.models.pages.SelectOption(
+                                SelectOption(
                                     id = it.toString(),
                                     name = it.toString(),
-                                    color = "default",
+                                    color = SelectOptionColor.DEFAULT,
                                 )
                             },
                     )
@@ -169,8 +182,7 @@ class RequestValidatorTest :
                     PagePropertyValue.RelationValue(
                         relation =
                             createLargeArray(150).map {
-                                no.saabelit.kotlinnotionclient.models.pages
-                                    .PageReference(id = it.toString())
+                                PageReference(id = it.toString())
                             },
                     )
                 val request =
@@ -196,7 +208,7 @@ class RequestValidatorTest :
                     PagePropertyValue.PeopleValue(
                         people =
                             createLargeArray(150).map {
-                                no.saabelit.kotlinnotionclient.models.pages.UserReference(
+                                UserReference(
                                     id = it.toString(),
                                 )
                             },
@@ -389,7 +401,7 @@ class RequestValidatorTest :
         context("Database Request Validation") {
             test("should validate normal database request without violations") {
                 val request =
-                    no.saabelit.kotlinnotionclient.models.databases.CreateDatabaseRequest(
+                    CreateDatabaseRequest(
                         parent = Parent(type = "page_id", pageId = "test-parent-id"),
                         title = listOf(createRichText("Test Database")),
                         properties = emptyMap(),
@@ -402,7 +414,7 @@ class RequestValidatorTest :
 
             test("should detect violations in database title") {
                 val request =
-                    no.saabelit.kotlinnotionclient.models.databases.CreateDatabaseRequest(
+                    CreateDatabaseRequest(
                         parent = Parent(type = "page_id", pageId = "test-parent-id"),
                         title = listOf(createLongRichText()),
                         properties = emptyMap(),
@@ -417,7 +429,7 @@ class RequestValidatorTest :
 
             test("should detect violations in database description") {
                 val request =
-                    no.saabelit.kotlinnotionclient.models.databases.CreateDatabaseRequest(
+                    CreateDatabaseRequest(
                         parent = Parent(type = "page_id", pageId = "test-parent-id"),
                         title = listOf(createRichText("Test Database")),
                         properties = emptyMap(),
@@ -594,7 +606,7 @@ class RequestValidatorTest :
                                 ),
                         )
 
-                    io.kotest.assertions.throwables.shouldThrow<ValidationException> {
+                    shouldThrow<ValidationException> {
                         noAutoSplitValidator.validateOrFix(request)
                     }
                 }
@@ -604,10 +616,10 @@ class RequestValidatorTest :
 
                     val tooManyOptions =
                         (1..101).map {
-                            no.saabelit.kotlinnotionclient.models.pages.SelectOption(
+                            SelectOption(
                                 id = "option-$it",
                                 name = "Option$it",
-                                color = "default",
+                                color = SelectOptionColor.DEFAULT,
                             )
                         }
                     val request =
@@ -619,7 +631,7 @@ class RequestValidatorTest :
                                 ),
                         )
 
-                    io.kotest.assertions.throwables.shouldThrow<ValidationException> {
+                    shouldThrow<ValidationException> {
                         autoSplitValidator.validateOrFix(request)
                     }
                 }
@@ -637,7 +649,7 @@ class RequestValidatorTest :
                                 Annotations(
                                     bold = true,
                                     italic = true,
-                                    color = "red",
+                                    color = Color.RED,
                                 ),
                             plainText = "a".repeat(2100),
                             href = "https://example.com",
@@ -661,7 +673,7 @@ class RequestValidatorTest :
                     fixedContent.forEach { segment ->
                         segment.annotations.bold.shouldBe(true)
                         segment.annotations.italic.shouldBe(true)
-                        segment.annotations.color.shouldBe("red")
+                        segment.annotations.color.shouldBe(Color.RED)
                         segment.href.shouldBe("https://example.com")
                     }
                 }
@@ -715,7 +727,7 @@ class RequestValidatorTest :
 
                     val longTitle = createLongRichText()
                     val request =
-                        no.saabelit.kotlinnotionclient.models.databases.CreateDatabaseRequest(
+                        CreateDatabaseRequest(
                             parent = Parent(type = "page_id", pageId = "test-page-id"),
                             title = listOf(longTitle),
                             properties = mapOf(),
@@ -743,7 +755,7 @@ class RequestValidatorTest :
 
                     val longDescription = createLongRichText()
                     val request =
-                        no.saabelit.kotlinnotionclient.models.databases.CreateDatabaseRequest(
+                        CreateDatabaseRequest(
                             parent = Parent(type = "page_id", pageId = "test-page-id"),
                             title = listOf(createRichText("Normal title")),
                             properties = mapOf(),
@@ -781,7 +793,7 @@ class RequestValidatorTest :
                             )
                         }
 
-                    io.kotest.assertions.throwables.shouldThrow<ValidationException> {
+                    shouldThrow<ValidationException> {
                         validator.validateOrThrow("children", tooManyBlocks)
                     }
                 }
@@ -816,7 +828,7 @@ class RequestValidatorTest :
                             ),
                         )
 
-                    io.kotest.assertions.throwables.shouldThrow<ValidationException> {
+                    shouldThrow<ValidationException> {
                         validator.validateOrThrow("children", blockWithLongContent)
                     }
                 }

@@ -1,4 +1,4 @@
-package no.saabelit.kotlinnotionclient.config
+package config
 
 import io.kotest.core.annotation.Tags
 import io.kotest.core.spec.style.FunSpec
@@ -8,6 +8,7 @@ import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import kotlinx.serialization.json.Json
+import no.saabelit.kotlinnotionclient.config.NotionApiLimits
 import no.saabelit.kotlinnotionclient.models.base.Annotations
 import no.saabelit.kotlinnotionclient.models.base.Link
 import no.saabelit.kotlinnotionclient.models.base.RichText
