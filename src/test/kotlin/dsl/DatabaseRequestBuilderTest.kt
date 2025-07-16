@@ -248,10 +248,11 @@ class DatabaseRequestBuilderTest :
                                 url("Website")
                                 email("Email")
                                 phoneNumber("Phone")
+                                people("Assignee")
                             }
                         }
 
-                    request.properties shouldHaveSize 8
+                    request.properties shouldHaveSize 9
                     request.properties["Name"].shouldBeInstanceOf<CreateDatabaseProperty.Title>()
                     request.properties["Description"].shouldBeInstanceOf<CreateDatabaseProperty.RichText>()
                     request.properties["Score"].shouldBeInstanceOf<CreateDatabaseProperty.Number>()
@@ -260,6 +261,7 @@ class DatabaseRequestBuilderTest :
                     request.properties["Website"].shouldBeInstanceOf<CreateDatabaseProperty.Url>()
                     request.properties["Email"].shouldBeInstanceOf<CreateDatabaseProperty.Email>()
                     request.properties["Phone"].shouldBeInstanceOf<CreateDatabaseProperty.PhoneNumber>()
+                    request.properties["Assignee"].shouldBeInstanceOf<CreateDatabaseProperty.People>()
                 }
 
                 "number with custom format" {
@@ -425,6 +427,7 @@ class DatabaseRequestBuilderTest :
                             url("Website")
                             email("Contact")
                             phoneNumber("Phone")
+                            people("Assignee")
                             relation("Related Tasks", "other-db-id") {
                                 dual("Backlink", "prop-id")
                             }
@@ -436,7 +439,7 @@ class DatabaseRequestBuilderTest :
                 request.description shouldBe listOf(RichText.fromPlainText("A database with all possible features"))
                 request.icon shouldBe PageIcon(type = "emoji", emoji = "🚀")
                 request.cover shouldBe PageCover(type = "external", external = ExternalFile(url = "https://example.com/cover.jpg"))
-                request.properties shouldHaveSize 11
+                request.properties shouldHaveSize 12
             }
 
             "should validate required fields" - {

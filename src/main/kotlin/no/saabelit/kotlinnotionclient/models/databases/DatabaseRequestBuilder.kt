@@ -33,6 +33,7 @@ import no.saabelit.kotlinnotionclient.models.pages.PageIcon
  *             option("Done", "green")
  *         }
  *         date("Due Date")
+ *         people("Assignee")
  *         relation("Related Tasks", targetDatabaseId)
  *     }
  *     icon.emoji("📊")
@@ -370,6 +371,15 @@ class DatabasePropertiesBuilder {
      */
     fun phoneNumber(name: String) {
         properties[name] = CreateDatabaseProperty.PhoneNumber()
+    }
+
+    /**
+     * Adds a people property to the database.
+     *
+     * @param name The property name
+     */
+    fun people(name: String) {
+        properties[name] = CreateDatabaseProperty.People()
     }
 
     /**

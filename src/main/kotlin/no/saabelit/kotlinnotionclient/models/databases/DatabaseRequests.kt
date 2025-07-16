@@ -152,6 +152,16 @@ sealed class CreateDatabaseProperty {
     ) : CreateDatabaseProperty()
 
     /**
+     * People property for user mentions.
+     */
+    @Serializable
+    @SerialName("people")
+    data class People(
+        @SerialName("people")
+        val people: EmptyObject = EmptyObject(),
+    ) : CreateDatabaseProperty()
+
+    /**
      * Relation property for linking to pages in another database.
      */
     @Serializable

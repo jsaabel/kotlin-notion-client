@@ -419,8 +419,7 @@ class RequestValidator(
     /**
      * Extracts text content from a rich text object.
      */
-    private fun extractTextContent(richText: RichText): String =
-        richText.plainText
+    private fun extractTextContent(richText: RichText): String = richText.plainText
 
     /**
      * Extracts rich text arrays from different block types.

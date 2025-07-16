@@ -73,6 +73,7 @@ class DatabaseRequestBuilderIntegrationTest :
                                 url("Reference URL")
                                 email("Assignee Email")
                                 phoneNumber("Phone")
+                                people("Assignee")
                             }
                         }
 
@@ -101,7 +102,7 @@ class DatabaseRequestBuilderIntegrationTest :
                     createdDatabase.description[0].plainText shouldBe "This database was created using the DatabaseRequestBuilder DSL!"
 
                     // Verify all properties were created
-                    createdDatabase.properties.size shouldBe 10
+                    createdDatabase.properties.size shouldBe 11
                     createdDatabase.properties.keys shouldBe
                         setOf(
                             "Task Name",
@@ -114,6 +115,7 @@ class DatabaseRequestBuilderIntegrationTest :
                             "Reference URL",
                             "Assignee Email",
                             "Phone",
+                            "Assignee",
                         )
 
                     // Verify specific property types
@@ -127,6 +129,7 @@ class DatabaseRequestBuilderIntegrationTest :
                     createdDatabase.properties["Reference URL"].shouldBeInstanceOf<DatabaseProperty.Url>()
                     createdDatabase.properties["Assignee Email"].shouldBeInstanceOf<DatabaseProperty.Email>()
                     createdDatabase.properties["Phone"].shouldBeInstanceOf<DatabaseProperty.PhoneNumber>()
+                    createdDatabase.properties["Assignee"].shouldBeInstanceOf<DatabaseProperty.People>()
 
                     println("✅ Database properties verified")
 
@@ -155,7 +158,7 @@ class DatabaseRequestBuilderIntegrationTest :
                     } else {
                         println("🔧 Cleanup skipped (NOTION_CLEANUP_AFTER_TEST=false)")
                         println("   Created database: ${createdDatabase.id} (\"DSL Integration Test Database\")")
-                        println("   Contains 10 properties with comprehensive type coverage")
+                        println("   Contains 11 properties with comprehensive type coverage")
                     }
                 } finally {
                     client.close()
