@@ -222,6 +222,127 @@ sealed class BlockRequest {
         @SerialName("table_row")
         val tableRow: TableRowRequestContent,
     ) : BlockRequest()
+
+    /**
+     * Bookmark block request.
+     * Bookmarks web links with metadata.
+     */
+    @Serializable
+    @SerialName("bookmark")
+    data class Bookmark(
+        @SerialName("bookmark")
+        val bookmark: BookmarkRequestContent,
+    ) : BlockRequest()
+
+    /**
+     * Embed block request.
+     * Embeds external content.
+     */
+    @Serializable
+    @SerialName("embed")
+    data class Embed(
+        @SerialName("embed")
+        val embed: EmbedRequestContent,
+    ) : BlockRequest()
+
+    /**
+     * Child page block request.
+     * References to child pages.
+     */
+    @Serializable
+    @SerialName("child_page")
+    data class ChildPage(
+        @SerialName("child_page")
+        val childPage: ChildPageRequestContent,
+    ) : BlockRequest()
+
+    /**
+     * Child database block request.
+     * References to child databases.
+     */
+    @Serializable
+    @SerialName("child_database")
+    data class ChildDatabase(
+        @SerialName("child_database")
+        val childDatabase: ChildDatabaseRequestContent,
+    ) : BlockRequest()
+
+    /**
+     * Column list block request.
+     * Container for column layout.
+     */
+    @Serializable
+    @SerialName("column_list")
+    data class ColumnList(
+        @SerialName("column_list")
+        val columnList: ColumnListRequestContent,
+    ) : BlockRequest()
+
+    /**
+     * Column block request.
+     * Individual column within a column list.
+     */
+    @Serializable
+    @SerialName("column")
+    data class Column(
+        @SerialName("column")
+        val column: ColumnRequestContent,
+    ) : BlockRequest()
+
+    /**
+     * Breadcrumb block request.
+     * Navigation breadcrumb display.
+     */
+    @Serializable
+    @SerialName("breadcrumb")
+    data class Breadcrumb(
+        @SerialName("breadcrumb")
+        val breadcrumb: BreadcrumbRequestContent = BreadcrumbRequestContent(),
+    ) : BlockRequest()
+
+    /**
+     * Table of contents block request.
+     * Auto-generated table of contents.
+     */
+    @Serializable
+    @SerialName("table_of_contents")
+    data class TableOfContents(
+        @SerialName("table_of_contents")
+        val tableOfContents: TableOfContentsRequestContent,
+    ) : BlockRequest()
+
+    /**
+     * Equation block request.
+     * Mathematical equations in LaTeX format.
+     */
+    @Serializable
+    @SerialName("equation")
+    data class Equation(
+        @SerialName("equation")
+        val equation: EquationRequestContent,
+    ) : BlockRequest()
+
+    /**
+     * Synced block request.
+     * Synchronized content blocks.
+     */
+    @Serializable
+    @SerialName("synced_block")
+    data class SyncedBlock(
+        @SerialName("synced_block")
+        val syncedBlock: SyncedBlockRequestContent,
+    ) : BlockRequest()
+
+    /**
+     * Template block request.
+     * Template button for repeated content.
+     */
+    @Serializable
+    @SerialName("template")
+    data class Template(
+        @SerialName("template")
+        val template: TemplateRequestContent,
+    ) : BlockRequest()
 }
 
 // REQUEST CONTENT CLASSES
@@ -496,4 +617,106 @@ data class TableRowRequestContent(
     val cells: List<List<RichText>>,
 )
 
-// Note: CalloutIcon is defined in Block.kt to avoid duplication
+/**
+ * Content for bookmark block requests.
+ */
+@Serializable
+data class BookmarkRequestContent(
+    @SerialName("caption")
+    val caption: List<RichText> = emptyList(),
+    @SerialName("url")
+    val url: String,
+)
+
+/**
+ * Content for embed block requests.
+ */
+@Serializable
+data class EmbedRequestContent(
+    @SerialName("url")
+    val url: String,
+)
+
+/**
+ * Content for child_page block requests.
+ */
+@Serializable
+data class ChildPageRequestContent(
+    @SerialName("title")
+    val title: String,
+)
+
+/**
+ * Content for child_database block requests.
+ */
+@Serializable
+data class ChildDatabaseRequestContent(
+    @SerialName("title")
+    val title: String,
+)
+
+/**
+ * Content for column_list block requests.
+ */
+@Serializable
+data class ColumnListRequestContent(
+    @SerialName("children")
+    val children: List<BlockRequest>? = null,
+)
+
+/**
+ * Content for column block requests.
+ */
+@Serializable
+data class ColumnRequestContent(
+    @SerialName("children")
+    val children: List<BlockRequest>? = null,
+)
+
+/**
+ * Content for breadcrumb block requests.
+ */
+@Serializable
+class BreadcrumbRequestContent
+
+/**
+ * Content for table_of_contents block requests.
+ */
+@Serializable
+data class TableOfContentsRequestContent(
+    @SerialName("color")
+    val color: Color = Color.DEFAULT,
+)
+
+/**
+ * Content for equation block requests.
+ */
+@Serializable
+data class EquationRequestContent(
+    @SerialName("expression")
+    val expression: String,
+)
+
+/**
+ * Content for synced_block block requests.
+ */
+@Serializable
+data class SyncedBlockRequestContent(
+    @SerialName("synced_from")
+    val syncedFrom: SyncedBlockReference? = null,
+    @SerialName("children")
+    val children: List<BlockRequest>? = null,
+)
+
+/**
+ * Content for template block requests.
+ */
+@Serializable
+data class TemplateRequestContent(
+    @SerialName("rich_text")
+    val richText: List<RichText>,
+    @SerialName("children")
+    val children: List<BlockRequest>? = null,
+)
+
+// Note: CalloutIcon and SyncedBlockReference are defined in Block.kt to avoid duplication

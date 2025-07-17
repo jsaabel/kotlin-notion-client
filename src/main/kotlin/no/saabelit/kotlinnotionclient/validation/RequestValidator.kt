@@ -489,6 +489,39 @@ class RequestValidator(
                     richTextArrays["tableRow.cells[$cellIndex]"] = cell
                 }
             }
+            is BlockRequest.Bookmark -> {
+                richTextArrays["bookmark.caption"] = block.bookmark.caption
+            }
+            is BlockRequest.Embed -> {
+                // Embed blocks don't have rich text content
+            }
+            is BlockRequest.ChildPage -> {
+                // Child page blocks don't have rich text content
+            }
+            is BlockRequest.ChildDatabase -> {
+                // Child database blocks don't have rich text content
+            }
+            is BlockRequest.ColumnList -> {
+                // Column list blocks don't have rich text content directly
+            }
+            is BlockRequest.Column -> {
+                // Column blocks don't have rich text content directly
+            }
+            is BlockRequest.Breadcrumb -> {
+                // Breadcrumb blocks don't have rich text content
+            }
+            is BlockRequest.TableOfContents -> {
+                // Table of contents blocks don't have rich text content
+            }
+            is BlockRequest.Equation -> {
+                // Equation blocks don't have rich text content
+            }
+            is BlockRequest.SyncedBlock -> {
+                // Synced blocks don't have rich text content directly
+            }
+            is BlockRequest.Template -> {
+                richTextArrays["template.richText"] = block.template.richText
+            }
         }
 
         return richTextArrays

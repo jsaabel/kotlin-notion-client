@@ -141,8 +141,50 @@ class ContentDslIntegrationTest :
                             divider()
                             expectedTopLevelBlocks++ // 15
 
-                            paragraph("🎉 Content DSL integration test completed successfully!")
+                            // New block types demonstration
+                            heading2("🆕 New Block Types")
                             expectedTopLevelBlocks++ // 16
+
+                            bookmark("https://notion.so", caption = "Notion homepage")
+                            expectedTopLevelBlocks++ // 17
+
+                            embed("https://www.youtube.com/watch?v=dQw4w9WgXcQ")
+                            expectedTopLevelBlocks++ // 18
+
+                            columnList {
+                                column {
+                                    paragraph("Left column content")
+                                    bullet("Left bullet")
+                                }
+                                column {
+                                    paragraph("Right column content")
+                                    bullet("Right bullet")
+                                }
+                            }
+                            expectedTopLevelBlocks++ // 19
+
+                            tableOfContents()
+                            expectedTopLevelBlocks++ // 20
+
+                            equation("E = mc^2")
+                            expectedTopLevelBlocks++ // 21
+
+                            // Note: Synced blocks require a two-step creation process
+                            // First create original, then create references to it
+                            // Skipping for now to avoid API complexity
+
+                            breadcrumb()
+                            expectedTopLevelBlocks++ // 22
+
+                            // Note: childPage and childDatabase blocks cannot be created via blocks API
+                            // They must be created through the pages API with proper parent relationships
+                            // These block types are only for reading existing child page relationships
+
+                            divider()
+                            expectedTopLevelBlocks++ // 23
+
+                            paragraph("🎉 Content DSL integration test completed successfully with all block types!")
+                            expectedTopLevelBlocks++ // 24
                         }
 
                     // Step 3: Validate DSL-generated structure
@@ -188,6 +230,16 @@ class ContentDslIntegrationTest :
                     val bullet = blocks[5] as Block.BulletedListItem
                     bullet.bulletedListItem.richText[0].plainText shouldBe "Bullet with nested content"
 
+                    // Step 9: Verify some of the new block types
+                    blocks[16].shouldBeInstanceOf<Block.Bookmark>()
+                    blocks[17].shouldBeInstanceOf<Block.Embed>()
+                    blocks[18].shouldBeInstanceOf<Block.ColumnList>()
+                    blocks[19].shouldBeInstanceOf<Block.TableOfContents>()
+                    blocks[20].shouldBeInstanceOf<Block.Equation>()
+                    blocks[21].shouldBeInstanceOf<Block.Breadcrumb>()
+                    // Note: childPage and childDatabase blocks are not created via blocks API
+
+                    println("✅ New block types verified successfully")
                     println("✅ Specific content verified successfully")
 
                     println("✅ Content DSL integration test completed successfully!")

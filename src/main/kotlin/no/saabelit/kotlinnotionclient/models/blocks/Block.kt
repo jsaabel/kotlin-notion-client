@@ -587,6 +587,366 @@ sealed class Block : NotionObject {
         @SerialName("type")
         override val type: String = "table_row"
     }
+
+    // LINK/REFERENCE BLOCKS
+
+    @Serializable
+    @SerialName("bookmark")
+    data class Bookmark(
+        @SerialName("id")
+        override val id: String,
+        @SerialName("created_time")
+        override val createdTime: String,
+        @SerialName("last_edited_time")
+        override val lastEditedTime: String,
+        @SerialName("created_by")
+        override val createdBy: User? = null,
+        @SerialName("last_edited_by")
+        override val lastEditedBy: User? = null,
+        @SerialName("archived")
+        override val archived: Boolean,
+        @SerialName("parent")
+        override val parent: Parent,
+        @SerialName("has_children")
+        override val hasChildren: Boolean,
+        @SerialName("bookmark")
+        val bookmark: BookmarkContent,
+    ) : Block() {
+        @SerialName("object")
+        override val objectType: String = "block"
+
+        @SerialName("type")
+        override val type: String = "bookmark"
+    }
+
+    @Serializable
+    @SerialName("link_preview")
+    data class LinkPreview(
+        @SerialName("id")
+        override val id: String,
+        @SerialName("created_time")
+        override val createdTime: String,
+        @SerialName("last_edited_time")
+        override val lastEditedTime: String,
+        @SerialName("created_by")
+        override val createdBy: User? = null,
+        @SerialName("last_edited_by")
+        override val lastEditedBy: User? = null,
+        @SerialName("archived")
+        override val archived: Boolean,
+        @SerialName("parent")
+        override val parent: Parent,
+        @SerialName("has_children")
+        override val hasChildren: Boolean,
+        @SerialName("link_preview")
+        val linkPreview: LinkPreviewContent,
+    ) : Block() {
+        @SerialName("object")
+        override val objectType: String = "block"
+
+        @SerialName("type")
+        override val type: String = "link_preview"
+    }
+
+    @Serializable
+    @SerialName("embed")
+    data class Embed(
+        @SerialName("id")
+        override val id: String,
+        @SerialName("created_time")
+        override val createdTime: String,
+        @SerialName("last_edited_time")
+        override val lastEditedTime: String,
+        @SerialName("created_by")
+        override val createdBy: User? = null,
+        @SerialName("last_edited_by")
+        override val lastEditedBy: User? = null,
+        @SerialName("archived")
+        override val archived: Boolean,
+        @SerialName("parent")
+        override val parent: Parent,
+        @SerialName("has_children")
+        override val hasChildren: Boolean,
+        @SerialName("embed")
+        val embed: EmbedContent,
+    ) : Block() {
+        @SerialName("object")
+        override val objectType: String = "block"
+
+        @SerialName("type")
+        override val type: String = "embed"
+    }
+
+    // CHILD/REFERENCE BLOCKS
+
+    @Serializable
+    @SerialName("child_page")
+    data class ChildPage(
+        @SerialName("id")
+        override val id: String,
+        @SerialName("created_time")
+        override val createdTime: String,
+        @SerialName("last_edited_time")
+        override val lastEditedTime: String,
+        @SerialName("created_by")
+        override val createdBy: User? = null,
+        @SerialName("last_edited_by")
+        override val lastEditedBy: User? = null,
+        @SerialName("archived")
+        override val archived: Boolean,
+        @SerialName("parent")
+        override val parent: Parent,
+        @SerialName("has_children")
+        override val hasChildren: Boolean,
+        @SerialName("child_page")
+        val childPage: ChildPageContent,
+    ) : Block() {
+        @SerialName("object")
+        override val objectType: String = "block"
+
+        @SerialName("type")
+        override val type: String = "child_page"
+    }
+
+    @Serializable
+    @SerialName("child_database")
+    data class ChildDatabase(
+        @SerialName("id")
+        override val id: String,
+        @SerialName("created_time")
+        override val createdTime: String,
+        @SerialName("last_edited_time")
+        override val lastEditedTime: String,
+        @SerialName("created_by")
+        override val createdBy: User? = null,
+        @SerialName("last_edited_by")
+        override val lastEditedBy: User? = null,
+        @SerialName("archived")
+        override val archived: Boolean,
+        @SerialName("parent")
+        override val parent: Parent,
+        @SerialName("has_children")
+        override val hasChildren: Boolean,
+        @SerialName("child_database")
+        val childDatabase: ChildDatabaseContent,
+    ) : Block() {
+        @SerialName("object")
+        override val objectType: String = "block"
+
+        @SerialName("type")
+        override val type: String = "child_database"
+    }
+
+    // LAYOUT BLOCKS
+
+    @Serializable
+    @SerialName("column_list")
+    data class ColumnList(
+        @SerialName("id")
+        override val id: String,
+        @SerialName("created_time")
+        override val createdTime: String,
+        @SerialName("last_edited_time")
+        override val lastEditedTime: String,
+        @SerialName("created_by")
+        override val createdBy: User? = null,
+        @SerialName("last_edited_by")
+        override val lastEditedBy: User? = null,
+        @SerialName("archived")
+        override val archived: Boolean,
+        @SerialName("parent")
+        override val parent: Parent,
+        @SerialName("has_children")
+        override val hasChildren: Boolean,
+        @SerialName("column_list")
+        val columnList: ColumnListContent,
+    ) : Block() {
+        @SerialName("object")
+        override val objectType: String = "block"
+
+        @SerialName("type")
+        override val type: String = "column_list"
+    }
+
+    @Serializable
+    @SerialName("column")
+    data class Column(
+        @SerialName("id")
+        override val id: String,
+        @SerialName("created_time")
+        override val createdTime: String,
+        @SerialName("last_edited_time")
+        override val lastEditedTime: String,
+        @SerialName("created_by")
+        override val createdBy: User? = null,
+        @SerialName("last_edited_by")
+        override val lastEditedBy: User? = null,
+        @SerialName("archived")
+        override val archived: Boolean,
+        @SerialName("parent")
+        override val parent: Parent,
+        @SerialName("has_children")
+        override val hasChildren: Boolean,
+        @SerialName("column")
+        val column: ColumnContent,
+    ) : Block() {
+        @SerialName("object")
+        override val objectType: String = "block"
+
+        @SerialName("type")
+        override val type: String = "column"
+    }
+
+    // NAVIGATION BLOCKS
+
+    @Serializable
+    @SerialName("breadcrumb")
+    data class Breadcrumb(
+        @SerialName("id")
+        override val id: String,
+        @SerialName("created_time")
+        override val createdTime: String,
+        @SerialName("last_edited_time")
+        override val lastEditedTime: String,
+        @SerialName("created_by")
+        override val createdBy: User? = null,
+        @SerialName("last_edited_by")
+        override val lastEditedBy: User? = null,
+        @SerialName("archived")
+        override val archived: Boolean,
+        @SerialName("parent")
+        override val parent: Parent,
+        @SerialName("has_children")
+        override val hasChildren: Boolean,
+        @SerialName("breadcrumb")
+        val breadcrumb: BreadcrumbContent,
+    ) : Block() {
+        @SerialName("object")
+        override val objectType: String = "block"
+
+        @SerialName("type")
+        override val type: String = "breadcrumb"
+    }
+
+    @Serializable
+    @SerialName("table_of_contents")
+    data class TableOfContents(
+        @SerialName("id")
+        override val id: String,
+        @SerialName("created_time")
+        override val createdTime: String,
+        @SerialName("last_edited_time")
+        override val lastEditedTime: String,
+        @SerialName("created_by")
+        override val createdBy: User? = null,
+        @SerialName("last_edited_by")
+        override val lastEditedBy: User? = null,
+        @SerialName("archived")
+        override val archived: Boolean,
+        @SerialName("parent")
+        override val parent: Parent,
+        @SerialName("has_children")
+        override val hasChildren: Boolean,
+        @SerialName("table_of_contents")
+        val tableOfContents: TableOfContentsContent,
+    ) : Block() {
+        @SerialName("object")
+        override val objectType: String = "block"
+
+        @SerialName("type")
+        override val type: String = "table_of_contents"
+    }
+
+    // MATHEMATICAL/FORMULA BLOCKS
+
+    @Serializable
+    @SerialName("equation")
+    data class Equation(
+        @SerialName("id")
+        override val id: String,
+        @SerialName("created_time")
+        override val createdTime: String,
+        @SerialName("last_edited_time")
+        override val lastEditedTime: String,
+        @SerialName("created_by")
+        override val createdBy: User? = null,
+        @SerialName("last_edited_by")
+        override val lastEditedBy: User? = null,
+        @SerialName("archived")
+        override val archived: Boolean,
+        @SerialName("parent")
+        override val parent: Parent,
+        @SerialName("has_children")
+        override val hasChildren: Boolean,
+        @SerialName("equation")
+        val equation: EquationContent,
+    ) : Block() {
+        @SerialName("object")
+        override val objectType: String = "block"
+
+        @SerialName("type")
+        override val type: String = "equation"
+    }
+
+    // SYNC/TEMPLATE BLOCKS
+
+    @Serializable
+    @SerialName("synced_block")
+    data class SyncedBlock(
+        @SerialName("id")
+        override val id: String,
+        @SerialName("created_time")
+        override val createdTime: String,
+        @SerialName("last_edited_time")
+        override val lastEditedTime: String,
+        @SerialName("created_by")
+        override val createdBy: User? = null,
+        @SerialName("last_edited_by")
+        override val lastEditedBy: User? = null,
+        @SerialName("archived")
+        override val archived: Boolean,
+        @SerialName("parent")
+        override val parent: Parent,
+        @SerialName("has_children")
+        override val hasChildren: Boolean,
+        @SerialName("synced_block")
+        val syncedBlock: SyncedBlockContent,
+    ) : Block() {
+        @SerialName("object")
+        override val objectType: String = "block"
+
+        @SerialName("type")
+        override val type: String = "synced_block"
+    }
+
+    @Serializable
+    @SerialName("template")
+    data class Template(
+        @SerialName("id")
+        override val id: String,
+        @SerialName("created_time")
+        override val createdTime: String,
+        @SerialName("last_edited_time")
+        override val lastEditedTime: String,
+        @SerialName("created_by")
+        override val createdBy: User? = null,
+        @SerialName("last_edited_by")
+        override val lastEditedBy: User? = null,
+        @SerialName("archived")
+        override val archived: Boolean,
+        @SerialName("parent")
+        override val parent: Parent,
+        @SerialName("has_children")
+        override val hasChildren: Boolean,
+        @SerialName("template")
+        val template: TemplateContent,
+    ) : Block() {
+        @SerialName("object")
+        override val objectType: String = "block"
+
+        @SerialName("type")
+        override val type: String = "template"
+    }
 }
 
 // CONTENT CLASSES (ordered to match block order above)
@@ -839,6 +1199,110 @@ data class TableRowContent(
     val cells: List<List<RichText>>,
 )
 
+/**
+ * Represents the content of a bookmark block.
+ */
+@Serializable
+data class BookmarkContent(
+    @SerialName("caption")
+    val caption: List<RichText> = emptyList(),
+    @SerialName("url")
+    val url: String,
+)
+
+/**
+ * Represents the content of a link_preview block.
+ */
+@Serializable
+data class LinkPreviewContent(
+    @SerialName("url")
+    val url: String,
+)
+
+/**
+ * Represents the content of an embed block.
+ */
+@Serializable
+data class EmbedContent(
+    @SerialName("url")
+    val url: String,
+)
+
+/**
+ * Represents the content of a child_page block.
+ */
+@Serializable
+data class ChildPageContent(
+    @SerialName("title")
+    val title: String,
+)
+
+/**
+ * Represents the content of a child_database block.
+ */
+@Serializable
+data class ChildDatabaseContent(
+    @SerialName("title")
+    val title: String,
+)
+
+/**
+ * Represents the content of a column_list block.
+ */
+@Serializable
+class ColumnListContent
+
+/**
+ * Represents the content of a column block.
+ */
+@Serializable
+data class ColumnContent(
+    @SerialName("column_ratio")
+    val columnRatio: Double? = null,
+)
+
+/**
+ * Represents the content of a breadcrumb block.
+ */
+@Serializable
+class BreadcrumbContent
+
+/**
+ * Represents the content of a table_of_contents block.
+ */
+@Serializable
+data class TableOfContentsContent(
+    @SerialName("color")
+    val color: Color = Color.DEFAULT,
+)
+
+/**
+ * Represents the content of an equation block.
+ */
+@Serializable
+data class EquationContent(
+    @SerialName("expression")
+    val expression: String,
+)
+
+/**
+ * Represents the content of a synced_block block.
+ */
+@Serializable
+data class SyncedBlockContent(
+    @SerialName("synced_from")
+    val syncedFrom: SyncedBlockReference? = null,
+)
+
+/**
+ * Represents the content of a template block.
+ */
+@Serializable
+data class TemplateContent(
+    @SerialName("rich_text")
+    val richText: List<RichText>,
+)
+
 // SUPPORT CLASSES (alphabetically ordered)
 
 /**
@@ -883,6 +1347,15 @@ data class FileReference(
 data class FileUpload(
     @SerialName("id")
     val id: String,
+)
+
+/**
+ * Represents a synced block reference.
+ */
+@Serializable
+data class SyncedBlockReference(
+    @SerialName("block_id")
+    val blockId: String,
 )
 
 // API RESPONSE CLASSES

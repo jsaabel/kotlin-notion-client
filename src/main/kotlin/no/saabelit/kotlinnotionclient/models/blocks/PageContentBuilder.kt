@@ -6,6 +6,8 @@ import no.saabelit.kotlinnotionclient.models.base.Color
 import no.saabelit.kotlinnotionclient.models.base.RichText
 import no.saabelit.kotlinnotionclient.models.files.FileUploadReference
 import no.saabelit.kotlinnotionclient.models.requests.RequestBuilders
+import no.saabelit.kotlinnotionclient.models.richtext.RichTextBuilder
+import no.saabelit.kotlinnotionclient.models.richtext.richText
 
 /**
  * DSL builder for creating page content with blocks.
@@ -159,6 +161,63 @@ class PageContentBuilder {
                         errors.add("Table rows must have at least one cell")
                     }
                 }
+                is BlockRequest.Bookmark -> {
+                    // Bookmarks need a URL
+                    if (block.bookmark.url.isBlank()) {
+                        errors.add("Bookmark blocks must have a URL")
+                    }
+                }
+                is BlockRequest.Embed -> {
+                    // Embeds need a URL
+                    if (block.embed.url.isBlank()) {
+                        errors.add("Embed blocks must have a URL")
+                    }
+                }
+                is BlockRequest.ChildPage -> {
+                    // Child pages need a title
+                    if (block.childPage.title.isBlank()) {
+                        errors.add("Child page blocks must have a title")
+                    }
+                }
+                is BlockRequest.ChildDatabase -> {
+                    // Child databases need a title
+                    if (block.childDatabase.title.isBlank()) {
+                        errors.add("Child database blocks must have a title")
+                    }
+                }
+                is BlockRequest.ColumnList -> {
+                    // Column lists need at least one column
+                    if (block.columnList.children.isNullOrEmpty()) {
+                        errors.add("Column lists must have at least one column")
+                    }
+                }
+                is BlockRequest.Column -> {
+                    // Columns can have empty content, so no validation needed
+                }
+                is BlockRequest.Breadcrumb -> {
+                    // Breadcrumbs don't need validation
+                }
+                is BlockRequest.TableOfContents -> {
+                    // Table of contents don't need validation
+                }
+                is BlockRequest.Equation -> {
+                    // Equations need an expression
+                    if (block.equation.expression.isBlank()) {
+                        errors.add("Equation blocks must have an expression")
+                    }
+                }
+                is BlockRequest.SyncedBlock -> {
+                    // Synced blocks either need children (original) or syncedFrom (reference)
+                    if (block.syncedBlock.syncedFrom == null && block.syncedBlock.children.isNullOrEmpty()) {
+                        errors.add("Synced blocks must have either content or reference to original block")
+                    }
+                }
+                is BlockRequest.Template -> {
+                    // Templates need rich text content
+                    if (block.template.richText.isEmpty()) {
+                        errors.add("Template blocks must have rich text content")
+                    }
+                }
             }
         }
 
@@ -219,6 +278,28 @@ class PageContentBuilder {
     }
 
     /**
+     * Adds a heading 1 block with rich text DSL.
+     *
+     * @param color The text color (default: "default")
+     * @param isToggleable Whether the heading can be collapsed
+     * @param children Optional nested content
+     * @param block The rich text DSL block
+     * @return This builder for chaining
+     */
+    fun heading1(
+        color: Color = Color.DEFAULT,
+        isToggleable: Boolean = false,
+        children: (PageContentBuilder.() -> Unit)? = null,
+        block: RichTextBuilder.() -> Unit,
+    ): PageContentBuilder =
+        heading1(
+            richText = richText(block),
+            color = color,
+            isToggleable = isToggleable,
+            children = children,
+        )
+
+    /**
      * Adds a heading 2 block.
      *
      * @param text The heading text
@@ -268,6 +349,28 @@ class PageContentBuilder {
             ),
         )
     }
+
+    /**
+     * Adds a heading 2 block with rich text DSL.
+     *
+     * @param color The text color (default: "default")
+     * @param isToggleable Whether the heading can be collapsed
+     * @param children Optional nested content
+     * @param block The rich text DSL block
+     * @return This builder for chaining
+     */
+    fun heading2(
+        color: Color = Color.DEFAULT,
+        isToggleable: Boolean = false,
+        children: (PageContentBuilder.() -> Unit)? = null,
+        block: RichTextBuilder.() -> Unit,
+    ): PageContentBuilder =
+        heading2(
+            richText = richText(block),
+            color = color,
+            isToggleable = isToggleable,
+            children = children,
+        )
 
     /**
      * Adds a heading 3 block.
@@ -321,6 +424,28 @@ class PageContentBuilder {
     }
 
     /**
+     * Adds a heading 3 block with rich text DSL.
+     *
+     * @param color The text color (default: "default")
+     * @param isToggleable Whether the heading can be collapsed
+     * @param children Optional nested content
+     * @param block The rich text DSL block
+     * @return This builder for chaining
+     */
+    fun heading3(
+        color: Color = Color.DEFAULT,
+        isToggleable: Boolean = false,
+        children: (PageContentBuilder.() -> Unit)? = null,
+        block: RichTextBuilder.() -> Unit,
+    ): PageContentBuilder =
+        heading3(
+            richText = richText(block),
+            color = color,
+            isToggleable = isToggleable,
+            children = children,
+        )
+
+    /**
      * Adds a paragraph block.
      *
      * @param text The paragraph text
@@ -364,6 +489,25 @@ class PageContentBuilder {
             ),
         )
     }
+
+    /**
+     * Adds a paragraph block with rich text DSL.
+     *
+     * @param color The text color (default: "default")
+     * @param children Optional nested content
+     * @param block The rich text DSL block
+     * @return This builder for chaining
+     */
+    fun paragraph(
+        color: Color = Color.DEFAULT,
+        children: (PageContentBuilder.() -> Unit)? = null,
+        block: RichTextBuilder.() -> Unit,
+    ): PageContentBuilder =
+        paragraph(
+            richText = richText(block),
+            color = color,
+            children = children,
+        )
 
     /**
      * Adds a bulleted list item.
@@ -411,6 +555,25 @@ class PageContentBuilder {
     }
 
     /**
+     * Adds a bulleted list item with rich text DSL.
+     *
+     * @param color The text color (default: "default")
+     * @param children Optional nested content
+     * @param block The rich text DSL block
+     * @return This builder for chaining
+     */
+    fun bullet(
+        color: Color = Color.DEFAULT,
+        children: (PageContentBuilder.() -> Unit)? = null,
+        block: RichTextBuilder.() -> Unit,
+    ): PageContentBuilder =
+        bullet(
+            richText = richText(block),
+            color = color,
+            children = children,
+        )
+
+    /**
      * Adds a numbered list item.
      *
      * @param text The list item text
@@ -454,6 +617,25 @@ class PageContentBuilder {
             ),
         )
     }
+
+    /**
+     * Adds a numbered list item with rich text DSL.
+     *
+     * @param color The text color (default: "default")
+     * @param children Optional nested content
+     * @param block The rich text DSL block
+     * @return This builder for chaining
+     */
+    fun number(
+        color: Color = Color.DEFAULT,
+        children: (PageContentBuilder.() -> Unit)? = null,
+        block: RichTextBuilder.() -> Unit,
+    ): PageContentBuilder =
+        number(
+            richText = richText(block),
+            color = color,
+            children = children,
+        )
 
     /**
      * Adds a to-do block.
@@ -507,6 +689,28 @@ class PageContentBuilder {
     }
 
     /**
+     * Adds a to-do block with rich text DSL.
+     *
+     * @param checked Whether the to-do is completed
+     * @param color The text color (default: "default")
+     * @param children Optional nested content
+     * @param block The rich text DSL block
+     * @return This builder for chaining
+     */
+    fun toDo(
+        checked: Boolean = false,
+        color: Color = Color.DEFAULT,
+        children: (PageContentBuilder.() -> Unit)? = null,
+        block: RichTextBuilder.() -> Unit,
+    ): PageContentBuilder =
+        toDo(
+            richText = richText(block),
+            checked = checked,
+            color = color,
+            children = children,
+        )
+
+    /**
      * Adds a toggle block.
      *
      * @param text The toggle header text
@@ -550,6 +754,25 @@ class PageContentBuilder {
             ),
         )
     }
+
+    /**
+     * Adds a toggle block with rich text DSL.
+     *
+     * @param color The text color (default: "default")
+     * @param children Optional nested content
+     * @param block The rich text DSL block
+     * @return This builder for chaining
+     */
+    fun toggle(
+        color: Color = Color.DEFAULT,
+        children: (PageContentBuilder.() -> Unit)? = null,
+        block: RichTextBuilder.() -> Unit,
+    ): PageContentBuilder =
+        toggle(
+            richText = richText(block),
+            color = color,
+            children = children,
+        )
 
     /**
      * Adds a code block.
@@ -621,6 +844,25 @@ class PageContentBuilder {
     }
 
     /**
+     * Adds a quote block with rich text DSL.
+     *
+     * @param color The text color (default: "default")
+     * @param children Optional nested content
+     * @param block The rich text DSL block
+     * @return This builder for chaining
+     */
+    fun quote(
+        color: Color = Color.DEFAULT,
+        children: (PageContentBuilder.() -> Unit)? = null,
+        block: RichTextBuilder.() -> Unit,
+    ): PageContentBuilder =
+        quote(
+            richText = richText(block),
+            color = color,
+            children = children,
+        )
+
+    /**
      * Adds a callout block.
      *
      * @param emoji The emoji icon for the callout
@@ -670,6 +912,28 @@ class PageContentBuilder {
             ),
         )
     }
+
+    /**
+     * Adds a callout block with rich text DSL.
+     *
+     * @param emoji The emoji icon for the callout
+     * @param color The text color (default: "default")
+     * @param children Optional nested content
+     * @param block The rich text DSL block
+     * @return This builder for chaining
+     */
+    fun callout(
+        emoji: String = "💡",
+        color: Color = Color.DEFAULT,
+        children: (PageContentBuilder.() -> Unit)? = null,
+        block: RichTextBuilder.() -> Unit,
+    ): PageContentBuilder =
+        callout(
+            icon = CalloutIcon(type = "emoji", emoji = emoji),
+            richText = richText(block),
+            color = color,
+            children = children,
+        )
 
     /**
      * Adds an image block from an external URL.
@@ -956,6 +1220,229 @@ class PageContentBuilder {
         tableRow(
             cells = cellTexts.map { listOf(RequestBuilders.createSimpleRichText(it)) },
         )
+
+    /**
+     * Adds a bookmark block.
+     *
+     * @param url The URL to bookmark
+     * @param caption Optional caption text
+     * @return This builder for chaining
+     */
+    fun bookmark(
+        url: String,
+        caption: String? = null,
+    ): PageContentBuilder =
+        addBlock(
+            BlockRequest.Bookmark(
+                bookmark =
+                    BookmarkRequestContent(
+                        url = url,
+                        caption = caption?.let { listOf(RequestBuilders.createSimpleRichText(it)) } ?: emptyList(),
+                    ),
+            ),
+        )
+
+    /**
+     * Adds an embed block.
+     *
+     * @param url The URL to embed
+     * @return This builder for chaining
+     */
+    fun embed(url: String): PageContentBuilder =
+        addBlock(
+            BlockRequest.Embed(
+                embed = EmbedRequestContent(url = url),
+            ),
+        )
+
+    /**
+     * Adds a child page block.
+     *
+     * @param title The title of the child page
+     * @return This builder for chaining
+     */
+    fun childPage(title: String): PageContentBuilder =
+        addBlock(
+            BlockRequest.ChildPage(
+                childPage = ChildPageRequestContent(title = title),
+            ),
+        )
+
+    /**
+     * Adds a child database block.
+     *
+     * @param title The title of the child database
+     * @return This builder for chaining
+     */
+    fun childDatabase(title: String): PageContentBuilder =
+        addBlock(
+            BlockRequest.ChildDatabase(
+                childDatabase = ChildDatabaseRequestContent(title = title),
+            ),
+        )
+
+    /**
+     * Adds a column layout with multiple columns.
+     *
+     * @param columns Builder for column content
+     * @return This builder for chaining
+     */
+    fun columnList(columns: ColumnListBuilder.() -> Unit): PageContentBuilder {
+        val columnBlocks = ColumnListBuilder().apply(columns).build()
+        return addBlock(
+            BlockRequest.ColumnList(
+                columnList = ColumnListRequestContent(children = columnBlocks),
+            ),
+        )
+    }
+
+    /**
+     * Adds a breadcrumb block.
+     *
+     * @return This builder for chaining
+     */
+    fun breadcrumb(): PageContentBuilder = addBlock(BlockRequest.Breadcrumb())
+
+    /**
+     * Adds a table of contents block.
+     *
+     * @param color The color of the table of contents
+     * @return This builder for chaining
+     */
+    fun tableOfContents(color: Color = Color.DEFAULT): PageContentBuilder =
+        addBlock(
+            BlockRequest.TableOfContents(
+                tableOfContents = TableOfContentsRequestContent(color = color),
+            ),
+        )
+
+    /**
+     * Adds an equation block.
+     *
+     * @param expression The LaTeX expression
+     * @return This builder for chaining
+     */
+    fun equation(expression: String): PageContentBuilder =
+        addBlock(
+            BlockRequest.Equation(
+                equation = EquationRequestContent(expression = expression),
+            ),
+        )
+
+    /**
+     * Adds a synced block (original).
+     *
+     * @param children The content of the synced block
+     * @return This builder for chaining
+     */
+    fun syncedBlock(children: PageContentBuilder.() -> Unit): PageContentBuilder {
+        val childBlocks = pageContent(children)
+        return addBlock(
+            BlockRequest.SyncedBlock(
+                syncedBlock =
+                    SyncedBlockRequestContent(
+                        syncedFrom = null,
+                        children = childBlocks,
+                    ),
+            ),
+        )
+    }
+
+    /**
+     * Adds a synced block reference (duplicate).
+     *
+     * @param originalBlockId The ID of the original synced block
+     * @return This builder for chaining
+     */
+    fun syncedBlockReference(originalBlockId: String): PageContentBuilder =
+        addBlock(
+            BlockRequest.SyncedBlock(
+                syncedBlock =
+                    SyncedBlockRequestContent(
+                        syncedFrom = SyncedBlockReference(blockId = originalBlockId),
+                        children = null,
+                    ),
+            ),
+        )
+
+    /**
+     * Adds a template block.
+     *
+     * @param text The template button text
+     * @param children The template content
+     * @return This builder for chaining
+     */
+    fun template(
+        text: String,
+        children: PageContentBuilder.() -> Unit,
+    ): PageContentBuilder {
+        val childBlocks = pageContent(children)
+        return addBlock(
+            BlockRequest.Template(
+                template =
+                    TemplateRequestContent(
+                        richText = listOf(RequestBuilders.createSimpleRichText(text)),
+                        children = childBlocks,
+                    ),
+            ),
+        )
+    }
+
+    /**
+     * Adds a template block with rich text.
+     *
+     * @param richText The template button rich text
+     * @param children The template content
+     * @return This builder for chaining
+     */
+    fun template(
+        richText: List<RichText>,
+        children: PageContentBuilder.() -> Unit,
+    ): PageContentBuilder {
+        val childBlocks = pageContent(children)
+        return addBlock(
+            BlockRequest.Template(
+                template =
+                    TemplateRequestContent(
+                        richText = richText,
+                        children = childBlocks,
+                    ),
+            ),
+        )
+    }
+}
+
+/**
+ * DSL builder for column lists.
+ */
+class ColumnListBuilder {
+    private val columns = mutableListOf<BlockRequest.Column>()
+
+    /**
+     * Adds a column to the column list.
+     *
+     * @param content The content of the column
+     * @return This builder for chaining
+     */
+    fun column(content: PageContentBuilder.() -> Unit): ColumnListBuilder {
+        val columnContent = pageContent(content)
+        columns.add(
+            BlockRequest.Column(
+                column =
+                    ColumnRequestContent(
+                        children = columnContent,
+                    ),
+            ),
+        )
+        return this
+    }
+
+    /**
+     * Builds the immutable list of column blocks.
+     *
+     * @return List of column block requests
+     */
+    internal fun build(): List<BlockRequest> = columns.toList()
 }
 
 /**
