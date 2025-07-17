@@ -6,10 +6,15 @@ plugins {
     alias(libs.plugins.kotlin.jvm)
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.kotlinter)
+    alias(libs.plugins.shadow)
 }
 
 group = "no.saabelit"
 version = "0.0.1-SNAPSHOT"
+
+application {
+    mainClass.set("no.saabelit.kotlinnotionclient.MainKt")
+}
 
 repositories {
     mavenCentral()
@@ -69,4 +74,10 @@ tasks.withType<DependencyUpdatesTask> {
     rejectVersionIf {
         isNonStable(candidate.version) && !isNonStable(currentVersion)
     }
+}
+
+tasks.shadowJar {
+    archiveClassifier.set("")
+    archiveFileName.set("kotlin-notion-client-${project.version}.jar")
+    mergeServiceFiles()
 }

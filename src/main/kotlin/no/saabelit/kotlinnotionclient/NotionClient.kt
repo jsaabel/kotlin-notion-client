@@ -70,6 +70,15 @@ class NotionClient private constructor(
 
     companion object {
         /**
+         * Creates a new NotionClient instance with just an API token.
+         * Uses default configuration with no logging.
+         *
+         * @param apiToken The Notion API token
+         * @return Configured NotionClient instance
+         */
+        fun create(apiToken: String): NotionClient = create(NotionConfig(apiToken = apiToken))
+
+        /**
          * Creates a new NotionClient instance with the provided configuration.
          *
          * @param config Configuration object containing API token and other settings
