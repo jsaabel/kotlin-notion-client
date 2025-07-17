@@ -2,7 +2,6 @@ package no.saabelit.kotlinnotionclient.validation
 
 import no.saabelit.kotlinnotionclient.config.NotionApiLimits
 import no.saabelit.kotlinnotionclient.models.base.RichText
-import no.saabelit.kotlinnotionclient.models.blocks.Block
 import no.saabelit.kotlinnotionclient.models.blocks.BlockRequest
 import no.saabelit.kotlinnotionclient.models.databases.CreateDatabaseRequest
 import no.saabelit.kotlinnotionclient.models.pages.CreatePageRequest
@@ -185,36 +184,6 @@ class RequestValidator(
         blocks.forEachIndexed { index, block ->
             violations.addAll(validateBlockContent("$fieldName[$index]", block))
         }
-
-        return violations
-    }
-
-    /**
-     * Validates an array of blocks for Block objects (used in page children).
-     */
-    fun validateBlockArrayForBlocks(
-        fieldName: String,
-        blocks: List<Block>,
-    ): List<ValidationViolation> {
-        val violations = mutableListOf<ValidationViolation>()
-
-        // Check array size
-        if (NotionApiLimits.Utils.isArrayTooLarge(blocks.size)) {
-            violations.add(
-                ValidationViolation(
-                    field = fieldName,
-                    violationType = ViolationType.ARRAY_TOO_LARGE,
-                    message = "Block array too large: ${blocks.size} blocks (max: ${NotionApiLimits.Collections.MAX_ARRAY_ELEMENTS})",
-                    currentValue = blocks.size,
-                    limit = NotionApiLimits.Collections.MAX_ARRAY_ELEMENTS,
-                    autoFixAvailable = true,
-                ),
-            )
-        }
-
-        // For now, we'll skip detailed content validation for Block objects
-        // since they are different from BlockRequest objects
-        // This could be extended later if needed
 
         return violations
     }
