@@ -1,4 +1,4 @@
-package integration
+package integration.dsl
 
 import io.kotest.core.annotation.Tags
 import io.kotest.core.spec.style.StringSpec
@@ -41,7 +41,7 @@ class RichTextDslIntegrationTest :
             val parentPageId = System.getenv("NOTION_TEST_PAGE_ID")
 
             if (token != null && parentPageId != null) {
-                val client = NotionClient.create(NotionConfig(apiToken = token))
+                val client = NotionClient.Companion.create(NotionConfig(apiToken = token))
 
                 try {
                     // Step 1: Create initial page
@@ -206,6 +206,79 @@ class RichTextDslIntegrationTest :
                                 text(" all in one paragraph!")
                             }
 
+                            // New formattedText method examples
+                            heading3 {
+                                text("New ")
+                                formattedText("formattedText()", bold = true, code = true, color = Color.BLUE)
+                                text(" Method Examples")
+                            }
+
+                            paragraph {
+                                text("The new ")
+                                formattedText("formattedText()", code = true)
+                                text(" method allows multiple formatting options in one call:")
+                            }
+
+                            bullet {
+                                formattedText("Bold and italic together", bold = true, italic = true)
+                            }
+
+                            bullet {
+                                formattedText("Code with color", code = true, color = Color.RED)
+                            }
+
+                            bullet {
+                                formattedText(
+                                    "All formatting combined",
+                                    bold = true,
+                                    italic = true,
+                                    code = true,
+                                    strikethrough = true,
+                                    underline = true,
+                                    color = Color.PURPLE,
+                                )
+                            }
+
+                            bullet {
+                                formattedText("Just colored text", color = Color.GREEN)
+                            }
+
+                            bullet {
+                                formattedText("Background colored", color = Color.YELLOW_BACKGROUND)
+                            }
+
+                            paragraph {
+                                text("You can mix ")
+                                formattedText("formattedText()", bold = true, color = Color.RED)
+                                text(" with traditional ")
+                                bold("bold()")
+                                text(" and ")
+                                italic("italic()")
+                                text(" methods seamlessly!")
+                            }
+
+                            quote {
+                                text("Compare: ")
+                                formattedText("Single method call", bold = true, italic = true, color = Color.BLUE)
+                                text(" vs. ")
+                                bold("multiple")
+                                text(" ")
+                                italic("method")
+                                text(" ")
+                                colored("calls", Color.BLUE)
+                                text(" - much cleaner!")
+                            }
+
+                            callout("💡") {
+                                text("Pro tip: Use ")
+                                formattedText("formattedText()", code = true, color = Color.GREEN)
+                                text(" for complex formatting and keep ")
+                                bold("bold()")
+                                text("/")
+                                italic("italic()")
+                                text(" for simple cases.")
+                            }
+
                             divider()
 
                             paragraph {
@@ -259,9 +332,9 @@ class RichTextDslIntegrationTest :
                     italicText?.annotations?.italic shouldBe true
 
                     // Find bold italic text
-                    val boldItalicText = paragraph1.paragraph.richText.find { it.plainText == "bold italic" }
-                    boldItalicText?.annotations?.bold shouldBe true
-                    boldItalicText?.annotations?.italic shouldBe true
+                    val boldItalicText2 = paragraph1.paragraph.richText.find { it.plainText == "bold italic" }
+                    boldItalicText2?.annotations?.bold shouldBe true
+                    boldItalicText2?.annotations?.italic shouldBe true
 
                     // Find code text
                     val codeText = paragraph1.paragraph.richText.find { it.plainText == "code formatting" }
@@ -274,8 +347,8 @@ class RichTextDslIntegrationTest :
                     val redText = paragraph2.paragraph.richText.find { it.plainText == "colored text" }
                     redText?.annotations?.color shouldBe Color.RED
 
-                    val backgroundText = paragraph2.paragraph.richText.find { it.plainText == "background colors" }
-                    backgroundText?.annotations?.color shouldBe Color.BLUE_BACKGROUND
+                    val backgroundText2 = paragraph2.paragraph.richText.find { it.plainText == "background colors" }
+                    backgroundText2?.annotations?.color shouldBe Color.BLUE_BACKGROUND
 
                     println("✅ Color formatting verified")
 
@@ -315,6 +388,89 @@ class RichTextDslIntegrationTest :
 
                     println("✅ Callout formatting verified")
 
+                    // Test new formattedText method examples
+                    // Find the formattedText heading
+                    val formattedTextHeading =
+                        blocks.find { block ->
+                            block is Block.Heading3 &&
+                                block.heading3.richText.any { it.plainText == "formattedText()" }
+                        } as Block.Heading3
+
+                    val formattedTextInHeading = formattedTextHeading.heading3.richText.find { it.plainText == "formattedText()" }
+                    formattedTextInHeading?.annotations?.bold shouldBe true
+                    formattedTextInHeading?.annotations?.code shouldBe true
+                    formattedTextInHeading?.annotations?.color shouldBe Color.BLUE
+
+                    println("✅ formattedText heading verified")
+
+                    // Test bullet with bold and italic together
+                    val boldItalicBullet =
+                        blocks.find { block ->
+                            block is Block.BulletedListItem &&
+                                block.bulletedListItem.richText.any { it.plainText == "Bold and italic together" }
+                        } as Block.BulletedListItem
+
+                    val boldItalicText = boldItalicBullet.bulletedListItem.richText.find { it.plainText == "Bold and italic together" }
+                    boldItalicText?.annotations?.bold shouldBe true
+                    boldItalicText?.annotations?.italic shouldBe true
+
+                    println("✅ formattedText bold+italic verified")
+
+                    // Test bullet with code and color
+                    val codeColorBullet =
+                        blocks.find { block ->
+                            block is Block.BulletedListItem &&
+                                block.bulletedListItem.richText.any { it.plainText == "Code with color" }
+                        } as Block.BulletedListItem
+
+                    val codeColorText = codeColorBullet.bulletedListItem.richText.find { it.plainText == "Code with color" }
+                    codeColorText?.annotations?.code shouldBe true
+                    codeColorText?.annotations?.color shouldBe Color.RED
+
+                    println("✅ formattedText code+color verified")
+
+                    // Test bullet with all formatting combined
+                    val allFormattingBullet =
+                        blocks.find { block ->
+                            block is Block.BulletedListItem &&
+                                block.bulletedListItem.richText.any { it.plainText == "All formatting combined" }
+                        } as Block.BulletedListItem
+
+                    val allFormattingText = allFormattingBullet.bulletedListItem.richText.find { it.plainText == "All formatting combined" }
+                    allFormattingText?.annotations?.bold shouldBe true
+                    allFormattingText?.annotations?.italic shouldBe true
+                    allFormattingText?.annotations?.code shouldBe true
+                    allFormattingText?.annotations?.strikethrough shouldBe true
+                    allFormattingText?.annotations?.underline shouldBe true
+                    allFormattingText?.annotations?.color shouldBe Color.PURPLE
+
+                    println("✅ formattedText all formatting verified")
+
+                    // Test background colored text
+                    val backgroundBullet =
+                        blocks.find { block ->
+                            block is Block.BulletedListItem &&
+                                block.bulletedListItem.richText.any { it.plainText == "Background colored" }
+                        } as Block.BulletedListItem
+
+                    val backgroundText = backgroundBullet.bulletedListItem.richText.find { it.plainText == "Background colored" }
+                    backgroundText?.annotations?.color shouldBe Color.YELLOW_BACKGROUND
+
+                    println("✅ formattedText background color verified")
+
+                    // Test mixed usage paragraph
+                    val mixedParagraph =
+                        blocks.find { block ->
+                            block is Block.Paragraph &&
+                                block.paragraph.richText.any { it.plainText == "You can mix " }
+                        } as Block.Paragraph
+
+                    val mixedFormattedText = mixedParagraph.paragraph.richText.find { it.plainText == "formattedText()" }
+                    mixedFormattedText?.annotations?.bold shouldBe true
+                    mixedFormattedText?.annotations?.color shouldBe Color.RED
+
+                    println("✅ formattedText mixed usage verified")
+
                     println("🎉 Rich Text DSL integration test completed successfully!")
                     println("   - All formatting types working: ✅")
                     println("   - Colors working: ✅")
@@ -322,6 +478,7 @@ class RichTextDslIntegrationTest :
                     println("   - Equations working: ✅")
                     println("   - Mixed formatting working: ✅")
                     println("   - Integration with all block types: ✅")
+                    println("   - New formattedText() method working: ✅")
 
                     // Step 7: Conditionally clean up
                     delay(500)

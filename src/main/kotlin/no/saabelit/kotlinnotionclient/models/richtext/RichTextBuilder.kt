@@ -49,6 +49,16 @@ annotation class RichTextDslMarker
  * }
  * ```
  *
+ * ## Using formattedText for Complex Styling:
+ * ```kotlin
+ * val richText = richText {
+ *     text("This text is ")
+ *     formattedText("bold and italic", bold = true, italic = true)
+ *     text(" and this is ")
+ *     formattedText("code with color", code = true, color = Color.BLUE)
+ * }
+ * ```
+ *
  * ## Integration with PageContentBuilder:
  * ```kotlin
  * paragraph {
@@ -321,6 +331,50 @@ class RichTextBuilder {
                 equation = Equation(expression = expression),
                 annotations = Annotations(),
                 plainText = expression,
+                href = null,
+            ),
+        )
+        return this
+    }
+
+    /**
+     * Adds formatted text with multiple styling options in a single call.
+     *
+     * This method provides a convenient way to apply multiple formatting styles
+     * without needing separate method calls for each style.
+     *
+     * @param content The text content
+     * @param bold Whether to apply bold formatting
+     * @param italic Whether to apply italic formatting
+     * @param code Whether to apply code formatting
+     * @param strikethrough Whether to apply strikethrough formatting
+     * @param underline Whether to apply underline formatting
+     * @param color The text color to apply
+     * @return This builder for chaining
+     */
+    fun formattedText(
+        content: String,
+        bold: Boolean = false,
+        italic: Boolean = false,
+        code: Boolean = false,
+        strikethrough: Boolean = false,
+        underline: Boolean = false,
+        color: Color = Color.DEFAULT,
+    ): RichTextBuilder {
+        segments.add(
+            RichText(
+                type = "text",
+                text = TextContent(content = content, link = null),
+                annotations =
+                    Annotations(
+                        bold = bold,
+                        italic = italic,
+                        code = code,
+                        strikethrough = strikethrough,
+                        underline = underline,
+                        color = color,
+                    ),
+                plainText = content,
                 href = null,
             ),
         )

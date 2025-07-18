@@ -83,7 +83,7 @@ class MockClientBuilder {
         handlers.add { request ->
             if (request.method == HttpMethod.Post &&
                 request.url.toString().contains("/v1/databases") &&
-                !request.url.toString().contains("/query")
+                !request.url.toString().contains("/unit/query")
             ) {
                 respond(
                     content = TestFixtures.Databases.createDatabaseAsString(),

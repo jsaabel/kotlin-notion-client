@@ -212,7 +212,7 @@ class PagePropertiesBuilderTest :
                     email("Contact", "maintainer@example.com")
                     phoneNumber("Phone", "+1-555-0123")
                     select("Status", "In Progress")
-                    multiSelect("Tags", "test", "comprehensive", "validation")
+                    multiSelect("Tags", "test", "comprehensive", "unit/validation")
                     date("StartDate", "2024-01-01")
                     dateTime("CreatedAt", "2024-01-01T09:00:00")
                     dateRange("Sprint", "2024-01-01", "2024-01-14")

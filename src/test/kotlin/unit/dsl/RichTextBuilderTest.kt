@@ -1,4 +1,4 @@
-package no.saabelit.kotlinnotionclient.dsl
+package unit.dsl
 
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldHaveSize
@@ -349,5 +349,120 @@ class RichTextBuilderTest :
             result.any { it.annotations.color == Color.GREEN } shouldBe true
             result.any { it.annotations.color == Color.YELLOW_BACKGROUND } shouldBe true
             result.any { it.href != null } shouldBe true
+        }
+
+        test("formattedText should create text with multiple formatting options") {
+            val result =
+                richText {
+                    formattedText("bold and italic", bold = true, italic = true)
+                }
+
+            result shouldHaveSize 1
+            result[0].type shouldBe "text"
+            result[0].text?.content shouldBe "bold and italic"
+            result[0].plainText shouldBe "bold and italic"
+            result[0].annotations shouldBe Annotations(bold = true, italic = true)
+            result[0].href shouldBe null
+        }
+
+        test("formattedText should create text with all formatting options") {
+            val result =
+                richText {
+                    formattedText(
+                        "complex formatting",
+                        bold = true,
+                        italic = true,
+                        code = true,
+                        strikethrough = true,
+                        underline = true,
+                        color = Color.RED,
+                    )
+                }
+
+            result shouldHaveSize 1
+            result[0].type shouldBe "text"
+            result[0].text?.content shouldBe "complex formatting"
+            result[0].plainText shouldBe "complex formatting"
+            result[0].annotations shouldBe
+                Annotations(
+                    bold = true,
+                    italic = true,
+                    code = true,
+                    strikethrough = true,
+                    underline = true,
+                    color = Color.RED,
+                )
+            result[0].href shouldBe null
+        }
+
+        test("formattedText should create text with only color") {
+            val result =
+                richText {
+                    formattedText("just colored", color = Color.BLUE)
+                }
+
+            result shouldHaveSize 1
+            result[0].type shouldBe "text"
+            result[0].text?.content shouldBe "just colored"
+            result[0].plainText shouldBe "just colored"
+            result[0].annotations shouldBe Annotations(color = Color.BLUE)
+            result[0].href shouldBe null
+        }
+
+        test("formattedText should create text with default formatting when no options provided") {
+            val result =
+                richText {
+                    formattedText("default text")
+                }
+
+            result shouldHaveSize 1
+            result[0].type shouldBe "text"
+            result[0].text?.content shouldBe "default text"
+            result[0].plainText shouldBe "default text"
+            result[0].annotations shouldBe Annotations()
+            result[0].href shouldBe null
+        }
+
+        test("formattedText should work in mixed formatting scenarios") {
+            val result =
+                richText {
+                    text("Start ")
+                    formattedText("bold red", bold = true, color = Color.RED)
+                    text(" middle ")
+                    formattedText("italic blue", italic = true, color = Color.BLUE)
+                    text(" end")
+                }
+
+            result shouldHaveSize 5
+
+            result[0].plainText shouldBe "Start "
+            result[0].annotations shouldBe Annotations()
+
+            result[1].plainText shouldBe "bold red"
+            result[1].annotations shouldBe Annotations(bold = true, color = Color.RED)
+
+            result[2].plainText shouldBe " middle "
+            result[2].annotations shouldBe Annotations()
+
+            result[3].plainText shouldBe "italic blue"
+            result[3].annotations shouldBe Annotations(italic = true, color = Color.BLUE)
+
+            result[4].plainText shouldBe " end"
+            result[4].annotations shouldBe Annotations()
+        }
+
+        test("formattedText should support method chaining") {
+            val result =
+                richText {
+                    text("Start ")
+                        .formattedText("chain", bold = true)
+                        .text(" end")
+                }
+
+            result shouldHaveSize 3
+            result[0].plainText shouldBe "Start "
+            result[1].plainText shouldBe "chain"
+            result[1].annotations.bold shouldBe true
+            result[2].plainText shouldBe " end"
         }
     })

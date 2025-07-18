@@ -74,7 +74,7 @@ class ValidationMockIntegrationTest :
                                 headers = headersOf("Content-Type" to listOf("application/json")),
                             )
                         }
-                        request.url.encodedPath.contains("/databases") &&
+                        request.url.encodedPath.contains("/unit/databases") &&
                             request.method.value == "POST" -> {
                             respond(
                                 content = TestFixtures.Databases.retrieveDatabaseAsString(),
