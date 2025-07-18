@@ -1,5 +1,7 @@
 @file:Suppress("unused")
 
+package unit.util
+
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.MockRequestHandler

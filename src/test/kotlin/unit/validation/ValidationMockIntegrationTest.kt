@@ -1,8 +1,8 @@
 @file:Suppress("unused")
 
-package validation
+package unit.validation
 
-import TestFixtures
+import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.annotation.Tags
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldNotBe
@@ -26,8 +26,10 @@ import no.saabelit.kotlinnotionclient.models.blocks.ParagraphRequestContent
 import no.saabelit.kotlinnotionclient.models.databases.CreateDatabaseRequest
 import no.saabelit.kotlinnotionclient.models.pages.CreatePageRequest
 import no.saabelit.kotlinnotionclient.models.pages.PagePropertyValue
+import no.saabelit.kotlinnotionclient.models.pages.SelectOption
 import no.saabelit.kotlinnotionclient.models.pages.UpdatePageRequest
 import no.saabelit.kotlinnotionclient.validation.ValidationException
+import unit.util.TestFixtures
 
 /**
  * Mock-based integration tests for validation logic using MockEngine to simulate API responses.
@@ -74,7 +76,7 @@ class ValidationMockIntegrationTest :
                                 headers = headersOf("Content-Type" to listOf("application/json")),
                             )
                         }
-                        request.url.encodedPath.contains("/unit/databases") &&
+                        request.url.encodedPath.contains("/databases") &&
                             request.method.value == "POST" -> {
                             respond(
                                 content = TestFixtures.Databases.retrieveDatabaseAsString(),
@@ -164,7 +166,7 @@ class ValidationMockIntegrationTest :
 
                 val tooManyOptions =
                     (1..101).map {
-                        no.saabelit.kotlinnotionclient.models.pages.SelectOption(
+                        SelectOption(
                             id = "option-$it",
                             name = "Option $it",
                             color = SelectOptionColor.DEFAULT,
@@ -180,7 +182,7 @@ class ValidationMockIntegrationTest :
                     )
 
                 // This should fail with ValidationException (array violations are not auto-fixable)
-                io.kotest.assertions.throwables.shouldThrow<ValidationException> {
+                shouldThrow<ValidationException> {
                     client.pages.create(request)
                 }
             }
@@ -266,7 +268,7 @@ class ValidationMockIntegrationTest :
                     }
 
                 // This should fail with ValidationException (block array violations are not auto-fixable)
-                io.kotest.assertions.throwables.shouldThrow<ValidationException> {
+                shouldThrow<ValidationException> {
                     client.blocks.appendChildren("test-block-id", tooManyBlocks)
                 }
             }
@@ -288,7 +290,7 @@ class ValidationMockIntegrationTest :
                     )
 
                 // This should fail with ValidationException (block content violations are not auto-fixable)
-                io.kotest.assertions.throwables.shouldThrow<ValidationException> {
+                shouldThrow<ValidationException> {
                     client.blocks.appendChildren("test-block-id", blockWithLongContent)
                 }
             }
@@ -389,7 +391,7 @@ class ValidationMockIntegrationTest :
                                 ),
                         )
                     }
-                io.kotest.assertions.throwables.shouldThrow<ValidationException> {
+                shouldThrow<ValidationException> {
                     client.blocks.appendChildren("test-block-id", invalidBlocks)
                 }
             }

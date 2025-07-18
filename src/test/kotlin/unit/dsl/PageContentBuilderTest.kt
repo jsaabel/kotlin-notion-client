@@ -1,4 +1,4 @@
-package dsl
+package unit.dsl
 
 import io.kotest.core.annotation.Tags
 import io.kotest.core.spec.style.DescribeSpec

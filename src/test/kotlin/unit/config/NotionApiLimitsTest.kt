@@ -1,4 +1,4 @@
-package config
+package unit.config
 
 import io.kotest.core.annotation.Tags
 import io.kotest.core.spec.style.FunSpec

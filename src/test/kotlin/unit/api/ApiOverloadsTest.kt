@@ -1,13 +1,13 @@
-package api
+package unit.api
 
 import io.kotest.core.annotation.Tags
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldNotBe
-import mockClient
 import no.saabelit.kotlinnotionclient.api.BlocksApi
 import no.saabelit.kotlinnotionclient.api.DatabasesApi
 import no.saabelit.kotlinnotionclient.api.PagesApi
 import no.saabelit.kotlinnotionclient.config.NotionConfig
+import unit.util.mockClient
 
 /**
  * Tests for API integration overloads that accept DSL builders.

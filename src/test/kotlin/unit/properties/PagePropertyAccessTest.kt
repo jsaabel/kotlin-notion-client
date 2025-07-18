@@ -1,3 +1,5 @@
+package unit.properties
+
 import io.kotest.core.annotation.Tags
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.collections.shouldBeEmpty
@@ -13,6 +15,8 @@ import no.saabelit.kotlinnotionclient.models.pages.getNumberProperty
 import no.saabelit.kotlinnotionclient.models.pages.getPlainTextForProperty
 import no.saabelit.kotlinnotionclient.models.pages.getProperty
 import no.saabelit.kotlinnotionclient.models.pages.getSelectPropertyName
+import unit.util.TestFixtures
+import unit.util.decode
 
 // import no.saabelit.kotlinnotionclient.models.pages.*
 

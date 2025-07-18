@@ -1,14 +1,13 @@
 @file:Suppress("unused", "HttpUrlsUsage")
 
-package api
+package unit.api
 
-import TestFixtures
 import io.kotest.core.annotation.Tags
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.types.shouldBeInstanceOf
-import mockClient
+import io.ktor.http.HttpMethod
 import no.saabelit.kotlinnotionclient.api.EnhancedFileUploadApi
 import no.saabelit.kotlinnotionclient.api.FileUploadApi
 import no.saabelit.kotlinnotionclient.config.NotionConfig
@@ -18,6 +17,8 @@ import no.saabelit.kotlinnotionclient.models.files.FileUploadResult
 import no.saabelit.kotlinnotionclient.models.files.UploadProgressStatus
 import no.saabelit.kotlinnotionclient.utils.FileSource
 import no.saabelit.kotlinnotionclient.utils.FileUploadUtils
+import unit.util.TestFixtures
+import unit.util.mockClient
 import kotlin.io.path.createTempFile
 import kotlin.io.path.writeBytes
 
@@ -141,12 +142,12 @@ class EnhancedFileUploadApiTest :
                 val mockClient =
                     mockClient {
                         addJsonResponse(
-                            method = io.ktor.http.HttpMethod.Post,
+                            method = HttpMethod.Post,
                             path = "/v1/file_uploads",
                             responseBody = TestFixtures.FileUploads.createFileUploadAsString(),
                         )
                         addJsonResponse(
-                            method = io.ktor.http.HttpMethod.Post,
+                            method = HttpMethod.Post,
                             path = "/v1/file_uploads/b52b8ed6-e029-4707-a671-832549c09de3/send",
                             responseBody = TestFixtures.FileUploads.sendFileUploadAsString(),
                         )
@@ -196,7 +197,7 @@ class EnhancedFileUploadApiTest :
                 val mockClient =
                     mockClient {
                         addJsonResponse(
-                            method = io.ktor.http.HttpMethod.Post,
+                            method = HttpMethod.Post,
                             path = "/v1/file_uploads",
                             responseBody =
                                 """
@@ -254,12 +255,12 @@ class EnhancedFileUploadApiTest :
                 val mockClient =
                     mockClient {
                         addJsonResponse(
-                            method = io.ktor.http.HttpMethod.Post,
+                            method = HttpMethod.Post,
                             path = "/v1/file_uploads",
                             responseBody = TestFixtures.FileUploads.createFileUploadAsString(),
                         )
                         addJsonResponse(
-                            method = io.ktor.http.HttpMethod.Post,
+                            method = HttpMethod.Post,
                             path = "/v1/file_uploads/b52b8ed6-e029-4707-a671-832549c09de3/send",
                             responseBody = TestFixtures.FileUploads.sendFileUploadAsString(),
                         )

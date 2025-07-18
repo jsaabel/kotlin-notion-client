@@ -1,16 +1,16 @@
-package dsl
+package unit.dsl
 
 import io.kotest.core.annotation.Tags
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.collections.shouldNotBeEmpty
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeTypeOf
-import mockClient
 import no.saabelit.kotlinnotionclient.NotionClient
 import no.saabelit.kotlinnotionclient.config.NotionConfig
 import no.saabelit.kotlinnotionclient.models.databases.DatabaseQueryRequest
 import no.saabelit.kotlinnotionclient.models.databases.SortDirection
 import no.saabelit.kotlinnotionclient.models.databases.databaseQuery
+import unit.util.mockClient
 
 /**
  * Tests for the Database Query DSL functionality.

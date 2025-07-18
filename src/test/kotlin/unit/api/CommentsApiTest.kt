@@ -1,8 +1,7 @@
 @file:Suppress("unused", "UnusedVariable")
 
-package api
+package unit.api
 
-import TestFixtures
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.annotation.Tags
 import io.kotest.core.spec.style.FunSpec
@@ -11,7 +10,6 @@ import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.types.shouldBeInstanceOf
 import io.ktor.http.HttpMethod
 import io.ktor.http.HttpStatusCode
-import mockClient
 import no.saabelit.kotlinnotionclient.api.CommentsApi
 import no.saabelit.kotlinnotionclient.config.NotionConfig
 import no.saabelit.kotlinnotionclient.exceptions.NotionException
@@ -24,6 +22,8 @@ import no.saabelit.kotlinnotionclient.models.comments.CommentDisplayNameType
 import no.saabelit.kotlinnotionclient.models.comments.CommentList
 import no.saabelit.kotlinnotionclient.models.comments.CreateCommentRequest
 import no.saabelit.kotlinnotionclient.models.requests.RequestBuilders
+import unit.util.TestFixtures
+import unit.util.mockClient
 
 /**
  * Unit tests for the CommentsApi class.

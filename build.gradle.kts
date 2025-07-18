@@ -6,7 +6,6 @@ plugins {
     alias(libs.plugins.kotlin.jvm)
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.kotlinter)
-    alias(libs.plugins.shadow)
 }
 
 group = "no.saabelit"
@@ -76,8 +75,3 @@ tasks.withType<DependencyUpdatesTask> {
     }
 }
 
-tasks.shadowJar {
-    archiveClassifier.set("")
-    archiveFileName.set("kotlin-notion-client-${project.version}.jar")
-    mergeServiceFiles()
-}

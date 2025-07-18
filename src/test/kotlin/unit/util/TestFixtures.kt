@@ -1,8 +1,11 @@
 @file:Suppress("unused")
 
+package unit.util
+
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.serializer
+import java.io.File
 
 /**
  * Utility class for loading official Notion API sample responses for testing.
@@ -58,7 +61,7 @@ object TestFixtures {
         category: String,
         filename: String,
     ): JsonElement {
-        val file = java.io.File("reference/notion-api/sample_responses/$category/$filename.json")
+        val file = File("reference/notion-api/sample_responses/$category/$filename.json")
         val content = file.readText()
         return json.parseToJsonElement(content)
     }
@@ -70,7 +73,7 @@ object TestFixtures {
         category: String,
         filename: String,
     ): String {
-        val file = java.io.File("reference/notion-api/sample_responses/$category/$filename.json")
+        val file = File("reference/notion-api/sample_responses/$category/$filename.json")
         return file.readText()
     }
 
@@ -185,6 +188,6 @@ object TestFixtures {
 }
 
 /**
- * Extension function to easily decode JsonElement to a specific type
+ * Extension function to easily unit.util.decode JsonElement to a specific type
  */
 inline fun <reified T> JsonElement.decode(): T = TestFixtures.json.decodeFromJsonElement(serializer<T>(), this)

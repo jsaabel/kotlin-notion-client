@@ -379,3 +379,52 @@ version constraints, especially since the main library build can still use lates
 ---
 
 **Updated Phase**: Implementation in progress - notebook integration complete with lessons learned! 🎯
+
+---
+
+## Working Configuration for Kotlin Notebooks + Fat JAR (July 18, 2025)
+
+### Verified Working Dependency Versions 🎯
+
+The following dependency configuration has been **confirmed to work** with Kotlin Jupyter notebooks when building fat JARs:
+
+```toml
+[versions]
+kotlin = "2.0.21"
+kotlinx-serialization-json = "1.7.3"
+ktor = "3.0.1"
+shadow = "8.3.0"
+kotest = "5.9.1"
+logback = "1.5.18"
+slf4j = "2.0.17"
+```
+
+### Key Compatibility Points ✅
+
+- **Kotlin 2.0.21**: Last version compatible with current Jupyter Kotlin kernel
+- **kotlinx-serialization 1.7.3**: Avoids serialization compatibility issues with notebook environment
+- **Ktor 3.0.1**: Stable HTTP client functionality without newer breaking changes
+- **Shadow 8.3.0**: Successfully builds fat JARs with proper service file merging
+
+### Failed Combinations (Documented for Future Reference) ❌
+
+**Kotlin 2.2.0 + kotlinx-serialization 1.9.0:**
+```
+JsonConvertException: Illegal input: 'kotlinx.serialization.KSerializer[] 
+kotlinx.serialization.internal.GeneratedSerializer.typeParametersSerializers()'
+```
+
+**Notes:**
+- This configuration enables full notebook integration with live API calls
+- Fat JAR approach isolates dependencies and makes distribution seamless
+- Simplified `NotionClient.create(apiToken: String)` constructor works reliably
+- All DSL features function correctly in notebook environment
+
+### Reverting to Latest Versions Plan 📋
+
+Once this configuration is documented, plan to revert to latest versions:
+- Kotlin 2.2.0+
+- kotlinx-serialization 1.9.0+
+- Ktor 3.2.1+
+
+Keep this working configuration documented for future notebook integration needs.

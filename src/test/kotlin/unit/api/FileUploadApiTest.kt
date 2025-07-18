@@ -1,21 +1,21 @@
 @file:Suppress("unused", "UnusedVariable")
 
-package api
+package unit.api
 
-import TestFixtures
 import io.kotest.core.annotation.Tags
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.ktor.http.HttpMethod
 import kotlinx.serialization.json.Json
-import mockClient
 import no.saabelit.kotlinnotionclient.api.FileUploadApi
 import no.saabelit.kotlinnotionclient.config.NotionConfig
 import no.saabelit.kotlinnotionclient.models.files.CreateFileUploadRequest
 import no.saabelit.kotlinnotionclient.models.files.FileUpload
 import no.saabelit.kotlinnotionclient.models.files.FileUploadMode
 import no.saabelit.kotlinnotionclient.models.files.FileUploadStatus
+import unit.util.TestFixtures
+import unit.util.mockClient
 
 /**
  * Unit tests for the FileUploadApi class.

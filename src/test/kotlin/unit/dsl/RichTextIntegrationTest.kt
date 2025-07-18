@@ -1,4 +1,4 @@
-package dsl
+package unit.dsl
 
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldHaveSize

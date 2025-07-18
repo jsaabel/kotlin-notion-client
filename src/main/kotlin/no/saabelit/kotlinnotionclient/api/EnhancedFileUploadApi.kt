@@ -3,8 +3,6 @@
 package no.saabelit.kotlinnotionclient.api
 
 import io.ktor.client.HttpClient
-import io.ktor.client.request.get
-import io.ktor.http.contentType
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
@@ -239,7 +237,7 @@ class EnhancedFileUploadApi(
      * @param maxWaitTimeMs Maximum time to wait in milliseconds (default: 10 seconds)
      * @param checkIntervalMs Interval between status checks in milliseconds (default: 500ms)
      * @return The file upload once it reaches "uploaded" status
-     * @throws FileUploadError.Timeout if the file doesn't become ready within the timeout
+     * @throws FileUploadError.TimeoutError if the file doesn't become ready within the timeout
      */
     suspend fun waitForFileReady(
         fileUploadId: String,

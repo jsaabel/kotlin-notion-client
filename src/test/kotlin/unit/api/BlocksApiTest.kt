@@ -1,4 +1,4 @@
-package api
+package unit.api
 
 import io.kotest.core.annotation.Tags
 import io.kotest.core.spec.style.FunSpec
@@ -7,7 +7,6 @@ import io.kotest.matchers.shouldNotBe
 import io.ktor.client.HttpClient
 import io.ktor.http.HttpMethod
 import io.ktor.http.HttpStatusCode
-import mockClient
 import no.saabelit.kotlinnotionclient.api.BlocksApi
 import no.saabelit.kotlinnotionclient.config.NotionConfig
 import no.saabelit.kotlinnotionclient.exceptions.NotionException
@@ -17,6 +16,8 @@ import no.saabelit.kotlinnotionclient.models.blocks.BlockRequest
 import no.saabelit.kotlinnotionclient.models.blocks.Heading2RequestContent
 import no.saabelit.kotlinnotionclient.models.blocks.ParagraphRequestContent
 import no.saabelit.kotlinnotionclient.models.requests.RequestBuilders
+import unit.util.TestFixtures
+import unit.util.mockClient
 
 @Tags("Unit")
 class BlocksApiTest :

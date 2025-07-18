@@ -1,6 +1,6 @@
 @file:Suppress("unused")
 
-package api
+package unit.api
 
 import io.kotest.core.annotation.Tags
 import io.kotest.core.spec.style.FunSpec

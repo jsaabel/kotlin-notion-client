@@ -2,7 +2,6 @@
 
 package integration
 
-import TestFixtures
 import io.kotest.core.annotation.Tags
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
@@ -21,6 +20,7 @@ import no.saabelit.kotlinnotionclient.config.NotionConfig
 import no.saabelit.kotlinnotionclient.ratelimit.NotionRateLimit
 import no.saabelit.kotlinnotionclient.ratelimit.RateLimitConfig
 import no.saabelit.kotlinnotionclient.ratelimit.RateLimitStrategy
+import unit.util.TestFixtures
 
 /**
  * Integration tests for rate limiting functionality using Ktor's mock engine.

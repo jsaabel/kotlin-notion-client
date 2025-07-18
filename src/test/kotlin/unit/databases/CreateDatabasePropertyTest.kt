@@ -1,4 +1,4 @@
-package databases
+package unit.databases
 
 import io.kotest.core.annotation.Tags
 import io.kotest.core.spec.style.StringSpec
