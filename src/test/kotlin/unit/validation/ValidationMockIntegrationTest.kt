@@ -1,5 +1,3 @@
-@file:Suppress("unused")
-
 package unit.validation
 
 import io.kotest.assertions.throwables.shouldThrow

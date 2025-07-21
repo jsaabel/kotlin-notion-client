@@ -1,5 +1,3 @@
-@file:Suppress("unused", "HttpUrlsUsage")
-
 package integration
 
 import io.kotest.core.annotation.Tags

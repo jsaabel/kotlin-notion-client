@@ -1,4 +1,4 @@
-@file:Suppress("unused", "HttpUrlsUsage")
+@file:Suppress("HttpUrlsUsage")
 
 package unit.api
 

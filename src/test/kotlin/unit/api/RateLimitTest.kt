@@ -1,5 +1,3 @@
-@file:Suppress("unused")
-
 package unit.api
 
 import io.kotest.core.annotation.Tags

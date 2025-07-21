@@ -1,4 +1,4 @@
-@file:Suppress("unused", "UnusedVariable")
+@file:Suppress("UnusedVariable")
 
 package unit.api
 

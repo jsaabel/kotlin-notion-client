@@ -1,5 +1,3 @@
-@file:Suppress("unused")
-
 package integration.dsl
 
 import io.kotest.core.annotation.Tags

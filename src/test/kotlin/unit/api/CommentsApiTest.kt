@@ -1,5 +1,3 @@
-@file:Suppress("unused", "UnusedVariable")
-
 package unit.api
 
 import io.kotest.assertions.throwables.shouldThrow
