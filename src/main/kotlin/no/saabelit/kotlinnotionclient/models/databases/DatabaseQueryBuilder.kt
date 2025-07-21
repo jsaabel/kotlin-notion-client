@@ -147,12 +147,12 @@ class FilterBuilder {
     /**
      * Creates a select property filter builder.
      */
-    fun select(propertyName: String): SelectFilterBuilder = SelectFilterBuilder(propertyName, "select")
+    fun select(propertyName: String): SelectFilterBuilder = SelectFilterBuilder(propertyName)
 
     /**
      * Creates a multi-select property filter builder.
      */
-    fun multiSelect(propertyName: String): SelectFilterBuilder = SelectFilterBuilder(propertyName, "multi_select")
+    fun multiSelect(propertyName: String): MultiSelectFilterBuilder = MultiSelectFilterBuilder(propertyName)
 
     /**
      * Creates a date property filter builder.
@@ -273,11 +273,10 @@ class NumberFilterBuilder(
 }
 
 /**
- * Builder for select and multi-select property filters.
+ * Builder for select property filters.
  */
 class SelectFilterBuilder(
     private val propertyName: String,
-    private val type: String,
 ) {
     fun equals(value: String): DatabaseFilter = createFilter(SelectCondition(equals = value))
 
@@ -290,8 +289,28 @@ class SelectFilterBuilder(
     private fun createFilter(condition: SelectCondition): DatabaseFilter =
         DatabaseFilter(
             property = propertyName,
-            select = if (type == "select") condition else null,
-            multiSelect = if (type == "multi_select") condition else null,
+            select = condition,
+        )
+}
+
+/**
+ * Builder for multi-select property filters.
+ */
+class MultiSelectFilterBuilder(
+    private val propertyName: String,
+) {
+    fun contains(value: String): DatabaseFilter = createFilter(MultiSelectCondition(contains = value))
+
+    fun doesNotContain(value: String): DatabaseFilter = createFilter(MultiSelectCondition(doesNotContain = value))
+
+    fun isEmpty(): DatabaseFilter = createFilter(MultiSelectCondition(isEmpty = true))
+
+    fun isNotEmpty(): DatabaseFilter = createFilter(MultiSelectCondition(isNotEmpty = true))
+
+    private fun createFilter(condition: MultiSelectCondition): DatabaseFilter =
+        DatabaseFilter(
+            property = propertyName,
+            multiSelect = condition,
         )
 }
 

@@ -68,7 +68,7 @@ data class DatabaseFilter(
     @SerialName("select")
     val select: SelectCondition? = null,
     @SerialName("multi_select")
-    val multiSelect: SelectCondition? = null,
+    val multiSelect: MultiSelectCondition? = null,
     @SerialName("date")
     val date: DateCondition? = null,
     @SerialName("checkbox")
@@ -161,7 +161,7 @@ data class NumberCondition(
 )
 
 /**
- * Select/Multi-select property condition.
+ * Select property condition.
  */
 @Serializable
 data class SelectCondition(
@@ -169,6 +169,21 @@ data class SelectCondition(
     val equals: String? = null,
     @SerialName("does_not_equal")
     val doesNotEqual: String? = null,
+    @SerialName("is_empty")
+    val isEmpty: Boolean? = null,
+    @SerialName("is_not_empty")
+    val isNotEmpty: Boolean? = null,
+)
+
+/**
+ * Multi-select property condition.
+ */
+@Serializable
+data class MultiSelectCondition(
+    @SerialName("contains")
+    val contains: String? = null,
+    @SerialName("does_not_contain")
+    val doesNotContain: String? = null,
     @SerialName("is_empty")
     val isEmpty: Boolean? = null,
     @SerialName("is_not_empty")
