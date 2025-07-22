@@ -127,7 +127,7 @@ class DatabaseRequestBuilderTest :
                             }
                         }
 
-                    request.icon shouldBe PageIcon(type = "external", url = "https://example.com/icon.png")
+                    request.icon shouldBe PageIcon(type = "external", external = ExternalFile(url = "https://example.com/icon.png"))
                 }
 
                 "file icon" {
@@ -144,8 +144,7 @@ class DatabaseRequestBuilderTest :
                     request.icon shouldBe
                         PageIcon(
                             type = "file",
-                            url = "https://files.notion.so/icon.png",
-                            expiryTime = "2023-01-01T00:00:00.000Z",
+                            file = NotionFile(url = "https://files.notion.so/icon.png", expiryTime = "2023-01-01T00:00:00.000Z"),
                         )
                 }
 
@@ -163,8 +162,7 @@ class DatabaseRequestBuilderTest :
                     request.icon shouldBe
                         PageIcon(
                             type = "file",
-                            url = "https://files.notion.so/icon.png",
-                            expiryTime = null,
+                            file = NotionFile(url = "https://files.notion.so/icon.png", expiryTime = null),
                         )
                 }
             }

@@ -12,7 +12,7 @@ import io.kotest.matchers.types.shouldBeInstanceOf
 import no.saabelit.kotlinnotionclient.models.base.Parent
 import no.saabelit.kotlinnotionclient.models.blocks.BlockRequest
 import no.saabelit.kotlinnotionclient.models.pages.PagePropertyValue
-import no.saabelit.kotlinnotionclient.models.pages.pageRequest
+import no.saabelit.kotlinnotionclient.models.pages.createPageRequest
 
 /**
  * Comprehensive unit tests for PageRequestBuilder DSL.
@@ -28,7 +28,7 @@ class PageRequestBuilderTest :
             describe("basic construction") {
                 it("should create a minimal page request with database parent") {
                     val request =
-                        pageRequest {
+                        createPageRequest {
                             parent.database("test-db-id")
                         }
 
@@ -45,7 +45,7 @@ class PageRequestBuilderTest :
 
                 it("should create a minimal page request with page parent") {
                     val request =
-                        pageRequest {
+                        createPageRequest {
                             parent.page("test-page-id")
                         }
 
@@ -58,7 +58,7 @@ class PageRequestBuilderTest :
 
                 it("should create a minimal page request with block parent") {
                     val request =
-                        pageRequest {
+                        createPageRequest {
                             parent.block("test-block-id")
                         }
 
@@ -71,7 +71,7 @@ class PageRequestBuilderTest :
 
                 it("should create a minimal page request with workspace parent") {
                     val request =
-                        pageRequest {
+                        createPageRequest {
                             parent.workspace()
                         }
 
@@ -84,7 +84,7 @@ class PageRequestBuilderTest :
 
                 it("should fail when parent is not specified") {
                     shouldThrow<IllegalArgumentException> {
-                        pageRequest {
+                        createPageRequest {
                             // No parent specified
                         }
                     }.message shouldContain "Parent must be specified"
@@ -94,7 +94,7 @@ class PageRequestBuilderTest :
             describe("title configuration") {
                 it("should set title property") {
                     val request =
-                        pageRequest {
+                        createPageRequest {
                             parent.database("test-db-id")
                             title("My Page Title")
                         }
@@ -111,7 +111,7 @@ class PageRequestBuilderTest :
             describe("properties configuration") {
                 it("should set properties for database pages") {
                     val request =
-                        pageRequest {
+                        createPageRequest {
                             parent.database("test-db-id")
                             properties {
                                 title("Name", "Test Page")
@@ -143,7 +143,7 @@ class PageRequestBuilderTest :
 
                 it("should fail when properties are used with page parent") {
                     shouldThrow<IllegalStateException> {
-                        pageRequest {
+                        createPageRequest {
                             parent.page("test-page-id")
                             properties {
                                 richText("Description", "This should fail")
@@ -154,7 +154,7 @@ class PageRequestBuilderTest :
 
                 it("should allow title property with page parent") {
                     val request =
-                        pageRequest {
+                        createPageRequest {
                             parent.page("test-page-id")
                             title("My Page Title")
                         }
@@ -167,7 +167,7 @@ class PageRequestBuilderTest :
             describe("icon configuration") {
                 it("should set emoji icon") {
                     val request =
-                        pageRequest {
+                        createPageRequest {
                             parent.database("test-db-id")
                             icon.emoji("📄")
                         }
@@ -179,47 +179,50 @@ class PageRequestBuilderTest :
 
                 it("should set external icon") {
                     val request =
-                        pageRequest {
+                        createPageRequest {
                             parent.database("test-db-id")
                             icon.external("https://example.com/icon.png")
                         }
 
                     request.icon.shouldNotBeNull()
                     request.icon!!.type shouldBe "external"
-                    request.icon!!.url shouldBe "https://example.com/icon.png"
+                    request.icon!!.external!!.url shouldBe "https://example.com/icon.png"
                 }
 
                 it("should set file icon") {
                     val request =
-                        pageRequest {
+                        createPageRequest {
                             parent.database("test-db-id")
                             icon.file("https://files.notion.com/icon.png", "2024-12-31")
                         }
 
                     request.icon.shouldNotBeNull()
                     request.icon!!.type shouldBe "file"
-                    request.icon!!.url shouldBe "https://files.notion.com/icon.png"
-                    request.icon!!.expiryTime shouldBe "2024-12-31"
+                    request.icon!!.file!!.url shouldBe "https://files.notion.com/icon.png"
+                    request.icon!!.file!!.expiryTime shouldBe "2024-12-31"
                 }
 
                 it("should set file icon without expiry time") {
                     val request =
-                        pageRequest {
+                        createPageRequest {
                             parent.database("test-db-id")
                             icon.file("https://files.notion.com/icon.png")
                         }
 
                     request.icon.shouldNotBeNull()
                     request.icon!!.type shouldBe "file"
-                    request.icon!!.url shouldBe "https://files.notion.com/icon.png"
-                    request.icon!!.expiryTime.shouldBeNull()
+                    request.icon!!.file!!.url shouldBe "https://files.notion.com/icon.png"
+                    request.icon!!
+                        .file!!
+                        .expiryTime
+                        .shouldBeNull()
                 }
             }
 
             describe("cover configuration") {
                 it("should set external cover") {
                     val request =
-                        pageRequest {
+                        createPageRequest {
                             parent.database("test-db-id")
                             cover.external("https://example.com/cover.jpg")
                         }
@@ -232,7 +235,7 @@ class PageRequestBuilderTest :
 
                 it("should set file cover") {
                     val request =
-                        pageRequest {
+                        createPageRequest {
                             parent.database("test-db-id")
                             cover.file("https://files.notion.com/cover.jpg", "2024-12-31")
                         }
@@ -246,7 +249,7 @@ class PageRequestBuilderTest :
 
                 it("should set file cover without expiry time") {
                     val request =
-                        pageRequest {
+                        createPageRequest {
                             parent.database("test-db-id")
                             cover.file("https://files.notion.com/cover.jpg")
                         }
@@ -265,7 +268,7 @@ class PageRequestBuilderTest :
             describe("content configuration") {
                 it("should set content using PageContentBuilder") {
                     val request =
-                        pageRequest {
+                        createPageRequest {
                             parent.database("test-db-id")
                             content {
                                 heading1("Welcome")
@@ -287,7 +290,7 @@ class PageRequestBuilderTest :
             describe("comprehensive configuration") {
                 it("should create a fully configured database page") {
                     val request =
-                        pageRequest {
+                        createPageRequest {
                             parent.database("test-db-id")
                             title("Comprehensive Test Page")
                             properties {
@@ -328,7 +331,7 @@ class PageRequestBuilderTest :
 
                 it("should create a fully configured child page") {
                     val request =
-                        pageRequest {
+                        createPageRequest {
                             parent.page("parent-page-id")
                             title("Child Page Title")
                             icon.emoji("📄")
@@ -361,7 +364,7 @@ class PageRequestBuilderTest :
             describe("validation edge cases") {
                 it("should allow empty properties block for database parent") {
                     val request =
-                        pageRequest {
+                        createPageRequest {
                             parent.database("test-db-id")
                             properties {
                                 // Empty properties block
@@ -373,7 +376,7 @@ class PageRequestBuilderTest :
 
                 it("should allow title and properties together for database parent") {
                     val request =
-                        pageRequest {
+                        createPageRequest {
                             parent.database("test-db-id")
                             title("Page Title")
                             properties {
@@ -388,7 +391,7 @@ class PageRequestBuilderTest :
 
                 it("should validate against mixing custom properties with non-database parent") {
                     shouldThrow<IllegalStateException> {
-                        pageRequest {
+                        createPageRequest {
                             parent.workspace()
                             properties {
                                 richText("Invalid", "This should fail")

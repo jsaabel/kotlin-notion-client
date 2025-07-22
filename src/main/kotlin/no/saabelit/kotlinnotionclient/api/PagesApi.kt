@@ -17,12 +17,14 @@ import no.saabelit.kotlinnotionclient.config.NotionConfig
 import no.saabelit.kotlinnotionclient.exceptions.NotionException
 import no.saabelit.kotlinnotionclient.models.pages.ArchivePageRequest
 import no.saabelit.kotlinnotionclient.models.pages.CreatePageRequest
+import no.saabelit.kotlinnotionclient.models.pages.CreatePageRequestBuilder
 import no.saabelit.kotlinnotionclient.models.pages.Page
 import no.saabelit.kotlinnotionclient.models.pages.PagePropertyItemResponse
-import no.saabelit.kotlinnotionclient.models.pages.PageRequestBuilder
 import no.saabelit.kotlinnotionclient.models.pages.PropertyItem
 import no.saabelit.kotlinnotionclient.models.pages.UpdatePageRequest
-import no.saabelit.kotlinnotionclient.models.pages.pageRequest
+import no.saabelit.kotlinnotionclient.models.pages.UpdatePageRequestBuilder
+import no.saabelit.kotlinnotionclient.models.pages.createPageRequest
+import no.saabelit.kotlinnotionclient.models.pages.updatePageRequest
 import no.saabelit.kotlinnotionclient.ratelimit.executeWithRateLimit
 import no.saabelit.kotlinnotionclient.validation.RequestValidator
 import no.saabelit.kotlinnotionclient.validation.ValidationConfig
@@ -110,8 +112,8 @@ class PagesApi(
      * @throws NotionException.AuthenticationError for authentication failures
      * @throws ValidationException if validation fails for non-fixable violations
      */
-    suspend fun create(builder: PageRequestBuilder.() -> Unit): Page {
-        val request = pageRequest(builder)
+    suspend fun create(builder: CreatePageRequestBuilder.() -> Unit): Page {
+        val request = createPageRequest(builder)
         return create(request)
     }
 
@@ -250,6 +252,28 @@ class PagesApi(
                 throw NotionException.NetworkError(e)
             }
         }
+    }
+
+    /**
+     * Updates an existing page using a fluent DSL builder.
+     *
+     * This is a convenience method that accepts a DSL builder lambda for more natural
+     * Kotlin-style API usage. The builder provides type-safe construction of update requests.
+     *
+     * @param pageId The ID of the page to update
+     * @param builder DSL builder lambda for constructing the update request
+     * @return Page object representing the updated page
+     * @throws NotionException.NetworkError for network-related failures
+     * @throws NotionException.ApiError for API-related errors (4xx, 5xx responses)
+     * @throws NotionException.AuthenticationError for authentication failures
+     * @throws ValidationException if validation fails for non-fixable violations
+     */
+    suspend fun update(
+        pageId: String,
+        builder: UpdatePageRequestBuilder.() -> Unit,
+    ): Page {
+        val request = updatePageRequest(builder)
+        return update(pageId, request)
     }
 
     /**

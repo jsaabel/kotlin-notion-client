@@ -188,7 +188,7 @@ class DatabaseRequestBuilder {
             this@DatabaseRequestBuilder.iconValue =
                 PageIcon(
                     type = "external",
-                    url = url,
+                    external = ExternalFile(url = url),
                 )
         }
 
@@ -205,8 +205,7 @@ class DatabaseRequestBuilder {
             this@DatabaseRequestBuilder.iconValue =
                 PageIcon(
                     type = "file",
-                    url = url,
-                    expiryTime = expiryTime,
+                    file = NotionFile(url = url, expiryTime = expiryTime),
                 )
         }
     }

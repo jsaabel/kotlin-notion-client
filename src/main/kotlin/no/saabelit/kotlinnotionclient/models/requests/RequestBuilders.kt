@@ -10,6 +10,7 @@ import no.saabelit.kotlinnotionclient.models.base.TextContent
 import no.saabelit.kotlinnotionclient.models.databases.CreateDatabaseProperty
 import no.saabelit.kotlinnotionclient.models.databases.CreateDatabaseRequest
 import no.saabelit.kotlinnotionclient.models.pages.CreatePageRequest
+import no.saabelit.kotlinnotionclient.models.pages.ExternalFile
 import no.saabelit.kotlinnotionclient.models.pages.PageIcon
 import no.saabelit.kotlinnotionclient.models.pages.PagePropertyValue
 import no.saabelit.kotlinnotionclient.models.users.User
@@ -165,6 +166,6 @@ object RequestBuilders {
     fun createExternalIcon(url: String): PageIcon =
         PageIcon(
             type = "external",
-            url = url,
+            external = ExternalFile(url = url),
         )
 }

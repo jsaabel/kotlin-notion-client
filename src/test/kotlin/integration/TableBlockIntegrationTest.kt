@@ -11,7 +11,7 @@ import no.saabelit.kotlinnotionclient.config.NotionConfig
 import no.saabelit.kotlinnotionclient.models.blocks.Block
 import no.saabelit.kotlinnotionclient.models.blocks.BlockRequest
 import no.saabelit.kotlinnotionclient.models.blocks.pageContent
-import no.saabelit.kotlinnotionclient.models.pages.pageRequest
+import no.saabelit.kotlinnotionclient.models.pages.createPageRequest
 
 /**
  * Self-contained integration test for Table Block functionality.
@@ -45,7 +45,7 @@ class TableBlockIntegrationTest :
                     // Step 1: Create initial page using pageRequest DSL
                     println("📄 Creating test page for Table Block demonstration...")
                     val initialPageRequest =
-                        pageRequest {
+                        createPageRequest {
                             parent.page(parentPageId)
                             icon.emoji("📊")
                             properties {

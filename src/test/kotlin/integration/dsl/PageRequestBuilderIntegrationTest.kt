@@ -12,7 +12,7 @@ import no.saabelit.kotlinnotionclient.NotionClient
 import no.saabelit.kotlinnotionclient.config.NotionConfig
 import no.saabelit.kotlinnotionclient.models.blocks.Block
 import no.saabelit.kotlinnotionclient.models.pages.PageProperty
-import no.saabelit.kotlinnotionclient.models.pages.pageRequest
+import no.saabelit.kotlinnotionclient.models.pages.createPageRequest
 
 /**
  * Self-contained integration test for the PageRequestBuilder DSL.
@@ -47,7 +47,7 @@ class PageRequestBuilderIntegrationTest :
 
                     // Create page using DSL
                     val pageRequest =
-                        pageRequest {
+                        createPageRequest {
                             parent.page(parentPageId)
                             title("DSL Integration Test Page")
                             icon.emoji("🚀")
@@ -158,7 +158,7 @@ class PageRequestBuilderIntegrationTest :
 
                     // Test that properties validation works as expected
                     try {
-                        pageRequest {
+                        createPageRequest {
                             parent.page(parentPageId)
                             properties {
                                 richText("Invalid", "This should fail validation")
@@ -172,7 +172,7 @@ class PageRequestBuilderIntegrationTest :
 
                     // Test that title is allowed with page parent
                     val validRequest =
-                        pageRequest {
+                        createPageRequest {
                             parent.page(parentPageId)
                             title("Valid Title Only")
                         }

@@ -49,7 +49,7 @@ import no.saabelit.kotlinnotionclient.models.blocks.pageContent
  * Child pages (parent.page()) can only have a title and content.
  */
 @PageRequestDslMarker
-class PageRequestBuilder {
+class CreatePageRequestBuilder {
     private var parentValue: Parent? = null
     private var properties = mutableMapOf<String, PagePropertyValue>()
     private var iconValue: PageIcon? = null
@@ -150,7 +150,7 @@ class PageRequestBuilder {
          * @param pageId The parent page ID
          */
         fun page(pageId: String) {
-            this@PageRequestBuilder.parentValue =
+            this@CreatePageRequestBuilder.parentValue =
                 Parent(
                     type = "page_id",
                     pageId = pageId,
@@ -165,7 +165,7 @@ class PageRequestBuilder {
          * @param databaseId The parent database ID
          */
         fun database(databaseId: String) {
-            this@PageRequestBuilder.parentValue =
+            this@CreatePageRequestBuilder.parentValue =
                 Parent(
                     type = "database_id",
                     databaseId = databaseId,
@@ -178,7 +178,7 @@ class PageRequestBuilder {
          * @param blockId The parent block ID
          */
         fun block(blockId: String) {
-            this@PageRequestBuilder.parentValue =
+            this@CreatePageRequestBuilder.parentValue =
                 Parent(
                     type = "block_id",
                     blockId = blockId,
@@ -189,7 +189,7 @@ class PageRequestBuilder {
          * Sets the parent to workspace.
          */
         fun workspace() {
-            this@PageRequestBuilder.parentValue =
+            this@CreatePageRequestBuilder.parentValue =
                 Parent(
                     type = "workspace",
                     workspace = true,
@@ -208,7 +208,7 @@ class PageRequestBuilder {
          * @param emoji The emoji character(s)
          */
         fun emoji(emoji: String) {
-            this@PageRequestBuilder.iconValue =
+            this@CreatePageRequestBuilder.iconValue =
                 PageIcon(
                     type = "emoji",
                     emoji = emoji,
@@ -221,10 +221,10 @@ class PageRequestBuilder {
          * @param url The external image URL
          */
         fun external(url: String) {
-            this@PageRequestBuilder.iconValue =
+            this@CreatePageRequestBuilder.iconValue =
                 PageIcon(
                     type = "external",
-                    url = url,
+                    external = ExternalFile(url = url),
                 )
         }
 
@@ -238,11 +238,10 @@ class PageRequestBuilder {
             url: String,
             expiryTime: String? = null,
         ) {
-            this@PageRequestBuilder.iconValue =
+            this@CreatePageRequestBuilder.iconValue =
                 PageIcon(
                     type = "file",
-                    url = url,
-                    expiryTime = expiryTime,
+                    file = NotionFile(url = url, expiryTime = expiryTime),
                 )
         }
     }
@@ -258,7 +257,7 @@ class PageRequestBuilder {
          * @param url The external image URL
          */
         fun external(url: String) {
-            this@PageRequestBuilder.coverValue =
+            this@CreatePageRequestBuilder.coverValue =
                 PageCover(
                     type = "external",
                     external = ExternalFile(url = url),
@@ -275,7 +274,7 @@ class PageRequestBuilder {
             url: String,
             expiryTime: String? = null,
         ) {
-            this@PageRequestBuilder.coverValue =
+            this@CreatePageRequestBuilder.coverValue =
                 PageCover(
                     type = "file",
                     file = NotionFile(url = url, expiryTime = expiryTime),
@@ -296,8 +295,8 @@ annotation class PageRequestDslMarker
  * @param block Configuration block for the page request
  * @return The configured CreatePageRequest
  */
-fun pageRequest(block: PageRequestBuilder.() -> Unit): CreatePageRequest {
-    val builder = PageRequestBuilder()
+fun createPageRequest(block: CreatePageRequestBuilder.() -> Unit): CreatePageRequest {
+    val builder = CreatePageRequestBuilder()
     builder.block()
     return builder.build()
 }

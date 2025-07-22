@@ -351,7 +351,7 @@ data class SelectOption(
     @SerialName("name")
     val name: String,
     @SerialName("color")
-    val color: SelectOptionColor = SelectOptionColor.DEFAULT,
+    val color: SelectOptionColor? = null,
 )
 
 @Serializable

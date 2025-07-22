@@ -57,10 +57,10 @@ data class PageIcon(
     val type: String,
     @SerialName("emoji")
     val emoji: String? = null,
-    @SerialName("url")
-    val url: String? = null,
-    @SerialName("expiry_time")
-    val expiryTime: String? = null,
+    @SerialName("external")
+    val external: ExternalFile? = null,
+    @SerialName("file")
+    val file: NotionFile? = null,
 )
 
 /**
