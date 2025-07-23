@@ -173,7 +173,62 @@ class CommentsIntegrationTest :
                         // The API fetches all comments automatically
                         println("✅ Pagination test completed")
 
-                        println("🎉 Comments workflow test completed successfully!")
+                        // Step 7: Test DSL-based comment creation
+                        println("🔧 Testing DSL-based comment creation...")
+
+                        val dslComment =
+                            client.comments.create {
+                                parent.pageId(createdPage.id)
+                                content {
+                                    text("🚀 DSL comment with ")
+                                    bold("formatted text")
+                                    text(" and ")
+                                    italic("styling")
+                                    text("!")
+                                }
+                                displayName("Integration Test Bot")
+                            }
+
+                        println("✅ Successfully created DSL comment:")
+                        println("   ID: ${dslComment.id}")
+                        println("   Content: ${dslComment.richText.joinToString("") { it.plainText }}")
+                        println("   Display Name: ${dslComment.displayName?.resolvedName}")
+
+                        // Validate DSL comment
+                        dslComment.id.shouldNotBeBlank()
+                        dslComment.objectType shouldBe "comment"
+                        dslComment.richText.shouldNotBeEmpty()
+                        dslComment.richText.size shouldBe 5 // text + bold + text + italic + text
+                        dslComment.richText[1].annotations.bold shouldBe true
+                        dslComment.richText[3].annotations.italic shouldBe true
+                        dslComment.parent.pageId shouldBe createdPage.id
+
+                        // Step 8: Test DSL comment with mentions
+                        println("🔧 Testing DSL comment with mentions...")
+
+                        val mentionComment =
+                            client.comments.create {
+                                parent.pageId(createdPage.id)
+                                content {
+                                    text("Testing mentions: page ")
+                                    pageMention(createdPage.id)
+                                    text(" and date ")
+                                    dateMention("2023-12-25")
+                                }
+                                discussionId(dslComment.discussionId)
+                            }
+
+                        println("✅ Successfully created mention comment:")
+                        println("   ID: ${mentionComment.id}")
+                        println("   Mentions: ${mentionComment.richText.count { it.type == "mention" }} found")
+
+                        // Validate mention comment
+                        mentionComment.id.shouldNotBeBlank()
+                        mentionComment.richText.shouldNotBeEmpty()
+                        mentionComment.richText.count { it.type == "mention" } shouldBe 2
+                        mentionComment.discussionId shouldBe dslComment.discussionId
+
+                        println("🎉 DSL comments workflow test completed successfully!")
                     } catch (e: NotionException.AuthenticationError) {
                         println("❌ Authentication failed: ${e.message}")
                         println("   Check your NOTION_API_TOKEN is valid")

@@ -15,6 +15,8 @@ import no.saabelit.kotlinnotionclient.exceptions.NotionException
 import no.saabelit.kotlinnotionclient.models.comments.Comment
 import no.saabelit.kotlinnotionclient.models.comments.CommentList
 import no.saabelit.kotlinnotionclient.models.comments.CreateCommentRequest
+import no.saabelit.kotlinnotionclient.models.comments.CreateCommentRequestBuilder
+import no.saabelit.kotlinnotionclient.models.comments.commentRequest
 import no.saabelit.kotlinnotionclient.ratelimit.executeWithRateLimit
 
 /**
@@ -174,4 +176,52 @@ class CommentsApi(
         } catch (e: Exception) {
             throw NotionException.NetworkError(e)
         }
+
+    /**
+     * Creates a new comment on a page or block using the DSL builder.
+     *
+     * This is a convenience method that provides a fluent DSL for creating comments
+     * without manually constructing CreateCommentRequest objects.
+     *
+     * ## Basic Usage:
+     * ```kotlin
+     * val comment = client.comments.create {
+     *     parent {
+     *         pageId("12345678-1234-1234-1234-123456789abc")
+     *     }
+     *     content {
+     *         text("This is a comment with ")
+     *         bold("formatted text")
+     *         text("!")
+     *     }
+     * }
+     * ```
+     *
+     * ## Advanced Usage:
+     * ```kotlin
+     * val comment = client.comments.create {
+     *     parent {
+     *         blockId("87654321-4321-4321-4321-210987654321")
+     *     }
+     *     content {
+     *         text("Replying to discussion with ")
+     *         italic("styled text")
+     *     }
+     *     discussionId("existing-discussion-id")
+     *     displayName("Custom Bot Name")
+     * }
+     * ```
+     *
+     * @param builder DSL block for building the comment request
+     * @return Comment The created comment
+     * @throws NotionException.NetworkError for network-related failures
+     * @throws NotionException.ApiError for API-related errors (4xx, 5xx responses)
+     * @throws NotionException.AuthenticationError for authentication failures
+     * @throws IllegalArgumentException if validation fails (empty content, too many attachments)
+     * @throws IllegalStateException if required fields are not set in the DSL
+     */
+    suspend fun create(builder: CreateCommentRequestBuilder.() -> Unit): Comment {
+        val request = commentRequest(builder)
+        return create(request)
+    }
 }

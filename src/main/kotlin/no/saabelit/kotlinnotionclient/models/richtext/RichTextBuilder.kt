@@ -4,9 +4,12 @@ package no.saabelit.kotlinnotionclient.models.richtext
 
 import no.saabelit.kotlinnotionclient.models.base.Annotations
 import no.saabelit.kotlinnotionclient.models.base.Color
+import no.saabelit.kotlinnotionclient.models.base.DatabaseReference
+import no.saabelit.kotlinnotionclient.models.base.DateObject
 import no.saabelit.kotlinnotionclient.models.base.Equation
 import no.saabelit.kotlinnotionclient.models.base.Link
 import no.saabelit.kotlinnotionclient.models.base.Mention
+import no.saabelit.kotlinnotionclient.models.base.PageReference
 import no.saabelit.kotlinnotionclient.models.base.RichText
 import no.saabelit.kotlinnotionclient.models.base.TextContent
 import no.saabelit.kotlinnotionclient.models.users.User
@@ -311,6 +314,72 @@ class RichTextBuilder {
                 mention = Mention.User(User(objectType = "user", id = userId, name = null, avatarUrl = null, type = null, bot = null)),
                 annotations = Annotations(),
                 plainText = "@Unknown User", // Notion will populate this
+                href = null,
+            ),
+        )
+        return this
+    }
+
+    /**
+     * Adds a page mention.
+     *
+     * @param pageId The ID of the page to mention
+     * @return This builder for chaining
+     */
+    fun pageMention(pageId: String): RichTextBuilder {
+        segments.add(
+            RichText(
+                type = "mention",
+                text = null,
+                mention = Mention.Page(PageReference(id = pageId)),
+                annotations = Annotations(),
+                plainText = "Untitled", // Notion will populate this with the page title
+                href = null,
+            ),
+        )
+        return this
+    }
+
+    /**
+     * Adds a database mention.
+     *
+     * @param databaseId The ID of the database to mention
+     * @return This builder for chaining
+     */
+    fun databaseMention(databaseId: String): RichTextBuilder {
+        segments.add(
+            RichText(
+                type = "mention",
+                text = null,
+                mention = Mention.Database(DatabaseReference(id = databaseId)),
+                annotations = Annotations(),
+                plainText = "Untitled", // Notion will populate this with the database title
+                href = null,
+            ),
+        )
+        return this
+    }
+
+    /**
+     * Adds a date mention.
+     *
+     * @param start The start date (ISO 8601 format)
+     * @param end The end date (optional, for date ranges)
+     * @param timeZone The time zone (optional)
+     * @return This builder for chaining
+     */
+    fun dateMention(
+        start: String,
+        end: String? = null,
+        timeZone: String? = null,
+    ): RichTextBuilder {
+        segments.add(
+            RichText(
+                type = "mention",
+                text = null,
+                mention = Mention.Date(DateObject(start = start, end = end, timeZone = timeZone)),
+                annotations = Annotations(),
+                plainText = start, // Notion will format this appropriately
                 href = null,
             ),
         )
