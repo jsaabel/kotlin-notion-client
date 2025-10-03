@@ -19,6 +19,7 @@ import no.saabelit.kotlinnotionclient.models.requests.RequestBuilders
 import unit.util.TestFixtures
 import unit.util.mockClient
 
+// TODO: This should not fail if env vars aren't set
 @Tags("Unit")
 class BlocksApiTest :
     FunSpec({
