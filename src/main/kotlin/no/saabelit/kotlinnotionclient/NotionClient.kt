@@ -17,6 +17,7 @@ import io.ktor.serialization.kotlinx.json.json
 import kotlinx.serialization.json.Json
 import no.saabelit.kotlinnotionclient.api.BlocksApi
 import no.saabelit.kotlinnotionclient.api.CommentsApi
+import no.saabelit.kotlinnotionclient.api.DataSourcesApi
 import no.saabelit.kotlinnotionclient.api.DatabasesApi
 import no.saabelit.kotlinnotionclient.api.EnhancedFileUploadApi
 import no.saabelit.kotlinnotionclient.api.FileUploadApi
@@ -43,6 +44,7 @@ import no.saabelit.kotlinnotionclient.ratelimit.NotionRateLimit
  * val user = client.users.getCurrentUser()
  * val page = client.pages.retrieve("page-id")
  * val database = client.databases.retrieve("db-id")
+ * val dataSource = client.dataSources.retrieve("data-source-id")
  * val block = client.blocks.retrieve("block-id")
  * val comments = client.comments.retrieve("block-id")
  *
@@ -58,6 +60,7 @@ class NotionClient private constructor(
     val users = UsersApi(httpClient, config)
     val pages = PagesApi(httpClient, config)
     val databases = DatabasesApi(httpClient, config)
+    val dataSources = DataSourcesApi(httpClient, config)
     val blocks = BlocksApi(httpClient, config)
     val comments = CommentsApi(httpClient, config)
     val fileUploads = FileUploadApi(httpClient, config)
