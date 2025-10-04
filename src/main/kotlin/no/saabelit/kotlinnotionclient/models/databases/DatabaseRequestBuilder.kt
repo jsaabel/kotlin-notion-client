@@ -98,7 +98,10 @@ class DatabaseRequestBuilder {
     }
 
     /**
-     * Builds the CreateDatabaseRequest.
+     * Builds the CreateDatabaseRequest (API version 2025-09-03+).
+     *
+     * Properties are automatically wrapped in an InitialDataSource object
+     * to match the 2025-09-03 API structure.
      *
      * @return The configured CreateDatabaseRequest
      * @throws IllegalStateException if parent or title is not set, or if no properties are defined
@@ -111,7 +114,7 @@ class DatabaseRequestBuilder {
         return CreateDatabaseRequest(
             parent = parentValue!!,
             title = titleValue!!,
-            properties = properties,
+            initialDataSource = InitialDataSource(properties = properties),
             icon = iconValue,
             cover = coverValue,
             description = descriptionValue,

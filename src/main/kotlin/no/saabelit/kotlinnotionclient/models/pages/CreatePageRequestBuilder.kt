@@ -13,10 +13,10 @@ import no.saabelit.kotlinnotionclient.models.blocks.pageContent
  * This builder provides a convenient way to construct CreatePageRequest objects
  * with significantly less boilerplate than manual construction.
  *
- * ## Database Page Example (with properties):
+ * ## Data Source Page Example (with properties) - API version 2025-09-03+:
  * ```kotlin
  * val request = pageRequest {
- *     parent.database(databaseId)
+ *     parent.dataSource(dataSourceId)  // Use data source ID, not database ID
  *     properties {
  *         title("Name", "My New Database Entry")
  *         richText("Description", "A detailed description")
@@ -117,13 +117,13 @@ class CreatePageRequestBuilder {
     fun build(): CreatePageRequest {
         require(parentValue != null) { "Parent must be specified" }
 
-        // Validate that properties are only used with database parents
+        // Validate that properties are only used with data source parents (API version 2025-09-03+)
         val hasCustomProperties = properties.keys.any { it != "title" }
-        val isDatabaseParent = parentValue?.type == "database_id"
+        val isDataSourceParent = parentValue?.type == "data_source_id"
 
-        if (hasCustomProperties && !isDatabaseParent) {
+        if (hasCustomProperties && !isDataSourceParent) {
             throw IllegalStateException(
-                "Custom properties can only be set when creating pages in a database. " +
+                "Custom properties can only be set when creating pages in a data source. " +
                     "For child pages, use only the title() method.",
             )
         }
@@ -158,17 +158,20 @@ class CreatePageRequestBuilder {
         }
 
         /**
-         * Sets the parent to a database (creates a database entry).
+         * Sets the parent to a data source (creates a database entry) - API version 2025-09-03+.
          *
-         * Database pages can have custom properties that match the database schema.
+         * Data source pages can have custom properties that match the data source schema.
+         * Use the data source ID, not the database ID. To get a data source ID:
+         * 1. Retrieve the database to get its data_sources array
+         * 2. Use the ID from the desired data source
          *
-         * @param databaseId The parent database ID
+         * @param dataSourceId The parent data source ID
          */
-        fun database(databaseId: String) {
+        fun dataSource(dataSourceId: String) {
             this@CreatePageRequestBuilder.parentValue =
                 Parent(
-                    type = "database_id",
-                    databaseId = databaseId,
+                    type = "data_source_id",
+                    dataSourceId = dataSourceId,
                 )
         }
 

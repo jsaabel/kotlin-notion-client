@@ -137,5 +137,4 @@ We aim to improve functionality in our API through backwards-compatible features
 With these new changes to the Notion app, we want our integration partners, developer community, ambassadors, champions, and everyone else making great tools to unlock the power of multiple-source database containers. This involves rethinking what a "database ID" in the API can do and repurposing API endpoints, necessitating the `2025-09-03` version release.
 
 ---
-
 *Updated about 4 hours ago*
