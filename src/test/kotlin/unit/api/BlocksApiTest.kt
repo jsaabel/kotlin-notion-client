@@ -19,13 +19,12 @@ import no.saabelit.kotlinnotionclient.models.requests.RequestBuilders
 import unit.util.TestFixtures
 import unit.util.mockClient
 
-// TODO: This should not fail if env vars aren't set
 @Tags("Unit")
 class BlocksApiTest :
     FunSpec({
         lateinit var httpClient: HttpClient
         lateinit var blocksApi: BlocksApi
-        val config = NotionConfig()
+        val config = NotionConfig(apiToken = "xxx")
 
         beforeTest {
             // Reset for each test
@@ -65,6 +64,7 @@ class BlocksApiTest :
                             .plainText shouldBe "Lacinato kale"
                         block.heading2.color shouldBe Color.DEFAULT
                     }
+
                     else -> throw AssertionError("Expected Heading2 block")
                 }
             }
@@ -212,6 +212,7 @@ class BlocksApiTest :
                             .annotations
                             .color shouldBe Color.GREEN
                     }
+
                     else -> throw AssertionError("Expected Heading2 block")
                 }
             }

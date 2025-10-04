@@ -1,7 +1,6 @@
 package integration
 
 import io.kotest.assertions.throwables.shouldThrow
-import io.kotest.core.annotation.Tags
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.comparables.shouldBeGreaterThan
 import io.kotest.matchers.comparables.shouldBeLessThanOrEqualTo
@@ -22,8 +21,6 @@ import no.saabelit.kotlinnotionclient.models.blocks.BulletedListItemRequestConte
 import no.saabelit.kotlinnotionclient.models.blocks.Heading1RequestContent
 import no.saabelit.kotlinnotionclient.models.blocks.ParagraphRequestContent
 import no.saabelit.kotlinnotionclient.models.blocks.QuoteRequestContent
-import no.saabelit.kotlinnotionclient.models.databases.CreateDatabaseProperty
-import no.saabelit.kotlinnotionclient.models.databases.CreateDatabaseRequest
 import no.saabelit.kotlinnotionclient.models.pages.CreatePageRequest
 import no.saabelit.kotlinnotionclient.models.pages.PageProperty
 import no.saabelit.kotlinnotionclient.models.pages.PagePropertyValue
@@ -32,8 +29,6 @@ import no.saabelit.kotlinnotionclient.validation.ValidationException
 /**
  * Real integration tests for validation logic that make actual API calls to Notion.
  *
- * ## Testing Philosophy
- *
  * These tests verify that our validation system works in real-world scenarios by:
  * - Making actual HTTP requests to the Notion API
  * - Testing validation with real API responses and error conditions
@@ -41,33 +36,22 @@ import no.saabelit.kotlinnotionclient.validation.ValidationException
  * - Testing end-to-end workflows with real data limits
  * - Ensuring our validation logic matches Notion's actual API behavior
  *
- * ## Prerequisites
- *
- * These tests require:
+ * Prerequisites:
  * - NOTION_API_TOKEN environment variable with a valid Notion API token
  * - NOTION_TEST_PAGE_ID environment variable with a test page ID for creating children
- * - A test Notion workspace where pages/databases can be created and modified
- *
- * ## What We Test
- *
- * 1. **Text Length Validation**: Real requests with content exceeding 2000 characters
- * 2. **Array Size Validation**: Real requests with arrays exceeding API limits
- * 4. **Error Prevention**: Confirm validation prevents actual 400 errors from Notion API
- * 5. **Performance**: Ensure validation doesn't significantly impact API call performance
  */
-@Tags("Integration", "RequiresApi", "Slow")
 class ValidationIntegrationTest :
     FunSpec({
 
-        val apiToken =
-            System.getenv("NOTION_API_TOKEN")
-                ?: throw IllegalStateException("NOTION_API_TOKEN environment variable not set")
+        if (!integrationTestEnvVarsAreSet()) {
+            xtest("(Skipped)") {
+                println("Skipping ValidationIntegrationTest due to missing environment variables")
+            }
+        } else {
+            val apiToken = System.getenv("NOTION_API_TOKEN")
+            val testPageId = System.getenv("NOTION_TEST_PAGE_ID")
 
-        val testPageId =
-            System.getenv("NOTION_TEST_PAGE_ID")
-                ?: throw IllegalStateException("NOTION_TEST_PAGE_ID environment variable not set")
-
-        val client = NotionClient.create(NotionConfig(apiToken = apiToken))
+            val client = NotionClient.create(NotionConfig(apiToken = apiToken))
 
         // Helper functions for creating test data
         fun createLongRichText(length: Int = 2100): RichText {
@@ -354,17 +338,18 @@ class ValidationIntegrationTest :
             context("Real API Validation - Edge Cases and Complex Scenarios") {
                 test("CONFIRMED: per-segment limit allows splitting long text") {
                     // Create a database with rich text property first
-                    val databaseRequest =
-                        CreateDatabaseRequest(
-                            parent = Parent(type = "page_id", pageId = testPageId),
-                            title = listOf(createNormalRichText("Per-Segment Limit Test Database")),
-                            properties =
-                                mapOf(
-                                    "Name" to CreateDatabaseProperty.Title(),
-                                    "Content" to CreateDatabaseProperty.RichText(),
-                                ),
-                        )
-                    val database = client.databases.create(databaseRequest)
+                    val database = client.databases.create {
+                        parent.page(testPageId)
+                        title("Per-Segment Limit Test Database")
+                        properties {
+                            title("Name")
+                            richText("Content")
+                        }
+                    }
+
+                    // Get the data source from the created database (2025-09-03 API)
+                    val retrievedDb = client.databases.retrieve(database.id)
+                    val dataSourceId = retrievedDb.dataSources.first().id
 
                     // Test: Multiple segments where each < 2000 chars but total > 2000 chars
                     val segment1 = createLongRichText(1800) // Under limit
@@ -376,7 +361,7 @@ class ValidationIntegrationTest :
 
                     val pageRequest =
                         CreatePageRequest(
-                            parent = Parent(type = "database_id", databaseId = database.id),
+                            parent = Parent(type = "data_source_id", dataSourceId = dataSourceId),
                             properties =
                                 mapOf(
                                     "Name" to PagePropertyValue.TitleValue(title = listOf(createNormalRichText("Test Entry"))),
@@ -414,5 +399,6 @@ class ValidationIntegrationTest :
                     richTextSegments[2].plainText.length shouldBeLessThanOrEqualTo NotionApiLimits.Content.MAX_RICH_TEXT_LENGTH
                 }
             }
+        }
         }
     })

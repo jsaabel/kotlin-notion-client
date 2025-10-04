@@ -1,6 +1,7 @@
 package integration.dsl
 
-import io.kotest.core.annotation.Tags
+import integration.integrationTestEnvVarsAreSet
+import integration.shouldCleanupAfterTest
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.maps.shouldContainKey
@@ -33,21 +34,17 @@ import no.saabelit.kotlinnotionclient.models.requests.RequestBuilders
  * 2. Set environment variable: export NOTION_TEST_PAGE_ID="your_parent_page_id"
  * 3. Your integration should have permissions to create/read/update pages, databases, and blocks
  * 4. Optional: Set NOTION_CLEANUP_AFTER_TEST="false" to keep test objects for manual inspection
- *
- * Run with: ./gradlew integrationTest
  */
-@Tags("Integration", "RequiresApi")
 class ApiOverloadsIntegrationTest :
     StringSpec({
 
-        // Helper function to check if cleanup should be performed after tests
-        fun shouldCleanupAfterTest(): Boolean = System.getenv("NOTION_CLEANUP_AFTER_TEST")?.lowercase() != "false"
+        if (!integrationTestEnvVarsAreSet()) {
+            "!(Skipped)" { println("Skipping ApiOverloadsIntegrationTest due to missing environment variables") }
+        } else {
 
-        "PagesApi create overload should work with live API" {
-            val token = System.getenv("NOTION_API_TOKEN")
-            val parentPageId = System.getenv("NOTION_TEST_PAGE_ID")
-
-            if (token != null && parentPageId != null) {
+            "PagesApi create overload should work with live API" {
+                val token = System.getenv("NOTION_API_TOKEN")
+                val parentPageId = System.getenv("NOTION_TEST_PAGE_ID")
                 val client = NotionClient.Companion.create(NotionConfig(apiToken = token))
 
                 try {
@@ -74,7 +71,7 @@ class ApiOverloadsIntegrationTest :
                     createdPage.shouldBeInstanceOf<Page>()
                     createdPage.objectType shouldBe "page"
                     createdPage.archived shouldBe false
-                    createdPage.parent.pageId shouldBe parentPageId
+                    createdPage.parent.pageId?.replace("-", "") shouldBe parentPageId.replace("-", "")
                     createdPage.icon?.emoji shouldBe "🧪"
                     createdPage.cover?.external?.url shouldContain "placehold"
 
@@ -116,19 +113,11 @@ class ApiOverloadsIntegrationTest :
                 } finally {
                     client.close()
                 }
-            } else {
-                println("⏭️ Skipping PagesApi overload integration test")
-                println("   Required environment variables:")
-                println("   - NOTION_API_TOKEN: Your integration API token")
-                println("   - NOTION_TEST_PAGE_ID: Page where test content will be created")
             }
-        }
 
-        "DatabasesApi create overload should work with live API" {
-            val token = System.getenv("NOTION_API_TOKEN")
-            val parentPageId = System.getenv("NOTION_TEST_PAGE_ID")
-
-            if (token != null && parentPageId != null) {
+            "DatabasesApi create overload should work with live API" {
+                val token = System.getenv("NOTION_API_TOKEN")
+                val parentPageId = System.getenv("NOTION_TEST_PAGE_ID")
                 val client = NotionClient.Companion.create(NotionConfig(apiToken = token))
 
                 try {
@@ -167,9 +156,14 @@ class ApiOverloadsIntegrationTest :
                     createdDatabase.shouldBeInstanceOf<Database>()
                     createdDatabase.objectType shouldBe "database"
                     createdDatabase.archived shouldBe false
-                    createdDatabase.parent.pageId shouldBe parentPageId
+                    createdDatabase.parent.pageId?.replace("-", "") shouldBe parentPageId.replace("-", "")
+
+                    // Icon and cover are returned in creation response (but may not persist - see known issue below)
                     createdDatabase.icon?.emoji shouldBe "📊"
                     createdDatabase.cover?.external?.url shouldContain "placehold"
+
+                    // KNOWN ISSUE: Icon/cover may not persist in Notion UI (2025-09-03 API behavior)
+                    // See DatabaseRequestBuilderIntegrationTest for detailed explanation
 
                     // Verify title
                     createdDatabase.title shouldHaveSize 1
@@ -179,8 +173,19 @@ class ApiOverloadsIntegrationTest :
                     createdDatabase.description shouldHaveSize 1
                     createdDatabase.description[0].plainText shouldBe "Database created using fluent API overload"
 
-                    // Verify properties were created
-                    val properties = createdDatabase.properties
+                    println("✅ Database created successfully: ${createdDatabase.id}")
+
+                    // Retrieve database to get data source (2025-09-03 API - properties are in data source)
+                    delay(500)
+                    val retrievedDatabase = client.databases.retrieve(createdDatabase.id)
+                    retrievedDatabase.dataSources.shouldNotBeNull()
+                    val dataSource = retrievedDatabase.dataSources.first()
+
+                    // Retrieve data source to verify properties
+                    val dataSourceDetails = client.dataSources.retrieve(dataSource.id)
+                    val properties = dataSourceDetails.properties
+
+                    // Verify properties were created in the data source
                     properties.shouldContainKey("Task Name")
                     properties.shouldContainKey("Description")
                     properties.shouldContainKey("Priority")
@@ -202,8 +207,7 @@ class ApiOverloadsIntegrationTest :
                     properties["Reference URL"]?.type shouldBe "url"
                     properties["Assignee Email"]?.type shouldBe "email"
 
-                    println("✅ Database created successfully: ${createdDatabase.id}")
-                    println("✅ Database properties verified successfully")
+                    println("✅ Data source properties verified successfully")
                     println("✅ DatabasesApi.create() overload test completed!")
 
                     // Cleanup
@@ -220,19 +224,11 @@ class ApiOverloadsIntegrationTest :
                 } finally {
                     client.close()
                 }
-            } else {
-                println("⏭️ Skipping DatabasesApi overload integration test")
-                println("   Required environment variables:")
-                println("   - NOTION_API_TOKEN: Your integration API token")
-                println("   - NOTION_TEST_PAGE_ID: Page where test content will be created")
             }
-        }
 
-        "BlocksApi appendChildren overload should work with live API" {
-            val token = System.getenv("NOTION_API_TOKEN")
-            val parentPageId = System.getenv("NOTION_TEST_PAGE_ID")
-
-            if (token != null && parentPageId != null) {
+            "BlocksApi appendChildren overload should work with live API" {
+                val token = System.getenv("NOTION_API_TOKEN")
+                val parentPageId = System.getenv("NOTION_TEST_PAGE_ID")
                 val client = NotionClient.Companion.create(NotionConfig(apiToken = token))
 
                 try {
@@ -315,19 +311,11 @@ class ApiOverloadsIntegrationTest :
                 } finally {
                     client.close()
                 }
-            } else {
-                println("⏭️ Skipping BlocksApi overload integration test")
-                println("   Required environment variables:")
-                println("   - NOTION_API_TOKEN: Your integration API token")
-                println("   - NOTION_TEST_PAGE_ID: Page where test content will be created")
             }
-        }
 
-        "BlocksApi update overload should work with live API" {
-            val token = System.getenv("NOTION_API_TOKEN")
-            val parentPageId = System.getenv("NOTION_TEST_PAGE_ID")
-
-            if (token != null && parentPageId != null) {
+            "BlocksApi update overload should work with live API" {
+                val token = System.getenv("NOTION_API_TOKEN")
+                val parentPageId = System.getenv("NOTION_TEST_PAGE_ID")
                 val client = NotionClient.Companion.create(NotionConfig(apiToken = token))
 
                 try {
@@ -424,19 +412,11 @@ class ApiOverloadsIntegrationTest :
                 } finally {
                     client.close()
                 }
-            } else {
-                println("⏭️ Skipping BlocksApi update integration test")
-                println("   Required environment variables:")
-                println("   - NOTION_API_TOKEN: Your integration API token")
-                println("   - NOTION_TEST_PAGE_ID: Page where test content will be created")
             }
-        }
 
-        "BlocksApi delete should work with live API" {
-            val token = System.getenv("NOTION_API_TOKEN")
-            val parentPageId = System.getenv("NOTION_TEST_PAGE_ID")
-
-            if (token != null && parentPageId != null) {
+            "BlocksApi delete should work with live API" {
+                val token = System.getenv("NOTION_API_TOKEN")
+                val parentPageId = System.getenv("NOTION_TEST_PAGE_ID")
                 val client = NotionClient.Companion.create(NotionConfig(apiToken = token))
 
                 try {
@@ -521,19 +501,11 @@ class ApiOverloadsIntegrationTest :
                 } finally {
                     client.close()
                 }
-            } else {
-                println("⏭️ Skipping BlocksApi delete integration test")
-                println("   Required environment variables:")
-                println("   - NOTION_API_TOKEN: Your integration API token")
-                println("   - NOTION_TEST_PAGE_ID: Page where test content will be created")
             }
-        }
 
-        "Combined API overloads workflow should work end-to-end" {
-            val token = System.getenv("NOTION_API_TOKEN")
-            val parentPageId = System.getenv("NOTION_TEST_PAGE_ID")
-
-            if (token != null && parentPageId != null) {
+            "Combined API overloads workflow should work end-to-end" {
+                val token = System.getenv("NOTION_API_TOKEN")
+                val parentPageId = System.getenv("NOTION_TEST_PAGE_ID")
                 val client = NotionClient.Companion.create(NotionConfig(apiToken = token))
 
                 try {
@@ -553,10 +525,14 @@ class ApiOverloadsIntegrationTest :
 
                     delay(1000)
 
-                    // Step 2: Create a page in the database using overload
+                    // Get the data source from the created database (2025-09-03 API)
+                    val retrievedDb = client.databases.retrieve(database.id)
+                    val dataSourceId = retrievedDb.dataSources.first().id
+
+                    // Step 2: Create a page in the data source using overload
                     val page =
                         client.pages.create {
-                            parent.database(database.id)
+                            parent.dataSource(dataSourceId)
                             properties {
                                 title("Project Name", "API Overload Project")
                                 richText("Description", "Testing combined workflow")
@@ -575,7 +551,7 @@ class ApiOverloadsIntegrationTest :
                         client.blocks.appendChildren(page.id) {
                             heading2("Progress Updates")
                             bullet("Database created successfully")
-                            bullet("Page created in database")
+                            bullet("Page created in data source")
                             bullet("Additional content added")
                             divider()
                             quote("All API overloads working together seamlessly!")
@@ -586,11 +562,12 @@ class ApiOverloadsIntegrationTest :
                     page.shouldBeInstanceOf<Page>()
                     blocks.shouldBeInstanceOf<BlockList>()
 
-                    page.parent.databaseId shouldBe database.id
+                    page.parent.dataSourceId shouldBe dataSourceId
                     blocks.results shouldHaveSize 6
 
                     println("✅ Combined workflow completed successfully!")
                     println("   - Database: ${database.id}")
+                    println("   - Data Source: $dataSourceId")
                     println("   - Page: ${page.id}")
                     println("   - Blocks added: ${blocks.results.size}")
 
@@ -613,11 +590,6 @@ class ApiOverloadsIntegrationTest :
                 } finally {
                     client.close()
                 }
-            } else {
-                println("⏭️ Skipping combined workflow integration test")
-                println("   Required environment variables:")
-                println("   - NOTION_API_TOKEN: Your integration API token")
-                println("   - NOTION_TEST_PAGE_ID: Page where test content will be created")
             }
         }
     })

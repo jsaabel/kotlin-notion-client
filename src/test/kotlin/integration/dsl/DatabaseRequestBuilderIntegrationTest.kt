@@ -1,6 +1,7 @@
 package integration.dsl
 
-import io.kotest.core.annotation.Tags
+import integration.integrationTestEnvVarsAreSet
+import integration.shouldCleanupAfterTest
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.nulls.shouldNotBeNull
@@ -12,7 +13,6 @@ import no.saabelit.kotlinnotionclient.NotionClient
 import no.saabelit.kotlinnotionclient.config.NotionConfig
 import no.saabelit.kotlinnotionclient.models.base.SelectOptionColor
 import no.saabelit.kotlinnotionclient.models.databases.DatabaseProperty
-import no.saabelit.kotlinnotionclient.models.databases.databaseRequest
 
 /**
  * Self-contained integration test for the DatabaseRequestBuilder DSL.
@@ -25,29 +25,24 @@ import no.saabelit.kotlinnotionclient.models.databases.databaseRequest
  * 2. Set environment variable: export NOTION_TEST_PAGE_ID="your_parent_page_id"
  * 3. Your integration should have permissions to create/read/update databases
  * 4. Optional: Set NOTION_CLEANUP_AFTER_TEST="false" to keep test objects for manual inspection
- *
- * Run with: ./gradlew integrationTest
  */
-@Tags("Integration", "RequiresApi")
 class DatabaseRequestBuilderIntegrationTest :
     StringSpec({
 
-        // Helper function to check if cleanup should be performed after tests
-        fun shouldCleanupAfterTest(): Boolean = System.getenv("NOTION_CLEANUP_AFTER_TEST")?.lowercase() != "false"
-
-        "Should create database with DSL and verify structure" {
-            val token = System.getenv("NOTION_API_TOKEN")
-            val parentPageId = System.getenv("NOTION_TEST_PAGE_ID")
-
-            if (token != null && parentPageId != null) {
+        if (!integrationTestEnvVarsAreSet()) {
+            "!(Skipped)" { println("Skipping DatabaseRequestBuilderIntegrationTest due to missing environment variables") }
+        } else {
+            "Should create database with DSL and verify structure" {
+                val token = System.getenv("NOTION_API_TOKEN")
+                val parentPageId = System.getenv("NOTION_TEST_PAGE_ID")
                 val client = NotionClient.create(NotionConfig(apiToken = token))
 
                 try {
                     println("🗄️ Creating test database with DatabaseRequestBuilder DSL...")
 
                     // Create database using DSL
-                    val databaseRequest =
-                        databaseRequest {
+                    val createdDatabase =
+                        client.databases.create {
                             parent.page(parentPageId)
                             title("DSL Integration Test Database")
                             description("This database was created using the DatabaseRequestBuilder DSL!")
@@ -74,8 +69,6 @@ class DatabaseRequestBuilderIntegrationTest :
                                 people("Assignee")
                             }
                         }
-
-                    val createdDatabase = client.databases.create(databaseRequest)
                     createdDatabase.objectType shouldBe "database"
                     createdDatabase.archived shouldBe false
 
@@ -84,10 +77,25 @@ class DatabaseRequestBuilderIntegrationTest :
                     // Small delay to ensure Notion has processed the database creation
                     delay(500)
 
-                    // Verify database properties
-                    createdDatabase.parent.pageId shouldBe parentPageId
+                    // Verify database properties (normalize UUID format)
+                    createdDatabase.parent.pageId?.replace("-", "") shouldBe parentPageId.replace("-", "")
+
+                    // Icon and cover verification
+                    // KNOWN ISSUE: In the 2025-09-03 API, icon and cover are set correctly during creation
+                    // (visible in Notion UI immediately after creation), but may be cleared/reset to default
+                    // shortly after. This appears to be API-level behavior, not a client implementation issue.
+                    // Our code correctly sends icon/cover in the request, and they are returned in the
+                    // initial creation response. Investigation needed to determine if this is a Notion API
+                    // bug or intended behavior in the new database/data-source model.
+                    // TODO: Investigate icon/cover persistence on databases in 2025-09-03 API
+                    println("   Icon: ${createdDatabase.icon?.type} = ${createdDatabase.icon?.emoji}")
+                    println("   Cover: ${createdDatabase.cover?.type} = ${createdDatabase.cover?.external?.url}")
+
+                    // Icon and cover are returned in the creation response
                     createdDatabase.icon?.emoji shouldBe "🚀"
                     createdDatabase.cover?.external?.url shouldContain "placehold"
+
+                    println("   ⚠️  Note: Icon/cover may not persist in Notion UI due to 2025-09-03 API behavior")
 
                     // Verify the title was set correctly
                     createdDatabase.title.shouldNotBeNull()
@@ -99,9 +107,19 @@ class DatabaseRequestBuilderIntegrationTest :
                     createdDatabase.description shouldHaveSize (1)
                     createdDatabase.description[0].plainText shouldBe "This database was created using the DatabaseRequestBuilder DSL!"
 
-                    // Verify all properties were created
-                    createdDatabase.properties.size shouldBe 11
-                    createdDatabase.properties.keys shouldBe
+                    println("✅ Database metadata verified")
+
+                    // Retrieve data source to verify properties (2025-09-03 API)
+                    val retrievedDb = client.databases.retrieve(createdDatabase.id)
+                    retrievedDb.dataSources.shouldNotBeNull()
+                    val dataSource = retrievedDb.dataSources.first()
+
+                    val dataSourceDetails = client.dataSources.retrieve(dataSource.id)
+                    val properties = dataSourceDetails.properties
+
+                    // Verify all properties were created in the data source
+                    properties.size shouldBe 11
+                    properties.keys shouldBe
                         setOf(
                             "Task Name",
                             "Description",
@@ -117,26 +135,26 @@ class DatabaseRequestBuilderIntegrationTest :
                         )
 
                     // Verify specific property types
-                    createdDatabase.properties["Task Name"].shouldBeInstanceOf<DatabaseProperty.Title>()
-                    createdDatabase.properties["Description"].shouldBeInstanceOf<DatabaseProperty.RichText>()
-                    createdDatabase.properties["Priority"].shouldBeInstanceOf<DatabaseProperty.Number>()
-                    createdDatabase.properties["Completed"].shouldBeInstanceOf<DatabaseProperty.Checkbox>()
-                    createdDatabase.properties["Status"].shouldBeInstanceOf<DatabaseProperty.Select>()
-                    createdDatabase.properties["Tags"].shouldBeInstanceOf<DatabaseProperty.MultiSelect>()
-                    createdDatabase.properties["Due Date"].shouldBeInstanceOf<DatabaseProperty.Date>()
-                    createdDatabase.properties["Reference URL"].shouldBeInstanceOf<DatabaseProperty.Url>()
-                    createdDatabase.properties["Assignee Email"].shouldBeInstanceOf<DatabaseProperty.Email>()
-                    createdDatabase.properties["Phone"].shouldBeInstanceOf<DatabaseProperty.PhoneNumber>()
-                    createdDatabase.properties["Assignee"].shouldBeInstanceOf<DatabaseProperty.People>()
+                    properties["Task Name"].shouldBeInstanceOf<DatabaseProperty.Title>()
+                    properties["Description"].shouldBeInstanceOf<DatabaseProperty.RichText>()
+                    properties["Priority"].shouldBeInstanceOf<DatabaseProperty.Number>()
+                    properties["Completed"].shouldBeInstanceOf<DatabaseProperty.Checkbox>()
+                    properties["Status"].shouldBeInstanceOf<DatabaseProperty.Select>()
+                    properties["Tags"].shouldBeInstanceOf<DatabaseProperty.MultiSelect>()
+                    properties["Due Date"].shouldBeInstanceOf<DatabaseProperty.Date>()
+                    properties["Reference URL"].shouldBeInstanceOf<DatabaseProperty.Url>()
+                    properties["Assignee Email"].shouldBeInstanceOf<DatabaseProperty.Email>()
+                    properties["Phone"].shouldBeInstanceOf<DatabaseProperty.PhoneNumber>()
+                    properties["Assignee"].shouldBeInstanceOf<DatabaseProperty.People>()
 
-                    println("✅ Database properties verified")
+                    println("✅ Data source properties verified")
 
                     // Verify select options
-                    val statusProperty = createdDatabase.properties["Status"] as DatabaseProperty.Select
+                    val statusProperty = properties["Status"] as DatabaseProperty.Select
                     statusProperty.select.options.shouldHaveSize(3)
                     statusProperty.select.options.map { it.name } shouldBe listOf("To Do", "In Progress", "Done")
 
-                    val tagsProperty = createdDatabase.properties["Tags"] as DatabaseProperty.MultiSelect
+                    val tagsProperty = properties["Tags"] as DatabaseProperty.MultiSelect
                     tagsProperty.multiSelect.options.shouldHaveSize(2)
                     tagsProperty.multiSelect.options.map { it.name } shouldBe listOf("Important", "Urgent")
 
@@ -156,135 +174,11 @@ class DatabaseRequestBuilderIntegrationTest :
                     } else {
                         println("🔧 Cleanup skipped (NOTION_CLEANUP_AFTER_TEST=false)")
                         println("   Created database: ${createdDatabase.id} (\"DSL Integration Test Database\")")
-                        println("   Contains 11 properties with comprehensive type coverage")
+                        println("   Contains 11 properties configured via DSL")
                     }
                 } finally {
                     client.close()
                 }
-            } else {
-                println("⏭️ Skipping DatabaseRequestBuilder DSL integration test")
-                println("   Required environment variables:")
-                println("   - NOTION_API_TOKEN: Your integration API token")
-                println("   - NOTION_TEST_PAGE_ID: Page where test content will be created")
-                println(
-                    "   Example: export NOTION_API_TOKEN='secret_...' && export NOTION_TEST_PAGE_ID='12345678-1234-1234-1234-123456789abc'",
-                )
-            }
-        }
-
-        "Should create minimal database with DSL" {
-            val token = System.getenv("NOTION_API_TOKEN")
-            val parentPageId = System.getenv("NOTION_TEST_PAGE_ID")
-
-            if (token != null && parentPageId != null) {
-                val client = NotionClient.create(NotionConfig(apiToken = token))
-
-                try {
-                    println("🗄️ Creating minimal test database...")
-
-                    val databaseRequest =
-                        databaseRequest {
-                            parent.page(parentPageId)
-                            title("Minimal DSL Database")
-                            properties {
-                                title("Name")
-                            }
-                        }
-
-                    val createdDatabase = client.databases.create(databaseRequest)
-                    createdDatabase.objectType shouldBe "database"
-                    createdDatabase.title[0].plainText shouldBe "Minimal DSL Database"
-                    createdDatabase.properties.size shouldBe 1
-                    createdDatabase.properties.keys shouldBe setOf("Name")
-
-                    println("✅ Minimal database created and verified")
-
-                    // Clean up
-                    if (shouldCleanupAfterTest()) {
-                        client.databases.archive(createdDatabase.id)
-                        println("✅ Minimal database archived")
-                    }
-                } finally {
-                    client.close()
-                }
-            } else {
-                println("⏭️ Skipping minimal database test - missing environment variables")
-            }
-        }
-
-        "Should validate DSL constraints properly" {
-            val token = System.getenv("NOTION_API_TOKEN")
-            val parentPageId = System.getenv("NOTION_TEST_PAGE_ID")
-
-            if (token != null && parentPageId != null) {
-                val client = NotionClient.create(NotionConfig(apiToken = token))
-
-                try {
-                    println("🔍 Testing DSL validation constraints...")
-
-                    // Test that required fields are validated
-                    try {
-                        databaseRequest {
-                            // Missing parent - should fail
-                            title("Invalid Database")
-                            properties {
-                                title("Name")
-                            }
-                        }
-                        throw AssertionError("Expected validation to fail but it didn't")
-                    } catch (e: IllegalArgumentException) {
-                        e.message shouldContain "Parent must be specified"
-                        println("✅ Parent validation working correctly")
-                    }
-
-                    // Test that title validation works
-                    try {
-                        databaseRequest {
-                            parent.page(parentPageId)
-                            // Missing title - should fail
-                            properties {
-                                title("Name")
-                            }
-                        }
-                        throw AssertionError("Expected validation to fail but it didn't")
-                    } catch (e: IllegalArgumentException) {
-                        e.message shouldContain "Title must be specified"
-                        println("✅ Title validation working correctly")
-                    }
-
-                    // Test that properties validation works
-                    try {
-                        databaseRequest {
-                            parent.page(parentPageId)
-                            title("Invalid Database")
-                            // Missing properties - should fail
-                        }
-                        throw AssertionError("Expected validation to fail but it didn't")
-                    } catch (e: IllegalArgumentException) {
-                        e.message shouldContain "Database must have at least one property"
-                        println("✅ Properties validation working correctly")
-                    }
-
-                    // Test that valid request works
-                    val validRequest =
-                        databaseRequest {
-                            parent.page(parentPageId)
-                            title("Valid Database")
-                            properties {
-                                title("Name")
-                            }
-                        }
-
-                    validRequest.title.shouldNotBeNull()
-                    validRequest.properties.shouldNotBeNull()
-                    println("✅ Valid request construction working correctly")
-
-                    println("✅ DSL validation tests completed successfully!")
-                } finally {
-                    client.close()
-                }
-            } else {
-                println("⏭️ Skipping validation test - missing environment variables")
             }
         }
     })

@@ -1,6 +1,7 @@
 package integration.dsl
 
-import io.kotest.core.annotation.Tags
+import integration.integrationTestEnvVarsAreSet
+import integration.shouldCleanupAfterTest
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.nulls.shouldNotBeNull
@@ -25,21 +26,17 @@ import no.saabelit.kotlinnotionclient.models.pages.createPageRequest
  * 2. Set environment variable: export NOTION_TEST_PAGE_ID="your_parent_page_id"
  * 3. Your integration should have permissions to create/read/update pages and blocks
  * 4. Optional: Set NOTION_CLEANUP_AFTER_TEST="false" to keep test objects for manual inspection
- *
- * Run with: ./gradlew integrationTest
  */
-@Tags("Integration", "RequiresApi")
 class PageRequestBuilderIntegrationTest :
     StringSpec({
 
-        // Helper function to check if cleanup should be performed after tests
-        fun shouldCleanupAfterTest(): Boolean = System.getenv("NOTION_CLEANUP_AFTER_TEST")?.lowercase() != "false"
+        if (!integrationTestEnvVarsAreSet()) {
+            "!(Skipped)" { println("Skipping PageRequestBuilderIntegrationTest due to missing environment variables") }
+        } else {
 
-        "Should create child page with DSL and verify structure" {
-            val token = System.getenv("NOTION_API_TOKEN")
-            val parentPageId = System.getenv("NOTION_TEST_PAGE_ID")
-
-            if (token != null && parentPageId != null) {
+            "Should create child page with DSL and verify structure" {
+                val token = System.getenv("NOTION_API_TOKEN")
+                val parentPageId = System.getenv("NOTION_TEST_PAGE_ID")
                 val client = NotionClient.create(NotionConfig(apiToken = token))
 
                 try {
@@ -87,8 +84,8 @@ class PageRequestBuilderIntegrationTest :
                     // Small delay to ensure Notion has processed the page creation
                     delay(500)
 
-                    // Verify page properties
-                    createdPage.parent.pageId shouldBe parentPageId
+                    // Verify page properties (normalize UUID format)
+                    createdPage.parent.pageId?.replace("-", "") shouldBe parentPageId.replace("-", "")
                     createdPage.icon?.emoji shouldBe "🚀"
                     createdPage.cover?.external?.url shouldContain "placehold"
 
@@ -135,22 +132,11 @@ class PageRequestBuilderIntegrationTest :
                 } finally {
                     client.close()
                 }
-            } else {
-                println("⏭️ Skipping PageRequestBuilder DSL integration test")
-                println("   Required environment variables:")
-                println("   - NOTION_API_TOKEN: Your integration API token")
-                println("   - NOTION_TEST_PAGE_ID: Page where test content will be created")
-                println(
-                    "   Example: export NOTION_API_TOKEN='secret_...' && export NOTION_TEST_PAGE_ID='12345678-1234-1234-1234-123456789abc'",
-                )
             }
-        }
 
-        "Should validate DSL constraints properly" {
-            val token = System.getenv("NOTION_API_TOKEN")
-            val parentPageId = System.getenv("NOTION_TEST_PAGE_ID")
-
-            if (token != null && parentPageId != null) {
+            "Should validate DSL constraints properly" {
+                val token = System.getenv("NOTION_API_TOKEN")
+                val parentPageId = System.getenv("NOTION_TEST_PAGE_ID")
                 val client = NotionClient.create(NotionConfig(apiToken = token))
 
                 try {
@@ -166,7 +152,7 @@ class PageRequestBuilderIntegrationTest :
                         }
                         throw AssertionError("Expected validation to fail but it didn't")
                     } catch (e: IllegalStateException) {
-                        e.message shouldContain "Custom properties can only be set when creating pages in a database"
+                        e.message shouldContain "Custom properties can only be set when creating pages in a data source"
                         println("✅ Validation constraint working correctly")
                     }
 
@@ -185,8 +171,6 @@ class PageRequestBuilderIntegrationTest :
                 } finally {
                     client.close()
                 }
-            } else {
-                println("⏭️ Skipping validation test - missing environment variables")
             }
         }
     })

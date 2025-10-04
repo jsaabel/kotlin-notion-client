@@ -1,6 +1,7 @@
 package integration.dsl
 
-import io.kotest.core.annotation.Tags
+import integration.integrationTestEnvVarsAreSet
+import integration.shouldCleanupAfterTest
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
@@ -26,21 +27,16 @@ import no.saabelit.kotlinnotionclient.models.requests.RequestBuilders
  * 2. Set environment variable: export NOTION_TEST_PAGE_ID="your_parent_page_id"
  * 3. Your integration should have permissions to create/read/update pages and blocks
  * 4. Optional: Set NOTION_CLEANUP_AFTER_TEST="false" to keep test objects for manual inspection
- *
- * Run with: ./gradlew integrationTest --tests "*RichTextDslIntegrationTest*"
  */
-@Tags("Integration", "RequiresApi")
 class RichTextDslIntegrationTest :
     StringSpec({
 
-        // Helper function to check if cleanup should be performed after tests
-        fun shouldCleanupAfterTest(): Boolean = System.getenv("NOTION_CLEANUP_AFTER_TEST")?.lowercase() != "false"
-
-        "Should create page with rich text DSL mixed formatting and verify with real API" {
-            val token = System.getenv("NOTION_API_TOKEN")
-            val parentPageId = System.getenv("NOTION_TEST_PAGE_ID")
-
-            if (token != null && parentPageId != null) {
+        if (!integrationTestEnvVarsAreSet()) {
+            "!(Skipped)" { println("Skipping RichTextDslIntegrationTest due to missing environment variables") }
+        } else {
+            "Should create page with rich text DSL mixed formatting and verify with real API" {
+                val token = System.getenv("NOTION_API_TOKEN")
+                val parentPageId = System.getenv("NOTION_TEST_PAGE_ID")
                 val client = NotionClient.Companion.create(NotionConfig(apiToken = token))
 
                 try {
@@ -495,14 +491,6 @@ class RichTextDslIntegrationTest :
                 } finally {
                     client.close()
                 }
-            } else {
-                println("⏭️ Skipping Rich Text DSL integration test")
-                println("   Required environment variables:")
-                println("   - NOTION_API_TOKEN: Your integration API token")
-                println("   - NOTION_TEST_PAGE_ID: Page where test content will be created")
-                println(
-                    "   Example: export NOTION_API_TOKEN='secret_...' && export NOTION_TEST_PAGE_ID='12345678-1234-1234-1234-123456789abc'",
-                )
             }
         }
     })

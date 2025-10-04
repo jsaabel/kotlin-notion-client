@@ -52,7 +52,6 @@ import unit.util.TestFixtures
  * These tests complement our unit tests by verifying the complete integration
  * without the complexity and unpredictability of triggering actual rate limits.
  */
-@Tags("Unit", "MockEngine")
 class RateLimitIntegrationTest :
     FunSpec({
 

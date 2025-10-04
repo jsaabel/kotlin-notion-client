@@ -2,7 +2,6 @@
 
 package integration
 
-import io.kotest.core.annotation.Tags
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
@@ -33,15 +32,13 @@ import no.saabelit.kotlinnotionclient.models.requests.RequestBuilders
  * 2. Set environment variable: export NOTION_TEST_PAGE_ID="your_parent_page_id"
  * 3. Your integration should have permissions to create/read/update pages and blocks
  * 4. Optional: Set NOTION_CLEANUP_AFTER_TEST="false" to keep test objects for manual inspection
- *
- * Run with: ./gradlew integrationTest
  */
-@Tags("Integration", "RequiresApi")
 class MediaIntegrationTest :
     StringSpec({
 
-        // Helper function to check if cleanup should be performed after tests
-        fun shouldCleanupAfterTest(): Boolean = System.getenv("NOTION_CLEANUP_AFTER_TEST")?.lowercase() != "false"
+        if (!integrationTestEnvVarsAreSet()) {
+            "!(Skipped)" { println("Skipping MediaIntegrationTest due to missing environment variables") }
+        } else {
 
         // Helper function to create sample file content for testing
         fun createSampleFileContent(filename: String): ByteArray =
@@ -55,9 +52,7 @@ class MediaIntegrationTest :
         "Should create media blocks using external URLs" {
             val token = System.getenv("NOTION_API_TOKEN")
             val parentPageId = System.getenv("NOTION_TEST_PAGE_ID")
-
-            if (token != null && parentPageId != null) {
-                val client = NotionClient.create(NotionConfig(apiToken = token))
+            val client = NotionClient.create(NotionConfig(apiToken = token))
 
                 try {
                     // Step 1: Create test page
@@ -177,17 +172,12 @@ class MediaIntegrationTest :
                 } finally {
                     client.close()
                 }
-            } else {
-                println("⏭️ Skipping external media test - missing environment variables")
-            }
         }
 
         "Should upload file and create media blocks from uploads" {
             val token = System.getenv("NOTION_API_TOKEN")
             val parentPageId = System.getenv("NOTION_TEST_PAGE_ID")
-
-            if (token != null && parentPageId != null) {
-                val client = NotionClient.create(NotionConfig(apiToken = token))
+            val client = NotionClient.create(NotionConfig(apiToken = token))
 
                 try {
                     // Step 1: Create test page
@@ -311,17 +301,12 @@ class MediaIntegrationTest :
                 } finally {
                     client.close()
                 }
-            } else {
-                println("⏭️ Skipping file upload media test - missing environment variables")
-            }
         }
 
         "Should demonstrate complete media workflow with mixed sources" {
             val token = System.getenv("NOTION_API_TOKEN")
             val parentPageId = System.getenv("NOTION_TEST_PAGE_ID")
-
-            if (token != null && parentPageId != null) {
-                val client = NotionClient.create(NotionConfig(apiToken = token))
+            val client = NotionClient.create(NotionConfig(apiToken = token))
 
                 try {
                     // Create a comprehensive test page showing all media capabilities
@@ -502,9 +487,6 @@ class MediaIntegrationTest :
                 } finally {
                     client.close()
                 }
-            } else {
-                println("⏭️ Skipping comprehensive media test - missing environment variables")
-                println("   Required: NOTION_API_TOKEN and NOTION_TEST_PAGE_ID")
-            }
+        }
         }
     })

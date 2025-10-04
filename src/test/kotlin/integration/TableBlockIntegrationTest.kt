@@ -25,20 +25,17 @@ import no.saabelit.kotlinnotionclient.models.pages.createPageRequest
  * 3. Your integration should have permissions to create/read/update pages and blocks
  * 4. Optional: Set NOTION_CLEANUP_AFTER_TEST="false" to keep test objects for manual inspection
  *
- * Run with: ./gradlew integrationTest
  */
-@Tags("Integration", "RequiresApi")
 class TableBlockIntegrationTest :
     StringSpec({
 
-        // Helper function to check if cleanup should be performed after tests
-        fun shouldCleanupAfterTest(): Boolean = System.getenv("NOTION_CLEANUP_AFTER_TEST")?.lowercase() != "false"
+        if (!integrationTestEnvVarsAreSet()) {
+            "!(Skipped)" { println("Skipping TableBlockIntegrationTest due to missing environment variables") }
+        } else {
+            "Should create page with table blocks and verify structure" {
+                val token = System.getenv("NOTION_API_TOKEN")
+                val parentPageId = System.getenv("NOTION_TEST_PAGE_ID")
 
-        "Should create page with table blocks and verify structure" {
-            val token = System.getenv("NOTION_API_TOKEN")
-            val parentPageId = System.getenv("NOTION_TEST_PAGE_ID")
-
-            if (token != null && parentPageId != null) {
                 val client = NotionClient.create(NotionConfig(apiToken = token))
 
                 try {
@@ -275,14 +272,6 @@ class TableBlockIntegrationTest :
                 } finally {
                     client.close()
                 }
-            } else {
-                println("⏭️ Skipping Table Block integration test")
-                println("   Required environment variables:")
-                println("   - NOTION_API_TOKEN: Your integration API token")
-                println("   - NOTION_TEST_PAGE_ID: Page where test content will be created")
-                println(
-                    "   Example: export NOTION_API_TOKEN='secret_...' && export NOTION_TEST_PAGE_ID='12345678-1234-1234-1234-123456789abc'",
-                )
             }
         }
     })

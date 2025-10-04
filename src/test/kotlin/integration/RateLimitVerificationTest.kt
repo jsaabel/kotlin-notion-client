@@ -16,20 +16,22 @@ import kotlin.time.Duration.Companion.seconds
 import kotlin.time.measureTime
 
 /**
- * Temporary verification test to ensure rate limiting still works after cleanup.
- * This will be deleted after verification.
+ * Verification test to ensure rate limiting works correctly.
  */
-@Tags("Integration", "RequiresApi")
 class RateLimitVerificationTest :
     FunSpec({
 
-        val apiToken = System.getenv("NOTION_API_TOKEN")
-        val testPageId = System.getenv("NOTION_TEST_PAGE_ID")
+        if (!integrationTestEnvVarsAreSet()) {
+            xtest("(Skipped)") {
+                println("Skipping RateLimitVerificationTest due to missing environment variables")
+            }
+        } else {
+            val apiToken = System.getenv("NOTION_API_TOKEN")
+            val testPageId = System.getenv("NOTION_TEST_PAGE_ID")
 
-        xtest("Rate limiting should still work after cleanup - 100 concurrent requests").config(
-            enabled = apiToken != null && testPageId != null,
-            timeout = 120.seconds,
-        ) {
+            test("Rate limiting should work - 100 concurrent requests").config(
+                timeout = 120.seconds,
+            ) {
             val config =
                 NotionConfig(
                     apiToken = apiToken!!,
@@ -118,5 +120,6 @@ class RateLimitVerificationTest :
 
             // At minimum, we should have made significant concurrent load
             totalTime.inWholeSeconds shouldBeGreaterThan 0L
+            }
         }
     })
