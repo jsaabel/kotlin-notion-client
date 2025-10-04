@@ -59,21 +59,58 @@ class MockClientBuilder {
     }
 
     /**
-     * Add a database query response using official sample data.
+     * Add a data source query response using official sample data (2025-09-03 API).
      */
-    fun addDatabaseQueryResponse() {
+    fun addDataSourceQueryResponse() {
         handlers.add { request ->
             if (request.method == HttpMethod.Post &&
-                request.url.toString().contains("/v1/databases/") &&
+                request.url.toString().contains("/v1/data_sources/") &&
                 request.url.toString().contains("/query")
             ) {
                 respond(
-                    content = TestFixtures.Databases.queryDatabaseAsString(),
+                    content = TestFixtures.DataSources.queryDataSourceAsString(),
                     status = HttpStatusCode.OK,
                     headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString()),
                 )
             } else {
                 respondError(HttpStatusCode.NotFound, "Query endpoint not found")
+            }
+        }
+    }
+
+    /**
+     * Add a data source retrieve response using official sample data (2025-09-03 API).
+     */
+    fun addDataSourceRetrieveResponse() {
+        handlers.add { request ->
+            if (request.method == HttpMethod.Get && request.url.toString().contains("/v1/data_sources/")) {
+                respond(
+                    content = TestFixtures.DataSources.retrieveDataSourceAsString(),
+                    status = HttpStatusCode.OK,
+                    headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString()),
+                )
+            } else {
+                respondError(HttpStatusCode.NotFound, "Data source not found")
+            }
+        }
+    }
+
+    /**
+     * Add a data source create response using official sample data (2025-09-03 API).
+     */
+    fun addDataSourceCreateResponse() {
+        handlers.add { request ->
+            if (request.method == HttpMethod.Post &&
+                request.url.toString().contains("/v1/data_sources") &&
+                !request.url.toString().contains("/query")
+            ) {
+                respond(
+                    content = TestFixtures.DataSources.createDataSourceAsString(),
+                    status = HttpStatusCode.OK,
+                    headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString()),
+                )
+            } else {
+                respondError(HttpStatusCode.NotFound, "Endpoint not found")
             }
         }
     }
