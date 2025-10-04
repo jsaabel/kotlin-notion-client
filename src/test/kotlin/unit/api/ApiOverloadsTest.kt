@@ -40,12 +40,13 @@ class ApiOverloadsTest :
             config shouldNotBe null
         }
 
-        "DatabasesApi create overload should exist and compile" {
+        "DatabasesApi create overload should exist and compile (2025-09-03 creates database container)" {
             val config = NotionConfig(apiToken = "test-token")
-            val client = mockClient { /* No responses needed */ }
+            val client = mockClient { addDatabaseCreateResponse() }
             val api = DatabasesApi(client, config)
 
             // This test verifies the DSL overload method exists by checking it compiles
+            // In 2025-09-03, this creates a database container (which will have a default data source)
             try {
                 api.create {
                     parent.page("parent-id")
@@ -55,7 +56,7 @@ class ApiOverloadsTest :
                     }
                 }
             } catch (_: Exception) {
-                // Expected to fail due to no mock response, but the compilation succeeds
+                // Expected to fail due to validation or other issues, but the compilation succeeds
             }
 
             // If we reach here without compilation errors, the overload exists

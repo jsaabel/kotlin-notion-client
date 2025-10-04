@@ -20,7 +20,6 @@ import no.saabelit.kotlinnotionclient.exceptions.NotionException
 import no.saabelit.kotlinnotionclient.models.base.Color
 import no.saabelit.kotlinnotionclient.models.blocks.Block
 import no.saabelit.kotlinnotionclient.models.comments.CommentList
-import no.saabelit.kotlinnotionclient.models.databases.Database
 import no.saabelit.kotlinnotionclient.models.pages.Page
 import unit.util.MockPresets
 import unit.util.TestFixtures
@@ -68,7 +67,7 @@ class MockedApiTest :
             httpClient.close()
         }
 
-        "Databases API should parse official sample response correctly" {
+        "Databases API should parse official sample response correctly (2025-09-03 API)" {
             val httpClient =
                 mockClient {
                     addDatabaseRetrieveResponse()
@@ -77,32 +76,20 @@ class MockedApiTest :
             val config = NotionConfig(apiToken = "test-token")
             val databasesApi = DatabasesApi(httpClient, config)
 
-            val database = databasesApi.retrieve("bc1211ca-e3f1-4939-ae34-5260b16f627c")
+            val database = databasesApi.retrieve("248104cd-477e-80fd-b757-e945d38000bd")
 
-            // Test using official sample data - much more comprehensive
-            database.id shouldBe "bc1211ca-e3f1-4939-ae34-5260b16f627c"
+            // Test using official 2025-09-03 sample data
+            database.id shouldBe "248104cd-477e-80fd-b757-e945d38000bd"
             database.objectType shouldBe "database"
-            database.url shouldBe "https://www.notion.so/bc1211cae3f14939ae34260b16f627c"
             database.archived shouldBe false
             database.isInline shouldBe false
-            database.title.first().plainText shouldBe "Grocery List"
-            database.description.first().plainText shouldBe "Grocery list for just kale 🥬"
+            database.title.first().plainText shouldBe "My Task Tracker"
 
-            // Test comprehensive property schema from official sample - verify they exist
-            database.properties.containsKey("+1") shouldBe true
-            database.properties.containsKey("In stock") shouldBe true
-            database.properties.containsKey("Price") shouldBe true
-            database.properties.containsKey("Description") shouldBe true
-            database.properties.containsKey("Last ordered") shouldBe true
-            database.properties.containsKey("Meals") shouldBe true
-            database.properties.containsKey("Number of meals") shouldBe true
-            database.properties.containsKey("Store availability") shouldBe true
-            database.properties.containsKey("Photo") shouldBe true
-            database.properties.containsKey("Food group") shouldBe true
-            database.properties.containsKey("Name") shouldBe true
-
-            // Test that we have all the complex properties
-            database.properties.size shouldBe 11
+            // Verify data sources array (new in 2025-09-03)
+            database.dataSources.shouldNotBe(null)
+            database.dataSources?.size shouldBe 1
+            database.dataSources?.first()?.id shouldBe "248104cd-477e-80af-bc30-000bd28de8f9"
+            database.dataSources?.first()?.name shouldBe "My Task Tracker"
 
             httpClient.close()
         }
@@ -311,7 +298,7 @@ class MockedApiTest :
             val page: Page = TestFixtures.Pages.retrievePage().decode()
             page.objectType shouldBe "page"
 
-            val database: Database = TestFixtures.Databases.retrieveDatabase().decode()
+            val database: no.saabelit.kotlinnotionclient.models.databases.Database = TestFixtures.Databases.retrieveDatabase().decode()
             database.objectType shouldBe "database"
 
             val block: Block = TestFixtures.Blocks.retrieveBlock().decode()

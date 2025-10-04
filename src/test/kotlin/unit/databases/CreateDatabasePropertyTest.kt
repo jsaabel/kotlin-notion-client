@@ -10,7 +10,8 @@ import no.saabelit.kotlinnotionclient.models.databases.RelationConfiguration
 /**
  * Unit tests for CreateDatabaseProperty functionality.
  *
- * Tests all database property types including the new Relation property.
+ * Tests all database/data source property types including the Relation property.
+ * As of 2025-09-03, these are used when creating data sources.
  * Focuses on testing the actual functionality rather than JSON formatting.
  */
 @Tags("Unit")
