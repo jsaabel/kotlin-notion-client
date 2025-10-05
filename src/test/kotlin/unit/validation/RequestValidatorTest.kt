@@ -19,6 +19,8 @@ import no.saabelit.kotlinnotionclient.models.base.SelectOptionColor
 import no.saabelit.kotlinnotionclient.models.base.TextContent
 import no.saabelit.kotlinnotionclient.models.blocks.BlockRequest
 import no.saabelit.kotlinnotionclient.models.blocks.ParagraphRequestContent
+import no.saabelit.kotlinnotionclient.models.databases.CreateDatabaseRequest
+import no.saabelit.kotlinnotionclient.models.databases.InitialDataSource
 import no.saabelit.kotlinnotionclient.models.pages.CreatePageRequest
 import no.saabelit.kotlinnotionclient.models.pages.PagePropertyValue
 import no.saabelit.kotlinnotionclient.models.pages.PageReference
@@ -397,52 +399,51 @@ class RequestValidatorTest :
             }
         }
 
-//          TODO: Adjust/replace following API version update
-//        context("Database Request Validation") {
-//            test("should validate normal database request without violations") {
-//                val request =
-//                    CreateDatabaseRequest(
-//                        parent = Parent(type = "page_id", pageId = "test-parent-id"),
-//                        title = listOf(createRichText("Test Database")),
-//                        properties = emptyMap(),
-//                    )
-//                val result = validator.validateDatabaseRequest(request)
-//
-//                result.isValid.shouldBeTrue()
-//                result.violations.shouldBeEmpty()
-//            }
-//
-//            test("should detect violations in database title") {
-//                val request =
-//                    CreateDatabaseRequest(
-//                        parent = Parent(type = "page_id", pageId = "test-parent-id"),
-//                        title = listOf(createLongRichText()),
-//                        properties = emptyMap(),
-//                    )
-//                val result = validator.validateDatabaseRequest(request)
-//
-//                result.isValid.shouldBeFalse()
-//                result.violations shouldHaveSize 1
-//                result.violations.first().violationType shouldBe ViolationType.CONTENT_TOO_LONG
-//                result.violations.first().field shouldBe "title[0]"
-//            }
-//
-//            test("should detect violations in database description") {
-//                val request =
-//                    CreateDatabaseRequest(
-//                        parent = Parent(type = "page_id", pageId = "test-parent-id"),
-//                        title = listOf(createRichText("Test Database")),
-//                        properties = emptyMap(),
-//                        description = listOf(createLongRichText()),
-//                    )
-//                val result = validator.validateDatabaseRequest(request)
-//
-//                result.isValid.shouldBeFalse()
-//                result.violations shouldHaveSize 1
-//                result.violations.first().violationType shouldBe ViolationType.CONTENT_TOO_LONG
-//                result.violations.first().field shouldBe "description[0]"
-//            }
-//        }
+        context("Database Request Validation (2025-09-03 API)") {
+            test("should validate normal database request without violations") {
+                val request =
+                    CreateDatabaseRequest(
+                        parent = Parent(type = "page_id", pageId = "test-parent-id"),
+                        title = listOf(createRichText("Test Database")),
+                        initialDataSource = InitialDataSource(properties = emptyMap()),
+                    )
+                val result = validator.validateDatabaseRequest(request)
+
+                result.isValid.shouldBeTrue()
+                result.violations.shouldBeEmpty()
+            }
+
+            test("should detect violations in database title") {
+                val request =
+                    CreateDatabaseRequest(
+                        parent = Parent(type = "page_id", pageId = "test-parent-id"),
+                        title = listOf(createLongRichText()),
+                        initialDataSource = InitialDataSource(properties = emptyMap()),
+                    )
+                val result = validator.validateDatabaseRequest(request)
+
+                result.isValid.shouldBeFalse()
+                result.violations shouldHaveSize 1
+                result.violations.first().violationType shouldBe ViolationType.CONTENT_TOO_LONG
+                result.violations.first().field shouldBe "title[0]"
+            }
+
+            test("should detect violations in database description") {
+                val request =
+                    CreateDatabaseRequest(
+                        parent = Parent(type = "page_id", pageId = "test-parent-id"),
+                        title = listOf(createRichText("Test Database")),
+                        initialDataSource = InitialDataSource(properties = emptyMap()),
+                        description = listOf(createLongRichText()),
+                    )
+                val result = validator.validateDatabaseRequest(request)
+
+                result.isValid.shouldBeFalse()
+                result.violations shouldHaveSize 1
+                result.violations.first().violationType shouldBe ViolationType.CONTENT_TOO_LONG
+                result.violations.first().field shouldBe "description[0]"
+            }
+        }
 
         context("ValidationResult") {
             test("should provide correct validation status") {
@@ -720,65 +721,64 @@ class RequestValidatorTest :
                 }
             }
 
-            // TODO: Adjust/replace following API version update
-//            context("Database Request Auto-Fixing") {
-//                test("should auto-split text in database title") {
-//                    val config = ValidationConfig(autoSplitLongText = true)
-//                    val autoSplitValidator = RequestValidator(config)
-//
-//                    val longTitle = createLongRichText()
-//                    val request =
-//                        CreateDatabaseRequest(
-//                            parent = Parent(type = "page_id", pageId = "test-page-id"),
-//                            title = listOf(longTitle),
-//                            properties = mapOf(),
-//                        )
-//
-//                    val result = autoSplitValidator.validateOrFix(request)
-//
-//                    // Should be split into 2 segments
-//                    result.title.size.shouldBe(2)
-//
-//                    // Each segment should be under limit
-//                    result.title.forEach { segment ->
-//                        val content = segment.text?.content ?: ""
-//                        content.length.shouldBeLessThanOrEqualTo(NotionApiLimits.Content.MAX_RICH_TEXT_LENGTH)
-//                    }
-//
-//                    // Total content should be preserved
-//                    val totalContent = result.title.joinToString("") { it.text?.content ?: "" }
-//                    totalContent.shouldBe("a".repeat(2100))
-//                }
-//
-//                test("should auto-split text in database description") {
-//                    val config = ValidationConfig(autoSplitLongText = true)
-//                    val autoSplitValidator = RequestValidator(config)
-//
-//                    val longDescription = createLongRichText()
-//                    val request =
-//                        CreateDatabaseRequest(
-//                            parent = Parent(type = "page_id", pageId = "test-page-id"),
-//                            title = listOf(createRichText("Normal title")),
-//                            properties = mapOf(),
-//                            description = listOf(longDescription),
-//                        )
-//
-//                    val result = autoSplitValidator.validateOrFix(request)
-//
-//                    // Should be split into 2 segments
-//                    result.description!!.size.shouldBe(2)
-//
-//                    // Each segment should be under limit
-//                    result.description.forEach { segment ->
-//                        val content = segment.text?.content ?: ""
-//                        content.length.shouldBeLessThanOrEqualTo(NotionApiLimits.Content.MAX_RICH_TEXT_LENGTH)
-//                    }
-//
-//                    // Total content should be preserved
-//                    val totalContent = result.description.joinToString("") { it.text?.content ?: "" }
-//                    totalContent.shouldBe("a".repeat(2100))
-//                }
-//            }
+            context("Database Request Auto-Fixing (2025-09-03 API)") {
+                test("should auto-split text in database title") {
+                    val config = ValidationConfig(autoSplitLongText = true)
+                    val autoSplitValidator = RequestValidator(config)
+
+                    val longTitle = createLongRichText()
+                    val request =
+                        CreateDatabaseRequest(
+                            parent = Parent(type = "page_id", pageId = "test-page-id"),
+                            title = listOf(longTitle),
+                            initialDataSource = InitialDataSource(properties = mapOf()),
+                        )
+
+                    val result = autoSplitValidator.validateOrFix(request)
+
+                    // Should be split into 2 segments
+                    result.title.size.shouldBe(2)
+
+                    // Each segment should be under limit
+                    result.title.forEach { segment ->
+                        val content = segment.text?.content ?: ""
+                        content.length.shouldBeLessThanOrEqualTo(NotionApiLimits.Content.MAX_RICH_TEXT_LENGTH)
+                    }
+
+                    // Total content should be preserved
+                    val totalContent = result.title.joinToString("") { it.text?.content ?: "" }
+                    totalContent.shouldBe("a".repeat(2100))
+                }
+
+                test("should auto-split text in database description") {
+                    val config = ValidationConfig(autoSplitLongText = true)
+                    val autoSplitValidator = RequestValidator(config)
+
+                    val longDescription = createLongRichText()
+                    val request =
+                        CreateDatabaseRequest(
+                            parent = Parent(type = "page_id", pageId = "test-page-id"),
+                            title = listOf(createRichText("Normal title")),
+                            initialDataSource = InitialDataSource(properties = mapOf()),
+                            description = listOf(longDescription),
+                        )
+
+                    val result = autoSplitValidator.validateOrFix(request)
+
+                    // Should be split into 2 segments
+                    result.description!!.size.shouldBe(2)
+
+                    // Each segment should be under limit
+                    result.description.forEach { segment ->
+                        val content = segment.text?.content ?: ""
+                        content.length.shouldBeLessThanOrEqualTo(NotionApiLimits.Content.MAX_RICH_TEXT_LENGTH)
+                    }
+
+                    // Total content should be preserved
+                    val totalContent = result.description.joinToString("") { it.text?.content ?: "" }
+                    totalContent.shouldBe("a".repeat(2100))
+                }
+            }
 
             context("Block Array Validation") {
                 test("should fail fast on block array violations") {

@@ -5,7 +5,7 @@ plugins {
     alias(libs.plugins.ben.manes.versions)
     alias(libs.plugins.kotlin.jvm)
     alias(libs.plugins.kotlin.serialization)
-//    alias(libs.plugins.kotlinter)
+    alias(libs.plugins.kotlinter)
 }
 
 group = "no.saabelit"
@@ -36,25 +36,6 @@ dependencies {
 tasks.test {
     useJUnitPlatform()
 }
-
-// Task for running only integration tests
-//tasks.register<Test>("integrationTest") {
-//    useJUnitPlatform()
-//    testClassesDirs = sourceSets.test.get().output.classesDirs
-//    classpath = sourceSets.test.get().runtimeClasspath
-//    systemProperty("kotest.tags.include", "Integration")
-//    group = "verification"
-//    description = "Runs integration tests against live Notion API (requires NOTION_API_TOKEN and NOTION_TEST_PAGE_ID)"
-//}
-
-// Task for running all tests (unit + integration)
-//tasks.register<Test>("testAll") {
-//    useJUnitPlatform()
-//    testClassesDirs = sourceSets.test.get().output.classesDirs
-//    classpath = sourceSets.test.get().runtimeClasspath
-//    group = "verification"
-//    description = "Runs all tests including integration tests"
-//}
 
 fun isNonStable(version: String): Boolean {
     val stableKeyword = listOf("RELEASE", "FINAL", "GA").any { version.uppercase().contains(it) }

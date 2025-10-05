@@ -82,18 +82,29 @@ class RelationPaginationIntegrationTest :
                     val sourceDataSource =
                         client.dataSources.create(
                             no.saabelit.kotlinnotionclient.models.databases.CreateDataSourceRequest(
-                                parent = no.saabelit.kotlinnotionclient.models.base.Parent(type = "database_id", databaseId = database.id),
-                                title = listOf(no.saabelit.kotlinnotionclient.models.base.RichText.fromPlainText("Source Data Source - ${System.currentTimeMillis()}")),
+                                parent =
+                                    no.saabelit.kotlinnotionclient.models.base
+                                        .Parent(type = "database_id", databaseId = database.id),
+                                title =
+                                    listOf(
+                                        no.saabelit.kotlinnotionclient.models.base.RichText.fromPlainText(
+                                            "Source Data Source - ${System.currentTimeMillis()}",
+                                        ),
+                                    ),
                                 properties =
                                     mapOf(
-                                        "Task Name" to no.saabelit.kotlinnotionclient.models.databases.CreateDatabaseProperty.Title(),
+                                        "Task Name" to
+                                            no.saabelit.kotlinnotionclient.models.databases.CreateDatabaseProperty
+                                                .Title(),
                                         "Related Items" to
                                             no.saabelit.kotlinnotionclient.models.databases.CreateDatabaseProperty.Relation(
                                                 relation =
                                                     no.saabelit.kotlinnotionclient.models.databases.RelationConfiguration(
                                                         databaseId = database.id,
                                                         dataSourceId = targetDataSourceId,
-                                                        singleProperty = no.saabelit.kotlinnotionclient.models.base.EmptyObject(),
+                                                        singleProperty =
+                                                            no.saabelit.kotlinnotionclient.models.base
+                                                                .EmptyObject(),
                                                     ),
                                             ),
                                     ),

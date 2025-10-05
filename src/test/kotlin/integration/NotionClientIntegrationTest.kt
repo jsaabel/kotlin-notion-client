@@ -41,53 +41,54 @@ class NotionClientIntegrationTest :
                             ),
                         )
 
-                Then("should successfully retrieve user information") {
-                    try {
-                        println("📡 Calling /users/me endpoint...")
-                        println("🔍 Debug info:")
-                        println("   Base URL: ${client.config.baseUrl}")
-                        println("   API Version: ${client.config.apiVersion}")
-                        println("   Token starts with: ${token.take(10)}...")
+                    Then("should successfully retrieve user information") {
+                        try {
+                            println("📡 Calling /users/me endpoint...")
+                            println("🔍 Debug info:")
+                            println("   Base URL: ${client.config.baseUrl}")
+                            println("   API Version: ${client.config.apiVersion}")
+                            println("   Token starts with: ${token.take(10)}...")
 
-                        val user = client.users.getCurrentUser()
+                            val user = client.users.getCurrentUser()
 
-                        // Validate the response structure
-                        user.id.shouldNotBeBlank()
-                        user.objectType shouldBe "user"
-                        user.type shouldNotBe null
+                            // Validate the response structure
+                            user.id.shouldNotBeBlank()
+                            user.objectType shouldBe "user"
+                            user.type shouldNotBe null
 
-                        println("✅ Success! Retrieved user information:")
-                        println("   ID: ${user.id}")
-                        println("   Name: ${user.name}")
-                        println("   Type: ${user.type}")
-                        println("   Avatar: ${user.avatarUrl ?: "No avatar"}")
+                            println("✅ Success! Retrieved user information:")
+                            println("   ID: ${user.id}")
+                            println("   Name: ${user.name}")
+                            println("   Type: ${user.type}")
+                            println("   Avatar: ${user.avatarUrl ?: "No avatar"}")
 
-                        if (user.type == UserType.BOT && user.bot != null) {
-                            println("   🤖 Bot Information:")
-                            println("      Owner Type: ${user.bot.owner.type}")
-                            user.bot.owner.user?.let { ownerUser ->
-                                println("      Owner Name: ${ownerUser.name}")
-                                println("      Owner ID: ${ownerUser.id}")
+                            if (user.type == UserType.BOT && user.bot != null) {
+                                println("   🤖 Bot Information:")
+                                println("      Owner Type: ${user.bot.owner.type}")
+                                user.bot.owner.user?.let { ownerUser ->
+                                    println("      Owner Name: ${ownerUser.name}")
+                                    println("      Owner ID: ${ownerUser.id}")
+                                }
                             }
+                        } catch (e: NotionException.AuthenticationError) {
+                            println("❌ Authentication failed: ${e.message}")
+                            println("   Check your NOTION_API_TOKEN is valid")
+                            throw e
+                        } catch (e: NotionException.ApiError) {
+                            println("❌ API Error: ${e.message}")
+                            println("   Status: ${e.status}")
+                            println("   Code: ${e.code}")
+                            throw e
+                        } catch (e: NotionException.NetworkError) {
+                            println("❌ Network Error: ${e.message}")
+                            println("   Check your internet connection")
+                            throw e
+                        } finally {
+                            client.close()
+                            println("🔒 Client closed")
                         }
-                    } catch (e: NotionException.AuthenticationError) {
-                        println("❌ Authentication failed: ${e.message}")
-                        println("   Check your NOTION_API_TOKEN is valid")
-                        throw e
-                    } catch (e: NotionException.ApiError) {
-                        println("❌ API Error: ${e.message}")
-                        println("   Status: ${e.status}")
-                        println("   Code: ${e.code}")
-                        throw e
-                    } catch (e: NotionException.NetworkError) {
-                        println("❌ Network Error: ${e.message}")
-                        println("   Check your internet connection")
-                        throw e
-                    } finally {
-                        client.close()
-                        println("🔒 Client closed")
                     }
                 }
             }
         }
-    }})
+    })
