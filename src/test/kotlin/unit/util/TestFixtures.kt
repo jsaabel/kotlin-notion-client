@@ -196,6 +196,12 @@ object TestFixtures {
 
         fun sendFileUploadAsString() = loadReferenceSampleResponseAsString("file_uploads", "post_send_a_file_upload")
     }
+
+    object Search {
+        fun searchByTitle() = loadSampleResponse("search", "post_search_by_title")
+
+        fun searchByTitleAsString() = loadSampleResponseAsString("search", "post_search_by_title")
+    }
 }
 
 /**

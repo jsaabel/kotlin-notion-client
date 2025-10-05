@@ -243,6 +243,20 @@ class MockClientBuilder {
         }
     }
 
+    fun addSearchResponse() {
+        handlers.add { request ->
+            if (request.method == HttpMethod.Post && request.url.toString().contains("/v1/search")) {
+                respond(
+                    content = TestFixtures.Search.searchByTitleAsString(),
+                    status = HttpStatusCode.OK,
+                    headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString()),
+                )
+            } else {
+                respondError(HttpStatusCode.NotFound, "Endpoint not found")
+            }
+        }
+    }
+
     /**
      * Add error response for testing error handling.
      */

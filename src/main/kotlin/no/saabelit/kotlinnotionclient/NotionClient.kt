@@ -22,6 +22,7 @@ import no.saabelit.kotlinnotionclient.api.DatabasesApi
 import no.saabelit.kotlinnotionclient.api.EnhancedFileUploadApi
 import no.saabelit.kotlinnotionclient.api.FileUploadApi
 import no.saabelit.kotlinnotionclient.api.PagesApi
+import no.saabelit.kotlinnotionclient.api.SearchApi
 import no.saabelit.kotlinnotionclient.api.UsersApi
 import no.saabelit.kotlinnotionclient.config.NotionConfig
 import no.saabelit.kotlinnotionclient.ratelimit.NotionRateLimit
@@ -63,6 +64,7 @@ class NotionClient private constructor(
     val dataSources = DataSourcesApi(httpClient, config)
     val blocks = BlocksApi(httpClient, config)
     val comments = CommentsApi(httpClient, config)
+    val search = SearchApi(httpClient, config)
     val fileUploads = FileUploadApi(httpClient, config)
 
     /**
