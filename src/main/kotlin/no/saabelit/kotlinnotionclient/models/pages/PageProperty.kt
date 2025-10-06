@@ -2,6 +2,8 @@
 
 package no.saabelit.kotlinnotionclient.models.pages
 
+import kotlinx.datetime.Instant
+import kotlinx.datetime.toLocalDateTime
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import no.saabelit.kotlinnotionclient.models.base.RichText
@@ -298,3 +300,127 @@ sealed class FileData {
         @SerialName("file") val file: UploadedFileUrl,
     ) : FileData()
 }
+
+// ========================================
+// Convenience accessors for kotlinx-datetime
+// ========================================
+
+/** Returns the start date as LocalDate, or null if not set or parsing fails. */
+val PageProperty.Date.localDateValue: kotlinx.datetime.LocalDate?
+    get() =
+        date?.start?.let {
+            try {
+                kotlinx.datetime.LocalDate.parse(it)
+            } catch (e: IllegalArgumentException) {
+                null
+            }
+        }
+
+/**
+ * Returns the start datetime components as LocalDateTime, ignoring timezone information.
+ *
+ * This extracts the date/time components as shown in the ISO string, regardless of timezone:
+ * - "2025-03-20T14:30:00Z" → LocalDateTime(2025, 3, 20, 14, 30)
+ * - "2025-03-20T14:30:00+01:00" → LocalDateTime(2025, 3, 20, 14, 30)
+ *
+ * **Warning**: This loses timezone context. For timezone-aware conversion, use [toLocalDateTime].
+ */
+val PageProperty.Date.localDateTimeNaive: kotlinx.datetime.LocalDateTime?
+    get() =
+        date?.start?.let {
+            try {
+                val normalized =
+                    it
+                        .replace(Regex("\\.\\d+"), "") // Remove milliseconds .000
+                        .removeSuffix("Z") // Remove UTC indicator
+                        .replace(Regex("[+-]\\d{2}:\\d{2}$"), "") // Remove timezone offset
+                kotlinx.datetime.LocalDateTime.parse(normalized)
+            } catch (e: IllegalArgumentException) {
+                null
+            }
+        }
+
+/** Returns the start instant as Instant, or null if not set or parsing fails. */
+val PageProperty.Date.instantValue: Instant?
+    get() =
+        date?.start?.let {
+            try {
+                val normalized = it.replace(Regex("\\.\\d+"), "") // TODO: temp fix?
+                Instant.parse(normalized)
+            } catch (e: IllegalArgumentException) {
+                null
+            }
+        }
+
+/**
+ * Converts the start datetime to LocalDateTime in the specified timezone.
+ *
+ * This properly handles timezone conversion:
+ * - "2025-03-20T14:30:00+01:00" in UTC → LocalDateTime(2025, 3, 20, 13, 30)
+ * - "2025-03-20T14:30:00Z" in America/New_York → LocalDateTime(2025, 3, 20, 9, 30)
+ *
+ * Returns null if the start value is a date-only (no time component) or parsing fails.
+ */
+fun PageProperty.Date.toLocalDateTime(timeZone: kotlinx.datetime.TimeZone): kotlinx.datetime.LocalDateTime? =
+    instantValue?.toLocalDateTime(timeZone)
+
+/** Returns the end date as LocalDate, or null if not set or parsing fails. */
+val PageProperty.Date.endLocalDateValue: kotlinx.datetime.LocalDate?
+    get() =
+        date?.end?.let {
+            try {
+                kotlinx.datetime.LocalDate.parse(it)
+            } catch (e: IllegalArgumentException) {
+                null
+            }
+        }
+
+/**
+ * Returns the end datetime components as LocalDateTime, ignoring timezone information.
+ *
+ * This extracts the date/time components as shown in the ISO string, regardless of timezone.
+ * **Warning**: This loses timezone context. For timezone-aware conversion, use [endToLocalDateTime].
+ */
+val PageProperty.Date.endLocalDateTimeNaive: kotlinx.datetime.LocalDateTime?
+    get() =
+        date?.end?.let {
+            try {
+                val normalized =
+                    it
+                        .replace(Regex("\\.\\d+"), "") // Remove milliseconds .000
+                        .removeSuffix("Z") // Remove UTC indicator
+                        .replace(Regex("[+-]\\d{2}:\\d{2}$"), "") // Remove timezone offset
+                kotlinx.datetime.LocalDateTime.parse(normalized)
+            } catch (e: IllegalArgumentException) {
+                null
+            }
+        }
+
+/** Returns the end instant as Instant, or null if not set or parsing fails. */
+val PageProperty.Date.endInstantValue: kotlinx.datetime.Instant?
+    get() =
+        date?.end?.let {
+            try {
+                val normalized = it.replace(Regex("\\.\\d+"), "")
+                kotlinx.datetime.Instant.parse(normalized)
+            } catch (e: IllegalArgumentException) {
+                null
+            }
+        }
+
+/**
+ * Converts the end datetime to LocalDateTime in the specified timezone.
+ *
+ * This properly handles timezone conversion for the range end value.
+ * Returns null if the end value is not set, is date-only, or parsing fails.
+ */
+fun PageProperty.Date.endToLocalDateTime(timeZone: kotlinx.datetime.TimeZone): kotlinx.datetime.LocalDateTime? =
+    endInstantValue?.toLocalDateTime(timeZone)
+
+/** Returns the start date/datetime as a string (for backward compatibility). */
+val PageProperty.Date.stringValue: String?
+    get() = date?.start
+
+/** Returns the end date/datetime as a string (for backward compatibility). */
+val PageProperty.Date.endStringValue: String?
+    get() = date?.end
