@@ -120,6 +120,28 @@ notion.comments.create {
 }
 ```
 
+## Known Issues
+
+### Link in Rich Text Not Properly Created
+**Issue:** Example 5 "Comments with links" claims to create a link but the implementation may be incorrect:
+```kotlin
+RichText(
+    type = "text",
+    text = TextContent(content = "Notion API docs", link = null),  // ← link is null
+    annotations = Annotations(),
+    plainText = "Notion API docs",
+    href = "https://developers.notion.com",  // ← href on RichText
+)
+```
+
+**Investigation needed:** Determine correct pattern for links in rich text:
+- Should `TextContent.link` contain a `Link` object with the URL?
+- Or should `RichText.href` be used?
+- Or both?
+- Check against official API samples and test with live API
+
+**Related:** This further reinforces the need for a rich text DSL that handles this correctly.
+
 ## Related Files
 - `src/test/kotlin/examples/CommentsExamples.kt` - Examples that would benefit from DSL
 - `src/main/kotlin/no/saabelit/kotlinnotionclient/models/comments/Comment.kt` - Comment models
