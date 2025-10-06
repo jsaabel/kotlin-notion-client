@@ -2,7 +2,7 @@
 
 > **⚠️ WORK IN PROGRESS**: This documentation is being actively developed and may be incomplete or subject to change.
 
-> **📝 Example Validation**: ⏳ Pending validation - examples need to be verified against live API
+> **📝 Example Validation**: ✅ All examples verified - validated against live Notion API (see `src/test/kotlin/examples/DataSourcesExamples.kt`)
 
 ## Overview
 
@@ -47,11 +47,11 @@ suspend fun update(
 ```kotlin
 val dataSource = notion.dataSources.retrieve("data-source-id")
 
-println("Name: ${dataSource.name}")
-println("Database ID: ${dataSource.databaseId}")
+val name = dataSource.title.firstOrNull()?.plainText ?: "Untitled"
+println("Name: $name")
 println("Properties:")
-dataSource.properties.forEach { (name, config) ->
-    println("  - $name: ${config.type}")
+dataSource.properties.forEach { (propName, config) ->
+    println("  - $propName: ${config.type}")
 }
 ```
 
@@ -73,24 +73,14 @@ allPages.forEach { page ->
 ```kotlin
 val filteredPages = notion.dataSources.query("data-source-id") {
     filter {
-        and {
-            property("Status") {
-                select { equals("In Progress") }
-            }
-            property("Priority") {
-                number { greaterThan(5.0) }
-            }
-        }
+        and(
+            select("Status").equals("In Progress"),
+            number("Priority").greaterThan(5.0),
+        )
     }
 
-    sorts {
-        property("Due Date") {
-            direction = SortDirection.ASCENDING
-        }
-        property("Priority") {
-            direction = SortDirection.DESCENDING
-        }
-    }
+    sortBy("Due Date", SortDirection.ASCENDING)
+    sortBy("Priority", SortDirection.DESCENDING)
 }
 ```
 
@@ -103,7 +93,7 @@ You can add additional tables (data sources) to an existing database:
 ```kotlin
 val dataSource = notion.dataSources.create {
     databaseId("existing-database-id")
-    name("Projects") // Name of the new table
+    title("Projects") // Name of the new table
 
     properties {
         title("Project Name")
@@ -132,29 +122,34 @@ You can modify the schema (properties) of a data source:
 
 ```kotlin
 val updated = notion.dataSources.update("data-source-id") {
-    // Update the name
-    name("Updated Projects")
+    // Update the title
+    title("Updated Projects")
 
     // Modify properties
     properties {
-        // Add a new property
-        checkbox("Is Critical")
-
-        // Update an existing select property
+        // Re-define existing properties to keep them
+        title("Task Name")
         select("Status") {
-            option("Planning")
+            option("To Do")
             option("In Progress") // Added
             option("On Hold")     // Added
-            option("Completed")
+            option("Done")
         }
+        number("Priority")
+        date("Due Date")
+        checkbox("Completed")
+
+        // Add a new property
+        checkbox("Is Critical")
     }
 }
 ```
 
 **Important**: Property updates follow these rules:
-- Adding new properties: They appear in the schema
-- Updating existing properties: Define them with new configuration
-- Removing properties: Not directly supported - archive pages or create new data source
+- **You must re-define ALL existing properties** you want to keep
+- Adding new properties: Include them in the properties block
+- Updating existing properties: Re-define them with new configuration
+- Removing properties: Simply omit them from the properties block (they will be removed)
 
 ## Understanding Data Sources vs. Databases
 
@@ -207,9 +202,7 @@ The `query()` method automatically fetches all matching pages:
 // This will fetch ALL pages, even if there are thousands
 val allPages = notion.dataSources.query("data-source-id") {
     filter {
-        property("Status") {
-            select { equals("Active") }
-        }
+        select("Status").equals("To Do")
     }
 }
 
@@ -224,22 +217,15 @@ The library handles pagination transparently, fetching up to 100,000 records (1,
 // Combine multiple conditions
 val results = notion.dataSources.query("data-source-id") {
     filter {
-        or {
+        or(
             // High priority tasks
-            and {
-                property("Priority") {
-                    number { greaterThanOrEqual(8.0) }
-                }
-                property("Status") {
-                    select { equals("To Do") }
-                }
-            }
-
+            and(
+                number("Priority").greaterThanOrEqualTo(8.0),
+                select("Status").equals("To Do"),
+            ),
             // Overdue tasks
-            property("Due Date") {
-                date { before("2025-10-05") }
-            }
-        }
+            date("Due Date").before("2025-10-05"),
+        )
     }
 }
 ```
@@ -253,10 +239,10 @@ val pages = notion.dataSources.query("data-source-id") {}
 
 pages.forEach { page ->
     // Access different property types
-    val titleProp = page.properties["Task Name"] as? TitlePropertyValue
-    val title = titleProp?.title?.firstOrNull()?.plainText
+    val titleProp = page.properties["Task Name"] as? PageProperty.Title
+    val title = titleProp?.plainText
 
-    val selectProp = page.properties["Status"] as? SelectPropertyValue
+    val selectProp = page.properties["Status"] as? PageProperty.Select
     val status = selectProp?.select?.name
 
     println("$title - $status")
