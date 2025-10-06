@@ -338,7 +338,7 @@ class DatabaseRequestBuilderTest :
                             parent.page("test-page-id")
                             title("Test Database")
                             properties {
-                                relation("Related", "target-db-id") {
+                                relation("Related", "target-db-id", "target-ds-id") {
                                     single()
                                 }
                             }
@@ -346,6 +346,7 @@ class DatabaseRequestBuilderTest :
 
                     val relationProperty = request.initialDataSource.properties["Related"] as CreateDatabaseProperty.Relation
                     relationProperty.relation.databaseId shouldBe "target-db-id"
+                    relationProperty.relation.dataSourceId shouldBe "target-ds-id"
                     relationProperty.relation.singleProperty shouldNotBe null
                     relationProperty.relation.dualProperty shouldBe null
                     relationProperty.relation.syncedPropertyName shouldBe null
@@ -357,14 +358,15 @@ class DatabaseRequestBuilderTest :
                             parent.page("test-page-id")
                             title("Test Database")
                             properties {
-                                relation("Related", "target-db-id") {
+                                relation("Related", "target-db-id", "target-ds-id") {
                                     dual("Backlink", "prop-id")
                                 }
                             }
                         }
 
                     val relationProperty = request.initialDataSource.properties["Related"] as CreateDatabaseProperty.Relation
-                    relationProperty.relation shouldBe RelationConfiguration.dualProperty("target-db-id", "Backlink", "prop-id")
+                    relationProperty.relation shouldBe
+                        RelationConfiguration.dualProperty("target-db-id", "target-ds-id", "Backlink", "prop-id")
                 }
 
                 "relation with synced property" {
@@ -373,14 +375,14 @@ class DatabaseRequestBuilderTest :
                             parent.page("test-page-id")
                             title("Test Database")
                             properties {
-                                relation("Related", "target-db-id") {
+                                relation("Related", "target-db-id", "target-ds-id") {
                                     synced("Backlink")
                                 }
                             }
                         }
 
                     val relationProperty = request.initialDataSource.properties["Related"] as CreateDatabaseProperty.Relation
-                    relationProperty.relation shouldBe RelationConfiguration.synced("target-db-id", "Backlink")
+                    relationProperty.relation shouldBe RelationConfiguration.synced("target-db-id", "target-ds-id", "Backlink")
                 }
 
                 "relation with default configuration" {
@@ -389,12 +391,13 @@ class DatabaseRequestBuilderTest :
                             parent.page("test-page-id")
                             title("Test Database")
                             properties {
-                                relation("Related", "target-db-id")
+                                relation("Related", "target-db-id", "target-ds-id")
                             }
                         }
 
                     val relationProperty = request.initialDataSource.properties["Related"] as CreateDatabaseProperty.Relation
                     relationProperty.relation.databaseId shouldBe "target-db-id"
+                    relationProperty.relation.dataSourceId shouldBe "target-ds-id"
                     relationProperty.relation.singleProperty shouldNotBe null
                     relationProperty.relation.dualProperty shouldBe null
                     relationProperty.relation.syncedPropertyName shouldBe null
@@ -428,7 +431,7 @@ class DatabaseRequestBuilderTest :
                             email("Contact")
                             phoneNumber("Phone")
                             people("Assignee")
-                            relation("Related Tasks", "other-db-id") {
+                            relation("Related Tasks", "other-db-id", "other-ds-id") {
                                 dual("Backlink", "prop-id")
                             }
                         }
@@ -563,10 +566,10 @@ class DatabaseRequestBuilderTest :
                             parent.page("test-page-id")
                             title("Test Database")
                             properties {
-                                relation("Parent Tasks", "tasks-db-id") {
+                                relation("Parent Tasks", "tasks-db-id", "tasks-ds-id") {
                                     single()
                                 }
-                                relation("Child Tasks", "tasks-db-id") {
+                                relation("Child Tasks", "tasks-db-id", "tasks-ds-id") {
                                     dual("Parent", "parent-prop-id")
                                 }
                             }
@@ -579,7 +582,8 @@ class DatabaseRequestBuilderTest :
                     parentProperty.relation.singleProperty shouldNotBe null
 
                     val childProperty = request.initialDataSource.properties["Child Tasks"] as CreateDatabaseProperty.Relation
-                    childProperty.relation shouldBe RelationConfiguration.dualProperty("tasks-db-id", "Parent", "parent-prop-id")
+                    childProperty.relation shouldBe
+                        RelationConfiguration.dualProperty("tasks-db-id", "tasks-ds-id", "Parent", "parent-prop-id")
                 }
             }
 
@@ -599,7 +603,7 @@ class DatabaseRequestBuilderTest :
                                 option("Active", SelectOptionColor.GREEN)
                                 option("Closed", SelectOptionColor.RED)
                             }
-                            relation("Dependencies", "deps-db-id") {
+                            relation("Dependencies", "deps-db-id", "deps-ds-id") {
                                 dual("Dependents", "dep-prop-id")
                             }
                         }

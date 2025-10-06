@@ -162,7 +162,7 @@ class DatabasesApi(
     suspend fun archive(databaseId: String): Database =
         httpClient.executeWithRateLimit {
             try {
-                val request = ArchiveDatabaseRequest(archived = true)
+                val request = ArchiveDatabaseRequest(inTrash = true)
                 val response: HttpResponse =
                     httpClient.patch("${config.baseUrl}/databases/$databaseId") {
                         contentType(ContentType.Application.Json)

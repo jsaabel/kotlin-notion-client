@@ -36,18 +36,20 @@ class CreateDatabasePropertyTest :
         }
 
         "Should create Relation property with single property correctly" {
-            val relationConfig = RelationConfiguration.singleProperty("test-database-id")
+            val relationConfig = RelationConfiguration.singleProperty("test-database-id", "test-datasource-id")
             val property = CreateDatabaseProperty.Relation(relationConfig)
 
             property shouldNotBe null
             property.relation shouldBe relationConfig
             property.relation.databaseId shouldBe "test-database-id"
+            property.relation.dataSourceId shouldBe "test-datasource-id"
         }
 
         "Should create Relation property with dual property correctly" {
             val relationConfig =
                 RelationConfiguration.dualProperty(
                     databaseId = "test-database-id",
+                    dataSourceId = "test-datasource-id",
                     syncedPropertyName = "Related Items",
                 )
             val property = CreateDatabaseProperty.Relation(relationConfig)
@@ -55,13 +57,15 @@ class CreateDatabasePropertyTest :
             property shouldNotBe null
             property.relation shouldBe relationConfig
             property.relation.databaseId shouldBe "test-database-id"
+            property.relation.dataSourceId shouldBe "test-datasource-id"
             property.relation.dualProperty?.syncedPropertyName shouldBe "Related Items"
         }
 
         "Should create RelationConfiguration.singleProperty correctly" {
-            val config = RelationConfiguration.singleProperty("test-database-id")
+            val config = RelationConfiguration.singleProperty("test-database-id", "test-datasource-id")
 
             config.databaseId shouldBe "test-database-id"
+            config.dataSourceId shouldBe "test-datasource-id"
             config.singleProperty shouldNotBe null
             config.dualProperty shouldBe null
             config.syncedPropertyName shouldBe null
@@ -72,11 +76,13 @@ class CreateDatabasePropertyTest :
             val config =
                 RelationConfiguration.dualProperty(
                     databaseId = "test-database-id",
+                    dataSourceId = "test-datasource-id",
                     syncedPropertyName = "Backlinks",
                     syncedPropertyId = "abc123",
                 )
 
             config.databaseId shouldBe "test-database-id"
+            config.dataSourceId shouldBe "test-datasource-id"
             config.singleProperty shouldBe null
             config.dualProperty?.syncedPropertyName shouldBe "Backlinks"
             config.dualProperty?.syncedPropertyId shouldBe "abc123"
@@ -88,10 +94,12 @@ class CreateDatabasePropertyTest :
             val config =
                 RelationConfiguration.synced(
                     databaseId = "test-database-id",
+                    dataSourceId = "test-datasource-id",
                     syncedPropertyName = "Related Items",
                 )
 
             config.databaseId shouldBe "test-database-id"
+            config.dataSourceId shouldBe "test-datasource-id"
             config.singleProperty shouldBe null
             config.dualProperty shouldBe null
             config.syncedPropertyName shouldBe "Related Items"

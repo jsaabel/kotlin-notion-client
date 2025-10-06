@@ -49,12 +49,13 @@ data class InitialDataSource(
 /**
  * Request model for archiving a database.
  *
- * Notion doesn't support true deletion - objects are archived instead.
+ * Notion doesn't support true deletion - objects are moved to trash instead.
+ * In the 2025-09-03 API, databases use "in_trash" field (not "archived").
  */
 @Serializable
 data class ArchiveDatabaseRequest(
-    @SerialName("archived")
-    val archived: Boolean = true,
+    @SerialName("in_trash")
+    val inTrash: Boolean = true,
 )
 
 /**
@@ -245,11 +246,16 @@ data class RelationConfiguration(
          * Creates a simple unidirectional relation to another database.
          *
          * @param databaseId The ID of the target database
+         * @param dataSourceId The ID of the target data source
          * @return RelationConfiguration for a single property relation
          */
-        fun singleProperty(databaseId: String): RelationConfiguration =
+        fun singleProperty(
+            databaseId: String,
+            dataSourceId: String,
+        ): RelationConfiguration =
             RelationConfiguration(
                 databaseId = databaseId,
+                dataSourceId = dataSourceId,
                 singleProperty = EmptyObject(),
             )
 
@@ -257,17 +263,20 @@ data class RelationConfiguration(
          * Creates a bidirectional relation with a specific synced property.
          *
          * @param databaseId The ID of the target database
+         * @param dataSourceId The ID of the target data source
          * @param syncedPropertyName The name of the property in the target database
          * @param syncedPropertyId The ID of the property in the target database (optional)
          * @return RelationConfiguration for a dual property relation
          */
         fun dualProperty(
             databaseId: String,
+            dataSourceId: String,
             syncedPropertyName: String,
             syncedPropertyId: String? = null,
         ): RelationConfiguration =
             RelationConfiguration(
                 databaseId = databaseId,
+                dataSourceId = dataSourceId,
                 dualProperty =
                     DualPropertyConfiguration(
                         syncedPropertyName = syncedPropertyName,
@@ -279,15 +288,18 @@ data class RelationConfiguration(
          * Creates a simple synced relation (legacy format).
          *
          * @param databaseId The ID of the target database
+         * @param dataSourceId The ID of the target data source
          * @param syncedPropertyName The name of the synced property
          * @return RelationConfiguration for a synced relation
          */
         fun synced(
             databaseId: String,
+            dataSourceId: String,
             syncedPropertyName: String,
         ): RelationConfiguration =
             RelationConfiguration(
                 databaseId = databaseId,
+                dataSourceId = dataSourceId,
                 syncedPropertyName = syncedPropertyName,
             )
     }
