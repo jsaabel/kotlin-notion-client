@@ -7,7 +7,7 @@ package integration
  * @return True if NOTION_RUN_INTEGRATION_TESTS is "true" and all specified envVars have non-blank values, false otherwise.
  */
 fun integrationTestEnvVarsAreSet(vararg envVars: String = arrayOf("NOTION_API_TOKEN", "NOTION_TEST_PAGE_ID")): Boolean {
-    if (System.getenv("NOTION_RUN_INTEGRATION_TESTS").lowercase() != "true") {
+    if ((System.getenv("NOTION_RUN_INTEGRATION_TESTS")?.lowercase() ?: "false") != "true") {
         return false
     }
     return envVars.all { System.getenv(it).isNullOrBlank().not() }

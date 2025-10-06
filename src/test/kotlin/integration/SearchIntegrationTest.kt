@@ -1,10 +1,10 @@
 package integration
 
+import integration.integrationTestEnvVarsAreSet
 import io.kotest.core.annotation.Tags
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
-import integration.integrationTestEnvVarsAreSet
 import no.saabelit.kotlinnotionclient.NotionClient
 import no.saabelit.kotlinnotionclient.config.NotionConfig
 import no.saabelit.kotlinnotionclient.models.search.searchRequest
