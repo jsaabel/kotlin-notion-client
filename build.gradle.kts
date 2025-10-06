@@ -21,6 +21,7 @@ repositories {
 
 dependencies {
     // Main dependencies
+    implementation(libs.kotlinx.datetime)
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.ktor.client.core)
     implementation(libs.bundles.ktor)

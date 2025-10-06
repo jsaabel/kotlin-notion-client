@@ -2,6 +2,11 @@
 
 package no.saabelit.kotlinnotionclient.models.pages
 
+import kotlinx.datetime.Instant
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.LocalDateTime
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toInstant
 import no.saabelit.kotlinnotionclient.models.base.RichText
 
 /**
@@ -347,6 +352,199 @@ class PagePropertiesBuilder {
         dateData: DateData,
     ) {
         properties[name] = PagePropertyValue.DateValue(date = dateData)
+    }
+
+    // ========================================
+    // Typed date/datetime overloads using kotlinx-datetime
+    // ========================================
+
+    /**
+     * Adds a date property value using LocalDate.
+     *
+     * @param name The property name
+     * @param value The LocalDate value
+     */
+    fun date(
+        name: String,
+        value: LocalDate,
+    ) {
+        properties[name] = PagePropertyValue.DateValue.fromDateString(value.toString())
+    }
+
+    /**
+     * Adds a datetime property value using LocalDateTime with timezone.
+     *
+     * @param name The property name
+     * @param value The LocalDateTime value
+     * @param timeZone The timezone (defaults to UTC)
+     */
+    fun dateTime(
+        name: String,
+        value: LocalDateTime,
+        timeZone: TimeZone = TimeZone.UTC,
+    ) {
+        val instant = value.toInstant(timeZone)
+        properties[name] = PagePropertyValue.DateValue.fromDateTimeString(instant.toString())
+    }
+
+    /**
+     * Adds a datetime property value using Instant (timezone-unambiguous).
+     *
+     * @param name The property name
+     * @param value The Instant value
+     */
+    fun dateTime(
+        name: String,
+        value: Instant,
+    ) {
+        properties[name] = PagePropertyValue.DateValue.fromDateTimeString(value.toString())
+    }
+
+    /**
+     * Adds a date range property value using LocalDate with DSL.
+     *
+     * Example:
+     * ```kotlin
+     * dateRange("Project Duration") {
+     *     start = LocalDate(2025, 3, 15)
+     *     end = LocalDate(2025, 3, 22)
+     * }
+     * ```
+     *
+     * @param name The property name
+     * @param block The date range builder configuration
+     */
+    fun dateRange(
+        name: String,
+        block: DateRangeBuilder.() -> Unit,
+    ) {
+        val (startDate, endDate) = DateRangeBuilder().apply(block).build()
+        properties[name] =
+            if (endDate != null) {
+                PagePropertyValue.DateValue.fromDateRange(startDate, endDate)
+            } else {
+                PagePropertyValue.DateValue.fromDateString(startDate)
+            }
+    }
+
+    /**
+     * Adds a date range property value using LocalDate directly.
+     *
+     * @param name The property name
+     * @param start The start date
+     * @param end The end date (null for open-ended)
+     */
+    fun dateRange(
+        name: String,
+        start: LocalDate,
+        end: LocalDate?,
+    ) {
+        properties[name] =
+            if (end != null) {
+                PagePropertyValue.DateValue.fromDateRange(start.toString(), end.toString())
+            } else {
+                PagePropertyValue.DateValue.fromDateString(start.toString())
+            }
+    }
+
+    /**
+     * Adds a datetime range property value using LocalDateTime with timezone and DSL.
+     *
+     * Example:
+     * ```kotlin
+     * dateTimeRange("Meeting", timeZone = TimeZone.of("America/New_York")) {
+     *     start = LocalDateTime(2025, 3, 15, 14, 0)
+     *     end = LocalDateTime(2025, 3, 15, 15, 30)
+     * }
+     * ```
+     *
+     * @param name The property name
+     * @param timeZone The timezone for the datetime values
+     * @param block The datetime range builder configuration
+     */
+    fun dateTimeRange(
+        name: String,
+        timeZone: TimeZone = TimeZone.UTC,
+        block: LocalDateTimeRangeBuilder.() -> Unit,
+    ) {
+        val (startDateTime, endDateTime) = LocalDateTimeRangeBuilder(timeZone).apply(block).build()
+        properties[name] =
+            if (endDateTime != null) {
+                PagePropertyValue.DateValue.fromDateTimeRange(startDateTime, endDateTime)
+            } else {
+                PagePropertyValue.DateValue.fromDateTimeString(startDateTime)
+            }
+    }
+
+    /**
+     * Adds a datetime range property value using LocalDateTime directly.
+     *
+     * @param name The property name
+     * @param start The start datetime
+     * @param end The end datetime (null for open-ended)
+     * @param timeZone The timezone for the datetime values (defaults to UTC)
+     */
+    fun dateTimeRange(
+        name: String,
+        start: LocalDateTime,
+        end: LocalDateTime?,
+        timeZone: TimeZone = TimeZone.UTC,
+    ) {
+        val startInstant = start.toInstant(timeZone)
+        val endInstant = end?.toInstant(timeZone)
+        properties[name] =
+            if (endInstant != null) {
+                PagePropertyValue.DateValue.fromDateTimeRange(startInstant.toString(), endInstant.toString())
+            } else {
+                PagePropertyValue.DateValue.fromDateTimeString(startInstant.toString())
+            }
+    }
+
+    /**
+     * Adds a datetime range property value using Instant with DSL.
+     *
+     * Example:
+     * ```kotlin
+     * dateTimeRange("Deployment Window") {
+     *     start = Instant.parse("2025-03-15T00:00:00Z")
+     *     end = Instant.parse("2025-03-15T04:00:00Z")
+     * }
+     * ```
+     *
+     * @param name The property name
+     * @param block The instant range builder configuration
+     */
+    fun dateTimeRange(
+        name: String,
+        block: InstantRangeBuilder.() -> Unit,
+    ) {
+        val (startInstant, endInstant) = InstantRangeBuilder().apply(block).build()
+        properties[name] =
+            if (endInstant != null) {
+                PagePropertyValue.DateValue.fromDateTimeRange(startInstant, endInstant)
+            } else {
+                PagePropertyValue.DateValue.fromDateTimeString(startInstant)
+            }
+    }
+
+    /**
+     * Adds a datetime range property value using Instant directly.
+     *
+     * @param name The property name
+     * @param start The start instant
+     * @param end The end instant (null for open-ended)
+     */
+    fun dateTimeRange(
+        name: String,
+        start: Instant,
+        end: Instant?,
+    ) {
+        properties[name] =
+            if (end != null) {
+                PagePropertyValue.DateValue.fromDateTimeRange(start.toString(), end.toString())
+            } else {
+                PagePropertyValue.DateValue.fromDateTimeString(start.toString())
+            }
     }
 
     /**
