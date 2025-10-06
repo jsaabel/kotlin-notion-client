@@ -79,51 +79,51 @@ object TestFixtures {
 
     // Database-specific helpers (2025-09-03 API)
     object Databases {
-        fun retrieveDatabase() = loadSampleResponse("databases_new", "get_retrieve_a_database")
+        fun retrieveDatabase() = loadSampleResponse("databases", "get_retrieve_a_database")
 
-        fun createDatabase() = loadSampleResponse("databases_new", "post_create_a_database")
+        fun createDatabase() = loadSampleResponse("databases", "post_create_a_database")
 
-        fun updateDatabase() = loadSampleResponse("databases_new", "patch_update_a_database")
+        fun updateDatabase() = loadSampleResponse("databases", "patch_update_a_database")
 
-        fun retrieveDatabaseAsString() = loadSampleResponseAsString("databases_new", "get_retrieve_a_database")
+        fun retrieveDatabaseAsString() = loadSampleResponseAsString("databases", "get_retrieve_a_database")
 
-        fun createDatabaseAsString() = loadSampleResponseAsString("databases_new", "post_create_a_database")
+        fun createDatabaseAsString() = loadSampleResponseAsString("databases", "post_create_a_database")
 
-        fun updateDatabaseAsString() = loadSampleResponseAsString("databases_new", "patch_update_a_database")
+        fun updateDatabaseAsString() = loadSampleResponseAsString("databases", "patch_update_a_database")
     }
 
     // Data Sources-specific helpers (2025-09-03 API)
     object DataSources {
-        fun retrieveDataSource() = loadSampleResponse("data_sources_new", "get_retrieve_a_data_source")
+        fun retrieveDataSource() = loadSampleResponse("data_sources", "get_retrieve_a_data_source")
 
-        fun createDataSource() = loadSampleResponse("data_sources_new", "post_create_a_data_source")
+        fun createDataSource() = loadSampleResponse("data_sources", "post_create_a_data_source")
 
-        fun updateDataSource() = loadSampleResponse("data_sources_new", "patch_update_a_data_source")
+        fun updateDataSource() = loadSampleResponse("data_sources", "patch_update_a_data_source")
 
-        fun queryDataSource() = loadSampleResponse("data_sources_new", "post_query_a_data_source")
+        fun queryDataSource() = loadSampleResponse("data_sources", "post_query_a_data_source")
 
-        fun retrieveDataSourceAsString() = loadSampleResponseAsString("data_sources_new", "get_retrieve_a_data_source")
+        fun retrieveDataSourceAsString() = loadSampleResponseAsString("data_sources", "get_retrieve_a_data_source")
 
-        fun createDataSourceAsString() = loadSampleResponseAsString("data_sources_new", "post_create_a_data_source")
+        fun createDataSourceAsString() = loadSampleResponseAsString("data_sources", "post_create_a_data_source")
 
-        fun updateDataSourceAsString() = loadSampleResponseAsString("data_sources_new", "patch_update_a_data_source")
+        fun updateDataSourceAsString() = loadSampleResponseAsString("data_sources", "patch_update_a_data_source")
 
-        fun queryDataSourceAsString() = loadSampleResponseAsString("data_sources_new", "post_query_a_data_source")
+        fun queryDataSourceAsString() = loadSampleResponseAsString("data_sources", "post_query_a_data_source")
     }
 
     // Page-specific helpers (2025-09-03 API)
     object Pages {
-        fun retrievePage() = loadSampleResponse("pages_new", "get_retrieve_a_page")
+        fun retrievePage() = loadSampleResponse("pages", "get_retrieve_a_page")
 
-        fun createPage() = loadSampleResponse("pages_new", "post_create_a_page")
+        fun createPage() = loadSampleResponse("pages", "post_create_a_page")
 
-        fun retrievePageProperty() = loadSampleResponse("pages_new", "get_retrieve_a_page_property_item")
+        fun retrievePageProperty() = loadSampleResponse("pages", "get_retrieve_a_page_property_item")
 
-        fun retrievePageAsString() = loadSampleResponseAsString("pages_new", "get_retrieve_a_page")
+        fun retrievePageAsString() = loadSampleResponseAsString("pages", "get_retrieve_a_page")
 
-        fun createPageAsString() = loadSampleResponseAsString("pages_new", "post_create_a_page")
+        fun createPageAsString() = loadSampleResponseAsString("pages", "post_create_a_page")
 
-        fun retrievePagePropertyAsString() = loadSampleResponseAsString("pages_new", "get_retrieve_a_page_property_item")
+        fun retrievePagePropertyAsString() = loadSampleResponseAsString("pages", "get_retrieve_a_page_property_item")
     }
 
     // Block-specific helpers

@@ -109,7 +109,7 @@ class DataSourcesExamples :
                 if (shouldCleanupAfterTest() && testDatabaseId != null) {
                     println("🧹 Cleaning up test database...")
                     try {
-                        notion.databases.archive(testDatabaseId!!)
+                        notion.databases.archive(testDatabaseId)
                         println("✅ Cleanup complete")
                     } catch (e: Exception) {
                         println("⚠️ Cleanup failed: ${e.message}")
@@ -273,12 +273,12 @@ class DataSourcesExamples :
 
                 // Get the first (and usually only) data source
                 val dataSourceId =
-                    database.dataSources?.firstOrNull()?.id
+                    database.dataSources.firstOrNull()?.id
                         ?: error("Database has no data sources")
 
                 // Or from an existing database
                 val existingDb = notion.databases.retrieve(database.id)
-                val dataSourceIdFromRetrieve = existingDb.dataSources?.firstOrNull()?.id
+                val dataSourceIdFromRetrieve = existingDb.dataSources.firstOrNull()?.id
 
                 // Validation
                 dataSourceId.shouldNotBeNull()
