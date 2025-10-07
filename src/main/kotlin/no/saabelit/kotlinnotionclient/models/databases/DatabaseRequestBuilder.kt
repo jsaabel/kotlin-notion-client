@@ -98,7 +98,10 @@ class DatabaseRequestBuilder {
     }
 
     /**
-     * Builds the CreateDatabaseRequest.
+     * Builds the CreateDatabaseRequest (API version 2025-09-03+).
+     *
+     * Properties are automatically wrapped in an InitialDataSource object
+     * to match the 2025-09-03 API structure.
      *
      * @return The configured CreateDatabaseRequest
      * @throws IllegalStateException if parent or title is not set, or if no properties are defined
@@ -111,7 +114,7 @@ class DatabaseRequestBuilder {
         return CreateDatabaseRequest(
             parent = parentValue!!,
             title = titleValue!!,
-            properties = properties,
+            initialDataSource = InitialDataSource(properties = properties),
             icon = iconValue,
             cover = coverValue,
             description = descriptionValue,
@@ -386,14 +389,16 @@ class DatabasePropertiesBuilder {
      *
      * @param name The property name
      * @param targetDatabaseId The ID of the target database
+     * @param targetDataSourceId The ID of the target data source
      * @param block Configuration block for relation options
      */
     fun relation(
         name: String,
         targetDatabaseId: String,
+        targetDataSourceId: String,
         block: RelationBuilder.() -> Unit = {},
     ) {
-        val builder = RelationBuilder(targetDatabaseId)
+        val builder = RelationBuilder(targetDatabaseId, targetDataSourceId)
         builder.block()
         properties[name] =
             CreateDatabaseProperty.Relation(
@@ -443,6 +448,7 @@ class SelectBuilder {
 @DatabaseRequestDslMarker
 class RelationBuilder(
     private val targetDatabaseId: String,
+    private val targetDataSourceId: String,
 ) {
     private var configurationType: RelationConfigurationType = RelationConfigurationType.Single
     private var syncedPropertyName: String? = null
@@ -487,16 +493,22 @@ class RelationBuilder(
      */
     fun build(): RelationConfiguration =
         when (configurationType) {
-            RelationConfigurationType.Single -> RelationConfiguration.singleProperty(targetDatabaseId)
+            RelationConfigurationType.Single ->
+                RelationConfiguration.singleProperty(
+                    targetDatabaseId,
+                    targetDataSourceId,
+                )
             RelationConfigurationType.Dual ->
                 RelationConfiguration.dualProperty(
                     targetDatabaseId,
+                    targetDataSourceId,
                     syncedPropertyName!!,
                     syncedPropertyId,
                 )
             RelationConfigurationType.Synced ->
                 RelationConfiguration.synced(
                     targetDatabaseId,
+                    targetDataSourceId,
                     syncedPropertyName!!,
                 )
         }

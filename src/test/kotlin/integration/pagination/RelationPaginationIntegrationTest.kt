@@ -1,5 +1,7 @@
 package integration.pagination
 
+import integration.integrationTestEnvVarsAreSet
+import integration.shouldCleanupAfterTest
 import io.kotest.core.annotation.Tags
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.ints.shouldBeGreaterThan
@@ -7,14 +9,7 @@ import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.delay
 import no.saabelit.kotlinnotionclient.NotionClient
 import no.saabelit.kotlinnotionclient.config.NotionConfig
-import no.saabelit.kotlinnotionclient.models.base.Parent
-import no.saabelit.kotlinnotionclient.models.databases.CreateDatabaseProperty
-import no.saabelit.kotlinnotionclient.models.databases.CreateDatabaseRequest
-import no.saabelit.kotlinnotionclient.models.databases.RelationConfiguration
-import no.saabelit.kotlinnotionclient.models.pages.CreatePageRequest
-import no.saabelit.kotlinnotionclient.models.pages.PagePropertyValue
 import no.saabelit.kotlinnotionclient.models.pages.PageReference
-import no.saabelit.kotlinnotionclient.models.requests.RequestBuilders
 
 /**
  * Integration tests for relation property pagination functionality.
@@ -35,17 +30,17 @@ import no.saabelit.kotlinnotionclient.models.requests.RequestBuilders
  * Note: This test creates two databases and many pages to test relation pagination.
  * It may take several minutes to complete and is tagged as "Slow" accordingly.
  */
-@Tags("Integration", "RequiresApi", "Slow")
+@Tags("Slow")
 class RelationPaginationIntegrationTest :
     StringSpec({
 
-        fun shouldCleanupAfterTest(): Boolean = System.getenv("NOTION_CLEANUP_AFTER_TEST")?.lowercase() != "false"
+        if (!integrationTestEnvVarsAreSet()) {
+            "!(Skipped)" { println("Skipping RelationPaginationIntegrationTest due to missing environment variables") }
+        } else {
 
-        "Should automatically paginate relation properties with >20 linked pages" {
-            val token = System.getenv("NOTION_API_TOKEN")
-            val parentPageId = System.getenv("NOTION_TEST_PAGE_ID")
-
-            if (token != null && parentPageId != null) {
+            "Should automatically paginate relation properties with >20 linked pages" {
+                val token = System.getenv("NOTION_API_TOKEN")
+                val parentPageId = System.getenv("NOTION_TEST_PAGE_ID")
                 val client = NotionClient.create(NotionConfig(apiToken = token))
                 val createdDatabases = mutableListOf<String>()
 
@@ -60,46 +55,79 @@ class RelationPaginationIntegrationTest :
                         println("   You may need to unarchive the parent page in Notion")
                     }
 
-                    // Step 1: Create a target database (what we'll link TO)
-                    println("🗄️ Creating target database for relation testing...")
-                    val targetDbRequest =
-                        CreateDatabaseRequest(
-                            parent = Parent(type = "page_id", pageId = parentPageId),
-                            title =
-                                listOf(
-                                    RequestBuilders.createSimpleRichText("Target DB - Relation Test - ${System.currentTimeMillis()}"),
-                                ),
-                            icon = RequestBuilders.createEmojiIcon("🎯"),
-                            properties =
-                                mapOf(
-                                    "Name" to CreateDatabaseProperty.Title(),
-                                    "Category" to CreateDatabaseProperty.Select(),
-                                ),
+                    // Step 1: Create a database with an initial data source
+                    println("🗄️ Creating database for relation testing...")
+                    val database =
+                        client.databases.create {
+                            parent.page(parentPageId)
+                            title("Relation Pagination Test DB - ${System.currentTimeMillis()}")
+                            icon.emoji("🔗")
+                            properties {
+                                title("Name")
+                                select("Category")
+                            }
+                        }
+
+                    createdDatabases.add(database.id)
+                    println("✅ Database created: ${database.id}")
+                    delay(1000)
+
+                    // Get the first data source (target data source)
+                    val dbRetrieved = client.databases.retrieve(database.id)
+                    val targetDataSourceId = dbRetrieved.dataSources.first().id
+                    println("✅ Retrieved first data source (target): $targetDataSourceId")
+
+                    // Step 2: Create a second data source in the same database
+                    println("\n🗄️ Creating second data source with relation property...")
+                    val sourceDataSource =
+                        client.dataSources.create(
+                            no.saabelit.kotlinnotionclient.models.databases.CreateDataSourceRequest(
+                                parent =
+                                    no.saabelit.kotlinnotionclient.models.base
+                                        .Parent(type = "database_id", databaseId = database.id),
+                                title =
+                                    listOf(
+                                        no.saabelit.kotlinnotionclient.models.base.RichText.fromPlainText(
+                                            "Source Data Source - ${System.currentTimeMillis()}",
+                                        ),
+                                    ),
+                                properties =
+                                    mapOf(
+                                        "Task Name" to
+                                            no.saabelit.kotlinnotionclient.models.databases.CreateDatabaseProperty
+                                                .Title(),
+                                        "Related Items" to
+                                            no.saabelit.kotlinnotionclient.models.databases.CreateDatabaseProperty.Relation(
+                                                relation =
+                                                    no.saabelit.kotlinnotionclient.models.databases.RelationConfiguration(
+                                                        databaseId = database.id,
+                                                        dataSourceId = targetDataSourceId,
+                                                        singleProperty =
+                                                            no.saabelit.kotlinnotionclient.models.base
+                                                                .EmptyObject(),
+                                                    ),
+                                            ),
+                                    ),
+                            ),
                         )
 
-                    val targetDb = client.databases.create(targetDbRequest)
-                    createdDatabases.add(targetDb.id)
-                    println("✅ Target database created: ${targetDb.id}")
-                    delay(500)
+                    val sourceDataSourceId = sourceDataSource.id
+                    println("✅ Second data source created: $sourceDataSourceId")
+                    delay(1000)
 
-                    // Step 2: Create many pages in the target database (25 pages to exceed typical relation pagination limit of 20)
+                    // Step 3: Create many pages in the target data source (25 pages to exceed typical relation pagination limit of 20)
                     println("\n📄 Creating 25 target pages for relation linking...")
                     val targetPageIds = mutableListOf<String>()
 
                     for (i in 1..25) {
                         val targetPage =
-                            client.pages.create(
-                                CreatePageRequest(
-                                    parent = Parent(type = "database_id", databaseId = targetDb.id),
-                                    properties =
-                                        mapOf(
-                                            "Name" to
-                                                PagePropertyValue.TitleValue(
-                                                    title = listOf(RequestBuilders.createSimpleRichText("Target Item $i")),
-                                                ),
-                                        ),
-                                ),
-                            )
+                            client.pages.create {
+                                parent.dataSource(targetDataSourceId)
+                                properties {
+                                    title("Name", "Target Item $i")
+                                }
+                            }
+
                         targetPageIds.add(targetPage.id)
 
                         if (i % 10 == 0) {
@@ -111,52 +139,18 @@ class RelationPaginationIntegrationTest :
                     println("✅ Created ${targetPageIds.size} target pages")
                     delay(1000)
 
-                    // Step 3: Create a source database with a relation property pointing to the target database
-                    println("\n🗄️ Creating source database with relation property...")
-                    val sourceDbRequest =
-                        CreateDatabaseRequest(
-                            parent = Parent(type = "page_id", pageId = parentPageId),
-                            title =
-                                listOf(
-                                    RequestBuilders.createSimpleRichText("Source DB - Relation Test - ${System.currentTimeMillis()}"),
-                                ),
-                            icon = RequestBuilders.createEmojiIcon("📊"),
-                            properties =
-                                mapOf(
-                                    "Name" to CreateDatabaseProperty.Title(),
-                                    "Related Items" to
-                                        CreateDatabaseProperty.Relation(
-                                            RelationConfiguration.singleProperty(targetDb.id),
-                                        ),
-                                ),
-                        )
-
-                    val sourceDb = client.databases.create(sourceDbRequest)
-                    createdDatabases.add(sourceDb.id)
-                    println("✅ Source database created: ${sourceDb.id}")
-                    delay(500)
-
-                    // Step 4: Create a page in the source database and link it to ALL target pages
+                    // Step 4: Create a page in the source data source and link it to ALL target pages
                     println("\n📄 Creating source page with relations to all target pages...")
                     val relationReferences = targetPageIds.map { PageReference(id = it) }
 
                     val sourcePage =
-                        client.pages.create(
-                            CreatePageRequest(
-                                parent = Parent(type = "database_id", databaseId = sourceDb.id),
-                                properties =
-                                    mapOf(
-                                        "Name" to
-                                            PagePropertyValue.TitleValue(
-                                                title = listOf(RequestBuilders.createSimpleRichText("Page with Many Relations")),
-                                            ),
-                                        "Related Items" to
-                                            PagePropertyValue.RelationValue(
-                                                relation = relationReferences,
-                                            ),
-                                    ),
-                            ),
-                        )
+                        client.pages.create {
+                            parent.dataSource(sourceDataSourceId)
+                            properties {
+                                title("Task Name", "Page with Many Relations")
+                                relation("Related Items", relationReferences)
+                            }
+                        }
 
                     println("✅ Source page created: ${sourcePage.id}")
                     println("   Linked to ${relationReferences.size} target pages")
@@ -201,9 +195,9 @@ class RelationPaginationIntegrationTest :
                     println("   - All target page IDs correctly retrieved")
                     println("   - Relation integrity verified")
 
-                    // Cleanup - just delete the databases, which cleans up all pages
+                    // Cleanup - just delete the database, which cleans up all data sources and pages
                     if (shouldCleanupAfterTest()) {
-                        println("\n🧹 Cleaning up test databases...")
+                        println("\n🧹 Cleaning up test database...")
                         createdDatabases.forEach { databaseId ->
                             try {
                                 client.databases.archive(databaseId)
@@ -211,11 +205,12 @@ class RelationPaginationIntegrationTest :
                                 println("   Warning: Failed to clean up database $databaseId")
                             }
                         }
-                        println("✅ Databases archived (all pages cleaned up automatically)")
+                        println("✅ Database archived (all data sources and pages cleaned up automatically)")
                     } else {
-                        println("\n🔧 Test databases preserved:")
-                        println("   Source DB: ${sourceDb.id}")
-                        println("   Target DB: ${targetDb.id}")
+                        println("\n🔧 Test database preserved:")
+                        println("   Database: ${database.id}")
+                        println("   Target data source: $targetDataSourceId (${targetPageIds.size} pages)")
+                        println("   Source data source: $sourceDataSourceId")
                         println("   Source page with ${relationItems.size} relations: ${sourcePage.id}")
                     }
 
@@ -223,11 +218,6 @@ class RelationPaginationIntegrationTest :
                 } finally {
                     client.close()
                 }
-            } else {
-                println("⏭️ Skipping relation pagination test - missing environment variables")
-                println("   Required:")
-                println("   - NOTION_API_TOKEN: Your integration API token")
-                println("   - NOTION_TEST_PAGE_ID: Parent page for test databases")
             }
         }
     })

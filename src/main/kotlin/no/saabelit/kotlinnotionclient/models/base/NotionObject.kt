@@ -20,14 +20,20 @@ interface NotionObject {
 }
 
 /**
- * Represents a parent reference in Notion.
+ * Represents a parent reference in Notion (API version 2025-09-03+).
  *
  * Objects in Notion can have different types of parents.
+ *
+ * As of the 2025-09-03 API version:
+ * - Pages should use data_source_id instead of database_id when parented by a database
+ * - database_id is deprecated for page parents but still used in other contexts
  */
 @Serializable
 data class Parent(
     @SerialName("type")
-    val type: String, // TODO: Use enums here and for other "type" fields!?
+    val type: String,
+    @SerialName("data_source_id")
+    val dataSourceId: String? = null,
     @SerialName("database_id")
     val databaseId: String? = null,
     @SerialName("page_id")

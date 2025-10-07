@@ -1,6 +1,7 @@
 package integration.dsl
 
-import io.kotest.core.annotation.Tags
+import integration.integrationTestEnvVarsAreSet
+import integration.shouldCleanupAfterTest
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.collections.shouldHaveSize
@@ -26,21 +27,17 @@ import no.saabelit.kotlinnotionclient.models.pages.updatePageRequest
  * 2. Set environment variable: export NOTION_TEST_PAGE_ID="your_parent_page_id"
  * 3. Your integration should have permissions to create/read/update databases and pages
  * 4. Optional: Set NOTION_CLEANUP_AFTER_TEST="false" to keep test objects for manual inspection
- *
- * Run with: ./gradlew integrationTest
  */
-@Tags("Integration", "RequiresApi")
 class UpdatePageRequestBuilderIntegrationTest :
     StringSpec({
 
-        // Helper function to check if cleanup should be performed after tests
-        fun shouldCleanupAfterTest(): Boolean = System.getenv("NOTION_CLEANUP_AFTER_TEST")?.lowercase() != "false"
+        if (!integrationTestEnvVarsAreSet()) {
+            "!(Skipped)" { println("Skipping UpdatePageRequestBuilderIntegrationTest due to missing environment variables") }
+        } else {
 
-        "Should create database, add pages, then update them with comprehensive property DSL" {
-            val token = System.getenv("NOTION_API_TOKEN")
-            val parentPageId = System.getenv("NOTION_TEST_PAGE_ID")
-
-            if (token != null && parentPageId != null) {
+            "Should create database, add pages, then update them with comprehensive property DSL" {
+                val token = System.getenv("NOTION_API_TOKEN")
+                val parentPageId = System.getenv("NOTION_TEST_PAGE_ID")
                 val client = NotionClient.create(NotionConfig(apiToken = token))
 
                 try {
@@ -81,12 +78,16 @@ class UpdatePageRequestBuilderIntegrationTest :
                     println("✅ Test database created: ${testDatabase.id}")
                     delay(2000) // Give Notion time to process database creation
 
+                    // Get data source from database (2025-09-03 API)
+                    val retrievedDb = client.databases.retrieve(testDatabase.id)
+                    val dataSourceId = retrievedDb.dataSources.first().id
+
                     // Step 2: Create initial database page with some property values
                     println("📝 Creating initial database page...")
 
                     val initialPage =
                         client.pages.create {
-                            parent.database(testDatabase.id)
+                            parent.dataSource(dataSourceId)
                             properties {
                                 title("Name", "Initial Test Page")
                                 richText("Description", "This page will be updated using the DSL")
@@ -266,22 +267,11 @@ class UpdatePageRequestBuilderIntegrationTest :
                 } finally {
                     client.close()
                 }
-            } else {
-                println("⏭️ Skipping UpdatePageRequestBuilder DSL integration test")
-                println("   Required environment variables:")
-                println("   - NOTION_API_TOKEN: Your integration API token")
-                println("   - NOTION_TEST_PAGE_ID: Page where test database will be created")
-                println(
-                    "   Example: export NOTION_API_TOKEN='secret_...' && export NOTION_TEST_PAGE_ID='12345678-1234-1234-1234-123456789abc'",
-                )
             }
-        }
 
-        "Should handle basic page updates without database properties" {
-            val token = System.getenv("NOTION_API_TOKEN")
-            val parentPageId = System.getenv("NOTION_TEST_PAGE_ID")
-
-            if (token != null && parentPageId != null) {
+            "Should handle basic page updates without database properties" {
+                val token = System.getenv("NOTION_API_TOKEN")
+                val parentPageId = System.getenv("NOTION_TEST_PAGE_ID")
                 val client = NotionClient.create(NotionConfig(apiToken = token))
 
                 try {
@@ -329,8 +319,6 @@ class UpdatePageRequestBuilderIntegrationTest :
                 } finally {
                     client.close()
                 }
-            } else {
-                println("⏭️ Skipping basic page update test (missing env vars)")
             }
         }
     })

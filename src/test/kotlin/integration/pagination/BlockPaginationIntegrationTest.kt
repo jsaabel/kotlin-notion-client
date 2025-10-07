@@ -1,5 +1,7 @@
 package integration.pagination
 
+import integration.integrationTestEnvVarsAreSet
+import integration.shouldCleanupAfterTest
 import io.kotest.core.annotation.Tags
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.ints.shouldBeGreaterThan
@@ -28,17 +30,16 @@ import no.saabelit.kotlinnotionclient.models.requests.RequestBuilders
  * 2. Set environment variable: export NOTION_TEST_PAGE_ID="your_parent_page_id"
  * 3. Optional: Set NOTION_CLEANUP_AFTER_TEST="false" to keep test objects
  */
-@Tags("Integration", "RequiresApi", "Slow")
+@Tags("Slow")
 class BlockPaginationIntegrationTest :
     StringSpec({
 
-        fun shouldCleanupAfterTest(): Boolean = System.getenv("NOTION_CLEANUP_AFTER_TEST")?.lowercase() != "false"
-
-        "Should automatically paginate block children for pages with many blocks" {
-            val token = System.getenv("NOTION_API_TOKEN")
-            val parentPageId = System.getenv("NOTION_TEST_PAGE_ID")
-
-            if (token != null && parentPageId != null) {
+        if (!integrationTestEnvVarsAreSet()) {
+            "!(Skipped)" { println("Skipping BlockPaginationIntegrationTest due to missing environment variables") }
+        } else {
+            "Should automatically paginate block children for pages with many blocks" {
+                val token = System.getenv("NOTION_API_TOKEN")
+                val parentPageId = System.getenv("NOTION_TEST_PAGE_ID")
                 val client = NotionClient.create(NotionConfig(apiToken = token))
 
                 try {
@@ -143,11 +144,6 @@ class BlockPaginationIntegrationTest :
                 } finally {
                     client.close()
                 }
-            } else {
-                println("⏭️ Skipping block pagination test - missing environment variables")
-                println("   Required:")
-                println("   - NOTION_API_TOKEN: Your integration API token")
-                println("   - NOTION_TEST_PAGE_ID: Parent page for test database")
             }
         }
     })

@@ -14,10 +14,13 @@ import no.saabelit.kotlinnotionclient.models.pages.PageIcon
 import no.saabelit.kotlinnotionclient.models.users.User
 
 /**
- * Represents a database in Notion.
+ * Represents a database in Notion (API version 2025-09-03+).
  *
- * Databases are collections of pages that share a common structure.
- * They define properties that can be applied to all pages within the database.
+ * As of the 2025-09-03 API version, databases are containers that can hold
+ * multiple data sources (tables), each with their own schema (properties).
+ * The database object now includes a list of data source references, and
+ * the properties field is deprecated in favor of accessing properties through
+ * the individual data sources.
  */
 @Serializable
 data class Database(
@@ -32,21 +35,23 @@ data class Database(
     @SerialName("last_edited_by")
     override val lastEditedBy: User? = null,
     @SerialName("archived")
-    override val archived: Boolean,
+    override val archived: Boolean = false,
     @SerialName("title")
     val title: List<RichText>,
     @SerialName("description")
-    val description: List<RichText>,
+    val description: List<RichText> = emptyList(),
     @SerialName("icon")
     val icon: PageIcon? = null,
     @SerialName("cover")
     val cover: PageCover? = null,
-    @SerialName("properties")
-    val properties: Map<String, DatabaseProperty>,
+    @SerialName("data_sources")
+    val dataSources: List<DataSourceRef>,
     @SerialName("parent")
     val parent: Parent,
+    // TODO: Verify if url should be nullable - official sample doesn't include it, but FAQ mentions database URLs exist
+    // See: journal/2025_10_04_03_API_Model_Assumptions.md
     @SerialName("url")
-    val url: String,
+    val url: String? = null,
     @SerialName("public_url")
     val publicUrl: String? = null,
     @SerialName("is_inline")

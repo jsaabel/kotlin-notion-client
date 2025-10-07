@@ -9,17 +9,17 @@ import no.saabelit.kotlinnotionclient.models.databases.DatabaseQueryBuilder
 import unit.util.mockClient
 
 /**
- * Tests for database query filters across all property types.
+ * Tests for database query filters across all property types (2025-09-03 API).
  *
  * Focuses on filter functionality for different property types and combinations.
+ * In 2025-09-03, queries target data sources instead of databases.
  */
-@Tags("Unit")
 class DatabaseQueryFiltersTest :
     StringSpec({
 
         fun createMockClient() =
             mockClient {
-                addDatabaseQueryResponse()
+                addDataSourceQueryResponse()
             }
 
         "Should build query with AND conditions" {
@@ -35,7 +35,7 @@ class DatabaseQueryFiltersTest :
                         )
                     }.build()
 
-            val pages = client.databases.query("test-database-id", query)
+            val pages = client.dataSources.query("test-data-source-id", query)
 
             pages.shouldNotBeEmpty()
         }
@@ -53,7 +53,7 @@ class DatabaseQueryFiltersTest :
                         )
                     }.build()
 
-            val pages = client.databases.query("test-database-id", query)
+            val pages = client.dataSources.query("test-data-source-id", query)
 
             pages.shouldNotBeEmpty()
         }
@@ -76,7 +76,7 @@ class DatabaseQueryFiltersTest :
                         )
                     }.build()
 
-            val pages = client.databases.query("test-database-id", query)
+            val pages = client.dataSources.query("test-data-source-id", query)
 
             pages.shouldNotBeEmpty()
         }
@@ -96,7 +96,7 @@ class DatabaseQueryFiltersTest :
                         )
                     }.build()
 
-            val pages = client.databases.query("test-database-id", query)
+            val pages = client.dataSources.query("test-data-source-id", query)
 
             pages.shouldNotBeEmpty()
         }
@@ -115,7 +115,7 @@ class DatabaseQueryFiltersTest :
                         )
                     }.build()
 
-            val pages = client.databases.query("test-database-id", query)
+            val pages = client.dataSources.query("test-data-source-id", query)
 
             pages.shouldNotBeEmpty()
         }
@@ -133,7 +133,7 @@ class DatabaseQueryFiltersTest :
                         )
                     }.build()
 
-            val pages = client.databases.query("test-database-id", query)
+            val pages = client.dataSources.query("test-data-source-id", query)
 
             pages.shouldNotBeEmpty()
         }
@@ -151,7 +151,7 @@ class DatabaseQueryFiltersTest :
                         )
                     }.build()
 
-            val pages = client.databases.query("test-database-id", query)
+            val pages = client.dataSources.query("test-data-source-id", query)
 
             pages.shouldNotBeEmpty()
         }
@@ -169,7 +169,7 @@ class DatabaseQueryFiltersTest :
                         )
                     }.build()
 
-            val pages = client.databases.query("test-database-id", query)
+            val pages = client.dataSources.query("test-data-source-id", query)
 
             pages.shouldNotBeEmpty()
         }
@@ -188,7 +188,7 @@ class DatabaseQueryFiltersTest :
                         )
                     }.build()
 
-            val pages = client.databases.query("test-database-id", query)
+            val pages = client.dataSources.query("test-data-source-id", query)
 
             pages.shouldNotBeEmpty()
         }
@@ -205,7 +205,7 @@ class DatabaseQueryFiltersTest :
                         )
                     }.build()
 
-            val pages = client.databases.query("test-database-id", query)
+            val pages = client.dataSources.query("test-data-source-id", query)
 
             pages.shouldNotBeEmpty()
         }

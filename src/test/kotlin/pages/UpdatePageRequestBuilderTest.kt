@@ -1,11 +1,9 @@
 package no.saabelit.kotlinnotionclient.models.pages
 
-import io.kotest.core.annotation.Tags
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 
-@Tags("Unit")
 class UpdatePageRequestBuilderTest :
     StringSpec({
 
@@ -35,11 +33,11 @@ class UpdatePageRequestBuilderTest :
 
             request.icon shouldNotBe null
             request.icon!!.type shouldBe "emoji"
-            request.icon!!.emoji shouldBe "✅"
+            request.icon.emoji shouldBe "✅"
 
             request.cover shouldNotBe null
             request.cover!!.type shouldBe "external"
-            request.cover!!.external!!.url shouldBe "https://example.com/cover.jpg"
+            request.cover.external!!.url shouldBe "https://example.com/cover.jpg"
 
             request.properties shouldBe null
             request.archived shouldBe null
@@ -87,7 +85,7 @@ class UpdatePageRequestBuilderTest :
 
             request.icon shouldNotBe null
             request.icon!!.type shouldBe "external"
-            request.icon!!.external?.url shouldBe "https://example.com/icon.png"
+            request.icon.external?.url shouldBe "https://example.com/icon.png"
 
             request.cover shouldNotBe null
             request.cover!!.type shouldBe "file"
@@ -129,9 +127,9 @@ class UpdatePageRequestBuilderTest :
             request.properties shouldNotBe null
             val selectValue = request.properties!!["Status"] as PagePropertyValue.SelectValue
             selectValue.select!!.name shouldBe "Done"
-            selectValue.select!!.color shouldBe null // No color by default to avoid conflicts
+            selectValue.select.color shouldBe null // No color by default to avoid conflicts
 
-            val multiSelectValue = request.properties!!["Categories"] as PagePropertyValue.MultiSelectValue
+            val multiSelectValue = request.properties["Categories"] as PagePropertyValue.MultiSelectValue
             multiSelectValue.multiSelect.size shouldBe 2
             multiSelectValue.multiSelect.forEach { option ->
                 option.color shouldBe null // No colors by default to avoid conflicts

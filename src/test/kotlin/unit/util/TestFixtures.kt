@@ -77,7 +77,7 @@ object TestFixtures {
         return file.readText()
     }
 
-    // Database-specific helpers
+    // Database-specific helpers (2025-09-03 API)
     object Databases {
         fun retrieveDatabase() = loadSampleResponse("databases", "get_retrieve_a_database")
 
@@ -85,32 +85,43 @@ object TestFixtures {
 
         fun updateDatabase() = loadSampleResponse("databases", "patch_update_a_database")
 
-        fun queryDatabase() = loadSampleResponse("databases", "post_query_a_database")
-
         fun retrieveDatabaseAsString() = loadSampleResponseAsString("databases", "get_retrieve_a_database")
 
         fun createDatabaseAsString() = loadSampleResponseAsString("databases", "post_create_a_database")
 
         fun updateDatabaseAsString() = loadSampleResponseAsString("databases", "patch_update_a_database")
-
-        fun queryDatabaseAsString() = loadSampleResponseAsString("databases", "post_query_a_database")
     }
 
-    // Page-specific helpers
+    // Data Sources-specific helpers (2025-09-03 API)
+    object DataSources {
+        fun retrieveDataSource() = loadSampleResponse("data_sources", "get_retrieve_a_data_source")
+
+        fun createDataSource() = loadSampleResponse("data_sources", "post_create_a_data_source")
+
+        fun updateDataSource() = loadSampleResponse("data_sources", "patch_update_a_data_source")
+
+        fun queryDataSource() = loadSampleResponse("data_sources", "post_query_a_data_source")
+
+        fun retrieveDataSourceAsString() = loadSampleResponseAsString("data_sources", "get_retrieve_a_data_source")
+
+        fun createDataSourceAsString() = loadSampleResponseAsString("data_sources", "post_create_a_data_source")
+
+        fun updateDataSourceAsString() = loadSampleResponseAsString("data_sources", "patch_update_a_data_source")
+
+        fun queryDataSourceAsString() = loadSampleResponseAsString("data_sources", "post_query_a_data_source")
+    }
+
+    // Page-specific helpers (2025-09-03 API)
     object Pages {
         fun retrievePage() = loadSampleResponse("pages", "get_retrieve_a_page")
 
         fun createPage() = loadSampleResponse("pages", "post_create_a_page")
-
-        fun updatePageProperties() = loadSampleResponse("pages", "patch_update_page_properties")
 
         fun retrievePageProperty() = loadSampleResponse("pages", "get_retrieve_a_page_property_item")
 
         fun retrievePageAsString() = loadSampleResponseAsString("pages", "get_retrieve_a_page")
 
         fun createPageAsString() = loadSampleResponseAsString("pages", "post_create_a_page")
-
-        fun updatePagePropertiesAsString() = loadSampleResponseAsString("pages", "patch_update_page_properties")
 
         fun retrievePagePropertyAsString() = loadSampleResponseAsString("pages", "get_retrieve_a_page_property_item")
     }
@@ -184,6 +195,12 @@ object TestFixtures {
         fun listFileUploadsAsString() = loadReferenceSampleResponseAsString("file_uploads", "get_list_file_uploads")
 
         fun sendFileUploadAsString() = loadReferenceSampleResponseAsString("file_uploads", "post_send_a_file_upload")
+    }
+
+    object Search {
+        fun searchByTitle() = loadSampleResponse("search", "post_search_by_title")
+
+        fun searchByTitleAsString() = loadSampleResponseAsString("search", "post_search_by_title")
     }
 }
 

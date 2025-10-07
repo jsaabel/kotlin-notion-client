@@ -1,5 +1,3 @@
-@file:Suppress("UnusedVariable")
-
 package integration
 
 import io.kotest.core.annotation.Tags
@@ -12,6 +10,7 @@ import no.saabelit.kotlinnotionclient.config.NotionConfig
 import no.saabelit.kotlinnotionclient.models.base.Parent
 import no.saabelit.kotlinnotionclient.models.databases.CreateDatabaseProperty
 import no.saabelit.kotlinnotionclient.models.databases.CreateDatabaseRequest
+import no.saabelit.kotlinnotionclient.models.databases.InitialDataSource
 import no.saabelit.kotlinnotionclient.models.pages.CreatePageRequest
 import no.saabelit.kotlinnotionclient.models.pages.PagePropertyValue
 import no.saabelit.kotlinnotionclient.models.pages.UpdatePageRequest
@@ -23,10 +22,8 @@ import no.saabelit.kotlinnotionclient.models.pages.getTitleAsPlainText
 import no.saabelit.kotlinnotionclient.models.pages.pageProperties
 import no.saabelit.kotlinnotionclient.models.requests.RequestBuilders
 
-// TODO: Implement / Use DSL for these
-
 /**
- * Self-contained integration tests that create their own test data and clean up afterwards.
+ * Self-contained integration tests that create their own test data and clean up afterwards (2025-09-03 API).
  *
  * These tests validate the full create/retrieve/archive workflow without requiring
  * pre-existing test data in Notion. They demonstrate real-world usage patterns.
@@ -47,19 +44,20 @@ class SelfContainedIntegrationTest :
 
         fun String.withOrWithoutHyphens(): List<String> = listOf(this, this.replace("-", ""))
 
-        // Helper function to check if cleanup should be performed after tests
-        fun shouldCleanupAfterTest(): Boolean = System.getenv("NOTION_CLEANUP_AFTER_TEST")?.lowercase() != "false"
-
-        "Should create database, create page, retrieve both, then clean up" {
-            val token = System.getenv("NOTION_API_TOKEN")
-            val testPageId = System.getenv("NOTION_TEST_PAGE_ID")
-
-            if (token != null && testPageId != null) {
+        if (!integrationTestEnvVarsAreSet()) {
+            "!(Skipped)" {
+                println("⏭️ Skipping SelfContainedIntegrationTest - missing environment variables")
+                println("   Required: NOTION_API_TOKEN and NOTION_TEST_PAGE_ID")
+            }
+        } else {
+            "Should create database, create page, retrieve both, then clean up" {
+                val token = System.getenv("NOTION_API_TOKEN")
+                val testPageId = System.getenv("NOTION_TEST_PAGE_ID")
                 val client = NotionClient.create(NotionConfig(apiToken = token))
 
                 try {
-                    // Step 1: Create a test database with multiple property types
-                    println("🗄️ Creating test database...")
+                    // Step 1: Create a test database with multiple property types (2025-09-03 API)
+                    println("🗄️ Creating test database with initial data source...")
                     val databaseRequest =
                         CreateDatabaseRequest(
                             parent =
@@ -69,47 +67,57 @@ class SelfContainedIntegrationTest :
                                 ),
                             title = listOf(RequestBuilders.createSimpleRichText("Test Database - Kotlin Client")),
                             icon = RequestBuilders.createEmojiIcon("🗄️"),
-                            properties =
-                                mapOf(
-                                    "Name" to CreateDatabaseProperty.Title(),
-                                    "Description" to CreateDatabaseProperty.RichText(),
-                                    "Priority" to CreateDatabaseProperty.Select(),
-                                    "Completed" to CreateDatabaseProperty.Checkbox(),
-                                    "Score" to CreateDatabaseProperty.Number(),
-                                    "Due Date" to CreateDatabaseProperty.Date(),
-                                    "Contact" to CreateDatabaseProperty.Email(),
+                            initialDataSource =
+                                InitialDataSource(
+                                    properties =
+                                        mapOf(
+                                            "Name" to CreateDatabaseProperty.Title(),
+                                            "Description" to CreateDatabaseProperty.RichText(),
+                                            "Priority" to CreateDatabaseProperty.Select(),
+                                            "Completed" to CreateDatabaseProperty.Checkbox(),
+                                            "Score" to CreateDatabaseProperty.Number(),
+                                            "Due Date" to CreateDatabaseProperty.Date(),
+                                            "Contact" to CreateDatabaseProperty.Email(),
+                                        ),
                                 ),
                         )
 
                     val createdDatabase = client.databases.create(databaseRequest)
 
-                    // Verify database creation
+                    // Step 1b: Get the data source ID from the created database (2025-09-03 API)
+                    val dataSourceId =
+                        createdDatabase.dataSources.firstOrNull()?.id
+                            ?: error("Database should have at least one data source")
+
+                    // Verify database creation (2025-09-03: databases are containers with data sources)
                     createdDatabase.objectType shouldBe "database"
                     createdDatabase.title.first().plainText shouldBe "Test Database - Kotlin Client"
-                    createdDatabase.properties.size shouldBe 7
-                    createdDatabase.properties.containsKey("Name") shouldBe true
-                    createdDatabase.properties.containsKey("Priority") shouldBe true
+                    createdDatabase.dataSources.size shouldBe 1
                     createdDatabase.archived shouldBe false
 
                     println("✅ Database created successfully: ${createdDatabase.id}")
+                    println("✅ Data source ID: $dataSourceId")
 
                     // Small delay to ensure Notion has processed the database creation
                     delay(500)
 
-                    // Step 2: Create a test page in the database (demonstrating our new builder API!)
-                    println("📄 Creating test page in database using clean builder API...")
+                    // Step 2: Create a test page in the data source (2025-09-03 API uses data_source_id parent)
+                    println("📄 Creating test page in data source using clean builder API...")
                     val pageRequest =
                         CreatePageRequest(
                             parent =
                                 Parent(
-                                    type = "database_id",
-                                    databaseId = createdDatabase.id,
+                                    type = "data_source_id",
+                                    dataSourceId = dataSourceId,
                                 ),
                             icon = RequestBuilders.createEmojiIcon("📋"),
                             properties =
                                 pageProperties {
                                     title("Name", "Test Task - Integration Test")
-                                    richText("Description", "This is a test task created by our Kotlin integration test")
+                                    richText(
+                                        "Description",
+                                        "This is a test task created by our Kotlin integration test",
+                                    )
                                     checkbox("Completed", false)
                                     number("Score", 85.5)
                                     email("Contact", "test@example.com")
@@ -118,23 +126,23 @@ class SelfContainedIntegrationTest :
 
                     val createdPage = client.pages.create(pageRequest)
 
-                    // Verify page creation
+                    // Verify page creation (2025-09-03: pages have data_source_id parent)
                     createdPage.objectType shouldBe "page"
                     createdPage.archived shouldBe false
-                    createdPage.parent.databaseId!!.withOrWithoutHyphens() shouldContainAnyOf createdDatabase.id.withOrWithoutHyphens()
+                    createdPage.parent.dataSourceId!!.withOrWithoutHyphens() shouldContainAnyOf dataSourceId.withOrWithoutHyphens()
 
                     println("✅ Page created successfully: ${createdPage.id}")
 
                     // Small delay to ensure Notion has processed the page creation
                     delay(500)
 
-                    // Step 3: Retrieve database and verify it contains our page structure
+                    // Step 3: Retrieve database and verify it contains our data source
                     println("🔍 Retrieving database to verify structure...")
                     val retrievedDatabase = client.databases.retrieve(createdDatabase.id)
 
                     retrievedDatabase.id shouldBe createdDatabase.id
                     retrievedDatabase.title.first().plainText shouldBe "Test Database - Kotlin Client"
-                    retrievedDatabase.properties.size shouldBe 7
+                    retrievedDatabase.dataSources.size shouldBe 1
                     retrievedDatabase.archived shouldBe false
 
                     // Step 4: Retrieve page and verify properties
@@ -143,13 +151,13 @@ class SelfContainedIntegrationTest :
 
                     retrievedPage.id shouldBe createdPage.id
                     retrievedPage.archived shouldBe false
-                    retrievedPage.parent.databaseId!!.withOrWithoutHyphens() shouldContainAnyOf createdDatabase.id.withOrWithoutHyphens()
+                    retrievedPage.parent.dataSourceId!!.withOrWithoutHyphens() shouldContainAnyOf dataSourceId.withOrWithoutHyphens()
 
                     // Verify properties using type-safe access (demonstrating our new API!)
                     println("🔍 Verifying properties with type-safe access...")
 
                     // Test title property access
-                    val title = retrievedPage.getTitleAsPlainText("Name")
+                    val title = retrievedPage.getTitleAsPlainText(name = "Name")
                     title shouldBe "Test Task - Integration Test"
 
                     // Test rich text property access
@@ -236,22 +244,11 @@ class SelfContainedIntegrationTest :
                 } finally {
                     client.close()
                 }
-            } else {
-                println("⏭️ Skipping self-contained integration test")
-                println("   Required environment variables:")
-                println("   - NOTION_API_TOKEN: Your integration API token")
-                println("   - NOTION_TEST_PAGE_ID: Page where test database will be created")
-                println(
-                    "   Example: export NOTION_API_TOKEN='secret_...' && export NOTION_TEST_PAGE_ID='12345678-1234-1234-1234-123456789abc'",
-                )
             }
-        }
 
-        "Should create standalone page, retrieve it, then clean up" {
-            val token = System.getenv("NOTION_API_TOKEN")
-            val parentPageId = System.getenv("NOTION_TEST_PAGE_ID")
-
-            if (token != null && parentPageId != null) {
+            "Should create standalone page, retrieve it, then clean up" {
+                val token = System.getenv("NOTION_API_TOKEN")
+                val parentPageId = System.getenv("NOTION_TEST_PAGE_ID")
                 val client = NotionClient.create(NotionConfig(apiToken = token))
 
                 try {
@@ -310,64 +307,52 @@ class SelfContainedIntegrationTest :
                 } finally {
                     client.close()
                 }
-            } else {
-                println("⏭️ Skipping standalone page test - missing environment variables")
             }
-        }
 
-        "Should demonstrate comprehensive property types in database" {
-            val token = System.getenv("NOTION_API_TOKEN")
-            val parentPageId = System.getenv("NOTION_TEST_PAGE_ID")
-
-            if (token != null && parentPageId != null) {
+            "Should demonstrate comprehensive property types in database" {
+                val token = System.getenv("NOTION_API_TOKEN")
+                val parentPageId = System.getenv("NOTION_TEST_PAGE_ID")
                 val client = NotionClient.create(NotionConfig(apiToken = token))
 
                 try {
-                    // Create database with many property types
-                    println("🗄️ Creating comprehensive test database...")
+                    // Create database with many property types (2025-09-03 API)
+                    println("🗄️ Creating comprehensive test database with initial data source...")
                     val comprehensiveRequest =
                         CreateDatabaseRequest(
                             parent = Parent(type = "page_id", pageId = parentPageId),
                             title = listOf(RequestBuilders.createSimpleRichText("Comprehensive Properties Test")),
                             icon = RequestBuilders.createEmojiIcon("🧪"),
-                            properties =
-                                mapOf(
-                                    "Title" to CreateDatabaseProperty.Title(),
-                                    "Text" to CreateDatabaseProperty.RichText(),
-                                    "Number" to CreateDatabaseProperty.Number(),
-                                    "Checkbox" to CreateDatabaseProperty.Checkbox(),
-                                    "URL" to CreateDatabaseProperty.Url(),
-                                    "Email" to CreateDatabaseProperty.Email(),
-                                    "Phone" to CreateDatabaseProperty.PhoneNumber(),
-                                    "Start Date" to CreateDatabaseProperty.Date(),
-                                    "Meeting Time" to CreateDatabaseProperty.Date(),
-                                    "Duration" to CreateDatabaseProperty.Date(),
-                                    "Single Select" to CreateDatabaseProperty.Select(),
-                                    "Multi Select" to CreateDatabaseProperty.MultiSelect(),
+                            initialDataSource =
+                                InitialDataSource(
+                                    properties =
+                                        mapOf(
+                                            "Title" to CreateDatabaseProperty.Title(),
+                                            "Text" to CreateDatabaseProperty.RichText(),
+                                            "Number" to CreateDatabaseProperty.Number(),
+                                            "Checkbox" to CreateDatabaseProperty.Checkbox(),
+                                            "URL" to CreateDatabaseProperty.Url(),
+                                            "Email" to CreateDatabaseProperty.Email(),
+                                            "Phone" to CreateDatabaseProperty.PhoneNumber(),
+                                            "Start Date" to CreateDatabaseProperty.Date(),
+                                            "Meeting Time" to CreateDatabaseProperty.Date(),
+                                            "Duration" to CreateDatabaseProperty.Date(),
+                                            "Single Select" to CreateDatabaseProperty.Select(),
+                                            "Multi Select" to CreateDatabaseProperty.MultiSelect(),
+                                        ),
                                 ),
                         )
 
                     val database = client.databases.create(comprehensiveRequest)
 
-                    // Verify all property types were created
-                    database.properties.size shouldBe 12
-                    database.properties.keys shouldBe
-                        setOf(
-                            "Title",
-                            "Text",
-                            "Number",
-                            "Checkbox",
-                            "URL",
-                            "Email",
-                            "Phone",
-                            "Start Date",
-                            "Meeting Time",
-                            "Duration",
-                            "Single Select",
-                            "Multi Select",
-                        )
+                    // Get the data source ID (2025-09-03 API)
+                    val dataSourceId =
+                        database.dataSources.firstOrNull()?.id
+                            ?: error("Database should have at least one data source")
 
-                    println("✅ Comprehensive database created with ${database.properties.size} property types")
+                    // Verify database was created (2025-09-03: databases are containers with data sources)
+                    database.dataSources.size shouldBe 1
+
+                    println("✅ Comprehensive database created with data source: $dataSourceId")
 
                     // Step 2: Create a page with comprehensive properties (demonstrating complex builder API!)
                     println("📄 Creating page with comprehensive properties using builder API...")
@@ -375,7 +360,7 @@ class SelfContainedIntegrationTest :
 
                     val pageRequest =
                         CreatePageRequest(
-                            parent = Parent(type = "database_id", databaseId = database.id),
+                            parent = Parent(type = "data_source_id", dataSourceId = dataSourceId),
                             icon = RequestBuilders.createEmojiIcon("⭐"),
                             properties =
                                 pageProperties {
@@ -457,8 +442,6 @@ class SelfContainedIntegrationTest :
                 } finally {
                     client.close()
                 }
-            } else {
-                println("⏭️ Skipping comprehensive properties test - missing environment variables")
             }
         }
     })

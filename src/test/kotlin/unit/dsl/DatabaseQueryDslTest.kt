@@ -13,18 +13,18 @@ import no.saabelit.kotlinnotionclient.models.databases.databaseQuery
 import unit.util.mockClient
 
 /**
- * Tests for the Database Query DSL functionality.
+ * Tests for the Database Query DSL functionality (2025-09-03 API).
  *
  * This test suite focuses on the fluent DSL API for database querying,
  * testing both the standalone databaseQuery function and the API integration.
+ * In 2025-09-03, queries target data sources instead of databases.
  */
-@Tags("Unit")
 class DatabaseQueryDslTest :
     StringSpec({
 
         fun createMockClient() =
             mockClient {
-                addDatabaseQueryResponse()
+                addDataSourceQueryResponse()
             }
 
         "databaseQuery function should create proper request object" {
@@ -116,7 +116,7 @@ class DatabaseQueryDslTest :
             val client = NotionClient.createWithClient(createMockClient(), NotionConfig("test-token"))
 
             val pages =
-                client.databases.query("test-database-id") {
+                client.dataSources.query("test-data-source-id") {
                     filter {
                         title("Name").contains("Important")
                     }
@@ -130,7 +130,7 @@ class DatabaseQueryDslTest :
             val client = NotionClient.createWithClient(createMockClient(), NotionConfig("test-token"))
 
             val pages =
-                client.databases.query("test-database-id") {
+                client.dataSources.query("test-data-source-id") {
                     filter {
                         and(
                             title("Task Name").contains("Urgent"),
@@ -153,7 +153,7 @@ class DatabaseQueryDslTest :
             val client = NotionClient.createWithClient(createMockClient(), NotionConfig("test-token"))
 
             val pages =
-                client.databases.query("test-database-id") {
+                client.dataSources.query("test-data-source-id") {
                     // Empty query - should return all records
                 }
 
@@ -164,7 +164,7 @@ class DatabaseQueryDslTest :
             val client = NotionClient.createWithClient(createMockClient(), NotionConfig("test-token"))
 
             val pages =
-                client.databases.query("test-database-id") {
+                client.dataSources.query("test-data-source-id") {
                     filter {
                         checkbox("Active").equals(true)
                     }
@@ -177,7 +177,7 @@ class DatabaseQueryDslTest :
             val client = NotionClient.createWithClient(createMockClient(), NotionConfig("test-token"))
 
             val pages =
-                client.databases.query("test-database-id") {
+                client.dataSources.query("test-data-source-id") {
                     sortByTimestamp("last_edited_time", SortDirection.DESCENDING)
                     pageSize(5)
                 }
@@ -189,7 +189,7 @@ class DatabaseQueryDslTest :
             val client = NotionClient.createWithClient(createMockClient(), NotionConfig("test-token"))
 
             val pages =
-                client.databases.query("test-database-id") {
+                client.dataSources.query("test-data-source-id") {
                     filter {
                         and(
                             number("Score").greaterThan(50),
@@ -207,7 +207,7 @@ class DatabaseQueryDslTest :
             val client = NotionClient.createWithClient(createMockClient(), NotionConfig("test-token"))
 
             val pages =
-                client.databases.query("test-database-id") {
+                client.dataSources.query("test-data-source-id") {
                     filter {
                         or(
                             date("Created").after("2024-01-01"),
@@ -225,7 +225,7 @@ class DatabaseQueryDslTest :
             val client = NotionClient.createWithClient(createMockClient(), NotionConfig("test-token"))
 
             val pages =
-                client.databases.query("test-database-id") {
+                client.dataSources.query("test-data-source-id") {
                     filter {
                         and(
                             title("Title").startsWith("Project"),
@@ -243,7 +243,7 @@ class DatabaseQueryDslTest :
             val client = NotionClient.createWithClient(createMockClient(), NotionConfig("test-token"))
 
             val pages =
-                client.databases.query("test-database-id") {
+                client.dataSources.query("test-data-source-id") {
                     filter {
                         and(
                             title("Required").isNotEmpty(),

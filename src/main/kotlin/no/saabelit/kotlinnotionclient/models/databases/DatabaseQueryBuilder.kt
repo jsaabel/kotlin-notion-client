@@ -2,6 +2,11 @@
 
 package no.saabelit.kotlinnotionclient.models.databases
 
+import kotlinx.datetime.Instant
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.LocalDateTime
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toInstant
 import no.saabelit.kotlinnotionclient.models.base.EmptyObject
 
 /**
@@ -320,6 +325,7 @@ class MultiSelectFilterBuilder(
 class DateFilterBuilder(
     private val propertyName: String,
 ) {
+    // String-based methods (existing, for backward compatibility)
     fun equals(date: String): DatabaseFilter = createFilter(DateCondition(equals = date))
 
     fun before(date: String): DatabaseFilter = createFilter(DateCondition(before = date))
@@ -329,6 +335,70 @@ class DateFilterBuilder(
     fun onOrBefore(date: String): DatabaseFilter = createFilter(DateCondition(onOrBefore = date))
 
     fun onOrAfter(date: String): DatabaseFilter = createFilter(DateCondition(onOrAfter = date))
+
+    // Typed overloads using kotlinx-datetime
+
+    /** Filter for dates equal to the given LocalDate. */
+    fun equals(date: LocalDate): DatabaseFilter = equals(date.toString())
+
+    /** Filter for dates before the given LocalDate. */
+    fun before(date: LocalDate): DatabaseFilter = before(date.toString())
+
+    /** Filter for dates after the given LocalDate. */
+    fun after(date: LocalDate): DatabaseFilter = after(date.toString())
+
+    /** Filter for dates on or before the given LocalDate. */
+    fun onOrBefore(date: LocalDate): DatabaseFilter = onOrBefore(date.toString())
+
+    /** Filter for dates on or after the given LocalDate. */
+    fun onOrAfter(date: LocalDate): DatabaseFilter = onOrAfter(date.toString())
+
+    /** Filter for datetimes equal to the given LocalDateTime in the specified timezone. */
+    fun equals(
+        dateTime: LocalDateTime,
+        timeZone: TimeZone = TimeZone.UTC,
+    ): DatabaseFilter = equals(dateTime.toInstant(timeZone).toString())
+
+    /** Filter for datetimes before the given LocalDateTime in the specified timezone. */
+    fun before(
+        dateTime: LocalDateTime,
+        timeZone: TimeZone = TimeZone.UTC,
+    ): DatabaseFilter = before(dateTime.toInstant(timeZone).toString())
+
+    /** Filter for datetimes after the given LocalDateTime in the specified timezone. */
+    fun after(
+        dateTime: LocalDateTime,
+        timeZone: TimeZone = TimeZone.UTC,
+    ): DatabaseFilter = after(dateTime.toInstant(timeZone).toString())
+
+    /** Filter for datetimes on or before the given LocalDateTime in the specified timezone. */
+    fun onOrBefore(
+        dateTime: LocalDateTime,
+        timeZone: TimeZone = TimeZone.UTC,
+    ): DatabaseFilter = onOrBefore(dateTime.toInstant(timeZone).toString())
+
+    /** Filter for datetimes on or after the given LocalDateTime in the specified timezone. */
+    fun onOrAfter(
+        dateTime: LocalDateTime,
+        timeZone: TimeZone = TimeZone.UTC,
+    ): DatabaseFilter = onOrAfter(dateTime.toInstant(timeZone).toString())
+
+    /** Filter for instants equal to the given Instant. */
+    fun equals(instant: Instant): DatabaseFilter = equals(instant.toString())
+
+    /** Filter for instants before the given Instant. */
+    fun before(instant: Instant): DatabaseFilter = before(instant.toString())
+
+    /** Filter for instants after the given Instant. */
+    fun after(instant: Instant): DatabaseFilter = after(instant.toString())
+
+    /** Filter for instants on or before the given Instant. */
+    fun onOrBefore(instant: Instant): DatabaseFilter = onOrBefore(instant.toString())
+
+    /** Filter for instants on or after the given Instant. */
+    fun onOrAfter(instant: Instant): DatabaseFilter = onOrAfter(instant.toString())
+
+    // Condition-based filters (no date parameter needed)
 
     fun isEmpty(): DatabaseFilter = createFilter(DateCondition(isEmpty = true))
 

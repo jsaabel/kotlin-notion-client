@@ -9,6 +9,7 @@ import no.saabelit.kotlinnotionclient.models.base.RichText
 import no.saabelit.kotlinnotionclient.models.base.TextContent
 import no.saabelit.kotlinnotionclient.models.databases.CreateDatabaseProperty
 import no.saabelit.kotlinnotionclient.models.databases.CreateDatabaseRequest
+import no.saabelit.kotlinnotionclient.models.databases.InitialDataSource
 import no.saabelit.kotlinnotionclient.models.pages.CreatePageRequest
 import no.saabelit.kotlinnotionclient.models.pages.ExternalFile
 import no.saabelit.kotlinnotionclient.models.pages.PageIcon
@@ -46,9 +47,12 @@ object RequestBuilders {
                     pageId = parentPageId,
                 ),
             title = listOf(createSimpleRichText(title)),
-            properties =
-                mapOf(
-                    "Name" to CreateDatabaseProperty.Title(),
+            initialDataSource =
+                InitialDataSource(
+                    properties =
+                        mapOf(
+                            "Name" to CreateDatabaseProperty.Title(),
+                        ),
                 ),
         )
 

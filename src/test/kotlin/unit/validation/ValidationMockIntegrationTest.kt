@@ -22,6 +22,7 @@ import no.saabelit.kotlinnotionclient.models.base.TextContent
 import no.saabelit.kotlinnotionclient.models.blocks.BlockRequest
 import no.saabelit.kotlinnotionclient.models.blocks.ParagraphRequestContent
 import no.saabelit.kotlinnotionclient.models.databases.CreateDatabaseRequest
+import no.saabelit.kotlinnotionclient.models.databases.InitialDataSource
 import no.saabelit.kotlinnotionclient.models.pages.CreatePageRequest
 import no.saabelit.kotlinnotionclient.models.pages.PagePropertyValue
 import no.saabelit.kotlinnotionclient.models.pages.SelectOption
@@ -48,7 +49,6 @@ import unit.util.TestFixtures
  * 3. **API Integration**: Validation works transparently within existing API methods
  * 4. **Configuration Respect**: Different validation configs produce expected behaviors
  */
-@Tags("Unit")
 class ValidationMockIntegrationTest :
     FunSpec({
 
@@ -206,7 +206,7 @@ class ValidationMockIntegrationTest :
             }
         }
 
-        context("Database Validation Integration") {
+        context("Database Validation Integration (2025-09-03 API)") {
             test("should auto-truncate text and successfully create database") {
                 val client =
                     createMockClient(
@@ -218,7 +218,7 @@ class ValidationMockIntegrationTest :
                     CreateDatabaseRequest(
                         parent = Parent(type = "page_id", pageId = "test-parent-id"),
                         title = listOf(longTitle),
-                        properties = mapOf(),
+                        initialDataSource = InitialDataSource(properties = mapOf()),
                     )
 
                 // This should succeed - validation auto-truncates the text
@@ -238,7 +238,7 @@ class ValidationMockIntegrationTest :
                     CreateDatabaseRequest(
                         parent = Parent(type = "page_id", pageId = "test-parent-id"),
                         title = listOf(longTitle),
-                        properties = mapOf(),
+                        initialDataSource = InitialDataSource(properties = mapOf()),
                         description = listOf(longDescription),
                     )
 
@@ -358,12 +358,12 @@ class ValidationMockIntegrationTest :
                 val pageResult = client.pages.create(pageRequest)
                 pageResult.shouldNotBe(null)
 
-                // Test 2: Database creation with auto-truncation
+                // Test 2: Database creation with auto-truncation (2025-09-03 API)
                 val databaseRequest =
                     CreateDatabaseRequest(
                         parent = Parent(type = "page_id", pageId = "test-parent-id"),
                         title = listOf(createLongRichText()),
-                        properties = mapOf(),
+                        initialDataSource = InitialDataSource(properties = mapOf()),
                     )
                 val databaseResult = client.databases.create(databaseRequest)
                 databaseResult.shouldNotBe(null)

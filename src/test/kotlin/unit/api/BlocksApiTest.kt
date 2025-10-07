@@ -24,7 +24,7 @@ class BlocksApiTest :
     FunSpec({
         lateinit var httpClient: HttpClient
         lateinit var blocksApi: BlocksApi
-        val config = NotionConfig()
+        val config = NotionConfig(apiToken = "xxx")
 
         beforeTest {
             // Reset for each test
@@ -64,6 +64,7 @@ class BlocksApiTest :
                             .plainText shouldBe "Lacinato kale"
                         block.heading2.color shouldBe Color.DEFAULT
                     }
+
                     else -> throw AssertionError("Expected Heading2 block")
                 }
             }
@@ -211,6 +212,7 @@ class BlocksApiTest :
                             .annotations
                             .color shouldBe Color.GREEN
                     }
+
                     else -> throw AssertionError("Expected Heading2 block")
                 }
             }

@@ -1,6 +1,5 @@
 package integration
 
-import io.kotest.core.annotation.Tags
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
@@ -35,17 +34,16 @@ import kotlin.io.path.createTempFile
  * 2. Set environment variable: export NOTION_TEST_PAGE_ID="your_parent_page_id"
  * 3. Optional: Set NOTION_CLEANUP_AFTER_TEST="false" to keep test objects
  */
-@Tags("Integration", "RequiresApi")
 class EnhancedFileUploadIntegrationTest :
     StringSpec({
 
-        fun shouldCleanupAfterTest(): Boolean = System.getenv("NOTION_CLEANUP_AFTER_TEST")?.lowercase() != "false"
+        if (!integrationTestEnvVarsAreSet()) {
+            "!(Skipped)" { println("Skipping EnhancedFileUploadIntegrationTest due to missing environment variables") }
+        } else {
 
-        "Should upload small file with progress tracking" {
-            val token = System.getenv("NOTION_API_TOKEN")
-            val parentPageId = System.getenv("NOTION_TEST_PAGE_ID")
-
-            if (token != null && parentPageId != null) {
+            "Should upload small file with progress tracking" {
+                val token = System.getenv("NOTION_API_TOKEN")
+                val parentPageId = System.getenv("NOTION_TEST_PAGE_ID")
                 val client = NotionClient.create(NotionConfig(apiToken = token))
 
                 try {
@@ -153,16 +151,11 @@ class EnhancedFileUploadIntegrationTest :
                 } finally {
                     client.close()
                 }
-            } else {
-                println("⏭️ Skipping enhanced upload test - missing environment variables")
             }
-        }
 
-        "Should handle large file multi-part upload simulation" {
-            val token = System.getenv("NOTION_API_TOKEN")
-            val parentPageId = System.getenv("NOTION_TEST_PAGE_ID")
-
-            if (token != null && parentPageId != null) {
+            "Should handle large file multi-part upload simulation" {
+                val token = System.getenv("NOTION_API_TOKEN")
+                val parentPageId = System.getenv("NOTION_TEST_PAGE_ID")
                 val client = NotionClient.create(NotionConfig(apiToken = token))
 
                 try {
@@ -323,16 +316,11 @@ class EnhancedFileUploadIntegrationTest :
                 } finally {
                     client.close()
                 }
-            } else {
-                println("⏭️ Skipping large file test - missing environment variables")
             }
-        }
 
-        "Should import external file with validation" {
-            val token = System.getenv("NOTION_API_TOKEN")
-            val parentPageId = System.getenv("NOTION_TEST_PAGE_ID")
-
-            if (token != null && parentPageId != null) {
+            "Should import external file with validation" {
+                val token = System.getenv("NOTION_API_TOKEN")
+                val parentPageId = System.getenv("NOTION_TEST_PAGE_ID")
                 val client = NotionClient.create(NotionConfig(apiToken = token))
 
                 try {
@@ -425,8 +413,6 @@ class EnhancedFileUploadIntegrationTest :
                 } finally {
                     client.close()
                 }
-            } else {
-                println("⏭️ Skipping external import test - missing environment variables")
             }
         }
     })

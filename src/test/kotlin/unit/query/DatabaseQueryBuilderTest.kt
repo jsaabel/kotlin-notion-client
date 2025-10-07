@@ -11,9 +11,10 @@ import no.saabelit.kotlinnotionclient.models.databases.SortDirection
 import unit.util.mockClient
 
 /**
- * Tests for the DatabaseQueryBuilder DSL functionality.
+ * Tests for the DatabaseQueryBuilder DSL functionality (2025-09-03 API).
  *
  * Focuses on the builder pattern and DSL for constructing complex queries.
+ * In 2025-09-03, queries target data sources instead of databases.
  */
 @Tags("Unit")
 class DatabaseQueryBuilderTest :
@@ -21,7 +22,7 @@ class DatabaseQueryBuilderTest :
 
         fun createMockClient() =
             mockClient {
-                addDatabaseQueryResponse()
+                addDataSourceQueryResponse()
             }
 
         "Should build query with title filter" {
@@ -33,7 +34,7 @@ class DatabaseQueryBuilderTest :
                         title("Name").contains("Important")
                     }.build()
 
-            val pages = client.databases.query("test-database-id", query)
+            val pages = client.dataSources.query("test-data-source-id", query)
 
             pages.shouldNotBeEmpty()
         }
@@ -47,7 +48,7 @@ class DatabaseQueryBuilderTest :
                     .sortBy("Name", SortDirection.ASCENDING)
                     .build()
 
-            val pages = client.databases.query("test-database-id", query)
+            val pages = client.dataSources.query("test-data-source-id", query)
 
             pages.shouldNotBeEmpty()
         }
@@ -61,7 +62,7 @@ class DatabaseQueryBuilderTest :
                     .sortByTimestamp("last_edited_time", SortDirection.ASCENDING)
                     .build()
 
-            val pages = client.databases.query("test-database-id", query)
+            val pages = client.dataSources.query("test-data-source-id", query)
 
             pages.shouldNotBeEmpty()
         }
@@ -75,7 +76,7 @@ class DatabaseQueryBuilderTest :
                     .pageSize(10)
                     .build()
 
-            val pages = client.databases.query("test-database-id", query)
+            val pages = client.dataSources.query("test-data-source-id", query)
 
             pages.shouldNotBeEmpty()
         }
@@ -107,7 +108,7 @@ class DatabaseQueryBuilderTest :
                     .pageSize(25)
                     .build()
 
-            val pages = client.databases.query("test-database-id", query)
+            val pages = client.dataSources.query("test-data-source-id", query)
 
             pages.shouldNotBeEmpty()
         }

@@ -5,6 +5,8 @@ import io.kotest.core.annotation.Tags
 import io.kotest.core.spec.style.FreeSpec
 import io.kotest.matchers.maps.shouldContainKey
 import io.kotest.matchers.maps.shouldHaveSize
+import io.kotest.matchers.nulls.shouldNotBeNull
+import io.kotest.matchers.should
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.types.shouldBeInstanceOf
@@ -38,9 +40,9 @@ class DatabaseRequestBuilderTest :
 
                 request.parent shouldBe Parent(type = "page_id", pageId = "test-page-id")
                 request.title shouldBe listOf(RichText.fromPlainText("Test Database"))
-                request.properties shouldHaveSize 1
-                request.properties shouldContainKey "Name"
-                request.properties["Name"].shouldBeInstanceOf<CreateDatabaseProperty.Title>()
+                request.initialDataSource.properties shouldHaveSize 1
+                request.initialDataSource.properties shouldContainKey "Name"
+                request.initialDataSource.properties["Name"].shouldBeInstanceOf<CreateDatabaseProperty.Title>()
                 request.icon shouldBe null
                 request.cover shouldBe null
                 request.description shouldBe null
@@ -250,16 +252,16 @@ class DatabaseRequestBuilderTest :
                             }
                         }
 
-                    request.properties shouldHaveSize 9
-                    request.properties["Name"].shouldBeInstanceOf<CreateDatabaseProperty.Title>()
-                    request.properties["Description"].shouldBeInstanceOf<CreateDatabaseProperty.RichText>()
-                    request.properties["Score"].shouldBeInstanceOf<CreateDatabaseProperty.Number>()
-                    request.properties["Due Date"].shouldBeInstanceOf<CreateDatabaseProperty.Date>()
-                    request.properties["Completed"].shouldBeInstanceOf<CreateDatabaseProperty.Checkbox>()
-                    request.properties["Website"].shouldBeInstanceOf<CreateDatabaseProperty.Url>()
-                    request.properties["Email"].shouldBeInstanceOf<CreateDatabaseProperty.Email>()
-                    request.properties["Phone"].shouldBeInstanceOf<CreateDatabaseProperty.PhoneNumber>()
-                    request.properties["Assignee"].shouldBeInstanceOf<CreateDatabaseProperty.People>()
+                    request.initialDataSource.properties shouldHaveSize 9
+                    request.initialDataSource.properties["Name"].shouldBeInstanceOf<CreateDatabaseProperty.Title>()
+                    request.initialDataSource.properties["Description"].shouldBeInstanceOf<CreateDatabaseProperty.RichText>()
+                    request.initialDataSource.properties["Score"].shouldBeInstanceOf<CreateDatabaseProperty.Number>()
+                    request.initialDataSource.properties["Due Date"].shouldBeInstanceOf<CreateDatabaseProperty.Date>()
+                    request.initialDataSource.properties["Completed"].shouldBeInstanceOf<CreateDatabaseProperty.Checkbox>()
+                    request.initialDataSource.properties["Website"].shouldBeInstanceOf<CreateDatabaseProperty.Url>()
+                    request.initialDataSource.properties["Email"].shouldBeInstanceOf<CreateDatabaseProperty.Email>()
+                    request.initialDataSource.properties["Phone"].shouldBeInstanceOf<CreateDatabaseProperty.PhoneNumber>()
+                    request.initialDataSource.properties["Assignee"].shouldBeInstanceOf<CreateDatabaseProperty.People>()
                 }
 
                 "number with custom format" {
@@ -272,7 +274,7 @@ class DatabaseRequestBuilderTest :
                             }
                         }
 
-                    val numberProperty = request.properties["Price"] as CreateDatabaseProperty.Number
+                    val numberProperty = request.initialDataSource.properties["Price"] as CreateDatabaseProperty.Number
                     numberProperty.number.format shouldBe "dollar"
                 }
 
@@ -290,7 +292,7 @@ class DatabaseRequestBuilderTest :
                             }
                         }
 
-                    val selectProperty = request.properties["Status"] as CreateDatabaseProperty.Select
+                    val selectProperty = request.initialDataSource.properties["Status"] as CreateDatabaseProperty.Select
                     selectProperty.select.options shouldHaveSizeList 3
                     selectProperty.select.options[0] shouldBe CreateSelectOption("To Do", SelectOptionColor.RED)
                     selectProperty.select.options[1] shouldBe CreateSelectOption("In Progress", SelectOptionColor.YELLOW)
@@ -307,7 +309,7 @@ class DatabaseRequestBuilderTest :
                             }
                         }
 
-                    val selectProperty = request.properties["Status"] as CreateDatabaseProperty.Select
+                    val selectProperty = request.initialDataSource.properties["Status"] as CreateDatabaseProperty.Select
                     selectProperty.select.options shouldHaveSizeList 0
                 }
 
@@ -324,7 +326,7 @@ class DatabaseRequestBuilderTest :
                             }
                         }
 
-                    val multiSelectProperty = request.properties["Tags"] as CreateDatabaseProperty.MultiSelect
+                    val multiSelectProperty = request.initialDataSource.properties["Tags"] as CreateDatabaseProperty.MultiSelect
                     multiSelectProperty.multiSelect.options shouldHaveSizeList 2
                     multiSelectProperty.multiSelect.options[0] shouldBe CreateSelectOption("Important", SelectOptionColor.RED)
                     multiSelectProperty.multiSelect.options[1] shouldBe CreateSelectOption("Urgent", SelectOptionColor.ORANGE)
@@ -336,14 +338,15 @@ class DatabaseRequestBuilderTest :
                             parent.page("test-page-id")
                             title("Test Database")
                             properties {
-                                relation("Related", "target-db-id") {
+                                relation("Related", "target-db-id", "target-ds-id") {
                                     single()
                                 }
                             }
                         }
 
-                    val relationProperty = request.properties["Related"] as CreateDatabaseProperty.Relation
+                    val relationProperty = request.initialDataSource.properties["Related"] as CreateDatabaseProperty.Relation
                     relationProperty.relation.databaseId shouldBe "target-db-id"
+                    relationProperty.relation.dataSourceId shouldBe "target-ds-id"
                     relationProperty.relation.singleProperty shouldNotBe null
                     relationProperty.relation.dualProperty shouldBe null
                     relationProperty.relation.syncedPropertyName shouldBe null
@@ -355,14 +358,15 @@ class DatabaseRequestBuilderTest :
                             parent.page("test-page-id")
                             title("Test Database")
                             properties {
-                                relation("Related", "target-db-id") {
+                                relation("Related", "target-db-id", "target-ds-id") {
                                     dual("Backlink", "prop-id")
                                 }
                             }
                         }
 
-                    val relationProperty = request.properties["Related"] as CreateDatabaseProperty.Relation
-                    relationProperty.relation shouldBe RelationConfiguration.dualProperty("target-db-id", "Backlink", "prop-id")
+                    val relationProperty = request.initialDataSource.properties["Related"] as CreateDatabaseProperty.Relation
+                    relationProperty.relation shouldBe
+                        RelationConfiguration.dualProperty("target-db-id", "target-ds-id", "Backlink", "prop-id")
                 }
 
                 "relation with synced property" {
@@ -371,14 +375,14 @@ class DatabaseRequestBuilderTest :
                             parent.page("test-page-id")
                             title("Test Database")
                             properties {
-                                relation("Related", "target-db-id") {
+                                relation("Related", "target-db-id", "target-ds-id") {
                                     synced("Backlink")
                                 }
                             }
                         }
 
-                    val relationProperty = request.properties["Related"] as CreateDatabaseProperty.Relation
-                    relationProperty.relation shouldBe RelationConfiguration.synced("target-db-id", "Backlink")
+                    val relationProperty = request.initialDataSource.properties["Related"] as CreateDatabaseProperty.Relation
+                    relationProperty.relation shouldBe RelationConfiguration.synced("target-db-id", "target-ds-id", "Backlink")
                 }
 
                 "relation with default configuration" {
@@ -387,12 +391,13 @@ class DatabaseRequestBuilderTest :
                             parent.page("test-page-id")
                             title("Test Database")
                             properties {
-                                relation("Related", "target-db-id")
+                                relation("Related", "target-db-id", "target-ds-id")
                             }
                         }
 
-                    val relationProperty = request.properties["Related"] as CreateDatabaseProperty.Relation
+                    val relationProperty = request.initialDataSource.properties["Related"] as CreateDatabaseProperty.Relation
                     relationProperty.relation.databaseId shouldBe "target-db-id"
+                    relationProperty.relation.dataSourceId shouldBe "target-ds-id"
                     relationProperty.relation.singleProperty shouldNotBe null
                     relationProperty.relation.dualProperty shouldBe null
                     relationProperty.relation.syncedPropertyName shouldBe null
@@ -426,7 +431,7 @@ class DatabaseRequestBuilderTest :
                             email("Contact")
                             phoneNumber("Phone")
                             people("Assignee")
-                            relation("Related Tasks", "other-db-id") {
+                            relation("Related Tasks", "other-db-id", "other-ds-id") {
                                 dual("Backlink", "prop-id")
                             }
                         }
@@ -437,7 +442,7 @@ class DatabaseRequestBuilderTest :
                 request.description shouldBe listOf(RichText.fromPlainText("A database with all possible features"))
                 request.icon shouldBe PageIcon(type = "emoji", emoji = "🚀")
                 request.cover shouldBe PageCover(type = "external", external = ExternalFile(url = "https://example.com/cover.jpg"))
-                request.properties shouldHaveSize 12
+                request.initialDataSource.properties shouldHaveSize 12
             }
 
             "should validate required fields" - {
@@ -492,7 +497,7 @@ class DatabaseRequestBuilderTest :
                             }
                         }
 
-                    val selectProperty = request.properties["Status"] as CreateDatabaseProperty.Select
+                    val selectProperty = request.initialDataSource.properties["Status"] as CreateDatabaseProperty.Select
                     selectProperty.select.options shouldHaveSizeList 0
                 }
 
@@ -508,7 +513,7 @@ class DatabaseRequestBuilderTest :
                             }
                         }
 
-                    val selectProperty = request.properties["Status"] as CreateDatabaseProperty.Select
+                    val selectProperty = request.initialDataSource.properties["Status"] as CreateDatabaseProperty.Select
                     selectProperty.select.options[0].color shouldBe SelectOptionColor.DEFAULT
                 }
 
@@ -522,7 +527,7 @@ class DatabaseRequestBuilderTest :
                             }
                         }
 
-                    val numberProperty = request.properties["Score"] as CreateDatabaseProperty.Number
+                    val numberProperty = request.initialDataSource.properties["Score"] as CreateDatabaseProperty.Number
                     numberProperty.number.format shouldBe "number"
                 }
             }
@@ -546,12 +551,12 @@ class DatabaseRequestBuilderTest :
                             }
                         }
 
-                    request.properties shouldHaveSize 2
+                    request.initialDataSource.properties shouldHaveSize 2
 
-                    val priorityProperty = request.properties["Priority"] as CreateDatabaseProperty.Select
+                    val priorityProperty = request.initialDataSource.properties["Priority"] as CreateDatabaseProperty.Select
                     priorityProperty.select.options shouldHaveSizeList 3
 
-                    val categoriesProperty = request.properties["Categories"] as CreateDatabaseProperty.MultiSelect
+                    val categoriesProperty = request.initialDataSource.properties["Categories"] as CreateDatabaseProperty.MultiSelect
                     categoriesProperty.multiSelect.options shouldHaveSizeList 2
                 }
 
@@ -561,23 +566,24 @@ class DatabaseRequestBuilderTest :
                             parent.page("test-page-id")
                             title("Test Database")
                             properties {
-                                relation("Parent Tasks", "tasks-db-id") {
+                                relation("Parent Tasks", "tasks-db-id", "tasks-ds-id") {
                                     single()
                                 }
-                                relation("Child Tasks", "tasks-db-id") {
+                                relation("Child Tasks", "tasks-db-id", "tasks-ds-id") {
                                     dual("Parent", "parent-prop-id")
                                 }
                             }
                         }
 
-                    request.properties shouldHaveSize 2
+                    request.initialDataSource.properties shouldHaveSize 2
 
-                    val parentProperty = request.properties["Parent Tasks"] as CreateDatabaseProperty.Relation
+                    val parentProperty = request.initialDataSource.properties["Parent Tasks"] as CreateDatabaseProperty.Relation
                     parentProperty.relation.databaseId shouldBe "tasks-db-id"
                     parentProperty.relation.singleProperty shouldNotBe null
 
-                    val childProperty = request.properties["Child Tasks"] as CreateDatabaseProperty.Relation
-                    childProperty.relation shouldBe RelationConfiguration.dualProperty("tasks-db-id", "Parent", "parent-prop-id")
+                    val childProperty = request.initialDataSource.properties["Child Tasks"] as CreateDatabaseProperty.Relation
+                    childProperty.relation shouldBe
+                        RelationConfiguration.dualProperty("tasks-db-id", "tasks-ds-id", "Parent", "parent-prop-id")
                 }
             }
 
@@ -597,14 +603,14 @@ class DatabaseRequestBuilderTest :
                                 option("Active", SelectOptionColor.GREEN)
                                 option("Closed", SelectOptionColor.RED)
                             }
-                            relation("Dependencies", "deps-db-id") {
+                            relation("Dependencies", "deps-db-id", "deps-ds-id") {
                                 dual("Dependents", "dep-prop-id")
                             }
                         }
                     }
 
                 request shouldNotBe null
-                request.properties shouldHaveSize 4
+                request.initialDataSource.properties shouldHaveSize 4
                 request.icon shouldNotBe null
                 request.cover shouldNotBe null
                 request.description shouldNotBe null

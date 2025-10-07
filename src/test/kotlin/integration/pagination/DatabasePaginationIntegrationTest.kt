@@ -1,19 +1,15 @@
 package integration.pagination
 
+import integration.integrationTestEnvVarsAreSet
+import integration.shouldCleanupAfterTest
 import io.kotest.core.annotation.Tags
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.delay
 import no.saabelit.kotlinnotionclient.NotionClient
 import no.saabelit.kotlinnotionclient.config.NotionConfig
-import no.saabelit.kotlinnotionclient.models.base.Parent
-import no.saabelit.kotlinnotionclient.models.databases.CreateDatabaseProperty
-import no.saabelit.kotlinnotionclient.models.databases.CreateDatabaseRequest
 import no.saabelit.kotlinnotionclient.models.databases.DatabaseQueryBuilder
-import no.saabelit.kotlinnotionclient.models.pages.CreatePageRequest
 import no.saabelit.kotlinnotionclient.models.pages.PageProperty
-import no.saabelit.kotlinnotionclient.models.pages.PagePropertyValue
-import no.saabelit.kotlinnotionclient.models.requests.RequestBuilders
 
 /**
  * Integration tests for database pagination functionality.
@@ -31,17 +27,17 @@ import no.saabelit.kotlinnotionclient.models.requests.RequestBuilders
  * 2. Set environment variable: export NOTION_TEST_PAGE_ID="your_parent_page_id"
  * 3. Optional: Set NOTION_CLEANUP_AFTER_TEST="false" to keep test objects
  */
-@Tags("Integration", "RequiresApi", "Slow")
+@Tags("Slow")
 class DatabasePaginationIntegrationTest :
     StringSpec({
 
-        fun shouldCleanupAfterTest(): Boolean = System.getenv("NOTION_CLEANUP_AFTER_TEST")?.lowercase() != "false"
+        if (!integrationTestEnvVarsAreSet()) {
+            "!(Skipped)" { println("Skipping DatabasePaginationIntegrationTest due to missing environment variables") }
+        } else {
 
-        "Should automatically paginate database queries with >100 pages" {
-            val token = System.getenv("NOTION_API_TOKEN")
-            val parentPageId = System.getenv("NOTION_TEST_PAGE_ID")
-
-            if (token != null && parentPageId != null) {
+            "Should automatically paginate database queries with >100 pages" {
+                val token = System.getenv("NOTION_API_TOKEN")
+                val parentPageId = System.getenv("NOTION_TEST_PAGE_ID")
                 val client = NotionClient.create(NotionConfig(apiToken = token))
 
                 try {
@@ -57,25 +53,25 @@ class DatabasePaginationIntegrationTest :
 
                     // Create test database
                     println("🗄️ Creating test database for pagination testing...")
-                    val databaseRequest =
-                        CreateDatabaseRequest(
-                            parent = Parent(type = "page_id", pageId = parentPageId),
-                            title =
-                                listOf(
-                                    RequestBuilders.createSimpleRichText("DB Pagination Test - ${System.currentTimeMillis()}"),
-                                ),
-                            icon = RequestBuilders.createEmojiIcon("📊"),
-                            properties =
-                                mapOf(
-                                    "Name" to CreateDatabaseProperty.Title(),
-                                    "Index" to CreateDatabaseProperty.Number(),
-                                    "Category" to CreateDatabaseProperty.Select(),
-                                ),
-                        )
+                    val database =
+                        client.databases.create {
+                            parent.page(parentPageId)
+                            title("DB Pagination Test - ${System.currentTimeMillis()}")
+                            icon.emoji("📊")
+                            properties {
+                                title("Name")
+                                number("Index")
+                                select("Category")
+                            }
+                        }
 
-                    val database = client.databases.create(databaseRequest)
                     println("✅ Database created: ${database.id}")
-                    delay(500)
+                    delay(1000)
+
+                    // Get data source from database (2025-09-03 API)
+                    val retrievedDb = client.databases.retrieve(database.id)
+                    val dataSourceId = retrievedDb.dataSources.first().id
+                    println("✅ Retrieved data source: $dataSourceId")
 
                     // Create 105 pages to trigger pagination (default page size is 100)
                     val totalPages = 105
@@ -85,24 +81,16 @@ class DatabasePaginationIntegrationTest :
                     val batchSize = 10
                     for (batch in 0 until totalPages step batchSize) {
                         val pagesInBatch = minOf(batchSize, totalPages - batch)
-                        val batchPages =
-                            (batch until batch + pagesInBatch).map { index ->
-                                CreatePageRequest(
-                                    parent = Parent(type = "database_id", databaseId = database.id),
-                                    properties =
-                                        mapOf(
-                                            "Name" to
-                                                PagePropertyValue.TitleValue(
-                                                    title = listOf(RequestBuilders.createSimpleRichText("Test Page ${index + 1}")),
-                                                ),
-                                            "Index" to PagePropertyValue.NumberValue(number = (index + 1).toDouble()),
-                                        ),
-                                )
-                            }
 
                         // Create pages in batch
-                        batchPages.forEach { request ->
-                            client.pages.create(request)
+                        for (index in batch until batch + pagesInBatch) {
+                            client.pages.create {
+                                parent.dataSource(dataSourceId)
+                                properties {
+                                    title("Name", "Test Page ${index + 1}")
+                                    number("Index", (index + 1).toDouble())
+                                }
+                            }
                         }
 
                         println(
@@ -115,9 +103,9 @@ class DatabasePaginationIntegrationTest :
                     delay(2000) // Wait for all pages to be indexed
 
                     // Test 1: Query all pages (automatic pagination)
-                    println("\n🔍 Testing automatic pagination for database query...")
+                    println("\n🔍 Testing automatic pagination for data source query...")
                     val startTime = System.currentTimeMillis()
-                    val allPages = client.databases.query(database.id)
+                    val allPages = client.dataSources.query(dataSourceId)
                     val queryTime = System.currentTimeMillis() - startTime
 
                     allPages.size shouldBe totalPages
@@ -133,7 +121,7 @@ class DatabasePaginationIntegrationTest :
                             .pageSize(10) // Small page size to trigger more API calls
                             .build()
 
-                    val smallPageResults = client.databases.query(database.id, smallPageSizeQuery)
+                    val smallPageResults = client.dataSources.query(dataSourceId, smallPageSizeQuery)
                     smallPageResults.size shouldBe totalPages
                     println("✅ Small page size pagination successful!")
                     println("   - Requested page size: 10")
@@ -150,7 +138,7 @@ class DatabasePaginationIntegrationTest :
                             .pageSize(20)
                             .build()
 
-                    val filteredResults = client.databases.query(database.id, complexQuery)
+                    val filteredResults = client.dataSources.query(dataSourceId, complexQuery)
                     filteredResults.size shouldBe 55 // Pages 51-105
                     println("✅ Complex query pagination successful!")
                     println("   - Filter: Index > 50")
@@ -183,11 +171,6 @@ class DatabasePaginationIntegrationTest :
                 } finally {
                     client.close()
                 }
-            } else {
-                println("⏭️ Skipping pagination test - missing environment variables")
-                println("   Required:")
-                println("   - NOTION_API_TOKEN: Your integration API token")
-                println("   - NOTION_TEST_PAGE_ID: Parent page for test database")
             }
         }
     })

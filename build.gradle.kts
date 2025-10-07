@@ -21,6 +21,7 @@ repositories {
 
 dependencies {
     // Main dependencies
+    implementation(libs.kotlinx.datetime)
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.ktor.client.core)
     implementation(libs.bundles.ktor)
@@ -35,27 +36,6 @@ dependencies {
 
 tasks.test {
     useJUnitPlatform()
-    // Exclude integration and manual tests by default for fast unit test runs
-    systemProperty("kotest.tags.exclude", "Integration | Manual")
-}
-
-// Task for running only integration tests
-tasks.register<Test>("integrationTest") {
-    useJUnitPlatform()
-    testClassesDirs = sourceSets.test.get().output.classesDirs
-    classpath = sourceSets.test.get().runtimeClasspath
-    systemProperty("kotest.tags.include", "Integration") 
-    group = "verification"
-    description = "Runs integration tests against live Notion API (requires NOTION_API_TOKEN and NOTION_TEST_PAGE_ID)"
-}
-
-// Task for running all tests (unit + integration)
-tasks.register<Test>("testAll") {
-    useJUnitPlatform()
-    testClassesDirs = sourceSets.test.get().output.classesDirs
-    classpath = sourceSets.test.get().runtimeClasspath
-    group = "verification"  
-    description = "Runs all tests including integration tests"
 }
 
 fun isNonStable(version: String): Boolean {
@@ -74,4 +54,3 @@ tasks.withType<DependencyUpdatesTask> {
         isNonStable(candidate.version) && !isNonStable(currentVersion)
     }
 }
-

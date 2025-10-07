@@ -10,7 +10,10 @@ import no.saabelit.kotlinnotionclient.models.pages.PageCover
 import no.saabelit.kotlinnotionclient.models.pages.PageIcon
 
 /**
- * Request model for creating a new database.
+ * Request model for creating a new database (API version 2025-09-03+).
+ *
+ * As of 2025-09-03, creating a database creates both the database container
+ * and its initial data source. Properties are now nested under initial_data_source.
  *
  * This model represents the data structure required to create a database
  * in Notion. It contains only the fields that are sent in the request,
@@ -22,8 +25,8 @@ data class CreateDatabaseRequest(
     val parent: Parent,
     @SerialName("title")
     val title: List<RichText>,
-    @SerialName("properties")
-    val properties: Map<String, CreateDatabaseProperty>,
+    @SerialName("initial_data_source")
+    val initialDataSource: InitialDataSource,
     @SerialName("icon")
     val icon: PageIcon? = null,
     @SerialName("cover")
@@ -33,14 +36,26 @@ data class CreateDatabaseRequest(
 )
 
 /**
+ * Configuration for the initial data source when creating a database.
+ *
+ * This contains the properties (schema) for the first data source in the database.
+ */
+@Serializable
+data class InitialDataSource(
+    @SerialName("properties")
+    val properties: Map<String, CreateDatabaseProperty>,
+)
+
+/**
  * Request model for archiving a database.
  *
- * Notion doesn't support true deletion - objects are archived instead.
+ * Notion doesn't support true deletion - objects are moved to trash instead.
+ * In the 2025-09-03 API, databases use "in_trash" field (not "archived").
  */
 @Serializable
 data class ArchiveDatabaseRequest(
-    @SerialName("archived")
-    val archived: Boolean = true,
+    @SerialName("in_trash")
+    val inTrash: Boolean = true,
 )
 
 /**
@@ -202,15 +217,21 @@ data class CreateSelectOption(
 )
 
 /**
- * Configuration for relation properties.
+ * Configuration for relation properties (API version 2025-09-03+).
  *
- * Relation properties connect pages to other databases. The target database
- * must be shared with your integration for the relation to work.
+ * Relation properties connect pages to other databases/data sources.
+ * The target must be shared with your integration for the relation to work.
+ *
+ * As of 2025-09-03:
+ * - Both database_id and data_source_id should be provided when possible
+ * - At minimum, provide data_source_id for proper targeting
  */
 @Serializable
 data class RelationConfiguration(
     @SerialName("database_id")
     val databaseId: String,
+    @SerialName("data_source_id")
+    val dataSourceId: String? = null,
     @SerialName("single_property")
     val singleProperty: EmptyObject? = null,
     @SerialName("dual_property")
@@ -225,11 +246,16 @@ data class RelationConfiguration(
          * Creates a simple unidirectional relation to another database.
          *
          * @param databaseId The ID of the target database
+         * @param dataSourceId The ID of the target data source
          * @return RelationConfiguration for a single property relation
          */
-        fun singleProperty(databaseId: String): RelationConfiguration =
+        fun singleProperty(
+            databaseId: String,
+            dataSourceId: String,
+        ): RelationConfiguration =
             RelationConfiguration(
                 databaseId = databaseId,
+                dataSourceId = dataSourceId,
                 singleProperty = EmptyObject(),
             )
 
@@ -237,17 +263,20 @@ data class RelationConfiguration(
          * Creates a bidirectional relation with a specific synced property.
          *
          * @param databaseId The ID of the target database
+         * @param dataSourceId The ID of the target data source
          * @param syncedPropertyName The name of the property in the target database
          * @param syncedPropertyId The ID of the property in the target database (optional)
          * @return RelationConfiguration for a dual property relation
          */
         fun dualProperty(
             databaseId: String,
+            dataSourceId: String,
             syncedPropertyName: String,
             syncedPropertyId: String? = null,
         ): RelationConfiguration =
             RelationConfiguration(
                 databaseId = databaseId,
+                dataSourceId = dataSourceId,
                 dualProperty =
                     DualPropertyConfiguration(
                         syncedPropertyName = syncedPropertyName,
@@ -259,15 +288,18 @@ data class RelationConfiguration(
          * Creates a simple synced relation (legacy format).
          *
          * @param databaseId The ID of the target database
+         * @param dataSourceId The ID of the target data source
          * @param syncedPropertyName The name of the synced property
          * @return RelationConfiguration for a synced relation
          */
         fun synced(
             databaseId: String,
+            dataSourceId: String,
             syncedPropertyName: String,
         ): RelationConfiguration =
             RelationConfiguration(
                 databaseId = databaseId,
+                dataSourceId = dataSourceId,
                 syncedPropertyName = syncedPropertyName,
             )
     }

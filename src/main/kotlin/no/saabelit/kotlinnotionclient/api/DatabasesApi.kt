@@ -10,17 +10,12 @@ import io.ktor.client.statement.HttpResponse
 import io.ktor.http.ContentType
 import io.ktor.http.contentType
 import io.ktor.http.isSuccess
-import no.saabelit.kotlinnotionclient.config.NotionApiLimits
 import no.saabelit.kotlinnotionclient.config.NotionConfig
 import no.saabelit.kotlinnotionclient.exceptions.NotionException
 import no.saabelit.kotlinnotionclient.models.databases.ArchiveDatabaseRequest
 import no.saabelit.kotlinnotionclient.models.databases.CreateDatabaseRequest
 import no.saabelit.kotlinnotionclient.models.databases.Database
-import no.saabelit.kotlinnotionclient.models.databases.DatabaseQueryBuilder
-import no.saabelit.kotlinnotionclient.models.databases.DatabaseQueryRequest
-import no.saabelit.kotlinnotionclient.models.databases.DatabaseQueryResponse
 import no.saabelit.kotlinnotionclient.models.databases.DatabaseRequestBuilder
-import no.saabelit.kotlinnotionclient.models.databases.databaseQuery
 import no.saabelit.kotlinnotionclient.models.databases.databaseRequest
 import no.saabelit.kotlinnotionclient.ratelimit.executeWithRateLimit
 import no.saabelit.kotlinnotionclient.validation.RequestValidator
@@ -28,10 +23,17 @@ import no.saabelit.kotlinnotionclient.validation.ValidationConfig
 import no.saabelit.kotlinnotionclient.validation.ValidationException
 
 /**
- * API client for Notion Databases endpoints.
+ * API client for Notion Databases endpoints (API version 2025-09-03+).
  *
- * Handles operations related to databases in Notion workspaces,
- * including retrieving database information and schemas.
+ * As of the 2025-09-03 API version, databases are containers that can hold
+ * multiple data sources. This API handles container-level operations:
+ * - Retrieving database metadata and list of data sources
+ * - Creating databases with initial data source
+ * - Updating database container properties (title, icon, cover, parent)
+ * - Archiving databases
+ *
+ * For operations on individual data sources (querying, updating schema):
+ * @see DataSourcesApi
  */
 class DatabasesApi(
     private val httpClient: HttpClient,
@@ -41,13 +43,17 @@ class DatabasesApi(
     private val validator = RequestValidator(validationConfig)
 
     /**
-     * Retrieves a database object using the ID specified.
+     * Retrieves a database object using the ID specified (API version 2025-09-03+).
+     *
+     * Returns database container metadata including list of data sources.
+     * To get the schema/properties of a specific data source, use DataSourcesApi.retrieve()
      *
      * @param databaseId The ID of the database to retrieve
-     * @return Database object with all properties and schema
+     * @return Database object with data_sources array (no longer includes properties)
      * @throws NotionException.NetworkError for network-related failures
      * @throws NotionException.ApiError for API-related errors (4xx, 5xx responses)
      * @throws NotionException.AuthenticationError for authentication failures
+     * @see DataSourcesApi.retrieve
      */
     suspend fun retrieve(databaseId: String): Database =
         httpClient.executeWithRateLimit {
@@ -156,7 +162,7 @@ class DatabasesApi(
     suspend fun archive(databaseId: String): Database =
         httpClient.executeWithRateLimit {
             try {
-                val request = ArchiveDatabaseRequest(archived = true)
+                val request = ArchiveDatabaseRequest(inTrash = true)
                 val response: HttpResponse =
                     httpClient.patch("${config.baseUrl}/databases/$databaseId") {
                         contentType(ContentType.Application.Json)
@@ -165,138 +171,6 @@ class DatabasesApi(
 
                 if (response.status.isSuccess()) {
                     response.body<Database>()
-                } else {
-                    val errorBody =
-                        try {
-                            response.body<String>()
-                        } catch (e: Exception) {
-                            "Could not read error response body"
-                        }
-
-                    throw NotionException.ApiError(
-                        code = response.status.value.toString(),
-                        status = response.status.value,
-                        details = "HTTP ${response.status.value}: ${response.status.description}. Response: $errorBody",
-                    )
-                }
-            } catch (e: NotionException) {
-                throw e // Re-throw our own exceptions
-            } catch (e: Exception) {
-                throw NotionException.NetworkError(e)
-            }
-        }
-
-    /**
-     * Queries a database using a fluent DSL builder.
-     *
-     * This is a convenience method that accepts a DSL builder lambda for more natural
-     * Kotlin-style API usage. The builder provides type-safe construction of database queries
-     * with filtering, sorting, and pagination.
-     *
-     * Example usage:
-     * ```kotlin
-     * val pages = client.databases.query("database-id") {
-     *     filter {
-     *         and(
-     *             title("Task").contains("Important"),
-     *             checkbox("Completed").equals(false)
-     *         )
-     *     }
-     *     sortBy("Priority", SortDirection.DESCENDING)
-     *     pageSize(50)
-     * }
-     * ```
-     *
-     * @param databaseId The ID of the database to query
-     * @param builder DSL builder lambda for constructing the query
-     * @return List of all matching pages across all result pages
-     * @throws NotionException.NetworkError for network-related failures
-     * @throws NotionException.ApiError for API-related errors (4xx, 5xx responses)
-     * @throws NotionException.AuthenticationError for authentication failures
-     */
-    suspend fun query(
-        databaseId: String,
-        builder: DatabaseQueryBuilder.() -> Unit,
-    ): List<no.saabelit.kotlinnotionclient.models.pages.Page> {
-        val request = databaseQuery(builder)
-        return query(databaseId, request)
-    }
-
-    /**
-     * Queries a database with optional filtering and sorting.
-     *
-     * Automatically fetches all pages that match the query criteria by handling
-     * pagination transparently. Returns all matching pages in a single list.
-     *
-     * @param databaseId The ID of the database to query
-     * @param request The query request with filters and sorts
-     * @return List of all matching pages across all result pages
-     * @throws NotionException.NetworkError for network-related failures
-     * @throws NotionException.ApiError for API-related errors (4xx, 5xx responses)
-     * @throws NotionException.AuthenticationError for authentication failures
-     */
-    suspend fun query(
-        databaseId: String,
-        request: DatabaseQueryRequest = DatabaseQueryRequest(),
-    ): List<no.saabelit.kotlinnotionclient.models.pages.Page> {
-        val allPages = mutableListOf<no.saabelit.kotlinnotionclient.models.pages.Page>()
-        var currentCursor: String? = null
-        var pageCount = 0
-
-        do {
-            val paginatedRequest =
-                request.copy(
-                    startCursor = currentCursor,
-                    pageSize = NotionApiLimits.Response.MAX_PAGE_SIZE,
-                )
-
-            val response = querySinglePage(databaseId, paginatedRequest)
-            allPages.addAll(response.results)
-
-            currentCursor = response.nextCursor
-            pageCount++
-
-            // Safety check to prevent infinite loops
-            val maxPages = 1000 // 100,000 records max (100 per page * 1000 pages)
-            if (pageCount >= maxPages) {
-                throw NotionException.ApiError(
-                    code = "PAGINATION_LIMIT_EXCEEDED",
-                    status = 500,
-                    details =
-                        "Database query exceeded $maxPages pages " +
-                            "(${maxPages * NotionApiLimits.Response.MAX_PAGE_SIZE} records). " +
-                            "This may indicate an infinite loop or an extremely large database.",
-                )
-            }
-        } while (response.hasMore)
-
-        return allPages
-    }
-
-    /**
-     * Queries a single page of database results.
-     *
-     * This is the low-level method that handles a single API request. Most users should
-     * use the `query` method instead, which automatically handles pagination.
-     *
-     * @param databaseId The ID of the database to query
-     * @param request The query request with filters, sorts, and pagination parameters
-     * @return DatabaseQueryResponse containing a single page of results
-     */
-    private suspend fun querySinglePage(
-        databaseId: String,
-        request: DatabaseQueryRequest,
-    ): DatabaseQueryResponse =
-        httpClient.executeWithRateLimit {
-            try {
-                val response: HttpResponse =
-                    httpClient.post("${config.baseUrl}/databases/$databaseId/query") {
-                        contentType(ContentType.Application.Json)
-                        setBody(request)
-                    }
-
-                if (response.status.isSuccess()) {
-                    response.body<DatabaseQueryResponse>()
                 } else {
                     val errorBody =
                         try {

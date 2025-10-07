@@ -20,6 +20,7 @@ import no.saabelit.kotlinnotionclient.models.base.TextContent
 import no.saabelit.kotlinnotionclient.models.blocks.BlockRequest
 import no.saabelit.kotlinnotionclient.models.blocks.ParagraphRequestContent
 import no.saabelit.kotlinnotionclient.models.databases.CreateDatabaseRequest
+import no.saabelit.kotlinnotionclient.models.databases.InitialDataSource
 import no.saabelit.kotlinnotionclient.models.pages.CreatePageRequest
 import no.saabelit.kotlinnotionclient.models.pages.PagePropertyValue
 import no.saabelit.kotlinnotionclient.models.pages.PageReference
@@ -398,13 +399,13 @@ class RequestValidatorTest :
             }
         }
 
-        context("Database Request Validation") {
+        context("Database Request Validation (2025-09-03 API)") {
             test("should validate normal database request without violations") {
                 val request =
                     CreateDatabaseRequest(
                         parent = Parent(type = "page_id", pageId = "test-parent-id"),
                         title = listOf(createRichText("Test Database")),
-                        properties = emptyMap(),
+                        initialDataSource = InitialDataSource(properties = emptyMap()),
                     )
                 val result = validator.validateDatabaseRequest(request)
 
@@ -417,7 +418,7 @@ class RequestValidatorTest :
                     CreateDatabaseRequest(
                         parent = Parent(type = "page_id", pageId = "test-parent-id"),
                         title = listOf(createLongRichText()),
-                        properties = emptyMap(),
+                        initialDataSource = InitialDataSource(properties = emptyMap()),
                     )
                 val result = validator.validateDatabaseRequest(request)
 
@@ -432,7 +433,7 @@ class RequestValidatorTest :
                     CreateDatabaseRequest(
                         parent = Parent(type = "page_id", pageId = "test-parent-id"),
                         title = listOf(createRichText("Test Database")),
-                        properties = emptyMap(),
+                        initialDataSource = InitialDataSource(properties = emptyMap()),
                         description = listOf(createLongRichText()),
                     )
                 val result = validator.validateDatabaseRequest(request)
@@ -720,7 +721,7 @@ class RequestValidatorTest :
                 }
             }
 
-            context("Database Request Auto-Fixing") {
+            context("Database Request Auto-Fixing (2025-09-03 API)") {
                 test("should auto-split text in database title") {
                     val config = ValidationConfig(autoSplitLongText = true)
                     val autoSplitValidator = RequestValidator(config)
@@ -730,7 +731,7 @@ class RequestValidatorTest :
                         CreateDatabaseRequest(
                             parent = Parent(type = "page_id", pageId = "test-page-id"),
                             title = listOf(longTitle),
-                            properties = mapOf(),
+                            initialDataSource = InitialDataSource(properties = mapOf()),
                         )
 
                     val result = autoSplitValidator.validateOrFix(request)
@@ -758,7 +759,7 @@ class RequestValidatorTest :
                         CreateDatabaseRequest(
                             parent = Parent(type = "page_id", pageId = "test-page-id"),
                             title = listOf(createRichText("Normal title")),
-                            properties = mapOf(),
+                            initialDataSource = InitialDataSource(properties = mapOf()),
                             description = listOf(longDescription),
                         )
 

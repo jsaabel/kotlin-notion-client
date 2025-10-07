@@ -22,8 +22,9 @@
     "emoji": "🥬"
   },
   "parent": {
-    "type": "database_id",
-    "database_id": "d9824bdc-8445-4327-be8b-5b47500af6ce"
+    "type": "data_source_id",
+    "data_source_id": "d9824bdc-8445-4327-be8b-5b47500af6ce",
+    "database_id": "9ce034a5-74ca-4259-8b01-8494453204fe"
   },
   "archived": false,
   "properties": {

@@ -2,7 +2,6 @@
 
 package integration
 
-import io.kotest.core.annotation.Tags
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
@@ -33,30 +32,26 @@ import no.saabelit.kotlinnotionclient.models.requests.RequestBuilders
  * 2. Set environment variable: export NOTION_TEST_PAGE_ID="your_parent_page_id"
  * 3. Your integration should have permissions to create/read/update pages and blocks
  * 4. Optional: Set NOTION_CLEANUP_AFTER_TEST="false" to keep test objects for manual inspection
- *
- * Run with: ./gradlew integrationTest
  */
-@Tags("Integration", "RequiresApi")
 class MediaIntegrationTest :
     StringSpec({
 
-        // Helper function to check if cleanup should be performed after tests
-        fun shouldCleanupAfterTest(): Boolean = System.getenv("NOTION_CLEANUP_AFTER_TEST")?.lowercase() != "false"
+        if (!integrationTestEnvVarsAreSet()) {
+            "!(Skipped)" { println("Skipping MediaIntegrationTest due to missing environment variables") }
+        } else {
 
-        // Helper function to create sample file content for testing
-        fun createSampleFileContent(filename: String): ByteArray =
-            when {
-                filename.endsWith(".txt") -> "Sample text file content for testing\nLine 2\nLine 3".toByteArray()
-                filename.endsWith(".json") -> """{"test": "data", "number": 42}""".toByteArray()
-                filename.endsWith(".csv") -> "name,age,city\nJohn,30,New York\nJane,25,London".toByteArray()
-                else -> "Binary file content placeholder".toByteArray()
-            }
+            // Helper function to create sample file content for testing
+            fun createSampleFileContent(filename: String): ByteArray =
+                when {
+                    filename.endsWith(".txt") -> "Sample text file content for testing\nLine 2\nLine 3".toByteArray()
+                    filename.endsWith(".json") -> """{"test": "data", "number": 42}""".toByteArray()
+                    filename.endsWith(".csv") -> "name,age,city\nJohn,30,New York\nJane,25,London".toByteArray()
+                    else -> "Binary file content placeholder".toByteArray()
+                }
 
-        "Should create media blocks using external URLs" {
-            val token = System.getenv("NOTION_API_TOKEN")
-            val parentPageId = System.getenv("NOTION_TEST_PAGE_ID")
-
-            if (token != null && parentPageId != null) {
+            "Should create media blocks using external URLs" {
+                val token = System.getenv("NOTION_API_TOKEN")
+                val parentPageId = System.getenv("NOTION_TEST_PAGE_ID")
                 val client = NotionClient.create(NotionConfig(apiToken = token))
 
                 try {
@@ -177,16 +172,11 @@ class MediaIntegrationTest :
                 } finally {
                     client.close()
                 }
-            } else {
-                println("⏭️ Skipping external media test - missing environment variables")
             }
-        }
 
-        "Should upload file and create media blocks from uploads" {
-            val token = System.getenv("NOTION_API_TOKEN")
-            val parentPageId = System.getenv("NOTION_TEST_PAGE_ID")
-
-            if (token != null && parentPageId != null) {
+            "Should upload file and create media blocks from uploads" {
+                val token = System.getenv("NOTION_API_TOKEN")
+                val parentPageId = System.getenv("NOTION_TEST_PAGE_ID")
                 val client = NotionClient.create(NotionConfig(apiToken = token))
 
                 try {
@@ -311,16 +301,11 @@ class MediaIntegrationTest :
                 } finally {
                     client.close()
                 }
-            } else {
-                println("⏭️ Skipping file upload media test - missing environment variables")
             }
-        }
 
-        "Should demonstrate complete media workflow with mixed sources" {
-            val token = System.getenv("NOTION_API_TOKEN")
-            val parentPageId = System.getenv("NOTION_TEST_PAGE_ID")
-
-            if (token != null && parentPageId != null) {
+            "Should demonstrate complete media workflow with mixed sources" {
+                val token = System.getenv("NOTION_API_TOKEN")
+                val parentPageId = System.getenv("NOTION_TEST_PAGE_ID")
                 val client = NotionClient.create(NotionConfig(apiToken = token))
 
                 try {
@@ -502,9 +487,6 @@ class MediaIntegrationTest :
                 } finally {
                     client.close()
                 }
-            } else {
-                println("⏭️ Skipping comprehensive media test - missing environment variables")
-                println("   Required: NOTION_API_TOKEN and NOTION_TEST_PAGE_ID")
             }
         }
     })
