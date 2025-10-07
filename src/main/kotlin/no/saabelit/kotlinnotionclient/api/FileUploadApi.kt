@@ -17,8 +17,10 @@ import io.ktor.http.contentType
 import io.ktor.http.headers
 import no.saabelit.kotlinnotionclient.config.NotionConfig
 import no.saabelit.kotlinnotionclient.models.files.CreateFileUploadRequest
+import no.saabelit.kotlinnotionclient.models.files.CreateFileUploadRequestBuilder
 import no.saabelit.kotlinnotionclient.models.files.FileUpload
 import no.saabelit.kotlinnotionclient.models.files.FileUploadList
+import no.saabelit.kotlinnotionclient.models.files.createFileUploadRequest
 
 /**
  * API client for file upload operations.
@@ -53,6 +55,49 @@ class FileUploadApi(
                 contentType(ContentType.Application.Json)
                 setBody(request)
             }.body()
+
+    /**
+     * Creates a file upload using the DSL builder.
+     *
+     * This is a convenience method that provides a fluent DSL for creating file uploads
+     * without manually constructing CreateFileUploadRequest objects.
+     *
+     * ## Single-Part Upload:
+     * ```kotlin
+     * val fileUpload = client.fileUploads.createFileUpload {
+     *     filename("document.pdf")
+     *     contentType("application/pdf")
+     * }
+     * ```
+     *
+     * ## Multi-Part Upload:
+     * ```kotlin
+     * val fileUpload = client.fileUploads.createFileUpload {
+     *     multiPart()
+     *     filename("large-video.mp4")
+     *     contentType("video/mp4")
+     *     numberOfParts(5)
+     * }
+     * ```
+     *
+     * ## External URL Import:
+     * ```kotlin
+     * val fileUpload = client.fileUploads.createFileUpload {
+     *     filename("remote-image.jpg")
+     *     contentType("image/jpeg")
+     *     externalUrl("https://example.com/image.jpg") // Sets mode and URL
+     * }
+     * ```
+     *
+     * @param builder DSL block for building the file upload request
+     * @return The created FileUpload object
+     * @throws IllegalStateException if required fields are not set for the specified mode
+     * @throws IllegalArgumentException if validation fails (invalid part count, non-HTTPS URL)
+     */
+    suspend fun createFileUpload(builder: CreateFileUploadRequestBuilder.() -> Unit): FileUpload {
+        val request = createFileUploadRequest(builder)
+        return createFileUpload(request)
+    }
 
     /**
      * Sends file content to a file upload.
