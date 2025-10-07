@@ -88,12 +88,30 @@ class CreateCommentRequestBuilder {
         }
 
         /**
+         * Sets the parent to a page (alias for pageId for consistency with other DSLs).
+         *
+         * @param pageId The ID of the page to comment on
+         */
+        fun page(pageId: String) {
+            pageId(pageId)
+        }
+
+        /**
          * Sets the parent to a block.
          *
          * @param blockId The ID of the block to comment on
          */
         fun blockId(blockId: String) {
             this@CreateCommentRequestBuilder.parentValue = Parent(type = "block_id", blockId = blockId)
+        }
+
+        /**
+         * Sets the parent to a block (alias for blockId for consistency with other DSLs).
+         *
+         * @param blockId The ID of the block to comment on
+         */
+        fun block(blockId: String) {
+            blockId(blockId)
         }
     }
 
@@ -103,7 +121,19 @@ class CreateCommentRequestBuilder {
      * @param block DSL block for building rich text content
      */
     fun content(block: RichTextBuilder.() -> Unit) {
-        richTextValue = richText(block)
+        richTextValue =
+            no.saabelit.kotlinnotionclient.models.richtext
+                .richText(block)
+    }
+
+    /**
+     * Sets the rich text content of the comment using the rich text DSL.
+     * This is an alias for content() for better semantic clarity.
+     *
+     * @param block DSL block for building rich text content
+     */
+    fun richText(block: RichTextBuilder.() -> Unit) {
+        content(block)
     }
 
     /**
@@ -187,5 +217,5 @@ class CreateCommentRequestBuilder {
  * @param block The DSL block for building the comment request
  * @return The constructed CreateCommentRequest
  */
-fun commentRequest(block: CreateCommentRequestBuilder.() -> Unit): CreateCommentRequest = CreateCommentRequestBuilder().apply(block).build()
-// TODO: Should this be called createCommentRequest? Check pattern in other DSLs.
+fun createCommentRequest(block: CreateCommentRequestBuilder.() -> Unit): CreateCommentRequest =
+    CreateCommentRequestBuilder().apply(block).build()

@@ -16,7 +16,9 @@ import no.saabelit.kotlinnotionclient.models.comments.Comment
 import no.saabelit.kotlinnotionclient.models.comments.CommentList
 import no.saabelit.kotlinnotionclient.models.comments.CreateCommentRequest
 import no.saabelit.kotlinnotionclient.models.comments.CreateCommentRequestBuilder
-import no.saabelit.kotlinnotionclient.models.comments.commentRequest
+import no.saabelit.kotlinnotionclient.models.comments.RetrieveCommentsRequestBuilder
+import no.saabelit.kotlinnotionclient.models.comments.createCommentRequest
+import no.saabelit.kotlinnotionclient.models.comments.retrieveCommentsRequest
 import no.saabelit.kotlinnotionclient.ratelimit.executeWithRateLimit
 
 /**
@@ -67,6 +69,47 @@ class CommentsApi(
         } while (response.hasMore)
 
         return allComments
+    }
+
+    /**
+     * Retrieves all comments for a specified block using the DSL builder.
+     *
+     * This provides a more fluent interface for retrieving comments with optional
+     * pagination parameters. Automatically fetches all comments by handling pagination transparently.
+     *
+     * ## Basic Usage:
+     * ```kotlin
+     * val comments = client.comments.retrieve {
+     *     blockId("12345678-1234-1234-1234-123456789abc")
+     * }
+     * ```
+     *
+     * ## With Pagination Control:
+     * ```kotlin
+     * val comments = client.comments.retrieve {
+     *     blockId("12345678-1234-1234-1234-123456789abc")
+     *     pageSize(50)
+     * }
+     * ```
+     *
+     * @param builder DSL block for configuring the retrieve request
+     * @return List of all comments across all result pages
+     * @throws NotionException.NetworkError for network-related failures
+     * @throws NotionException.ApiError for API-related errors (4xx, 5xx responses)
+     * @throws NotionException.AuthenticationError for authentication failures
+     * @throws IllegalStateException if required fields are not set in the DSL
+     */
+    suspend fun retrieve(builder: RetrieveCommentsRequestBuilder.() -> Unit): List<Comment> {
+        val (blockId, pageSize, startCursor) = retrieveCommentsRequest(builder)
+
+        // If specific pagination parameters are provided, use single page retrieval
+        return if (pageSize != null || startCursor != null) {
+            val result = retrievePage(blockId, startCursor, pageSize)
+            result.results
+        } else {
+            // Otherwise use the full pagination logic
+            retrieve(blockId)
+        }
     }
 
     /**
@@ -221,7 +264,7 @@ class CommentsApi(
      * @throws IllegalStateException if required fields are not set in the DSL
      */
     suspend fun create(builder: CreateCommentRequestBuilder.() -> Unit): Comment {
-        val request = commentRequest(builder)
+        val request = createCommentRequest(builder)
         return create(request)
     }
 }

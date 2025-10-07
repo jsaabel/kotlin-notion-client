@@ -7,15 +7,9 @@ import io.kotest.core.spec.style.StringSpec
 import kotlinx.coroutines.delay
 import no.saabelit.kotlinnotionclient.NotionClient
 import no.saabelit.kotlinnotionclient.config.NotionConfig
-import no.saabelit.kotlinnotionclient.models.base.Annotations
 import no.saabelit.kotlinnotionclient.models.base.Mention
-import no.saabelit.kotlinnotionclient.models.base.Parent
-import no.saabelit.kotlinnotionclient.models.base.RichText
-import no.saabelit.kotlinnotionclient.models.base.TextContent
 import no.saabelit.kotlinnotionclient.models.blocks.pageContent
 import no.saabelit.kotlinnotionclient.models.comments.CommentAttachmentRequest
-import no.saabelit.kotlinnotionclient.models.comments.CreateCommentRequest
-import no.saabelit.kotlinnotionclient.models.requests.RequestBuilders
 
 /**
  * Comments API Examples
@@ -70,82 +64,58 @@ class CommentsExamples :
             }
 
             "Example 1: Create a simple comment on a page" {
-                // Create a comment on the page
+                // Create a comment using the DSL
                 val comment =
-                    notion.comments.create(
-                        CreateCommentRequest(
-                            parent = Parent(type = "page_id", pageId = testPageId!!),
-                            richText =
-                                listOf(
-                                    RequestBuilders.createSimpleRichText("This is a simple comment on the page"),
-                                ),
-                        ),
-                    )
+                    notion.comments.create {
+                        parent.page(testPageId!!)
+                        richText {
+                            text("This is a simple comment on the page")
+                        }
+                    }
 
                 println("Created comment: ${comment.id}")
                 println("Comment content: ${comment.richText.first().plainText}")
             }
 
             "Example 2: Create a comment thread using discussion_id" {
-                // Create first comment
+                // Create first comment using DSL
                 val firstComment =
-                    notion.comments.create(
-                        CreateCommentRequest(
-                            parent = Parent(type = "page_id", pageId = testPageId!!),
-                            richText =
-                                listOf(
-                                    RequestBuilders.createSimpleRichText("Starting a discussion thread"),
-                                ),
-                        ),
-                    )
+                    notion.comments.create {
+                        parent.page(testPageId!!)
+                        richText {
+                            text("Starting a discussion thread")
+                        }
+                    }
 
                 delay(500)
 
-                // Reply to the same discussion
+                // Reply to the same discussion using DSL
                 val replyComment =
-                    notion.comments.create(
-                        CreateCommentRequest(
-                            parent = Parent(type = "page_id", pageId = testPageId),
-                            discussionId = firstComment.discussionId,
-                            richText =
-                                listOf(
-                                    RequestBuilders.createSimpleRichText("This is a reply in the same thread"),
-                                ),
-                        ),
-                    )
+                    notion.comments.create {
+                        parent.page(testPageId!!)
+                        discussionId(firstComment.discussionId)
+                        richText {
+                            text("This is a reply in the same thread")
+                        }
+                    }
 
                 println("Discussion ID: ${firstComment.discussionId}")
                 println("Both comments share the same discussion ID: ${firstComment.discussionId == replyComment.discussionId}")
             }
 
             "Example 3: Rich text formatting in comments" {
-                // Create a comment with rich text formatting
+                // Create a comment with rich text formatting using DSL
                 val comment =
-                    notion.comments.create(
-                        CreateCommentRequest(
-                            parent = Parent(type = "page_id", pageId = testPageId!!),
-                            richText =
-                                listOf(
-                                    RequestBuilders.createSimpleRichText("This is "),
-                                    RichText(
-                                        type = "text",
-                                        text = TextContent(content = "bold text", link = null),
-                                        annotations = Annotations(bold = true),
-                                        plainText = "bold text",
-                                        href = null,
-                                    ),
-                                    RequestBuilders.createSimpleRichText(" and this is "),
-                                    RichText(
-                                        type = "text",
-                                        text = TextContent(content = "italic text", link = null),
-                                        annotations = Annotations(italic = true),
-                                        plainText = "italic text",
-                                        href = null,
-                                    ),
-                                    RequestBuilders.createSimpleRichText("."),
-                                ),
-                        ),
-                    )
+                    notion.comments.create {
+                        parent.page(testPageId!!)
+                        richText {
+                            text("This is ")
+                            bold("bold text")
+                            text(" and this is ")
+                            italic("italic text")
+                            text(".")
+                        }
+                    }
 
                 println("Comment with formatting created: ${comment.id}")
                 println("Full text: ${comment.richText.joinToString("") { it.plainText }}")
@@ -172,42 +142,30 @@ class CommentsExamples :
 
                 delay(500)
 
-                // Create a comment on the specific block
+                // Create a comment on the specific block using DSL
                 val comment =
-                    notion.comments.create(
-                        CreateCommentRequest(
-                            parent = Parent(type = "block_id", blockId = blockId),
-                            richText =
-                                listOf(
-                                    RequestBuilders.createSimpleRichText("This comment is on a specific block"),
-                                ),
-                        ),
-                    )
+                    notion.comments.create {
+                        parent.block(blockId)
+                        richText {
+                            text("This comment is on a specific block")
+                        }
+                    }
 
                 println("Created comment on block: ${comment.parent.blockId}")
                 println("Comment content: ${comment.richText.first().plainText}")
             }
 
             "Example 5: Comments with links" {
-                // Create a comment with a link
+                // Create a comment with a link using DSL
                 val comment =
-                    notion.comments.create(
-                        CreateCommentRequest(
-                            parent = Parent(type = "page_id", pageId = testPageId!!),
-                            richText =
-                                listOf(
-                                    RequestBuilders.createSimpleRichText("Check out "),
-                                    RichText(
-                                        type = "text",
-                                        text = TextContent(content = "Notion API docs", link = null),
-                                        annotations = Annotations(),
-                                        plainText = "Notion API docs",
-                                        href = "https://developers.notion.com",
-                                    ),
-                                    RequestBuilders.createSimpleRichText(" for more information."),
-                                ),
-                        ),
-                    )
+                    notion.comments.create {
+                        parent.page(testPageId!!)
+                        richText {
+                            text("Check out ")
+                            link("https://developers.notion.com", "Notion API docs")
+                            text(" for more information.")
+                        }
+                    }
 
                 println("Comment with link created: ${comment.id}")
                 val linkElement = comment.richText.find { it.href != null }
@@ -215,19 +173,16 @@ class CommentsExamples :
             }
 
             "Example 6: User mentions in comments".config(enabled = !testUserId.isNullOrBlank()) {
-                // Create a comment with a user mention
+                // Create a comment with a user mention using DSL
                 val comment =
-                    notion.comments.create(
-                        CreateCommentRequest(
-                            parent = Parent(type = "page_id", pageId = testPageId!!),
-                            richText =
-                                listOf(
-                                    RequestBuilders.createSimpleRichText("Hey "),
-                                    RequestBuilders.createUserMention(testUserId!!, "User"),
-                                    RequestBuilders.createSimpleRichText(", please review this!"),
-                                ),
-                        ),
-                    )
+                    notion.comments.create {
+                        parent.page(testPageId!!)
+                        richText {
+                            text("Hey ")
+                            userMention(testUserId!!)
+                            text(", please review this!")
+                        }
+                    }
 
                 println("Comment with mention created: ${comment.id}")
                 val mentionElement = comment.richText.find { it.type == "mention" }
@@ -252,24 +207,15 @@ class CommentsExamples :
 
                 delay(500)
 
-                // Create a comment with the file attachment
+                // Create a comment with the file attachment using DSL
                 val comment =
-                    notion.comments.create(
-                        CreateCommentRequest(
-                            parent = Parent(type = "page_id", pageId = testPageId!!),
-                            richText =
-                                listOf(
-                                    RequestBuilders.createSimpleRichText("This comment has an attached file"),
-                                ),
-                            attachments =
-                                listOf(
-                                    CommentAttachmentRequest(
-                                        fileUploadId = uploadResult.uploadId,
-                                        type = "file_upload",
-                                    ),
-                                ),
-                        ),
-                    )
+                    notion.comments.create {
+                        parent.page(testPageId!!)
+                        richText {
+                            text("This comment has an attached file")
+                        }
+                        attachment(uploadResult.uploadId)
+                    }
 
                 println("Comment with attachment created: ${comment.id}")
                 println("Attachments count: ${comment.attachments?.size ?: 0}")
@@ -278,8 +224,11 @@ class CommentsExamples :
             "Example 8: Retrieve all comments from a page" {
                 delay(1000) // Allow time for comments to be indexed
 
-                // Retrieve all comments created on the test page
-                val comments = notion.comments.retrieve(testPageId!!)
+                // Retrieve all comments using DSL
+                val comments =
+                    notion.comments.retrieve {
+                        blockId(testPageId!!)
+                    }
 
                 println("Retrieved ${comments.size} comments from test page")
                 comments.forEach { comment ->
@@ -287,37 +236,73 @@ class CommentsExamples :
                 }
             }
 
+            "Example 8b: Retrieve comments with pagination control" {
+                delay(1000) // Allow time for comments to be indexed
+
+                // Retrieve comments with page size limit using DSL
+                val limitedComments =
+                    notion.comments.retrieve {
+                        blockId(testPageId!!)
+                        pageSize(3) // Only get first 3 comments
+                    }
+
+                println("Retrieved ${limitedComments.size} comments (max 3) from test page")
+                limitedComments.forEach { comment ->
+                    println("- ${comment.richText.firstOrNull()?.plainText}")
+                }
+            }
+
+            "Example 8c: Advanced DSL example with custom display name" {
+                // Create a comment with all DSL features
+                val advancedComment =
+                    notion.comments.create {
+                        parent.page(testPageId!!)
+                        richText {
+                            text("🤖 Advanced comment with ")
+                            bold("multiple formatting")
+                            text(", ")
+                            italic("styles")
+                            text(", and ")
+                            code("inline code")
+                            text("!")
+                        }
+                        displayName("Documentation Bot")
+                    }
+
+                println("Advanced comment created: ${advancedComment.id}")
+                println("Display name: ${advancedComment.displayName?.resolvedName}")
+            }
+
             "Example 9: Handle validation errors" {
-                // Attempt to create a comment with empty rich text
+                // Attempt to create a comment with empty rich text using DSL
                 try {
-                    notion.comments.create(
-                        CreateCommentRequest(
-                            parent = Parent(type = "page_id", pageId = testPageId!!),
-                            richText = emptyList(), // This will fail validation
-                        ),
-                    )
-                } catch (e: IllegalArgumentException) {
+                    notion.comments.create {
+                        parent.page(testPageId!!)
+                        // Empty richText block will fail validation
+                        richText {
+                            // intentionally empty
+                        }
+                    }
+                } catch (e: IllegalStateException) {
                     println("Validation error caught: ${e.message}")
                 }
 
-                // Attempt to create a comment with too many attachments
+                // Attempt to create a comment with too many attachments using DSL
                 try {
-                    notion.comments.create(
-                        CreateCommentRequest(
-                            parent = Parent(type = "page_id", pageId = testPageId!!),
-                            richText =
-                                listOf(
-                                    RequestBuilders.createSimpleRichText("Too many attachments"),
-                                ),
-                            attachments =
-                                listOf(
-                                    CommentAttachmentRequest(fileUploadId = "file1"),
-                                    CommentAttachmentRequest(fileUploadId = "file2"),
-                                    CommentAttachmentRequest(fileUploadId = "file3"),
-                                    CommentAttachmentRequest(fileUploadId = "file4"), // Exceeds limit of 3
-                                ),
-                        ),
-                    )
+                    notion.comments.create {
+                        parent.page(testPageId!!)
+                        richText {
+                            text("Too many attachments")
+                        }
+                        attachments(
+                            listOf(
+                                CommentAttachmentRequest(fileUploadId = "file1"),
+                                CommentAttachmentRequest(fileUploadId = "file2"),
+                                CommentAttachmentRequest(fileUploadId = "file3"),
+                                CommentAttachmentRequest(fileUploadId = "file4"), // Exceeds limit of 3
+                            ),
+                        )
+                    }
                 } catch (e: IllegalArgumentException) {
                     println("Attachment limit error caught: ${e.message}")
                 }
