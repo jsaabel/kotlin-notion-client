@@ -93,8 +93,8 @@ class FileUploadsExamples :
             }
 
             "Enhanced API - Upload from Path" {
-                val testContent = "# Markdown Test\n\nThis is a **test** markdown file."
-                val testPath = Files.createTempFile("notion-test", "-markdown.md")
+                val testContent = "Path Upload Test\n\nThis is a test file uploaded from a Path object."
+                val testPath = Files.createTempFile("notion-test", "-path-test.txt")
                 Files.write(testPath, testContent.toByteArray())
 
                 val result =
@@ -106,7 +106,7 @@ class FileUploadsExamples :
                 when (result) {
                     is FileUploadResult.Success -> {
                         result.fileUpload.filename shouldBe testPath.fileName.toString()
-                        result.fileUpload.contentType shouldBe "text/markdown"
+                        result.fileUpload.contentType shouldBe "text/plain"
                         uploadedFiles.add(result.uploadId)
                         println("✅ Path upload successful: ${result.uploadId}")
                     }
@@ -180,7 +180,7 @@ class FileUploadsExamples :
 
             "Enhanced API - Import from external URL" {
                 // Using a reliable public image for testing
-                val externalUrl = "https://via.placeholder.com/150x150.png?text=Test"
+                val externalUrl = "https://placehold.co/150x150.png"
 
                 val result =
                     notion.enhancedFileUploads.importExternalFile(
@@ -238,7 +238,7 @@ class FileUploadsExamples :
             }
 
             "Basic API - External URL import using DSL" {
-                val externalUrl = "https://via.placeholder.com/200x200.jpg?text=BasicAPI"
+                val externalUrl = "https://placehold.co/200x200.jpg"
 
                 val fileUpload =
                     notion.fileUploads.createFileUpload {
@@ -256,11 +256,15 @@ class FileUploadsExamples :
             }
 
             "Basic API - Multi-part upload using DSL" {
-                // Create a larger test content (split into 3 parts for testing)
-                val fullContent =
-                    "Part 1 content. ".repeat(100) +
-                        "Part 2 content. ".repeat(100) +
-                        "Part 3 content. ".repeat(100)
+                // Create a file large enough to require multi-part upload (>20 MiB)
+                // Each part must be at least 5 MiB, so we'll create a 16 MiB file with 3 parts
+                val fiveMB = 5 * 1024 * 1024
+                val oneMB = 1 * 1024 * 1024
+
+                // Create realistic text content for a "large document"
+                val part1Content = "Part 1 content.\n".repeat(fiveMB / 16).toByteArray() // ~5 MiB
+                val part2Content = "Part 2 content.\n".repeat(fiveMB / 16).toByteArray() // ~5 MiB
+                val part3Content = "Part 3 content.\n".repeat((fiveMB + oneMB) / 16).toByteArray() // ~6 MiB
 
                 val fileUpload =
                     notion.fileUploads.createFileUpload {
@@ -273,29 +277,35 @@ class FileUploadsExamples :
                 // Note: FileUpload response doesn't expose the mode directly
                 // Note: FileUpload response doesn't expose numberOfParts directly
 
-                // Split content and upload parts
-                val contentBytes = fullContent.toByteArray()
-                val partSize = contentBytes.size / 3
+                // Upload each part (must be at least 5 MiB each except the last)
+                notion.fileUploads.sendFileUpload(
+                    fileUploadId = fileUpload.id,
+                    fileContent = part1Content,
+                    partNumber = 1,
+                )
+                println("📤 Uploaded part 1/3 (~${part1Content.size / 1024 / 1024} MiB)")
 
-                for (partNumber in 1..3) {
-                    val startIdx = (partNumber - 1) * partSize
-                    val endIdx = if (partNumber == 3) contentBytes.size else partNumber * partSize
-                    val partContent = contentBytes.sliceArray(startIdx until endIdx)
+                notion.fileUploads.sendFileUpload(
+                    fileUploadId = fileUpload.id,
+                    fileContent = part2Content,
+                    partNumber = 2,
+                )
+                println("📤 Uploaded part 2/3 (~${part2Content.size / 1024 / 1024} MiB)")
 
-                    notion.fileUploads.sendFileUpload(
-                        fileUploadId = fileUpload.id,
-                        fileContent = partContent,
-                        partNumber = partNumber,
-                    )
-                    println("📤 Uploaded part $partNumber/3")
-                }
+                notion.fileUploads.sendFileUpload(
+                    fileUploadId = fileUpload.id,
+                    fileContent = part3Content,
+                    partNumber = 3,
+                )
+                println("📤 Uploaded part 3/3 (~${part3Content.size / 1024 / 1024} MiB)")
 
                 // Complete the multi-part upload
                 val completedUpload = notion.fileUploads.completeFileUpload(fileUpload.id)
                 completedUpload.status shouldBe FileUploadStatus.UPLOADED
                 uploadedFiles.add(fileUpload.id)
 
-                println("✅ Basic multi-part upload successful: ${fileUpload.id}")
+                val totalSize = (part1Content.size + part2Content.size + part3Content.size) / 1024 / 1024
+                println("✅ Basic multi-part upload successful: ${fileUpload.id} (~$totalSize MiB total)")
             }
 
             "Basic API - List and retrieve operations" {
@@ -327,7 +337,7 @@ class FileUploadsExamples :
             // ===== USING UPLOADED FILES IN PAGES =====
 
             "Using uploaded files in pages" {
-                val testFile = createTestFile("-page-integration.md", "# Integration Test\n\nThis file is used in a page.")
+                val testFile = createTestFile("-page-integration.txt", "Integration Test\n\nThis file is used in a page.")
 
                 // Upload the file
                 val uploadResult = notion.enhancedFileUploads.uploadFile(file = testFile)

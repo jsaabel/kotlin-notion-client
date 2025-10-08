@@ -23,7 +23,7 @@ data class FileUpload(
     @SerialName("last_edited_time")
     val lastEditedTime: String,
     @SerialName("expiry_time")
-    val expiryTime: String,
+    val expiryTime: String? = null,
     @SerialName("upload_url")
     val uploadUrl: String? = null,
     @SerialName("archived")

@@ -317,7 +317,7 @@ class EnhancedFileUploadApi(
             val data = source.openStream().use { it.readBytes() }
             val finalUpload =
                 withRetry(options.retryConfig) {
-                    basicApi.sendFileUpload(fileUpload.id, data)
+                    basicApi.sendFileUpload(fileUpload.id, data, contentType)
                 }
 
             // Report completion
@@ -393,6 +393,7 @@ class EnhancedFileUploadApi(
                     fileUpload,
                     chunking,
                     options,
+                    contentType,
                 )
 
             // Report completing
@@ -448,6 +449,7 @@ class EnhancedFileUploadApi(
         fileUpload: FileUpload,
         chunking: ChunkingStrategy,
         options: FileUploadOptions,
+        contentType: String,
     ): Long =
         coroutineScope {
             var uploadedBytes = 0L
@@ -478,7 +480,7 @@ class EnhancedFileUploadApi(
                             .map { (partNumber, chunkData) ->
                                 async {
                                     withRetry(options.retryConfig) {
-                                        basicApi.sendFileUpload(fileUpload.id, chunkData, partNumber)
+                                        basicApi.sendFileUpload(fileUpload.id, chunkData, contentType, partNumber)
 
                                         uploadedBytes += chunkData.size
                                         reportProgress(
@@ -511,7 +513,7 @@ class EnhancedFileUploadApi(
                         inputStream.readNBytes(chunkData, 0, chunkSize)
 
                         withRetry(options.retryConfig) {
-                            basicApi.sendFileUpload(fileUpload.id, chunkData, partNumber)
+                            basicApi.sendFileUpload(fileUpload.id, chunkData, contentType, partNumber)
                         }
 
                         uploadedBytes += chunkSize

@@ -10,12 +10,15 @@ import io.ktor.client.request.get
 import io.ktor.client.request.parameter
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
+import io.ktor.client.statement.HttpResponse
 import io.ktor.http.ContentType
 import io.ktor.http.Headers
 import io.ktor.http.HttpHeaders
 import io.ktor.http.contentType
 import io.ktor.http.headers
+import io.ktor.http.isSuccess
 import no.saabelit.kotlinnotionclient.config.NotionConfig
+import no.saabelit.kotlinnotionclient.exceptions.NotionException
 import no.saabelit.kotlinnotionclient.models.files.CreateFileUploadRequest
 import no.saabelit.kotlinnotionclient.models.files.CreateFileUploadRequestBuilder
 import no.saabelit.kotlinnotionclient.models.files.FileUpload
@@ -44,17 +47,35 @@ class FileUploadApi(
      *
      * @param request The file upload creation request
      * @return The created FileUpload object
+     * @throws NotionException.ApiError for API-related errors (4xx, 5xx responses)
      */
-    suspend fun createFileUpload(request: CreateFileUploadRequest): FileUpload =
-        client
-            .post("${config.baseUrl}/file_uploads") {
+    suspend fun createFileUpload(request: CreateFileUploadRequest): FileUpload {
+        val response: HttpResponse =
+            client.post("${config.baseUrl}/file_uploads") {
                 headers {
                     append(HttpHeaders.Authorization, "Bearer ${config.apiToken}")
                     append("Notion-Version", config.apiVersion)
                 }
                 contentType(ContentType.Application.Json)
                 setBody(request)
-            }.body()
+            }
+
+        return if (response.status.isSuccess()) {
+            response.body<FileUpload>()
+        } else {
+            val errorBody =
+                try {
+                    response.body<String>()
+                } catch (e: Exception) {
+                    "Could not read error response body"
+                }
+            throw NotionException.ApiError(
+                code = response.status.value.toString(),
+                status = response.status.value,
+                details = errorBody,
+            )
+        }
+    }
 
     /**
      * Creates a file upload using the DSL builder.
@@ -107,16 +128,19 @@ class FileUploadApi(
      *
      * @param fileUploadId The ID of the file upload
      * @param fileContent The file content as a byte array
+     * @param contentType Optional MIME type of the file being uploaded (must match the type used during creation). If not provided, Notion uses the content type from the file upload creation.
      * @param partNumber Optional part number for multi-part uploads (1-1000)
      * @return The updated FileUpload object
+     * @throws NotionException.ApiError for API-related errors (4xx, 5xx responses)
      */
     suspend fun sendFileUpload(
         fileUploadId: String,
         fileContent: ByteArray,
+        contentType: String? = null,
         partNumber: Int? = null,
-    ): FileUpload =
-        client
-            .submitFormWithBinaryData(
+    ): FileUpload {
+        val response: HttpResponse =
+            client.submitFormWithBinaryData(
                 url = "${config.baseUrl}/file_uploads/$fileUploadId/send",
                 formData =
                     formData {
@@ -125,6 +149,9 @@ class FileUploadApi(
                             fileContent,
                             Headers.build {
                                 append(HttpHeaders.ContentDisposition, "filename=\"file\"")
+                                contentType?.let {
+                                    append(HttpHeaders.ContentType, it)
+                                }
                             },
                         )
                         partNumber?.let {
@@ -136,7 +163,24 @@ class FileUploadApi(
                     append(HttpHeaders.Authorization, "Bearer ${config.apiToken}")
                     append("Notion-Version", config.apiVersion)
                 }
-            }.body()
+            }
+
+        return if (response.status.isSuccess()) {
+            response.body<FileUpload>()
+        } else {
+            val errorBody =
+                try {
+                    response.body<String>()
+                } catch (e: Exception) {
+                    "Could not read error response body"
+                }
+            throw NotionException.ApiError(
+                code = response.status.value.toString(),
+                status = response.status.value,
+                details = errorBody,
+            )
+        }
+    }
 
     /**
      * Completes a multi-part file upload.
@@ -145,17 +189,35 @@ class FileUploadApi(
      *
      * @param fileUploadId The ID of the file upload to complete
      * @return The completed FileUpload object
+     * @throws NotionException.ApiError for API-related errors (4xx, 5xx responses)
      */
-    suspend fun completeFileUpload(fileUploadId: String): FileUpload =
-        client
-            .post("${config.baseUrl}/file_uploads/$fileUploadId/complete") {
+    suspend fun completeFileUpload(fileUploadId: String): FileUpload {
+        val response: HttpResponse =
+            client.post("${config.baseUrl}/file_uploads/$fileUploadId/complete") {
                 headers {
                     append(HttpHeaders.Authorization, "Bearer ${config.apiToken}")
                     append("Notion-Version", config.apiVersion)
                 }
                 contentType(ContentType.Application.Json)
                 setBody(emptyMap<String, String>()) // Empty body for completion
-            }.body()
+            }
+
+        return if (response.status.isSuccess()) {
+            response.body<FileUpload>()
+        } else {
+            val errorBody =
+                try {
+                    response.body<String>()
+                } catch (e: Exception) {
+                    "Could not read error response body"
+                }
+            throw NotionException.ApiError(
+                code = response.status.value.toString(),
+                status = response.status.value,
+                details = errorBody,
+            )
+        }
+    }
 
     /**
      * Retrieves a file upload.
@@ -164,15 +226,33 @@ class FileUploadApi(
      *
      * @param fileUploadId The ID of the file upload to retrieve
      * @return The FileUpload object
+     * @throws NotionException.ApiError for API-related errors (4xx, 5xx responses)
      */
-    suspend fun retrieveFileUpload(fileUploadId: String): FileUpload =
-        client
-            .get("${config.baseUrl}/file_uploads/$fileUploadId") {
+    suspend fun retrieveFileUpload(fileUploadId: String): FileUpload {
+        val response: HttpResponse =
+            client.get("${config.baseUrl}/file_uploads/$fileUploadId") {
                 headers {
                     append(HttpHeaders.Authorization, "Bearer ${config.apiToken}")
                     append("Notion-Version", config.apiVersion)
                 }
-            }.body()
+            }
+
+        return if (response.status.isSuccess()) {
+            response.body<FileUpload>()
+        } else {
+            val errorBody =
+                try {
+                    response.body<String>()
+                } catch (e: Exception) {
+                    "Could not read error response body"
+                }
+            throw NotionException.ApiError(
+                code = response.status.value.toString(),
+                status = response.status.value,
+                details = errorBody,
+            )
+        }
+    }
 
     /**
      * Lists file uploads.
@@ -182,20 +262,38 @@ class FileUploadApi(
      * @param startCursor Pagination cursor for the next page
      * @param pageSize Number of results per page (max 100)
      * @return List of FileUpload objects with pagination info
+     * @throws NotionException.ApiError for API-related errors (4xx, 5xx responses)
      */
     suspend fun listFileUploads(
         startCursor: String? = null,
         pageSize: Int? = null,
-    ): FileUploadList =
-        client
-            .get("${config.baseUrl}/file_uploads") {
+    ): FileUploadList {
+        val response: HttpResponse =
+            client.get("${config.baseUrl}/file_uploads") {
                 headers {
                     append(HttpHeaders.Authorization, "Bearer ${config.apiToken}")
                     append("Notion-Version", config.apiVersion)
                 }
                 startCursor?.let { parameter("start_cursor", it) }
                 pageSize?.let { parameter("page_size", it) }
-            }.body()
+            }
+
+        return if (response.status.isSuccess()) {
+            response.body<FileUploadList>()
+        } else {
+            val errorBody =
+                try {
+                    response.body<String>()
+                } catch (e: Exception) {
+                    "Could not read error response body"
+                }
+            throw NotionException.ApiError(
+                code = response.status.value.toString(),
+                status = response.status.value,
+                details = errorBody,
+            )
+        }
+    }
 
     /**
      * Convenience method to upload a file in a single operation.
@@ -228,6 +326,7 @@ class FileUploadApi(
         return sendFileUpload(
             fileUploadId = upload.id,
             fileContent = fileContent,
+            contentType = contentType,
         )
     }
 
@@ -265,6 +364,7 @@ class FileUploadApi(
             sendFileUpload(
                 fileUploadId = upload.id,
                 fileContent = partContent,
+                contentType = contentType,
                 partNumber = index + 1, // Part numbers are 1-based
             )
         }
