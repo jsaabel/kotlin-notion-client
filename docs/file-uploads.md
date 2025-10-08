@@ -210,29 +210,38 @@ println("File uploaded: ${uploadedFile.id}")
 ### Multi-Part Upload (> 20MB)
 
 ```kotlin
+// IMPORTANT: Each part must be >= 5 MiB (except the last part)
+val file = File("large-video.mp4")
+val fileSize = file.length()
+
+// Calculate number of parts ensuring each is >= 5 MiB
+val fiveMiB = 5 * 1024 * 1024L
+val numberOfParts = ((fileSize + fiveMiB - 1) / fiveMiB).toInt().coerceAtLeast(1)
+
 // Create multi-part upload using DSL
 val fileUpload = notion.fileUploads.createFileUpload {
     multiPart()
-    filename("large-video.mp4") 
+    filename("large-video.mp4")
     contentType("video/mp4")
-    numberOfParts(5) // You calculate this based on your chunking
+    numberOfParts(numberOfParts)
 }
 
 // Split and upload each part
-val file = File("large-video.mp4")
-val partSize = file.length() / 5
 val fileBytes = file.readBytes()
+val partSize = fileSize / numberOfParts
 
-for (partNumber in 1..5) {
+for (partNumber in 1..numberOfParts) {
     val startIdx = ((partNumber - 1) * partSize).toInt()
-    val endIdx = if (partNumber == 5) fileBytes.size else (partNumber * partSize).toInt()
+    val endIdx = if (partNumber == numberOfParts) fileBytes.size else (partNumber * partSize).toInt()
     val partContent = fileBytes.sliceArray(startIdx until endIdx)
-    
+
     notion.fileUploads.sendFileUpload(
         fileUploadId = fileUpload.id,
         fileContent = partContent,
         partNumber = partNumber
     )
+
+    println("Uploaded part $partNumber/$numberOfParts")
 }
 
 // Complete the multi-part upload
@@ -326,10 +335,36 @@ if (uploadResult is FileUploadResult.Success) {
 
 ## File Size and Type Limits
 
-- **Maximum file size**: 500MB
-- **Multi-part recommended**: Files > 20MB
+### File Size Limits
+- **Free workspaces**: 5 MiB per file
+- **Paid workspaces**: 5 GiB per file
+- **Multi-part required**: Files > 20 MiB
+- **Multi-part minimum**: Each part must be >= 5 MiB (except the last part)
 - **Maximum parts**: 1,000 per upload
-- **Supported types**: All file types (images, documents, videos, archives, etc.)
+
+### Supported File Types
+The File Upload API supports specific file extensions organized by category:
+
+**Audio**: `.aac`, `.adts`, `.mid`, `.midi`, `.mp3`, `.mpga`, `.m4a`, `.m4b`, `.mp4`, `.oga`, `.ogg`, `.wav`, `.wma`
+
+**Documents**: `.pdf`, `.txt`, `.json`, `.doc`, `.dot`, `.docx`, `.dotx`, `.xls`, `.xlt`, `.xla`, `.xlsx`, `.xltx`, `.ppt`, `.pot`, `.pps`, `.ppa`, `.pptx`, `.potx`
+
+**Images**: `.gif`, `.heic`, `.jpeg`, `.jpg`, `.png`, `.svg`, `.tif`, `.tiff`, `.webp`, `.ico`
+
+**Video**: `.amv`, `.asf`, `.wmv`, `.avi`, `.f4v`, `.flv`, `.gifv`, `.m4v`, `.mkv`, `.webm`, `.mov`, `.qt`, `.mpeg`
+
+> ⚠️ **Note**: Some file types that work in the Notion UI (like `.md` for Markdown) are **not supported** by the File Upload API. Always check the supported extensions list above.
+
+### External URL Requirements
+- URLs must use **HTTPS** (HTTP is not allowed)
+- URL must be publicly accessible
+- Notion validates the URL by fetching headers before import
+
+### Upload Lifecycle
+- New uploads have a **1-hour expiry time** from creation
+- Files must be attached to a page/block within 1 hour or they'll be archived
+- Once attached, the expiry time is removed (becomes permanent)
+- File upload IDs can be reused after the file is attached, even if the original content is deleted
 
 ### Automatic Optimization
 
