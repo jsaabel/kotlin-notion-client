@@ -1,0 +1,13 @@
+{
+  "object": "user",
+  "id": "9a3b5ae0-c6e6-482d-b0e1-ed315ee6dc57",
+  "type": "bot",
+  "bot": {
+    "owner": {
+      "type": "workspace",
+      "workspace": true
+    }
+  },
+  "name": "Doug Engelbot",
+  "avatar_url": "https://secure.notion-static.com/6720d746-3402-4171-8ebb-28d15144923c.jpg"
+}

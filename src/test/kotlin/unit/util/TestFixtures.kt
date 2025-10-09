@@ -174,6 +174,25 @@ object TestFixtures {
         fun createCommentAsString() = loadSampleResponseAsString("comments", "post_create_comment")
     }
 
+    // User-specific helpers
+    object Users {
+        fun retrieveBotUser() = loadSampleResponse("users", "get_retrieve_bot_user")
+
+        fun retrievePersonUser() = loadSampleResponse("users", "get_retrieve_a_person_user")
+
+        fun retrieveABotUser() = loadSampleResponse("users", "get_retrieve_a_bot_user")
+
+        fun listUsers() = loadSampleResponse("users", "get_list_all_users")
+
+        fun retrieveBotUserAsString() = loadSampleResponseAsString("users", "get_retrieve_bot_user")
+
+        fun retrievePersonUserAsString() = loadSampleResponseAsString("users", "get_retrieve_a_person_user")
+
+        fun retrieveABotUserAsString() = loadSampleResponseAsString("users", "get_retrieve_a_bot_user")
+
+        fun listUsersAsString() = loadSampleResponseAsString("users", "get_list_all_users")
+    }
+
     // FileUpload-specific helpers (using reference directory)
     object FileUploads {
         fun createFileUpload() = loadReferenceSampleResponse("file_uploads", "post_create_a_file_upload")

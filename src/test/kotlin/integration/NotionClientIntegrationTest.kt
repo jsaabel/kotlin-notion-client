@@ -64,11 +64,13 @@ class NotionClientIntegrationTest :
 
                             if (user.type == UserType.BOT && user.bot != null) {
                                 println("   🤖 Bot Information:")
-                                println("      Owner Type: ${user.bot.owner.type}")
-                                user.bot.owner.user?.let { ownerUser ->
-                                    println("      Owner Name: ${ownerUser.name}")
-                                    println("      Owner ID: ${ownerUser.id}")
-                                }
+                                user.bot.owner?.let { owner ->
+                                    println("      Owner Type: ${owner.type}")
+                                    owner.user?.let { ownerUser ->
+                                        println("      Owner Name: ${ownerUser.name}")
+                                        println("      Owner ID: ${ownerUser.id}")
+                                    }
+                                } ?: println("      Owner information not available")
                             }
                         } catch (e: NotionException.AuthenticationError) {
                             println("❌ Authentication failed: ${e.message}")
