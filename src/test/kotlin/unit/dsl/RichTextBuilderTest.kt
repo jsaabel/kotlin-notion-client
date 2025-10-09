@@ -3,8 +3,14 @@ package unit.dsl
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.string.shouldContain
+import kotlinx.datetime.Instant
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.LocalDateTime
+import kotlinx.datetime.TimeZone
 import no.saabelit.kotlinnotionclient.models.base.Annotations
 import no.saabelit.kotlinnotionclient.models.base.Color
+import no.saabelit.kotlinnotionclient.models.base.DateObject
 import no.saabelit.kotlinnotionclient.models.base.Equation
 import no.saabelit.kotlinnotionclient.models.base.Link
 import no.saabelit.kotlinnotionclient.models.base.Mention
@@ -464,5 +470,137 @@ class RichTextBuilderTest :
             result[1].plainText shouldBe "chain"
             result[1].annotations.bold shouldBe true
             result[2].plainText shouldBe " end"
+        }
+
+        test("dateMention should create date mention using LocalDate") {
+            val result =
+                richText {
+                    dateMention(LocalDate(2025, 10, 15))
+                }
+
+            result shouldHaveSize 1
+            result[0].type shouldBe "mention"
+            result[0].text shouldBe null
+            val dateMention = result[0].mention as? Mention.Date
+            dateMention?.date?.start shouldBe "2025-10-15"
+            dateMention?.date?.end shouldBe null
+            dateMention?.date?.timeZone shouldBe null
+            result[0].annotations shouldBe Annotations()
+            result[0].href shouldBe null
+        }
+
+        test("dateMention should create date range using LocalDate") {
+            val result =
+                richText {
+                    dateMention(
+                        start = LocalDate(2025, 10, 15),
+                        end = LocalDate(2025, 10, 20),
+                    )
+                }
+
+            result shouldHaveSize 1
+            result[0].type shouldBe "mention"
+            val dateMention = result[0].mention as? Mention.Date
+            dateMention?.date?.start shouldBe "2025-10-15"
+            dateMention?.date?.end shouldBe "2025-10-20"
+            dateMention?.date?.timeZone shouldBe null
+        }
+
+        test("dateMention should create datetime mention using LocalDateTime") {
+            val result =
+                richText {
+                    dateMention(
+                        start = LocalDateTime(2025, 10, 15, 14, 30),
+                        timeZone = TimeZone.UTC,
+                    )
+                }
+
+            result shouldHaveSize 1
+            result[0].type shouldBe "mention"
+            val dateMention = result[0].mention as? Mention.Date
+            dateMention?.date?.start shouldContain "2025-10-15T14:30:00"
+            dateMention?.date?.end shouldBe null
+            dateMention?.date?.timeZone shouldBe "Z" // TimeZone.UTC.id returns "Z"
+        }
+
+        test("dateMention should create datetime range using LocalDateTime with timezone") {
+            val result =
+                richText {
+                    dateMention(
+                        start = LocalDateTime(2025, 10, 15, 9, 0),
+                        end = LocalDateTime(2025, 10, 15, 17, 0),
+                        timeZone = TimeZone.of("America/New_York"),
+                    )
+                }
+
+            result shouldHaveSize 1
+            result[0].type shouldBe "mention"
+            val dateMention = result[0].mention as? Mention.Date
+            dateMention?.date?.start shouldContain "2025-10-15"
+            dateMention?.date?.end shouldContain "2025-10-15"
+            dateMention?.date?.timeZone shouldBe "America/New_York"
+        }
+
+        test("dateMention should create instant mention using Instant") {
+            val instant = Instant.parse("2025-10-15T14:30:00Z")
+            val result =
+                richText {
+                    dateMention(instant)
+                }
+
+            result shouldHaveSize 1
+            result[0].type shouldBe "mention"
+            val dateMention = result[0].mention as? Mention.Date
+            dateMention?.date?.start shouldBe "2025-10-15T14:30:00Z"
+            dateMention?.date?.end shouldBe null
+            dateMention?.date?.timeZone shouldBe null
+        }
+
+        test("dateMention should create instant range using Instant") {
+            val start = Instant.parse("2025-10-15T14:00:00Z")
+            val end = Instant.parse("2025-10-15T16:00:00Z")
+            val result =
+                richText {
+                    dateMention(start = start, end = end)
+                }
+
+            result shouldHaveSize 1
+            result[0].type shouldBe "mention"
+            val dateMention = result[0].mention as? Mention.Date
+            dateMention?.date?.start shouldBe "2025-10-15T14:00:00Z"
+            dateMention?.date?.end shouldBe "2025-10-15T16:00:00Z"
+            dateMention?.date?.timeZone shouldBe null
+        }
+
+        test("dateMention should create string-based date mention") {
+            val result =
+                richText {
+                    dateMention("2025-10-15")
+                }
+
+            result shouldHaveSize 1
+            result[0].type shouldBe "mention"
+            val dateMention = result[0].mention as? Mention.Date
+            dateMention?.date?.start shouldBe "2025-10-15"
+            dateMention?.date?.end shouldBe null
+            dateMention?.date?.timeZone shouldBe null
+        }
+
+        test("dateMention should create string-based datetime range with timezone") {
+            val result =
+                richText {
+                    dateMention(
+                        start = "2025-10-15T09:00:00",
+                        end = "2025-10-15T17:00:00",
+                        timeZone = "America/New_York",
+                    )
+                }
+
+            result shouldHaveSize 1
+            result[0].type shouldBe "mention"
+            val dateMention = result[0].mention as? Mention.Date
+            dateMention?.date?.start shouldBe "2025-10-15T09:00:00"
+            dateMention?.date?.end shouldBe "2025-10-15T17:00:00"
+            dateMention?.date?.timeZone shouldBe "America/New_York"
         }
     })

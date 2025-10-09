@@ -2,6 +2,11 @@
 
 package no.saabelit.kotlinnotionclient.models.richtext
 
+import kotlinx.datetime.Instant
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.LocalDateTime
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toInstant
 import no.saabelit.kotlinnotionclient.models.base.Annotations
 import no.saabelit.kotlinnotionclient.models.base.Color
 import no.saabelit.kotlinnotionclient.models.base.DatabaseReference
@@ -385,6 +390,56 @@ class RichTextBuilder {
         )
         return this
     }
+
+    /**
+     * Adds a date mention using LocalDate.
+     *
+     * @param start The start date
+     * @param end The end date (optional, for date ranges)
+     * @return This builder for chaining
+     */
+    fun dateMention(
+        start: LocalDate,
+        end: LocalDate? = null,
+    ): RichTextBuilder {
+        val startStr = start.toString()
+        val endStr = end?.toString()
+        return dateMention(start = startStr, end = endStr, timeZone = null)
+    }
+
+    /**
+     * Adds a date mention using LocalDateTime with timezone.
+     *
+     * @param start The start datetime
+     * @param end The end datetime (optional, for datetime ranges)
+     * @param timeZone The timezone (defaults to UTC)
+     * @return This builder for chaining
+     */
+    fun dateMention(
+        start: LocalDateTime,
+        end: LocalDateTime? = null,
+        timeZone: TimeZone = TimeZone.UTC,
+    ): RichTextBuilder {
+        val startInstant = start.toInstant(timeZone)
+        val endInstant = end?.toInstant(timeZone)
+        return dateMention(
+            start = startInstant.toString(),
+            end = endInstant?.toString(),
+            timeZone = timeZone.id,
+        )
+    }
+
+    /**
+     * Adds a date mention using Instant (timezone-unambiguous).
+     *
+     * @param start The start instant
+     * @param end The end instant (optional, for instant ranges)
+     * @return This builder for chaining
+     */
+    fun dateMention(
+        start: Instant,
+        end: Instant? = null,
+    ): RichTextBuilder = dateMention(start = start.toString(), end = end?.toString(), timeZone = null)
 
     /**
      * Adds an equation.

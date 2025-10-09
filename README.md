@@ -106,7 +106,6 @@ See [docs/databases.md](docs/databases.md) and [docs/data-sources.md](docs/data-
 - **[Rich Text DSL](docs/rich-text-dsl.md)** - Working with formatted text
 - **[Error Handling](docs/error-handling.md)** - Understanding and handling errors
 - **[Testing](docs/testing.md)** - Testing your Notion integrations
-- **[Architecture](ARCHITECTURE.md)** - Design decisions and patterns (for contributors)
 
 ## Building from Source
 
@@ -165,11 +164,9 @@ Contributions are welcome! This project is in pre-release, so now is a great tim
 - Documentation improvements
 - Performance optimizations
 
-Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
-
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the MIT License.
 
 ## Acknowledgments
 
