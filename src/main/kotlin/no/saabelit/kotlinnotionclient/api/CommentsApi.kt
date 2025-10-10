@@ -9,6 +9,7 @@ import io.ktor.client.statement.HttpResponse
 import io.ktor.http.ContentType
 import io.ktor.http.contentType
 import io.ktor.http.isSuccess
+import kotlinx.coroutines.flow.Flow
 import no.saabelit.kotlinnotionclient.config.NotionApiLimits
 import no.saabelit.kotlinnotionclient.config.NotionConfig
 import no.saabelit.kotlinnotionclient.exceptions.NotionException
@@ -20,6 +21,7 @@ import no.saabelit.kotlinnotionclient.models.comments.RetrieveCommentsRequestBui
 import no.saabelit.kotlinnotionclient.models.comments.createCommentRequest
 import no.saabelit.kotlinnotionclient.models.comments.retrieveCommentsRequest
 import no.saabelit.kotlinnotionclient.ratelimit.executeWithRateLimit
+import no.saabelit.kotlinnotionclient.utils.Pagination
 
 /**
  * API client for Notion Comments endpoints.
@@ -267,4 +269,58 @@ class CommentsApi(
         val request = createCommentRequest(builder)
         return create(request)
     }
+
+    // ========== Pagination Helper Methods ==========
+
+    /**
+     * Retrieves comments as a Flow for reactive processing.
+     *
+     * This method emits individual comments as they become available, enabling
+     * efficient memory usage for large comment threads and reactive processing patterns.
+     *
+     * Example usage:
+     * ```kotlin
+     * client.comments.retrieveAsFlow("block-id").collect { comment ->
+     *     println("Processing comment: ${comment.id}")
+     *     // Process each comment individually
+     * }
+     * ```
+     *
+     * @param blockId The ID of the block to retrieve comments for
+     * @return Flow<Comment> that emits individual comments from all result pages
+     */
+    fun retrieveAsFlow(blockId: String): Flow<Comment> =
+        Pagination.asFlow { cursor ->
+            retrievePage(
+                blockId,
+                startCursor = cursor,
+                pageSize = NotionApiLimits.Response.MAX_PAGE_SIZE,
+            )
+        }
+
+    /**
+     * Retrieves comments and returns response pages as a Flow.
+     *
+     * Unlike [retrieveAsFlow], this emits complete [CommentList] objects,
+     * allowing access to pagination metadata alongside results.
+     *
+     * Example usage:
+     * ```kotlin
+     * client.comments.retrievePagedFlow("block-id").collect { response ->
+     *     println("Got ${response.results.size} comments (has more: ${response.hasMore})")
+     *     response.results.forEach { comment -> /* process comment */ }
+     * }
+     * ```
+     *
+     * @param blockId The ID of the block to retrieve comments for
+     * @return Flow<CommentList> that emits complete response pages
+     */
+    fun retrievePagedFlow(blockId: String): Flow<CommentList> =
+        Pagination.asPagesFlow { cursor ->
+            retrievePage(
+                blockId,
+                startCursor = cursor,
+                pageSize = NotionApiLimits.Response.MAX_PAGE_SIZE,
+            )
+        }
 }

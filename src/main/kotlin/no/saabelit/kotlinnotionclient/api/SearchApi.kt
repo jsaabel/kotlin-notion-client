@@ -6,9 +6,12 @@ import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import io.ktor.http.ContentType
 import io.ktor.http.contentType
+import kotlinx.coroutines.flow.Flow
+import kotlinx.serialization.json.JsonElement
 import no.saabelit.kotlinnotionclient.config.NotionConfig
 import no.saabelit.kotlinnotionclient.models.search.SearchRequest
 import no.saabelit.kotlinnotionclient.models.search.SearchResponse
+import no.saabelit.kotlinnotionclient.utils.Pagination
 
 /**
  * API client for Notion Search operations.
@@ -81,4 +84,52 @@ class SearchApi(
      * @return SearchResponse containing matching results
      */
     suspend fun search(query: String): SearchResponse = search(SearchRequest(query = query))
+
+    // ========== Pagination Helper Methods ==========
+
+    /**
+     * Searches and returns results as a Flow for reactive processing.
+     *
+     * This method emits individual search results (JsonElement) as they become available,
+     * enabling efficient memory usage for large search result sets.
+     *
+     * **Note**: Results are polymorphic JsonElements that can be either Page or DataSource objects.
+     *
+     * Example usage:
+     * ```kotlin
+     * client.search.searchAsFlow(SearchRequest(query = "project")).collect { result ->
+     *     // result is a JsonElement - can be Page or DataSource
+     *     println("Processing search result...")
+     * }
+     * ```
+     *
+     * @param request The search request parameters
+     * @return Flow<JsonElement> that emits individual search results from all result pages
+     */
+    fun searchAsFlow(request: SearchRequest = SearchRequest()): Flow<JsonElement> =
+        Pagination.asFlow { cursor ->
+            search(request.copy(startCursor = cursor))
+        }
+
+    /**
+     * Searches and returns response pages as a Flow.
+     *
+     * Unlike [searchAsFlow], this emits complete [SearchResponse] objects,
+     * allowing access to pagination metadata alongside results.
+     *
+     * Example usage:
+     * ```kotlin
+     * client.search.searchPagedFlow(SearchRequest(query = "notes")).collect { response ->
+     *     println("Got ${response.results.size} results (has more: ${response.hasMore})")
+     *     response.results.forEach { result -> /* process result */ }
+     * }
+     * ```
+     *
+     * @param request The search request parameters
+     * @return Flow<SearchResponse> that emits complete response pages
+     */
+    fun searchPagedFlow(request: SearchRequest = SearchRequest()): Flow<SearchResponse> =
+        Pagination.asPagesFlow { cursor ->
+            search(request.copy(startCursor = cursor))
+        }
 }

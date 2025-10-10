@@ -4,6 +4,7 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import no.saabelit.kotlinnotionclient.models.base.PageReference
 import no.saabelit.kotlinnotionclient.models.base.RichText
+import no.saabelit.kotlinnotionclient.utils.PaginatedResponse
 
 /**
  * Response model for paginated property item retrieval.
@@ -16,16 +17,16 @@ data class PagePropertyItemResponse(
     @SerialName("object")
     val objectType: String, // Always "list"
     @SerialName("results")
-    val results: List<PropertyItem>,
+    override val results: List<PropertyItem>,
     @SerialName("next_cursor")
-    val nextCursor: String? = null,
+    override val nextCursor: String? = null,
     @SerialName("has_more")
-    val hasMore: Boolean,
+    override val hasMore: Boolean,
     @SerialName("next_url")
     val nextUrl: String? = null,
     @SerialName("property_item")
     val propertyItem: PropertyItemMetadata,
-)
+) : PaginatedResponse<PropertyItem>
 
 /**
  * Individual property item within a paginated response.

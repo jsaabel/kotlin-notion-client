@@ -13,6 +13,7 @@ import io.ktor.client.statement.HttpResponse
 import io.ktor.http.ContentType
 import io.ktor.http.contentType
 import io.ktor.http.isSuccess
+import kotlinx.coroutines.flow.Flow
 import no.saabelit.kotlinnotionclient.config.NotionConfig
 import no.saabelit.kotlinnotionclient.exceptions.NotionException
 import no.saabelit.kotlinnotionclient.models.pages.ArchivePageRequest
@@ -26,6 +27,7 @@ import no.saabelit.kotlinnotionclient.models.pages.UpdatePageRequestBuilder
 import no.saabelit.kotlinnotionclient.models.pages.createPageRequest
 import no.saabelit.kotlinnotionclient.models.pages.updatePageRequest
 import no.saabelit.kotlinnotionclient.ratelimit.executeWithRateLimit
+import no.saabelit.kotlinnotionclient.utils.Pagination
 import no.saabelit.kotlinnotionclient.validation.RequestValidator
 import no.saabelit.kotlinnotionclient.validation.ValidationConfig
 import no.saabelit.kotlinnotionclient.validation.ValidationException
@@ -437,5 +439,73 @@ class PagesApi(
             } catch (e: Exception) {
                 throw NotionException.NetworkError(e)
             }
+        }
+
+    // ========== Pagination Helper Methods ==========
+
+    /**
+     * Retrieves property items as a Flow for reactive processing.
+     *
+     * This method emits individual property items as they become available, enabling
+     * efficient memory usage for properties with many items (e.g., large relation lists).
+     *
+     * Example usage:
+     * ```kotlin
+     * client.pages.retrievePropertyItemsAsFlow("page-id", "property-id").collect { item ->
+     *     println("Processing property item...")
+     *     // Process each item individually
+     * }
+     * ```
+     *
+     * @param pageId The ID of the page containing the property
+     * @param propertyId The ID of the property to retrieve items for
+     * @return Flow<PropertyItem> that emits individual property items from all result pages
+     */
+    fun retrievePropertyItemsAsFlow(
+        pageId: String,
+        propertyId: String,
+    ): Flow<PropertyItem> =
+        Pagination.asFlow { cursor ->
+            val url =
+                buildString {
+                    append("${config.baseUrl}/pages/$pageId/properties/$propertyId")
+                    if (cursor != null) {
+                        append("?start_cursor=$cursor")
+                    }
+                }
+            retrievePropertyItemsPage(url)
+        }
+
+    /**
+     * Retrieves property items and returns response pages as a Flow.
+     *
+     * Unlike [retrievePropertyItemsAsFlow], this emits complete [PagePropertyItemResponse] objects,
+     * allowing access to pagination metadata alongside results.
+     *
+     * Example usage:
+     * ```kotlin
+     * client.pages.retrievePropertyItemsPagedFlow("page-id", "property-id").collect { response ->
+     *     println("Got ${response.results.size} items (has more: ${response.hasMore})")
+     *     response.results.forEach { item -> /* process item */ }
+     * }
+     * ```
+     *
+     * @param pageId The ID of the page containing the property
+     * @param propertyId The ID of the property to retrieve items for
+     * @return Flow<PagePropertyItemResponse> that emits complete response pages
+     */
+    fun retrievePropertyItemsPagedFlow(
+        pageId: String,
+        propertyId: String,
+    ): Flow<PagePropertyItemResponse> =
+        Pagination.asPagesFlow { cursor ->
+            val url =
+                buildString {
+                    append("${config.baseUrl}/pages/$pageId/properties/$propertyId")
+                    if (cursor != null) {
+                        append("?start_cursor=$cursor")
+                    }
+                }
+            retrievePropertyItemsPage(url)
         }
 }

@@ -9,6 +9,7 @@ import io.ktor.client.statement.HttpResponse
 import io.ktor.http.ContentType
 import io.ktor.http.contentType
 import io.ktor.http.isSuccess
+import kotlinx.coroutines.flow.Flow
 import kotlinx.serialization.Serializable
 import no.saabelit.kotlinnotionclient.config.NotionApiLimits
 import no.saabelit.kotlinnotionclient.config.NotionConfig
@@ -19,6 +20,7 @@ import no.saabelit.kotlinnotionclient.models.blocks.BlockRequest
 import no.saabelit.kotlinnotionclient.models.blocks.PageContentBuilder
 import no.saabelit.kotlinnotionclient.models.blocks.pageContent
 import no.saabelit.kotlinnotionclient.ratelimit.executeWithRateLimit
+import no.saabelit.kotlinnotionclient.utils.Pagination
 import no.saabelit.kotlinnotionclient.validation.RequestValidator
 import no.saabelit.kotlinnotionclient.validation.ValidationConfig
 import no.saabelit.kotlinnotionclient.validation.ValidationException
@@ -370,6 +372,60 @@ class BlocksApi(
             } catch (e: Exception) {
                 throw NotionException.NetworkError(e)
             }
+        }
+
+    // ========== Pagination Helper Methods ==========
+
+    /**
+     * Retrieves child blocks as a Flow for reactive processing.
+     *
+     * This method emits individual blocks as they become available, enabling
+     * efficient memory usage for large block structures and reactive processing patterns.
+     *
+     * Example usage:
+     * ```kotlin
+     * client.blocks.retrieveChildrenAsFlow("block-id").collect { block ->
+     *     println("Processing block: ${block.id}")
+     *     // Process each block individually
+     * }
+     * ```
+     *
+     * @param blockId The ID of the parent block
+     * @return Flow<Block> that emits individual child blocks from all result pages
+     */
+    fun retrieveChildrenAsFlow(blockId: String): Flow<Block> =
+        Pagination.asFlow { cursor ->
+            retrieveChildrenPage(
+                blockId,
+                startCursor = cursor,
+                pageSize = NotionApiLimits.Response.MAX_PAGE_SIZE,
+            )
+        }
+
+    /**
+     * Retrieves child blocks and returns response pages as a Flow.
+     *
+     * Unlike [retrieveChildrenAsFlow], this emits complete [BlockList] objects,
+     * allowing access to pagination metadata alongside results.
+     *
+     * Example usage:
+     * ```kotlin
+     * client.blocks.retrieveChildrenPagedFlow("block-id").collect { response ->
+     *     println("Got ${response.results.size} blocks (has more: ${response.hasMore})")
+     *     response.results.forEach { block -> /* process block */ }
+     * }
+     * ```
+     *
+     * @param blockId The ID of the parent block
+     * @return Flow<BlockList> that emits complete response pages
+     */
+    fun retrieveChildrenPagedFlow(blockId: String): Flow<BlockList> =
+        Pagination.asPagesFlow { cursor ->
+            retrieveChildrenPage(
+                blockId,
+                startCursor = cursor,
+                pageSize = NotionApiLimits.Response.MAX_PAGE_SIZE,
+            )
         }
 }
 

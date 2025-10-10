@@ -368,13 +368,49 @@ notion.blocks.appendChildren(pageId) {
 
 ### Pagination Handling
 
-`retrieveChildren()` automatically handles pagination:
+Retrieving block children supports multiple pagination approaches:
+
+#### 1. Automatic Collection (Simple)
+
+`retrieveChildren()` automatically fetches all children:
 
 ```kotlin
 // Retrieves ALL children, handling pagination internally
 val allBlocks = notion.blocks.retrieveChildren(pageId)
 println("Total blocks: ${allBlocks.size}")
 ```
+
+**Use when**: You need all children and the count is reasonable (< 1000 blocks).
+
+#### 2. Flow-Based Streaming
+
+For pages with many blocks, use Flow for efficient processing:
+
+```kotlin
+// Memory-efficient - processes blocks as they're fetched
+notion.blocks.retrieveChildrenAsFlow(pageId).collect { block ->
+    println("Processing ${block.type}: ${block.id}")
+    // Process each block individually
+}
+```
+
+**Use when**: Working with pages that have many blocks (1000+) or memory efficiency matters.
+
+#### 3. Page-Level Flow
+
+Access pagination metadata while processing:
+
+```kotlin
+// Get complete responses with pagination info
+notion.blocks.retrieveChildrenPagedFlow(pageId).collect { response ->
+    println("Fetched ${response.results.size} blocks (has more: ${response.hasMore})")
+    response.results.forEach { block ->
+        // Process blocks in this batch
+    }
+}
+```
+
+See **[Pagination](pagination.md)** for comprehensive guide and best practices.
 
 ### Error Handling
 

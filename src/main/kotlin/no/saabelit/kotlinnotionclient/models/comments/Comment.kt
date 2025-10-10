@@ -6,6 +6,7 @@ import no.saabelit.kotlinnotionclient.models.base.NotionObject
 import no.saabelit.kotlinnotionclient.models.base.Parent
 import no.saabelit.kotlinnotionclient.models.base.RichText
 import no.saabelit.kotlinnotionclient.models.users.User
+import no.saabelit.kotlinnotionclient.utils.PaginatedResponse
 
 /**
  * Represents a comment in Notion.
@@ -49,12 +50,12 @@ data class CommentList(
     @SerialName("object")
     val objectType: String = "list",
     @SerialName("results")
-    val results: List<Comment>,
+    override val results: List<Comment>,
     @SerialName("next_cursor")
-    val nextCursor: String? = null,
+    override val nextCursor: String? = null,
     @SerialName("has_more")
-    val hasMore: Boolean = false,
-)
+    override val hasMore: Boolean = false,
+) : PaginatedResponse<Comment>
 
 /**
  * Represents an attachment in a comment.

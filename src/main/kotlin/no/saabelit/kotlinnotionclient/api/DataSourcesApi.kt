@@ -10,6 +10,7 @@ import io.ktor.client.statement.HttpResponse
 import io.ktor.http.ContentType
 import io.ktor.http.contentType
 import io.ktor.http.isSuccess
+import kotlinx.coroutines.flow.Flow
 import no.saabelit.kotlinnotionclient.config.NotionApiLimits
 import no.saabelit.kotlinnotionclient.config.NotionConfig
 import no.saabelit.kotlinnotionclient.exceptions.NotionException
@@ -25,6 +26,7 @@ import no.saabelit.kotlinnotionclient.models.databases.createDataSourceRequest
 import no.saabelit.kotlinnotionclient.models.databases.databaseQuery
 import no.saabelit.kotlinnotionclient.models.databases.updateDataSourceRequest
 import no.saabelit.kotlinnotionclient.ratelimit.executeWithRateLimit
+import no.saabelit.kotlinnotionclient.utils.Pagination
 import no.saabelit.kotlinnotionclient.validation.RequestValidator
 import no.saabelit.kotlinnotionclient.validation.ValidationConfig
 
@@ -354,5 +356,105 @@ class DataSourcesApi(
             } catch (e: Exception) {
                 throw NotionException.NetworkError(e)
             }
+        }
+
+    // ========== Pagination Helper Methods ==========
+
+    /**
+     * Queries a data source and returns results as a Flow for reactive processing.
+     *
+     * This method emits individual pages as they become available, enabling
+     * efficient memory usage for large result sets and reactive processing patterns.
+     *
+     * Example usage:
+     * ```kotlin
+     * client.dataSources.queryAsFlow("data-source-id") {
+     *     filter { property("Status") { select { equals("Active") } } }
+     * }.collect { page ->
+     *     println("Processing page: ${page.id}")
+     *     // Process each page individually
+     * }
+     * ```
+     *
+     * @param dataSourceId The ID of the data source to query
+     * @param builder DSL builder lambda for constructing the query
+     * @return Flow<Page> that emits individual pages from all result pages
+     */
+    fun queryAsFlow(
+        dataSourceId: String,
+        builder: DatabaseQueryBuilder.() -> Unit,
+    ): Flow<no.saabelit.kotlinnotionclient.models.pages.Page> {
+        val request = databaseQuery(builder)
+        return queryAsFlow(dataSourceId, request)
+    }
+
+    /**
+     * Queries a data source and returns results as a Flow for reactive processing.
+     *
+     * @param dataSourceId The ID of the data source to query
+     * @param request The query request with filters and sorts
+     * @return Flow<Page> that emits individual pages from all result pages
+     */
+    fun queryAsFlow(
+        dataSourceId: String,
+        request: DatabaseQueryRequest = DatabaseQueryRequest(),
+    ): Flow<no.saabelit.kotlinnotionclient.models.pages.Page> =
+        Pagination.asFlow { cursor ->
+            querySinglePage(
+                dataSourceId,
+                request.copy(
+                    startCursor = cursor,
+                    pageSize = NotionApiLimits.Response.MAX_PAGE_SIZE,
+                ),
+            )
+        }
+
+    /**
+     * Queries a data source and returns response pages as a Flow.
+     *
+     * Unlike [queryAsFlow], this emits complete [DatabaseQueryResponse] objects,
+     * allowing access to pagination metadata alongside results.
+     *
+     * Example usage:
+     * ```kotlin
+     * client.dataSources.queryPagedFlow("data-source-id") {
+     *     filter { /* ... */ }
+     * }.collect { response ->
+     *     println("Got ${response.results.size} pages (has more: ${response.hasMore})")
+     *     response.results.forEach { page -> /* process page */ }
+     * }
+     * ```
+     *
+     * @param dataSourceId The ID of the data source to query
+     * @param builder DSL builder lambda for constructing the query
+     * @return Flow<DatabaseQueryResponse> that emits complete response pages
+     */
+    fun queryPagedFlow(
+        dataSourceId: String,
+        builder: DatabaseQueryBuilder.() -> Unit,
+    ): Flow<DatabaseQueryResponse> {
+        val request = databaseQuery(builder)
+        return queryPagedFlow(dataSourceId, request)
+    }
+
+    /**
+     * Queries a data source and returns response pages as a Flow.
+     *
+     * @param dataSourceId The ID of the data source to query
+     * @param request The query request with filters and sorts
+     * @return Flow<DatabaseQueryResponse> that emits complete response pages
+     */
+    fun queryPagedFlow(
+        dataSourceId: String,
+        request: DatabaseQueryRequest = DatabaseQueryRequest(),
+    ): Flow<DatabaseQueryResponse> =
+        Pagination.asPagesFlow { cursor ->
+            querySinglePage(
+                dataSourceId,
+                request.copy(
+                    startCursor = cursor,
+                    pageSize = NotionApiLimits.Response.MAX_PAGE_SIZE,
+                ),
+            )
         }
 }

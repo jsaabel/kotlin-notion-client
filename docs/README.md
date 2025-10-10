@@ -16,6 +16,7 @@
 - **[Comments](comments.md)** - Add and retrieve comments
 
 ### Features
+- **[Pagination](pagination.md)** - Handle paginated results efficiently
 - **[Rich Text DSL](rich-text-dsl.md)** - Format text with mentions, links, and more
 - **[File Uploads](file-uploads.md)** - Upload and manage files and images
 - **[Error Handling](error-handling.md)** - Handle API errors gracefully

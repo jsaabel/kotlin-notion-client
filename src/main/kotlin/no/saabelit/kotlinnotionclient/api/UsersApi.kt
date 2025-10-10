@@ -5,11 +5,13 @@ import io.ktor.client.call.body
 import io.ktor.client.request.get
 import io.ktor.client.statement.HttpResponse
 import io.ktor.http.isSuccess
+import kotlinx.coroutines.flow.Flow
 import no.saabelit.kotlinnotionclient.config.NotionConfig
 import no.saabelit.kotlinnotionclient.exceptions.NotionException
 import no.saabelit.kotlinnotionclient.models.users.User
 import no.saabelit.kotlinnotionclient.models.users.UserList
 import no.saabelit.kotlinnotionclient.ratelimit.executeWithRateLimit
+import no.saabelit.kotlinnotionclient.utils.Pagination
 
 /**
  * API client for Notion Users endpoints.
@@ -166,5 +168,53 @@ class UsersApi(
             } catch (e: Exception) {
                 throw NotionException.NetworkError(e)
             }
+        }
+
+    // ========== Pagination Helper Methods ==========
+
+    /**
+     * Lists all users as a Flow for reactive processing.
+     *
+     * This method emits individual users as they become available, enabling
+     * efficient memory usage for workspaces with many users and reactive processing patterns.
+     *
+     * **Required capability**: User information capabilities
+     *
+     * Example usage:
+     * ```kotlin
+     * client.users.listAsFlow().collect { user ->
+     *     println("Processing user: ${user.name}")
+     *     // Process each user individually
+     * }
+     * ```
+     *
+     * @return Flow<User> that emits individual users from all result pages
+     */
+    fun listAsFlow(): Flow<User> =
+        Pagination.asFlow { cursor ->
+            list(startCursor = cursor, pageSize = 100)
+        }
+
+    /**
+     * Lists users and returns response pages as a Flow.
+     *
+     * Unlike [listAsFlow], this emits complete [UserList] objects,
+     * allowing access to pagination metadata alongside results.
+     *
+     * **Required capability**: User information capabilities
+     *
+     * Example usage:
+     * ```kotlin
+     * client.users.listPagedFlow().collect { response ->
+     *     println("Got ${response.results.size} users (has more: ${response.hasMore})")
+     *     response.results.forEach { user -> /* process user */ }
+     * }
+     * ```
+     *
+     * @return Flow<UserList> that emits complete response pages
+     */
+    fun listPagedFlow(): Flow<UserList> =
+        Pagination.asPagesFlow { cursor ->
+            list(startCursor = cursor, pageSize = 100)
         }
 }

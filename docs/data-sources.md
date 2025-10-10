@@ -194,7 +194,11 @@ val existingDb = notion.databases.retrieve("database-id")
 val dataSourceId = existingDb.dataSources?.firstOrNull()?.id
 ```
 
-### Automatic Pagination
+### Working with Pagination
+
+Data source queries can return large result sets. The library provides three ways to handle pagination:
+
+#### 1. Automatic Collection (Simple)
 
 The `query()` method automatically fetches all matching pages:
 
@@ -209,7 +213,45 @@ val allPages = notion.dataSources.query("data-source-id") {
 println("Total matching pages: ${allPages.size}")
 ```
 
-The library handles pagination transparently, fetching up to 100,000 records (1,000 pages × 100 records/page safety limit).
+**Use when**: Result sets are reasonably sized (< 1000 items) and you need all results.
+
+#### 2. Flow-Based Streaming (Recommended for Large Sets)
+
+For large result sets, use Flow to process items as they arrive:
+
+```kotlin
+// Memory-efficient - processes pages as they're fetched
+notion.dataSources.queryAsFlow("data-source-id") {
+    filter {
+        select("Status").equals("To Do")
+    }
+}.collect { page ->
+    println("Processing: ${page.id}")
+    // Process each page individually
+}
+```
+
+**Use when**: Working with 1000+ items or when memory efficiency matters.
+
+#### 3. Page-Level Flow (Batch Processing)
+
+Access pagination metadata while processing:
+
+```kotlin
+// Get complete responses with pagination info
+notion.dataSources.queryPagedFlow("data-source-id") {
+    filter { /* ... */ }
+}.collect { response ->
+    println("Fetched ${response.results.size} pages (has more: ${response.hasMore})")
+    response.results.forEach { page ->
+        // Process pages in this batch
+    }
+}
+```
+
+**Use when**: You need pagination metadata or want to process pages in batches.
+
+See **[Pagination](pagination.md)** for comprehensive guide and best practices.
 
 ### Complex Filters
 

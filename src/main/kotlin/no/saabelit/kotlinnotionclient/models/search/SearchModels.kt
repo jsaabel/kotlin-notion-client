@@ -3,6 +3,7 @@ package no.saabelit.kotlinnotionclient.models.search
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonElement
+import no.saabelit.kotlinnotionclient.utils.PaginatedResponse
 
 /**
  * Request parameters for searching pages and data sources.
@@ -74,16 +75,16 @@ data class SearchResponse(
     @SerialName("object")
     val objectType: String,
     @SerialName("results")
-    val results: List<JsonElement>,
+    override val results: List<JsonElement>,
     @SerialName("next_cursor")
-    val nextCursor: String? = null,
+    override val nextCursor: String? = null,
     @SerialName("has_more")
-    val hasMore: Boolean,
+    override val hasMore: Boolean,
     @SerialName("type")
     val type: String? = null,
     @SerialName("page_or_database")
     val pageOrDatabase: Map<String, String>? = null,
-)
+) : PaginatedResponse<JsonElement>
 
 /**
  * DSL builder for SearchRequest.

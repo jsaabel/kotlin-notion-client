@@ -4,6 +4,7 @@ package no.saabelit.kotlinnotionclient.models.users
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import no.saabelit.kotlinnotionclient.utils.PaginatedResponse
 
 /**
  * Represents a User in the Notion API.
@@ -110,9 +111,9 @@ data class UserList(
     @SerialName("object")
     val objectType: String = "list",
     @SerialName("results")
-    val results: List<User>,
+    override val results: List<User>,
     @SerialName("next_cursor")
-    val nextCursor: String? = null,
+    override val nextCursor: String? = null,
     @SerialName("has_more")
-    val hasMore: Boolean = false,
-)
+    override val hasMore: Boolean = false,
+) : PaginatedResponse<User>

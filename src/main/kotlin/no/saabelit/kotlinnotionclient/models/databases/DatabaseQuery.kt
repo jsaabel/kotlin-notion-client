@@ -7,6 +7,7 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import no.saabelit.kotlinnotionclient.models.base.EmptyObject
 import no.saabelit.kotlinnotionclient.models.pages.Page
+import no.saabelit.kotlinnotionclient.utils.PaginatedResponse
 
 /**
  * Request model for querying a database.
@@ -36,16 +37,16 @@ data class DatabaseQueryResponse(
     @SerialName("object")
     val objectType: String, // Always "list"
     @SerialName("results")
-    val results: List<Page>,
+    override val results: List<Page>,
     @SerialName("next_cursor")
-    val nextCursor: String? = null,
+    override val nextCursor: String? = null,
     @SerialName("has_more")
-    val hasMore: Boolean,
+    override val hasMore: Boolean,
     @SerialName("type")
     val type: String, // Always "page_or_database"
     @SerialName("page_or_database")
     val pageOrDatabase: EmptyObject = EmptyObject(),
-)
+) : PaginatedResponse<Page>
 
 /**
  * Database filter specification.

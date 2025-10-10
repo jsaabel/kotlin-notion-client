@@ -10,6 +10,7 @@ import no.saabelit.kotlinnotionclient.models.base.NotionObject
 import no.saabelit.kotlinnotionclient.models.base.Parent
 import no.saabelit.kotlinnotionclient.models.base.RichText
 import no.saabelit.kotlinnotionclient.models.users.User
+import no.saabelit.kotlinnotionclient.utils.PaginatedResponse
 
 /**
  * Represents a block in Notion.
@@ -1368,13 +1369,13 @@ data class BlockList(
     @SerialName("object")
     val objectType: String = "list",
     @SerialName("results")
-    val results: List<Block>,
+    override val results: List<Block>,
     @SerialName("next_cursor")
-    val nextCursor: String? = null,
+    override val nextCursor: String? = null,
     @SerialName("has_more")
-    val hasMore: Boolean = false,
+    override val hasMore: Boolean = false,
     @SerialName("type")
     val type: String = "block",
     @SerialName("block")
     val block: JsonObject,
-)
+) : PaginatedResponse<Block>
