@@ -47,7 +47,7 @@ class ApiOverloadsIntegrationTest :
             "PagesApi create overload should work with live API" {
                 val token = System.getenv("NOTION_API_TOKEN")
                 val parentPageId = System.getenv("NOTION_TEST_PAGE_ID")
-                val client = NotionClient.Companion.create(NotionConfig(apiToken = token))
+                val client = NotionClient.create(NotionConfig(apiToken = token))
 
                 try {
                     println("📄 Testing PagesApi.create() overload with live API...")
@@ -120,7 +120,7 @@ class ApiOverloadsIntegrationTest :
             "DatabasesApi create overload should work with live API" {
                 val token = System.getenv("NOTION_API_TOKEN")
                 val parentPageId = System.getenv("NOTION_TEST_PAGE_ID")
-                val client = NotionClient.Companion.create(NotionConfig(apiToken = token))
+                val client = NotionClient.create(NotionConfig(apiToken = token))
 
                 try {
                     println("🗄️ Testing DatabasesApi.create() overload with live API...")
@@ -231,7 +231,7 @@ class ApiOverloadsIntegrationTest :
             "BlocksApi appendChildren overload should work with live API" {
                 val token = System.getenv("NOTION_API_TOKEN")
                 val parentPageId = System.getenv("NOTION_TEST_PAGE_ID")
-                val client = NotionClient.Companion.create(NotionConfig(apiToken = token))
+                val client = NotionClient.create(NotionConfig(apiToken = token))
 
                 try {
                     println("🧱 Testing BlocksApi.appendChildren() overload with live API...")
@@ -318,7 +318,7 @@ class ApiOverloadsIntegrationTest :
             "BlocksApi update overload should work with live API" {
                 val token = System.getenv("NOTION_API_TOKEN")
                 val parentPageId = System.getenv("NOTION_TEST_PAGE_ID")
-                val client = NotionClient.Companion.create(NotionConfig(apiToken = token))
+                val client = NotionClient.create(NotionConfig(apiToken = token))
 
                 try {
                     println("🔄 Testing BlocksApi.update() overload with live API...")
@@ -419,7 +419,7 @@ class ApiOverloadsIntegrationTest :
             "BlocksApi delete should work with live API" {
                 val token = System.getenv("NOTION_API_TOKEN")
                 val parentPageId = System.getenv("NOTION_TEST_PAGE_ID")
-                val client = NotionClient.Companion.create(NotionConfig(apiToken = token))
+                val client = NotionClient.create(NotionConfig(apiToken = token))
 
                 try {
                     println("🗑️ Testing BlocksApi.delete() with live API...")
@@ -508,7 +508,7 @@ class ApiOverloadsIntegrationTest :
             "Combined API overloads workflow should work end-to-end" {
                 val token = System.getenv("NOTION_API_TOKEN")
                 val parentPageId = System.getenv("NOTION_TEST_PAGE_ID")
-                val client = NotionClient.Companion.create(NotionConfig(apiToken = token))
+                val client = NotionClient.create(NotionConfig(apiToken = token))
 
                 try {
                     println("🔄 Testing combined API overloads workflow...")

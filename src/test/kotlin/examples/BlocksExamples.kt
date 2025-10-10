@@ -68,7 +68,7 @@ class BlocksExamples :
                 if (shouldCleanupAfterTest() && testPageId != null) {
                     println("🧹 Cleaning up test page...")
                     try {
-                        notion.pages.archive(testPageId!!)
+                        notion.pages.archive(testPageId)
                         println("✅ Cleanup complete")
                     } catch (e: Exception) {
                         println("⚠️ Cleanup failed: ${e.message}")
@@ -110,7 +110,7 @@ class BlocksExamples :
 
                 // Verify by retrieving children
                 delay(1000)
-                val blocks = notion.blocks.retrieveChildren(testPageId!!)
+                val blocks = notion.blocks.retrieveChildren(testPageId)
 
                 // Validation
                 blocks.shouldNotBeEmpty()
@@ -144,7 +144,7 @@ class BlocksExamples :
 
                 // Verify
                 delay(1000)
-                val blocks = notion.blocks.retrieveChildren(testPageId!!)
+                val blocks = notion.blocks.retrieveChildren(testPageId)
 
                 // Validation - should have at least one paragraph with multiple rich text segments
                 blocks.shouldNotBeEmpty()
@@ -181,7 +181,7 @@ class BlocksExamples :
 
                 // Verify
                 delay(1000)
-                val blocks = notion.blocks.retrieveChildren(testPageId!!)
+                val blocks = notion.blocks.retrieveChildren(testPageId)
 
                 // Validation
                 blocks.shouldNotBeEmpty()
@@ -212,7 +212,7 @@ class BlocksExamples :
 
                 // Verify
                 delay(1000)
-                val blocks = notion.blocks.retrieveChildren(testPageId!!)
+                val blocks = notion.blocks.retrieveChildren(testPageId)
 
                 // Validation
                 blocks.shouldNotBeEmpty()
@@ -237,7 +237,7 @@ class BlocksExamples :
 
                 // Verify
                 delay(1000)
-                val blocks = notion.blocks.retrieveChildren(testPageId!!)
+                val blocks = notion.blocks.retrieveChildren(testPageId)
 
                 // Validation
                 blocks.shouldNotBeEmpty()
@@ -262,7 +262,7 @@ class BlocksExamples :
 
                 // Verify
                 delay(1000)
-                val blocks = notion.blocks.retrieveChildren(testPageId!!)
+                val blocks = notion.blocks.retrieveChildren(testPageId)
 
                 // Validation
                 blocks.shouldNotBeEmpty()

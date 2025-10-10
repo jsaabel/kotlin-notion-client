@@ -274,9 +274,9 @@ class CreateCommentRequestBuilderTest :
                         }
 
                     request.displayName.shouldNotBeNull()
-                    request.displayName!!.type shouldBe CommentDisplayNameType.CUSTOM
-                    request.displayName!!.custom.shouldNotBeNull()
-                    request.displayName!!.custom!!.name shouldBe "Custom Bot Name"
+                    request.displayName.type shouldBe CommentDisplayNameType.CUSTOM
+                    request.displayName.custom.shouldNotBeNull()
+                    request.displayName.custom.name shouldBe "Custom Bot Name"
                 }
 
                 it("should support single attachment") {
@@ -290,9 +290,9 @@ class CreateCommentRequestBuilderTest :
                         }
 
                     request.attachments.shouldNotBeNull()
-                    request.attachments!! shouldHaveSize 1
-                    request.attachments!![0].fileUploadId shouldBe "file-upload-123"
-                    request.attachments!![0].type shouldBe "file_upload"
+                    request.attachments shouldHaveSize 1
+                    request.attachments[0].fileUploadId shouldBe "file-upload-123"
+                    request.attachments[0].type shouldBe "file_upload"
                 }
 
                 it("should support multiple attachments") {
@@ -313,10 +313,10 @@ class CreateCommentRequestBuilderTest :
                         }
 
                     request.attachments.shouldNotBeNull()
-                    request.attachments!! shouldHaveSize 3
-                    request.attachments!![0].fileUploadId shouldBe "file1"
-                    request.attachments!![1].fileUploadId shouldBe "file2"
-                    request.attachments!![2].fileUploadId shouldBe "file3"
+                    request.attachments shouldHaveSize 3
+                    request.attachments[0].fileUploadId shouldBe "file1"
+                    request.attachments[1].fileUploadId shouldBe "file2"
+                    request.attachments[2].fileUploadId shouldBe "file3"
                 }
             }
 
@@ -438,7 +438,7 @@ class CreateCommentRequestBuilderTest :
                     request.discussionId shouldBe "discussion-456"
                     request.displayName!!.custom!!.name shouldBe "Advanced Bot"
                     request.attachments!! shouldHaveSize 1
-                    request.attachments!![0].fileUploadId shouldBe "file-upload-789"
+                    request.attachments[0].fileUploadId shouldBe "file-upload-789"
                 }
 
                 it("should allow building multiple requests independently") {

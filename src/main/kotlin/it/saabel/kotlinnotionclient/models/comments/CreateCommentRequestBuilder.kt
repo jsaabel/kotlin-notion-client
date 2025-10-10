@@ -5,7 +5,6 @@ package it.saabel.kotlinnotionclient.models.comments
 import it.saabel.kotlinnotionclient.models.base.Parent
 import it.saabel.kotlinnotionclient.models.base.RichText
 import it.saabel.kotlinnotionclient.models.richtext.RichTextBuilder
-import it.saabel.kotlinnotionclient.models.richtext.richText
 
 /**
  * DSL marker to prevent nested scopes in comment builders.

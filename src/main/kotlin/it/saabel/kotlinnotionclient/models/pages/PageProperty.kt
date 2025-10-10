@@ -397,12 +397,12 @@ val PageProperty.Date.endLocalDateTimeNaive: kotlinx.datetime.LocalDateTime?
         }
 
 /** Returns the end instant as Instant, or null if not set or parsing fails. */
-val PageProperty.Date.endInstantValue: kotlinx.datetime.Instant?
+val PageProperty.Date.endInstantValue: Instant?
     get() =
         date?.end?.let {
             try {
                 val normalized = it.replace(Regex("\\.\\d+"), "")
-                kotlinx.datetime.Instant.parse(normalized)
+                Instant.parse(normalized)
             } catch (e: IllegalArgumentException) {
                 null
             }

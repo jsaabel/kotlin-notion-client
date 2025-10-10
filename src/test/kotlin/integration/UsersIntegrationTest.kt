@@ -49,7 +49,7 @@ class UsersIntegrationTest :
                 user.person shouldBe null
 
                 // Owner info may or may not be present
-                if (user.bot?.owner != null) {
+                if (user.bot.owner != null) {
                     println("✓ Got bot user: ${user.name} (${user.id}) with owner: ${user.bot.owner.type}")
                 } else {
                     println("✓ Got bot user: ${user.name} (${user.id}) - no owner info")

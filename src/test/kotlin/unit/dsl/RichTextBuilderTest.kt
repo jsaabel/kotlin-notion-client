@@ -6,7 +6,6 @@ import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
 import it.saabel.kotlinnotionclient.models.base.Annotations
 import it.saabel.kotlinnotionclient.models.base.Color
-import it.saabel.kotlinnotionclient.models.base.DateObject
 import it.saabel.kotlinnotionclient.models.base.Equation
 import it.saabel.kotlinnotionclient.models.base.Link
 import it.saabel.kotlinnotionclient.models.base.Mention

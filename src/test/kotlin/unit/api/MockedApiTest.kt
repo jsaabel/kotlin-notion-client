@@ -87,9 +87,9 @@ class MockedApiTest :
 
             // Verify data sources array (new in 2025-09-03)
             database.dataSources.shouldNotBe(null)
-            database.dataSources?.size shouldBe 1
-            database.dataSources?.first()?.id shouldBe "248104cd-477e-80af-bc30-000bd28de8f9"
-            database.dataSources?.first()?.name shouldBe "My Task Tracker"
+            database.dataSources.size shouldBe 1
+            database.dataSources.first().id shouldBe "248104cd-477e-80af-bc30-000bd28de8f9"
+            database.dataSources.first().name shouldBe "My Task Tracker"
 
             httpClient.close()
         }
@@ -98,9 +98,9 @@ class MockedApiTest :
             val httpClient =
                 mockClient {
                     addErrorResponse(
-                        HttpMethod.Companion.Get,
+                        HttpMethod.Get,
                         "*/v1/pages/*",
-                        HttpStatusCode.Companion.NotFound,
+                        HttpStatusCode.NotFound,
                         "Could not find page with ID: invalid-id",
                     )
                 }
@@ -126,9 +126,9 @@ class MockedApiTest :
             val httpClient =
                 mockClient {
                     addErrorResponse(
-                        HttpMethod.Companion.Get,
+                        HttpMethod.Get,
                         "*/v1/databases/*",
-                        HttpStatusCode.Companion.BadRequest,
+                        HttpStatusCode.BadRequest,
                         "Invalid database ID format",
                     )
                 }

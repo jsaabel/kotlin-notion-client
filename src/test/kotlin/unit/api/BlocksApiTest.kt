@@ -44,9 +44,9 @@ class BlocksApiTest :
                 httpClient =
                     mockClient {
                         addJsonResponse(
-                            method = HttpMethod.Companion.Get,
+                            method = HttpMethod.Get,
                             path = "/v1/blocks/$blockId",
-                            statusCode = HttpStatusCode.Companion.OK,
+                            statusCode = HttpStatusCode.OK,
                             responseBody = blockData.toString(),
                         )
                     }
@@ -75,9 +75,9 @@ class BlocksApiTest :
                 httpClient =
                     mockClient {
                         addErrorResponse(
-                            method = HttpMethod.Companion.Get,
+                            method = HttpMethod.Get,
                             urlPattern = "/v1/blocks/$blockId",
-                            statusCode = HttpStatusCode.Companion.NotFound,
+                            statusCode = HttpStatusCode.NotFound,
                         )
                     }
                 blocksApi = BlocksApi(httpClient, config)
@@ -99,9 +99,9 @@ class BlocksApiTest :
                 httpClient =
                     mockClient {
                         addJsonResponse(
-                            method = HttpMethod.Companion.Get,
+                            method = HttpMethod.Get,
                             path = "/v1/blocks/$parentBlockId/children",
-                            statusCode = HttpStatusCode.Companion.OK,
+                            statusCode = HttpStatusCode.OK,
                             responseBody = childrenData.toString(),
                         )
                     }
@@ -123,9 +123,9 @@ class BlocksApiTest :
                 httpClient =
                     mockClient {
                         addJsonResponse(
-                            method = HttpMethod.Companion.Patch,
+                            method = HttpMethod.Patch,
                             path = "/v1/blocks/$parentBlockId/children",
-                            statusCode = HttpStatusCode.Companion.OK,
+                            statusCode = HttpStatusCode.OK,
                             responseBody = appendChildrenResponse.toString(),
                         )
                     }
@@ -154,9 +154,9 @@ class BlocksApiTest :
                 httpClient =
                     mockClient {
                         addJsonResponse(
-                            method = HttpMethod.Companion.Patch,
+                            method = HttpMethod.Patch,
                             path = "/v1/blocks/$parentBlockId/children",
-                            statusCode = HttpStatusCode.Companion.OK,
+                            statusCode = HttpStatusCode.OK,
                             responseBody = appendChildrenResponse.toString(),
                         )
                     }
@@ -181,9 +181,9 @@ class BlocksApiTest :
                 httpClient =
                     mockClient {
                         addJsonResponse(
-                            method = HttpMethod.Companion.Patch,
+                            method = HttpMethod.Patch,
                             path = "/v1/blocks/$blockId",
-                            statusCode = HttpStatusCode.Companion.OK,
+                            statusCode = HttpStatusCode.OK,
                             responseBody = updateResponse.toString(),
                         )
                     }
@@ -224,9 +224,9 @@ class BlocksApiTest :
                 httpClient =
                     mockClient {
                         addJsonResponse(
-                            method = HttpMethod.Companion.Patch,
+                            method = HttpMethod.Patch,
                             path = "/v1/blocks/$blockId",
-                            statusCode = HttpStatusCode.Companion.OK,
+                            statusCode = HttpStatusCode.OK,
                             responseBody = updateResponse.toString(),
                         )
                     }
@@ -286,9 +286,9 @@ class BlocksApiTest :
                 httpClient =
                     mockClient {
                         addErrorResponse(
-                            method = HttpMethod.Companion.Patch,
+                            method = HttpMethod.Patch,
                             urlPattern = "/v1/blocks/$blockId",
-                            statusCode = HttpStatusCode.Companion.BadRequest,
+                            statusCode = HttpStatusCode.BadRequest,
                         )
                     }
                 blocksApi = BlocksApi(httpClient, config)
@@ -318,9 +318,9 @@ class BlocksApiTest :
                 httpClient =
                     mockClient {
                         addJsonResponse(
-                            method = HttpMethod.Companion.Patch,
+                            method = HttpMethod.Patch,
                             path = "/v1/blocks/$blockId",
-                            statusCode = HttpStatusCode.Companion.OK,
+                            statusCode = HttpStatusCode.OK,
                             responseBody = deleteResponse.toString(),
                         )
                     }
@@ -339,9 +339,9 @@ class BlocksApiTest :
                 httpClient =
                     mockClient {
                         addErrorResponse(
-                            method = HttpMethod.Companion.Patch,
+                            method = HttpMethod.Patch,
                             urlPattern = "/v1/blocks/$blockId",
-                            statusCode = HttpStatusCode.Companion.NotFound,
+                            statusCode = HttpStatusCode.NotFound,
                         )
                     }
                 blocksApi = BlocksApi(httpClient, config)
@@ -360,9 +360,9 @@ class BlocksApiTest :
                 httpClient =
                     mockClient {
                         addErrorResponse(
-                            method = HttpMethod.Companion.Patch,
+                            method = HttpMethod.Patch,
                             urlPattern = "/v1/blocks/$blockId",
-                            statusCode = HttpStatusCode.Companion.Forbidden,
+                            statusCode = HttpStatusCode.Forbidden,
                         )
                     }
                 blocksApi = BlocksApi(httpClient, config)

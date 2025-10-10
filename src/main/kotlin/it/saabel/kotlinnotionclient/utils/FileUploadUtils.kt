@@ -5,7 +5,6 @@ package it.saabel.kotlinnotionclient.utils
 import java.io.File
 import java.io.InputStream
 import java.nio.file.Path
-import kotlin.io.path.extension
 import kotlin.io.path.name
 
 /**
