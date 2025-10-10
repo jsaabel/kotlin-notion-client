@@ -8,11 +8,11 @@ import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
-import no.saabelit.kotlinnotionclient.models.base.Mention
-import no.saabelit.kotlinnotionclient.models.base.Parent
-import no.saabelit.kotlinnotionclient.models.comments.CommentAttachmentRequest
-import no.saabelit.kotlinnotionclient.models.comments.CommentDisplayNameType
-import no.saabelit.kotlinnotionclient.models.comments.createCommentRequest
+import it.saabel.kotlinnotionclient.models.base.Mention
+import it.saabel.kotlinnotionclient.models.base.Parent
+import it.saabel.kotlinnotionclient.models.comments.CommentAttachmentRequest
+import it.saabel.kotlinnotionclient.models.comments.CommentDisplayNameType
+import it.saabel.kotlinnotionclient.models.comments.createCommentRequest
 
 /**
  * Comprehensive unit tests for CreateCommentRequestBuilder DSL.

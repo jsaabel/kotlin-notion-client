@@ -4,11 +4,11 @@ import io.kotest.core.annotation.Tags
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.shouldBe
+import it.saabel.kotlinnotionclient.models.databases.DatabaseQueryResponse
+import it.saabel.kotlinnotionclient.models.pages.Page
+import it.saabel.kotlinnotionclient.utils.PaginatedResponse
+import it.saabel.kotlinnotionclient.utils.Pagination
 import kotlinx.coroutines.flow.toList
-import no.saabelit.kotlinnotionclient.models.databases.DatabaseQueryResponse
-import no.saabelit.kotlinnotionclient.models.pages.Page
-import no.saabelit.kotlinnotionclient.utils.PaginatedResponse
-import no.saabelit.kotlinnotionclient.utils.Pagination
 
 /**
  * Unit tests for pagination utilities.
@@ -210,7 +210,7 @@ private fun createMockPage(id: String): Page =
         archived = false,
         properties = emptyMap(),
         parent =
-            no.saabelit.kotlinnotionclient.models.base.Parent(
+            it.saabel.kotlinnotionclient.models.base.Parent(
                 type = "workspace",
                 workspace = true,
             ),
@@ -233,6 +233,6 @@ private fun createMockQueryResponse(
         hasMore = hasMore,
         type = "page_or_database",
         pageOrDatabase =
-            no.saabelit.kotlinnotionclient.models.base
+            it.saabel.kotlinnotionclient.models.base
                 .EmptyObject(),
     )

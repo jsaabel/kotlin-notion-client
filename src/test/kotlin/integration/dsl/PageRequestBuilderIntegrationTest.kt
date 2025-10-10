@@ -9,12 +9,12 @@ import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
 import io.kotest.matchers.types.shouldBeInstanceOf
+import it.saabel.kotlinnotionclient.NotionClient
+import it.saabel.kotlinnotionclient.config.NotionConfig
+import it.saabel.kotlinnotionclient.models.blocks.Block
+import it.saabel.kotlinnotionclient.models.pages.PageProperty
+import it.saabel.kotlinnotionclient.models.pages.createPageRequest
 import kotlinx.coroutines.delay
-import no.saabelit.kotlinnotionclient.NotionClient
-import no.saabelit.kotlinnotionclient.config.NotionConfig
-import no.saabelit.kotlinnotionclient.models.blocks.Block
-import no.saabelit.kotlinnotionclient.models.pages.PageProperty
-import no.saabelit.kotlinnotionclient.models.pages.createPageRequest
 
 /**
  * Self-contained integration test for the PageRequestBuilder DSL.

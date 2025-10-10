@@ -6,9 +6,9 @@ import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
+import it.saabel.kotlinnotionclient.NotionClient
+import it.saabel.kotlinnotionclient.config.NotionConfig
 import kotlinx.coroutines.delay
-import no.saabelit.kotlinnotionclient.NotionClient
-import no.saabelit.kotlinnotionclient.config.NotionConfig
 
 /**
  * Comprehensive integration test for the Data Sources API (2025-09-03).

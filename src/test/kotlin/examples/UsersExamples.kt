@@ -3,10 +3,10 @@ package examples
 import integration.integrationTestEnvVarsAreSet
 import io.kotest.core.annotation.Tags
 import io.kotest.core.spec.style.StringSpec
-import no.saabelit.kotlinnotionclient.NotionClient
-import no.saabelit.kotlinnotionclient.config.NotionConfig
-import no.saabelit.kotlinnotionclient.exceptions.NotionException
-import no.saabelit.kotlinnotionclient.models.users.UserType
+import it.saabel.kotlinnotionclient.NotionClient
+import it.saabel.kotlinnotionclient.config.NotionConfig
+import it.saabel.kotlinnotionclient.exceptions.NotionException
+import it.saabel.kotlinnotionclient.models.users.UserType
 
 /**
  * Users API Examples
@@ -188,7 +188,7 @@ class UsersExamples :
                 suspend fun getUserInfo(
                     client: NotionClient,
                     userId: String,
-                ): no.saabelit.kotlinnotionclient.models.users.User? =
+                ): it.saabel.kotlinnotionclient.models.users.User? =
                     try {
                         client.users.retrieve(userId)
                     } catch (e: NotionException.ApiError) {
@@ -220,8 +220,8 @@ class UsersExamples :
 
             "Example 8: Iterate through all users" {
                 // Example from docs: Iterate Through All Users
-                suspend fun getAllUsers(client: NotionClient): List<no.saabelit.kotlinnotionclient.models.users.User> {
-                    val allUsers = mutableListOf<no.saabelit.kotlinnotionclient.models.users.User>()
+                suspend fun getAllUsers(client: NotionClient): List<it.saabel.kotlinnotionclient.models.users.User> {
+                    val allUsers = mutableListOf<it.saabel.kotlinnotionclient.models.users.User>()
                     var cursor: String? = null
 
                     do {

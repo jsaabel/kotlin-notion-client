@@ -10,17 +10,17 @@ import io.kotest.matchers.should
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.types.shouldBeInstanceOf
-import no.saabelit.kotlinnotionclient.models.base.Parent
-import no.saabelit.kotlinnotionclient.models.base.RichText
-import no.saabelit.kotlinnotionclient.models.base.SelectOptionColor
-import no.saabelit.kotlinnotionclient.models.databases.CreateDatabaseProperty
-import no.saabelit.kotlinnotionclient.models.databases.CreateSelectOption
-import no.saabelit.kotlinnotionclient.models.databases.RelationConfiguration
-import no.saabelit.kotlinnotionclient.models.databases.databaseRequest
-import no.saabelit.kotlinnotionclient.models.pages.ExternalFile
-import no.saabelit.kotlinnotionclient.models.pages.NotionFile
-import no.saabelit.kotlinnotionclient.models.pages.PageCover
-import no.saabelit.kotlinnotionclient.models.pages.PageIcon
+import it.saabel.kotlinnotionclient.models.base.Parent
+import it.saabel.kotlinnotionclient.models.base.RichText
+import it.saabel.kotlinnotionclient.models.base.SelectOptionColor
+import it.saabel.kotlinnotionclient.models.databases.CreateDatabaseProperty
+import it.saabel.kotlinnotionclient.models.databases.CreateSelectOption
+import it.saabel.kotlinnotionclient.models.databases.RelationConfiguration
+import it.saabel.kotlinnotionclient.models.databases.databaseRequest
+import it.saabel.kotlinnotionclient.models.pages.ExternalFile
+import it.saabel.kotlinnotionclient.models.pages.NotionFile
+import it.saabel.kotlinnotionclient.models.pages.PageCover
+import it.saabel.kotlinnotionclient.models.pages.PageIcon
 import io.kotest.matchers.collections.shouldHaveSize as shouldHaveSizeList
 
 @Tags("Unit")

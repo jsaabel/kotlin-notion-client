@@ -3,10 +3,10 @@ package unit.dsl
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
-import no.saabelit.kotlinnotionclient.models.base.Annotations
-import no.saabelit.kotlinnotionclient.models.base.Color
-import no.saabelit.kotlinnotionclient.models.blocks.BlockRequest
-import no.saabelit.kotlinnotionclient.models.blocks.pageContent
+import it.saabel.kotlinnotionclient.models.base.Annotations
+import it.saabel.kotlinnotionclient.models.base.Color
+import it.saabel.kotlinnotionclient.models.blocks.BlockRequest
+import it.saabel.kotlinnotionclient.models.blocks.pageContent
 
 class RichTextIntegrationTest :
     FunSpec({

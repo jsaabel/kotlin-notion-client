@@ -4,8 +4,8 @@ import io.kotest.core.annotation.Tags
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
-import no.saabelit.kotlinnotionclient.models.databases.CreateDatabaseProperty
-import no.saabelit.kotlinnotionclient.models.databases.RelationConfiguration
+import it.saabel.kotlinnotionclient.models.databases.CreateDatabaseProperty
+import it.saabel.kotlinnotionclient.models.databases.RelationConfiguration
 
 /**
  * Unit tests for CreateDatabaseProperty functionality.

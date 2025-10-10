@@ -7,9 +7,9 @@ import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
-import no.saabelit.kotlinnotionclient.models.base.Color
-import no.saabelit.kotlinnotionclient.models.blocks.BlockRequest
-import no.saabelit.kotlinnotionclient.models.blocks.pageContent
+import it.saabel.kotlinnotionclient.models.base.Color
+import it.saabel.kotlinnotionclient.models.blocks.BlockRequest
+import it.saabel.kotlinnotionclient.models.blocks.pageContent
 
 /**
  * Unit tests for PageContentBuilder DSL focusing on the new block types.

@@ -6,17 +6,17 @@ import io.kotest.matchers.collections.shouldNotBeEmpty
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.string.shouldNotBeBlank
+import it.saabel.kotlinnotionclient.NotionClient
+import it.saabel.kotlinnotionclient.config.NotionConfig
+import it.saabel.kotlinnotionclient.exceptions.NotionException
+import it.saabel.kotlinnotionclient.models.base.Parent
+import it.saabel.kotlinnotionclient.models.blocks.pageContent
+import it.saabel.kotlinnotionclient.models.comments.CommentAttachmentRequest
+import it.saabel.kotlinnotionclient.models.comments.CreateCommentRequest
+import it.saabel.kotlinnotionclient.models.pages.CreatePageRequest
+import it.saabel.kotlinnotionclient.models.pages.PagePropertyValue
+import it.saabel.kotlinnotionclient.models.requests.RequestBuilders
 import kotlinx.coroutines.delay
-import no.saabelit.kotlinnotionclient.NotionClient
-import no.saabelit.kotlinnotionclient.config.NotionConfig
-import no.saabelit.kotlinnotionclient.exceptions.NotionException
-import no.saabelit.kotlinnotionclient.models.base.Parent
-import no.saabelit.kotlinnotionclient.models.blocks.pageContent
-import no.saabelit.kotlinnotionclient.models.comments.CommentAttachmentRequest
-import no.saabelit.kotlinnotionclient.models.comments.CreateCommentRequest
-import no.saabelit.kotlinnotionclient.models.pages.CreatePageRequest
-import no.saabelit.kotlinnotionclient.models.pages.PagePropertyValue
-import no.saabelit.kotlinnotionclient.models.requests.RequestBuilders
 
 /**
  * Self-contained integration test for the Comments API.

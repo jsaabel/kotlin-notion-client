@@ -7,15 +7,15 @@ import io.kotest.matchers.booleans.shouldBeTrue
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
+import it.saabel.kotlinnotionclient.config.NotionApiLimits
+import it.saabel.kotlinnotionclient.models.base.Annotations
+import it.saabel.kotlinnotionclient.models.base.Link
+import it.saabel.kotlinnotionclient.models.base.RichText
+import it.saabel.kotlinnotionclient.models.base.TextContent
+import it.saabel.kotlinnotionclient.models.pages.Page
+import it.saabel.kotlinnotionclient.models.pages.PageProperty
+import it.saabel.kotlinnotionclient.models.pages.getProperty
 import kotlinx.serialization.json.Json
-import no.saabelit.kotlinnotionclient.config.NotionApiLimits
-import no.saabelit.kotlinnotionclient.models.base.Annotations
-import no.saabelit.kotlinnotionclient.models.base.Link
-import no.saabelit.kotlinnotionclient.models.base.RichText
-import no.saabelit.kotlinnotionclient.models.base.TextContent
-import no.saabelit.kotlinnotionclient.models.pages.Page
-import no.saabelit.kotlinnotionclient.models.pages.PageProperty
-import no.saabelit.kotlinnotionclient.models.pages.getProperty
 import kotlin.io.path.Path
 import kotlin.io.path.readText
 

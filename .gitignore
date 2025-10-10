@@ -44,3 +44,15 @@ bin/
 
 ### Mac OS ###
 .DS_Store
+
+### Environment & Secrets ###
+.env
+.env.local
+.env.*.local
+*.properties.local
+secrets/
+credentials/
+
+### Local Test Data ###
+test-data/
+*.local.json

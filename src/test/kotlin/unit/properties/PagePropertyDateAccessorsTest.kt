@@ -3,19 +3,19 @@ package unit.properties
 import io.kotest.core.annotation.Tags
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
+import it.saabel.kotlinnotionclient.models.pages.DateData
+import it.saabel.kotlinnotionclient.models.pages.PageProperty
+import it.saabel.kotlinnotionclient.models.pages.endInstantValue
+import it.saabel.kotlinnotionclient.models.pages.endLocalDateTimeNaive
+import it.saabel.kotlinnotionclient.models.pages.endLocalDateValue
+import it.saabel.kotlinnotionclient.models.pages.endStringValue
+import it.saabel.kotlinnotionclient.models.pages.instantValue
+import it.saabel.kotlinnotionclient.models.pages.localDateTimeNaive
+import it.saabel.kotlinnotionclient.models.pages.localDateValue
+import it.saabel.kotlinnotionclient.models.pages.stringValue
 import kotlinx.datetime.Instant
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
-import no.saabelit.kotlinnotionclient.models.pages.DateData
-import no.saabelit.kotlinnotionclient.models.pages.PageProperty
-import no.saabelit.kotlinnotionclient.models.pages.endInstantValue
-import no.saabelit.kotlinnotionclient.models.pages.endLocalDateTimeNaive
-import no.saabelit.kotlinnotionclient.models.pages.endLocalDateValue
-import no.saabelit.kotlinnotionclient.models.pages.endStringValue
-import no.saabelit.kotlinnotionclient.models.pages.instantValue
-import no.saabelit.kotlinnotionclient.models.pages.localDateTimeNaive
-import no.saabelit.kotlinnotionclient.models.pages.localDateValue
-import no.saabelit.kotlinnotionclient.models.pages.stringValue
 
 /**
  * Tests for PageProperty.Date extension properties.

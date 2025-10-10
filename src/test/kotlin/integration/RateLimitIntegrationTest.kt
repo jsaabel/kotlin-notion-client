@@ -11,13 +11,13 @@ import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.headersOf
 import io.ktor.serialization.kotlinx.json.json
+import it.saabel.kotlinnotionclient.NotionClient
+import it.saabel.kotlinnotionclient.config.NotionConfig
+import it.saabel.kotlinnotionclient.ratelimit.NotionRateLimit
+import it.saabel.kotlinnotionclient.ratelimit.RateLimitConfig
+import it.saabel.kotlinnotionclient.ratelimit.RateLimitStrategy
 import kotlinx.coroutines.delay
 import kotlinx.serialization.json.Json
-import no.saabelit.kotlinnotionclient.NotionClient
-import no.saabelit.kotlinnotionclient.config.NotionConfig
-import no.saabelit.kotlinnotionclient.ratelimit.NotionRateLimit
-import no.saabelit.kotlinnotionclient.ratelimit.RateLimitConfig
-import no.saabelit.kotlinnotionclient.ratelimit.RateLimitStrategy
 import unit.util.TestFixtures
 
 /**
@@ -179,7 +179,7 @@ class RateLimitIntegrationTest :
                     client.pages.retrieve("test-page")
                     // If we get here without an exception, the test should fail
                     throw AssertionError("Expected an ApiError for 429 response")
-                } catch (e: no.saabelit.kotlinnotionclient.exceptions.NotionException.ApiError) {
+                } catch (e: it.saabel.kotlinnotionclient.exceptions.NotionException.ApiError) {
                     // This is expected - verify it's a 429 error
                     e.status shouldBe 429
                 }

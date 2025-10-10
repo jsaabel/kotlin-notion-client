@@ -8,8 +8,8 @@ import io.kotest.matchers.maps.shouldHaveSize
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.types.shouldBeInstanceOf
-import no.saabelit.kotlinnotionclient.models.pages.PagePropertyValue
-import no.saabelit.kotlinnotionclient.models.pages.pageProperties
+import it.saabel.kotlinnotionclient.models.pages.PagePropertyValue
+import it.saabel.kotlinnotionclient.models.pages.pageProperties
 
 /**
  * Tests for the PagePropertiesBuilder DSL functionality.

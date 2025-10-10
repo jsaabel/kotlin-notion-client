@@ -8,11 +8,11 @@ import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
+import it.saabel.kotlinnotionclient.NotionClient
+import it.saabel.kotlinnotionclient.config.NotionConfig
+import it.saabel.kotlinnotionclient.models.pages.PageProperty
+import it.saabel.kotlinnotionclient.models.pages.updatePageRequest
 import kotlinx.coroutines.delay
-import no.saabelit.kotlinnotionclient.NotionClient
-import no.saabelit.kotlinnotionclient.config.NotionConfig
-import no.saabelit.kotlinnotionclient.models.pages.PageProperty
-import no.saabelit.kotlinnotionclient.models.pages.updatePageRequest
 
 /**
  * Integration test for the UpdatePageRequestBuilder DSL.

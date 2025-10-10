@@ -7,13 +7,13 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.ktor.http.HttpMethod
+import it.saabel.kotlinnotionclient.api.FileUploadApi
+import it.saabel.kotlinnotionclient.config.NotionConfig
+import it.saabel.kotlinnotionclient.models.files.CreateFileUploadRequest
+import it.saabel.kotlinnotionclient.models.files.FileUpload
+import it.saabel.kotlinnotionclient.models.files.FileUploadMode
+import it.saabel.kotlinnotionclient.models.files.FileUploadStatus
 import kotlinx.serialization.json.Json
-import no.saabelit.kotlinnotionclient.api.FileUploadApi
-import no.saabelit.kotlinnotionclient.config.NotionConfig
-import no.saabelit.kotlinnotionclient.models.files.CreateFileUploadRequest
-import no.saabelit.kotlinnotionclient.models.files.FileUpload
-import no.saabelit.kotlinnotionclient.models.files.FileUploadMode
-import no.saabelit.kotlinnotionclient.models.files.FileUploadStatus
 import unit.util.TestFixtures
 import unit.util.mockClient
 

@@ -5,9 +5,9 @@ import io.kotest.core.annotation.Tags
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.throwable.shouldHaveMessage
-import no.saabelit.kotlinnotionclient.models.files.CreateFileUploadRequestBuilder
-import no.saabelit.kotlinnotionclient.models.files.FileUploadMode
-import no.saabelit.kotlinnotionclient.models.files.createFileUploadRequest
+import it.saabel.kotlinnotionclient.models.files.CreateFileUploadRequestBuilder
+import it.saabel.kotlinnotionclient.models.files.FileUploadMode
+import it.saabel.kotlinnotionclient.models.files.createFileUploadRequest
 
 /**
  * Unit tests for the CreateFileUploadRequestBuilder DSL.

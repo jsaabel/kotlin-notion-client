@@ -5,12 +5,12 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.types.shouldBeInstanceOf
-import no.saabelit.kotlinnotionclient.ratelimit.BackoffCalculator
-import no.saabelit.kotlinnotionclient.ratelimit.RateLimitConfig
-import no.saabelit.kotlinnotionclient.ratelimit.RateLimitDecision
-import no.saabelit.kotlinnotionclient.ratelimit.RateLimitState
-import no.saabelit.kotlinnotionclient.ratelimit.RateLimitStrategy
-import no.saabelit.kotlinnotionclient.ratelimit.RetryAttempt
+import it.saabel.kotlinnotionclient.ratelimit.BackoffCalculator
+import it.saabel.kotlinnotionclient.ratelimit.RateLimitConfig
+import it.saabel.kotlinnotionclient.ratelimit.RateLimitDecision
+import it.saabel.kotlinnotionclient.ratelimit.RateLimitState
+import it.saabel.kotlinnotionclient.ratelimit.RateLimitStrategy
+import it.saabel.kotlinnotionclient.ratelimit.RetryAttempt
 import kotlin.time.Duration.Companion.seconds
 
 /**

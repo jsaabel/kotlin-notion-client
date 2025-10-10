@@ -3,7 +3,7 @@ package unit.dsl
 import io.kotest.core.annotation.Tags
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
-import no.saabelit.kotlinnotionclient.models.blocks.pageContent
+import it.saabel.kotlinnotionclient.models.blocks.pageContent
 
 /**
  * Demonstration of the new Content Creation DSL.

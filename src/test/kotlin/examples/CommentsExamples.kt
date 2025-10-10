@@ -4,12 +4,12 @@ import integration.integrationTestEnvVarsAreSet
 import integration.shouldCleanupAfterTest
 import io.kotest.core.annotation.Tags
 import io.kotest.core.spec.style.StringSpec
+import it.saabel.kotlinnotionclient.NotionClient
+import it.saabel.kotlinnotionclient.config.NotionConfig
+import it.saabel.kotlinnotionclient.models.base.Mention
+import it.saabel.kotlinnotionclient.models.blocks.pageContent
+import it.saabel.kotlinnotionclient.models.comments.CommentAttachmentRequest
 import kotlinx.coroutines.delay
-import no.saabelit.kotlinnotionclient.NotionClient
-import no.saabelit.kotlinnotionclient.config.NotionConfig
-import no.saabelit.kotlinnotionclient.models.base.Mention
-import no.saabelit.kotlinnotionclient.models.blocks.pageContent
-import no.saabelit.kotlinnotionclient.models.comments.CommentAttachmentRequest
 
 /**
  * Comments API Examples

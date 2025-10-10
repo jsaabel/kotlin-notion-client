@@ -5,17 +5,17 @@ import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
+import it.saabel.kotlinnotionclient.NotionClient
+import it.saabel.kotlinnotionclient.config.NotionConfig
+import it.saabel.kotlinnotionclient.models.pages.endLocalDateValue
+import it.saabel.kotlinnotionclient.models.pages.instantValue
+import it.saabel.kotlinnotionclient.models.pages.localDateValue
+import it.saabel.kotlinnotionclient.models.pages.toLocalDateTime
 import kotlinx.coroutines.delay
 import kotlinx.datetime.Instant
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.TimeZone
-import no.saabelit.kotlinnotionclient.NotionClient
-import no.saabelit.kotlinnotionclient.config.NotionConfig
-import no.saabelit.kotlinnotionclient.models.pages.endLocalDateValue
-import no.saabelit.kotlinnotionclient.models.pages.instantValue
-import no.saabelit.kotlinnotionclient.models.pages.localDateValue
-import no.saabelit.kotlinnotionclient.models.pages.toLocalDateTime
 
 /**
  * Comprehensive integration test for typed date/datetime property API.
@@ -189,7 +189,7 @@ class TypedDatePropertiesIntegrationTest :
                     val dueDateProp = retrievedPage.properties["Due Date"]
                     dueDateProp.shouldNotBeNull()
 
-                    if (dueDateProp is no.saabelit.kotlinnotionclient.models.pages.PageProperty.Date) {
+                    if (dueDateProp is it.saabel.kotlinnotionclient.models.pages.PageProperty.Date) {
                         val localDate = dueDateProp.localDateValue
                         localDate.shouldNotBeNull()
                         localDate shouldBe LocalDate(2025, 3, 15)
@@ -200,7 +200,7 @@ class TypedDatePropertiesIntegrationTest :
                     val meetingTimeProp = retrievedMeetingPage.properties["Meeting Time"]
                     meetingTimeProp.shouldNotBeNull()
 
-                    if (meetingTimeProp is no.saabelit.kotlinnotionclient.models.pages.PageProperty.Date) {
+                    if (meetingTimeProp is it.saabel.kotlinnotionclient.models.pages.PageProperty.Date) {
                         val instant = meetingTimeProp.instantValue
                         instant.shouldNotBeNull()
                         instant shouldBe Instant.parse("2025-03-20T14:30:00Z")
@@ -217,7 +217,7 @@ class TypedDatePropertiesIntegrationTest :
                     val rangeProp = retrievedRangePage.properties["Event Period"]
                     rangeProp.shouldNotBeNull()
 
-                    if (rangeProp is no.saabelit.kotlinnotionclient.models.pages.PageProperty.Date) {
+                    if (rangeProp is it.saabel.kotlinnotionclient.models.pages.PageProperty.Date) {
                         rangeProp.localDateValue shouldBe LocalDate(2025, 4, 1)
                         rangeProp.endLocalDateValue shouldBe LocalDate(2025, 4, 3)
                         println("✅ Date range accessors work: ${rangeProp.localDateValue} to ${rangeProp.endLocalDateValue}")

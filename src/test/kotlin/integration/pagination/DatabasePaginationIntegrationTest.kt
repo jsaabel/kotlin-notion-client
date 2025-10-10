@@ -5,11 +5,11 @@ import integration.shouldCleanupAfterTest
 import io.kotest.core.annotation.Tags
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
+import it.saabel.kotlinnotionclient.NotionClient
+import it.saabel.kotlinnotionclient.config.NotionConfig
+import it.saabel.kotlinnotionclient.models.databases.DatabaseQueryBuilder
+import it.saabel.kotlinnotionclient.models.pages.PageProperty
 import kotlinx.coroutines.delay
-import no.saabelit.kotlinnotionclient.NotionClient
-import no.saabelit.kotlinnotionclient.config.NotionConfig
-import no.saabelit.kotlinnotionclient.models.databases.DatabaseQueryBuilder
-import no.saabelit.kotlinnotionclient.models.pages.PageProperty
 
 /**
  * Integration tests for database pagination functionality.

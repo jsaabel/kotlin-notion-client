@@ -4,23 +4,23 @@ import io.kotest.core.annotation.Tags
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.collections.shouldContainAnyOf
 import io.kotest.matchers.shouldBe
+import it.saabel.kotlinnotionclient.NotionClient
+import it.saabel.kotlinnotionclient.config.NotionConfig
+import it.saabel.kotlinnotionclient.models.base.Parent
+import it.saabel.kotlinnotionclient.models.databases.CreateDatabaseProperty
+import it.saabel.kotlinnotionclient.models.databases.CreateDatabaseRequest
+import it.saabel.kotlinnotionclient.models.databases.InitialDataSource
+import it.saabel.kotlinnotionclient.models.pages.CreatePageRequest
+import it.saabel.kotlinnotionclient.models.pages.PagePropertyValue
+import it.saabel.kotlinnotionclient.models.pages.UpdatePageRequest
+import it.saabel.kotlinnotionclient.models.pages.getCheckboxProperty
+import it.saabel.kotlinnotionclient.models.pages.getEmailProperty
+import it.saabel.kotlinnotionclient.models.pages.getNumberProperty
+import it.saabel.kotlinnotionclient.models.pages.getRichTextAsPlainText
+import it.saabel.kotlinnotionclient.models.pages.getTitleAsPlainText
+import it.saabel.kotlinnotionclient.models.pages.pageProperties
+import it.saabel.kotlinnotionclient.models.requests.RequestBuilders
 import kotlinx.coroutines.delay
-import no.saabelit.kotlinnotionclient.NotionClient
-import no.saabelit.kotlinnotionclient.config.NotionConfig
-import no.saabelit.kotlinnotionclient.models.base.Parent
-import no.saabelit.kotlinnotionclient.models.databases.CreateDatabaseProperty
-import no.saabelit.kotlinnotionclient.models.databases.CreateDatabaseRequest
-import no.saabelit.kotlinnotionclient.models.databases.InitialDataSource
-import no.saabelit.kotlinnotionclient.models.pages.CreatePageRequest
-import no.saabelit.kotlinnotionclient.models.pages.PagePropertyValue
-import no.saabelit.kotlinnotionclient.models.pages.UpdatePageRequest
-import no.saabelit.kotlinnotionclient.models.pages.getCheckboxProperty
-import no.saabelit.kotlinnotionclient.models.pages.getEmailProperty
-import no.saabelit.kotlinnotionclient.models.pages.getNumberProperty
-import no.saabelit.kotlinnotionclient.models.pages.getRichTextAsPlainText
-import no.saabelit.kotlinnotionclient.models.pages.getTitleAsPlainText
-import no.saabelit.kotlinnotionclient.models.pages.pageProperties
-import no.saabelit.kotlinnotionclient.models.requests.RequestBuilders
 
 /**
  * Self-contained integration tests that create their own test data and clean up afterwards (2025-09-03 API).

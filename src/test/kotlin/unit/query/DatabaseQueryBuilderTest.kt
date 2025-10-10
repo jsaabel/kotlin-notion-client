@@ -4,10 +4,10 @@ import io.kotest.core.annotation.Tags
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.collections.shouldNotBeEmpty
 import io.kotest.matchers.shouldBe
-import no.saabelit.kotlinnotionclient.NotionClient
-import no.saabelit.kotlinnotionclient.config.NotionConfig
-import no.saabelit.kotlinnotionclient.models.databases.DatabaseQueryBuilder
-import no.saabelit.kotlinnotionclient.models.databases.SortDirection
+import it.saabel.kotlinnotionclient.NotionClient
+import it.saabel.kotlinnotionclient.config.NotionConfig
+import it.saabel.kotlinnotionclient.models.databases.DatabaseQueryBuilder
+import it.saabel.kotlinnotionclient.models.databases.SortDirection
 import unit.util.mockClient
 
 /**

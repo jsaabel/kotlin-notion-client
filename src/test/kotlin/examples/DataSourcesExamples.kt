@@ -7,11 +7,11 @@ import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.collections.shouldNotBeEmpty
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
+import it.saabel.kotlinnotionclient.NotionClient
+import it.saabel.kotlinnotionclient.config.NotionConfig
+import it.saabel.kotlinnotionclient.models.databases.SortDirection
+import it.saabel.kotlinnotionclient.models.pages.PageProperty
 import kotlinx.coroutines.delay
-import no.saabelit.kotlinnotionclient.NotionClient
-import no.saabelit.kotlinnotionclient.config.NotionConfig
-import no.saabelit.kotlinnotionclient.models.databases.SortDirection
-import no.saabelit.kotlinnotionclient.models.pages.PageProperty
 
 /**
  * Validation tests for all code examples in docs/data-sources.md

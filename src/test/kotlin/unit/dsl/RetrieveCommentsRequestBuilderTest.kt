@@ -6,7 +6,7 @@ import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
-import no.saabelit.kotlinnotionclient.models.comments.retrieveCommentsRequest
+import it.saabel.kotlinnotionclient.models.comments.retrieveCommentsRequest
 
 /**
  * Unit tests for RetrieveCommentsRequestBuilder DSL.

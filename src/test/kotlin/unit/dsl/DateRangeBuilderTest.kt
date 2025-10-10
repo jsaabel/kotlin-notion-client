@@ -5,13 +5,13 @@ import io.kotest.core.annotation.Tags
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
+import it.saabel.kotlinnotionclient.models.pages.DateRangeBuilder
+import it.saabel.kotlinnotionclient.models.pages.InstantRangeBuilder
+import it.saabel.kotlinnotionclient.models.pages.LocalDateTimeRangeBuilder
 import kotlinx.datetime.Instant
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.TimeZone
-import no.saabelit.kotlinnotionclient.models.pages.DateRangeBuilder
-import no.saabelit.kotlinnotionclient.models.pages.InstantRangeBuilder
-import no.saabelit.kotlinnotionclient.models.pages.LocalDateTimeRangeBuilder
 
 /**
  * Tests for date range DSL builders.

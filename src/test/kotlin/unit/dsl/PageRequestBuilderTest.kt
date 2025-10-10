@@ -5,8 +5,8 @@ import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.maps.shouldContainKey
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
-import no.saabelit.kotlinnotionclient.models.base.Parent
-import no.saabelit.kotlinnotionclient.models.pages.createPageRequest
+import it.saabel.kotlinnotionclient.models.base.Parent
+import it.saabel.kotlinnotionclient.models.pages.createPageRequest
 
 // TODO: Adjust/replace following API version update
 

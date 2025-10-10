@@ -5,16 +5,16 @@ import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import it.saabel.kotlinnotionclient.NotionClient
+import it.saabel.kotlinnotionclient.config.NotionConfig
+import it.saabel.kotlinnotionclient.models.base.Parent
+import it.saabel.kotlinnotionclient.models.blocks.Block
+import it.saabel.kotlinnotionclient.models.blocks.BlockRequest
+import it.saabel.kotlinnotionclient.models.blocks.pageContent
+import it.saabel.kotlinnotionclient.models.pages.CreatePageRequest
+import it.saabel.kotlinnotionclient.models.pages.PagePropertyValue
+import it.saabel.kotlinnotionclient.models.requests.RequestBuilders
 import kotlinx.coroutines.delay
-import no.saabelit.kotlinnotionclient.NotionClient
-import no.saabelit.kotlinnotionclient.config.NotionConfig
-import no.saabelit.kotlinnotionclient.models.base.Parent
-import no.saabelit.kotlinnotionclient.models.blocks.Block
-import no.saabelit.kotlinnotionclient.models.blocks.BlockRequest
-import no.saabelit.kotlinnotionclient.models.blocks.pageContent
-import no.saabelit.kotlinnotionclient.models.pages.CreatePageRequest
-import no.saabelit.kotlinnotionclient.models.pages.PagePropertyValue
-import no.saabelit.kotlinnotionclient.models.requests.RequestBuilders
 
 /**
  * Self-contained integration test for the Content Creation DSL.

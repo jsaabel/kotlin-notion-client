@@ -9,23 +9,23 @@ import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.string.shouldContain
 import io.kotest.matchers.string.shouldNotContain
-import no.saabelit.kotlinnotionclient.NotionClient
-import no.saabelit.kotlinnotionclient.config.NotionApiLimits
-import no.saabelit.kotlinnotionclient.config.NotionConfig
-import no.saabelit.kotlinnotionclient.models.base.Annotations
-import no.saabelit.kotlinnotionclient.models.base.Parent
-import no.saabelit.kotlinnotionclient.models.base.RichText
-import no.saabelit.kotlinnotionclient.models.base.SelectOptionColor
-import no.saabelit.kotlinnotionclient.models.base.TextContent
-import no.saabelit.kotlinnotionclient.models.blocks.BlockRequest
-import no.saabelit.kotlinnotionclient.models.blocks.BulletedListItemRequestContent
-import no.saabelit.kotlinnotionclient.models.blocks.Heading1RequestContent
-import no.saabelit.kotlinnotionclient.models.blocks.ParagraphRequestContent
-import no.saabelit.kotlinnotionclient.models.blocks.QuoteRequestContent
-import no.saabelit.kotlinnotionclient.models.pages.CreatePageRequest
-import no.saabelit.kotlinnotionclient.models.pages.PageProperty
-import no.saabelit.kotlinnotionclient.models.pages.PagePropertyValue
-import no.saabelit.kotlinnotionclient.validation.ValidationException
+import it.saabel.kotlinnotionclient.NotionClient
+import it.saabel.kotlinnotionclient.config.NotionApiLimits
+import it.saabel.kotlinnotionclient.config.NotionConfig
+import it.saabel.kotlinnotionclient.models.base.Annotations
+import it.saabel.kotlinnotionclient.models.base.Parent
+import it.saabel.kotlinnotionclient.models.base.RichText
+import it.saabel.kotlinnotionclient.models.base.SelectOptionColor
+import it.saabel.kotlinnotionclient.models.base.TextContent
+import it.saabel.kotlinnotionclient.models.blocks.BlockRequest
+import it.saabel.kotlinnotionclient.models.blocks.BulletedListItemRequestContent
+import it.saabel.kotlinnotionclient.models.blocks.Heading1RequestContent
+import it.saabel.kotlinnotionclient.models.blocks.ParagraphRequestContent
+import it.saabel.kotlinnotionclient.models.blocks.QuoteRequestContent
+import it.saabel.kotlinnotionclient.models.pages.CreatePageRequest
+import it.saabel.kotlinnotionclient.models.pages.PageProperty
+import it.saabel.kotlinnotionclient.models.pages.PagePropertyValue
+import it.saabel.kotlinnotionclient.validation.ValidationException
 
 /**
  * Real integration tests for validation logic that make actual API calls to Notion.
@@ -79,10 +79,10 @@ class ValidationIntegrationTest :
             context("Real API Validation - Array Limits") {
                 test("should fail fast on too many multi-select options") {
                     val tooManyOptions =
-                        (1..101).map {
-                            no.saabelit.kotlinnotionclient.models.pages.SelectOption(
-                                id = "option-$it",
-                                name = "Option $it",
+                        (1..101).map { index ->
+                            it.saabel.kotlinnotionclient.models.pages.SelectOption(
+                                id = "option-$index",
+                                name = "Option $index",
                                 color = SelectOptionColor.DEFAULT,
                             )
                         }

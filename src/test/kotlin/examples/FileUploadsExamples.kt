@@ -6,12 +6,12 @@ import io.kotest.core.annotation.Tags
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
-import no.saabelit.kotlinnotionclient.NotionClient
-import no.saabelit.kotlinnotionclient.config.NotionConfig
-import no.saabelit.kotlinnotionclient.models.files.FileUploadOptions
-import no.saabelit.kotlinnotionclient.models.files.FileUploadResult
-import no.saabelit.kotlinnotionclient.models.files.FileUploadStatus
-import no.saabelit.kotlinnotionclient.models.files.UploadProgressStatus
+import it.saabel.kotlinnotionclient.NotionClient
+import it.saabel.kotlinnotionclient.config.NotionConfig
+import it.saabel.kotlinnotionclient.models.files.FileUploadOptions
+import it.saabel.kotlinnotionclient.models.files.FileUploadResult
+import it.saabel.kotlinnotionclient.models.files.FileUploadStatus
+import it.saabel.kotlinnotionclient.models.files.UploadProgressStatus
 import java.io.File
 import java.nio.file.Files
 

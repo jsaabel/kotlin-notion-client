@@ -4,14 +4,14 @@ import io.kotest.core.annotation.Tags
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.comparables.shouldBeGreaterThan
 import io.kotest.matchers.shouldBe
+import it.saabel.kotlinnotionclient.NotionClient
+import it.saabel.kotlinnotionclient.config.NotionConfig
+import it.saabel.kotlinnotionclient.exceptions.NotionException
+import it.saabel.kotlinnotionclient.ratelimit.RateLimitConfig
+import it.saabel.kotlinnotionclient.ratelimit.RateLimitStrategy
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
-import no.saabelit.kotlinnotionclient.NotionClient
-import no.saabelit.kotlinnotionclient.config.NotionConfig
-import no.saabelit.kotlinnotionclient.exceptions.NotionException
-import no.saabelit.kotlinnotionclient.ratelimit.RateLimitConfig
-import no.saabelit.kotlinnotionclient.ratelimit.RateLimitStrategy
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.measureTime
 

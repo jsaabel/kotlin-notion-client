@@ -6,10 +6,10 @@ import io.kotest.core.annotation.Tags
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.ints.shouldBeGreaterThan
 import io.kotest.matchers.shouldBe
+import it.saabel.kotlinnotionclient.NotionClient
+import it.saabel.kotlinnotionclient.config.NotionConfig
+import it.saabel.kotlinnotionclient.models.pages.PageReference
 import kotlinx.coroutines.delay
-import no.saabelit.kotlinnotionclient.NotionClient
-import no.saabelit.kotlinnotionclient.config.NotionConfig
-import no.saabelit.kotlinnotionclient.models.pages.PageReference
 
 /**
  * Integration tests for relation property pagination functionality.
@@ -81,29 +81,29 @@ class RelationPaginationIntegrationTest :
                     println("\n🗄️ Creating second data source with relation property...")
                     val sourceDataSource =
                         client.dataSources.create(
-                            no.saabelit.kotlinnotionclient.models.databases.CreateDataSourceRequest(
+                            it.saabel.kotlinnotionclient.models.databases.CreateDataSourceRequest(
                                 parent =
-                                    no.saabelit.kotlinnotionclient.models.base
+                                    it.saabel.kotlinnotionclient.models.base
                                         .Parent(type = "database_id", databaseId = database.id),
                                 title =
                                     listOf(
-                                        no.saabelit.kotlinnotionclient.models.base.RichText.fromPlainText(
+                                        it.saabel.kotlinnotionclient.models.base.RichText.fromPlainText(
                                             "Source Data Source - ${System.currentTimeMillis()}",
                                         ),
                                     ),
                                 properties =
                                     mapOf(
                                         "Task Name" to
-                                            no.saabelit.kotlinnotionclient.models.databases.CreateDatabaseProperty
+                                            it.saabel.kotlinnotionclient.models.databases.CreateDatabaseProperty
                                                 .Title(),
                                         "Related Items" to
-                                            no.saabelit.kotlinnotionclient.models.databases.CreateDatabaseProperty.Relation(
+                                            it.saabel.kotlinnotionclient.models.databases.CreateDatabaseProperty.Relation(
                                                 relation =
-                                                    no.saabelit.kotlinnotionclient.models.databases.RelationConfiguration(
+                                                    it.saabel.kotlinnotionclient.models.databases.RelationConfiguration(
                                                         databaseId = database.id,
                                                         dataSourceId = targetDataSourceId,
                                                         singleProperty =
-                                                            no.saabelit.kotlinnotionclient.models.base
+                                                            it.saabel.kotlinnotionclient.models.base
                                                                 .EmptyObject(),
                                                     ),
                                             ),

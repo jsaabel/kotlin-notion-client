@@ -10,17 +10,17 @@ import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.http.HttpMethod
 import io.ktor.http.HttpStatusCode
 import io.ktor.serialization.kotlinx.json.json
+import it.saabel.kotlinnotionclient.api.BlocksApi
+import it.saabel.kotlinnotionclient.api.CommentsApi
+import it.saabel.kotlinnotionclient.api.DatabasesApi
+import it.saabel.kotlinnotionclient.api.PagesApi
+import it.saabel.kotlinnotionclient.config.NotionConfig
+import it.saabel.kotlinnotionclient.exceptions.NotionException
+import it.saabel.kotlinnotionclient.models.base.Color
+import it.saabel.kotlinnotionclient.models.blocks.Block
+import it.saabel.kotlinnotionclient.models.comments.CommentList
+import it.saabel.kotlinnotionclient.models.pages.Page
 import kotlinx.serialization.json.Json
-import no.saabelit.kotlinnotionclient.api.BlocksApi
-import no.saabelit.kotlinnotionclient.api.CommentsApi
-import no.saabelit.kotlinnotionclient.api.DatabasesApi
-import no.saabelit.kotlinnotionclient.api.PagesApi
-import no.saabelit.kotlinnotionclient.config.NotionConfig
-import no.saabelit.kotlinnotionclient.exceptions.NotionException
-import no.saabelit.kotlinnotionclient.models.base.Color
-import no.saabelit.kotlinnotionclient.models.blocks.Block
-import no.saabelit.kotlinnotionclient.models.comments.CommentList
-import no.saabelit.kotlinnotionclient.models.pages.Page
 import unit.util.MockPresets
 import unit.util.TestFixtures
 import unit.util.decode
@@ -298,7 +298,7 @@ class MockedApiTest :
             val page: Page = TestFixtures.Pages.retrievePage().decode()
             page.objectType shouldBe "page"
 
-            val database: no.saabelit.kotlinnotionclient.models.databases.Database = TestFixtures.Databases.retrieveDatabase().decode()
+            val database: it.saabel.kotlinnotionclient.models.databases.Database = TestFixtures.Databases.retrieveDatabase().decode()
             database.objectType shouldBe "database"
 
             val block: Block = TestFixtures.Blocks.retrieveBlock().decode()

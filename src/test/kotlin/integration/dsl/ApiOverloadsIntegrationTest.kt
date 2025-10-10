@@ -10,19 +10,19 @@ import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
 import io.kotest.matchers.types.shouldBeInstanceOf
+import it.saabel.kotlinnotionclient.NotionClient
+import it.saabel.kotlinnotionclient.config.NotionConfig
+import it.saabel.kotlinnotionclient.models.base.Color
+import it.saabel.kotlinnotionclient.models.base.SelectOptionColor
+import it.saabel.kotlinnotionclient.models.blocks.Block
+import it.saabel.kotlinnotionclient.models.blocks.BlockList
+import it.saabel.kotlinnotionclient.models.blocks.BlockRequest
+import it.saabel.kotlinnotionclient.models.blocks.ParagraphRequestContent
+import it.saabel.kotlinnotionclient.models.databases.Database
+import it.saabel.kotlinnotionclient.models.pages.Page
+import it.saabel.kotlinnotionclient.models.pages.PageProperty
+import it.saabel.kotlinnotionclient.models.requests.RequestBuilders
 import kotlinx.coroutines.delay
-import no.saabelit.kotlinnotionclient.NotionClient
-import no.saabelit.kotlinnotionclient.config.NotionConfig
-import no.saabelit.kotlinnotionclient.models.base.Color
-import no.saabelit.kotlinnotionclient.models.base.SelectOptionColor
-import no.saabelit.kotlinnotionclient.models.blocks.Block
-import no.saabelit.kotlinnotionclient.models.blocks.BlockList
-import no.saabelit.kotlinnotionclient.models.blocks.BlockRequest
-import no.saabelit.kotlinnotionclient.models.blocks.ParagraphRequestContent
-import no.saabelit.kotlinnotionclient.models.databases.Database
-import no.saabelit.kotlinnotionclient.models.pages.Page
-import no.saabelit.kotlinnotionclient.models.pages.PageProperty
-import no.saabelit.kotlinnotionclient.models.requests.RequestBuilders
 
 /**
  * Integration tests for API integration overloads that accept DSL builders.

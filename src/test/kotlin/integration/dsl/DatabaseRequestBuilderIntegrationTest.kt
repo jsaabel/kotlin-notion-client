@@ -9,11 +9,11 @@ import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
 import io.kotest.matchers.types.shouldBeInstanceOf
+import it.saabel.kotlinnotionclient.NotionClient
+import it.saabel.kotlinnotionclient.config.NotionConfig
+import it.saabel.kotlinnotionclient.models.base.SelectOptionColor
+import it.saabel.kotlinnotionclient.models.databases.DatabaseProperty
 import kotlinx.coroutines.delay
-import no.saabelit.kotlinnotionclient.NotionClient
-import no.saabelit.kotlinnotionclient.config.NotionConfig
-import no.saabelit.kotlinnotionclient.models.base.SelectOptionColor
-import no.saabelit.kotlinnotionclient.models.databases.DatabaseProperty
 
 /**
  * Self-contained integration test for the DatabaseRequestBuilder DSL.

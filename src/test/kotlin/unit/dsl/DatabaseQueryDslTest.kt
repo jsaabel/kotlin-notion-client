@@ -5,11 +5,11 @@ import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.collections.shouldNotBeEmpty
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeTypeOf
-import no.saabelit.kotlinnotionclient.NotionClient
-import no.saabelit.kotlinnotionclient.config.NotionConfig
-import no.saabelit.kotlinnotionclient.models.databases.DatabaseQueryRequest
-import no.saabelit.kotlinnotionclient.models.databases.SortDirection
-import no.saabelit.kotlinnotionclient.models.databases.databaseQuery
+import it.saabel.kotlinnotionclient.NotionClient
+import it.saabel.kotlinnotionclient.config.NotionConfig
+import it.saabel.kotlinnotionclient.models.databases.DatabaseQueryRequest
+import it.saabel.kotlinnotionclient.models.databases.SortDirection
+import it.saabel.kotlinnotionclient.models.databases.databaseQuery
 import unit.util.mockClient
 
 /**

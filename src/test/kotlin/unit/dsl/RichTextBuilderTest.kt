@@ -4,18 +4,18 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
+import it.saabel.kotlinnotionclient.models.base.Annotations
+import it.saabel.kotlinnotionclient.models.base.Color
+import it.saabel.kotlinnotionclient.models.base.DateObject
+import it.saabel.kotlinnotionclient.models.base.Equation
+import it.saabel.kotlinnotionclient.models.base.Link
+import it.saabel.kotlinnotionclient.models.base.Mention
+import it.saabel.kotlinnotionclient.models.richtext.richText
+import it.saabel.kotlinnotionclient.models.users.User
 import kotlinx.datetime.Instant
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.TimeZone
-import no.saabelit.kotlinnotionclient.models.base.Annotations
-import no.saabelit.kotlinnotionclient.models.base.Color
-import no.saabelit.kotlinnotionclient.models.base.DateObject
-import no.saabelit.kotlinnotionclient.models.base.Equation
-import no.saabelit.kotlinnotionclient.models.base.Link
-import no.saabelit.kotlinnotionclient.models.base.Mention
-import no.saabelit.kotlinnotionclient.models.richtext.richText
-import no.saabelit.kotlinnotionclient.models.users.User
 
 class RichTextBuilderTest :
     FunSpec({

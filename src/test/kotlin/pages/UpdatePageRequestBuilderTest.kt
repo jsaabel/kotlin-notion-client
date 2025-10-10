@@ -1,4 +1,4 @@
-package no.saabelit.kotlinnotionclient.models.pages
+package it.saabel.kotlinnotionclient.models.pages
 
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe

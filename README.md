@@ -1,8 +1,15 @@
 # Kotlin Notion Client
 
-> **⚠️ WORK IN PROGRESS**: This documentation is being actively developed and may be incomplete or subject to change.
-
 A modern, type-safe Kotlin client for the Notion API with comprehensive DSL support and coroutine-based operations.
+
+> **⚠️ AI-Assisted Development Notice**
+> This library was developed with significant assistance from Claude Code (AI). While it includes comprehensive testing (481+ unit tests) and validation against official Notion API samples, please be aware of potential issues:
+> - Documentation examples may not perfectly match implementation
+> - Edge cases may exist that weren't covered in testing
+> - Some API patterns may have inconsistencies
+>
+> **Please report any issues you encounter!** Your feedback is invaluable for improving the library.
+> See the [Development Context](#development-context) section for full transparency about the development process.
 
 ## Why This Client?
 
@@ -13,14 +20,22 @@ A modern, type-safe Kotlin client for the Notion API with comprehensive DSL supp
 
 ## Installation
 
-> **Note**: This library is not yet published to Maven Central. Publication is planned post-documentation completion.
-
-### Gradle (Kotlin DSL)
+### Maven Central
 
 ```kotlin
+// Gradle (Kotlin DSL)
 dependencies {
-    implementation("no.saabelit:kotlin-notion-client:0.1.0")
+    implementation("it.saabel:kotlin-notion-client:0.1.0")
 }
+```
+
+```xml
+<!-- Maven -->
+<dependency>
+    <groupId>it.saabel</groupId>
+    <artifactId>kotlin-notion-client</artifactId>
+    <version>0.1.0</version>
+</dependency>
 ```
 
 ### Requirements
@@ -31,7 +46,7 @@ dependencies {
 ## Quick Start
 
 ```kotlin
-import no.saabelit.kotlinnotionclient.NotionClient
+import it.saabel.kotlinnotionclient.NotionClient
 
 // Initialize the client
 val notion = NotionClient.create("your-notion-api-token")

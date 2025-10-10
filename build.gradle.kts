@@ -8,11 +8,11 @@ plugins {
     alias(libs.plugins.kotlinter)
 }
 
-group = "no.saabelit"
-version = "0.0.1-SNAPSHOT"
+group = "it.saabel"
+version = "0.1.0"
 
 application {
-    mainClass.set("no.saabelit.kotlinnotionclient.MainKt")
+    mainClass.set("it.saabel.kotlinnotionclient.MainKt")
 }
 
 repositories {
