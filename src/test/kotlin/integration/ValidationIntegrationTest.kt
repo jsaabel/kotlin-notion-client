@@ -1,6 +1,7 @@
 package integration
 
 import io.kotest.assertions.throwables.shouldThrow
+import io.kotest.core.annotation.Tags
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.comparables.shouldBeGreaterThan
 import io.kotest.matchers.comparables.shouldBeLessThanOrEqualTo
@@ -40,6 +41,7 @@ import no.saabelit.kotlinnotionclient.validation.ValidationException
  * - NOTION_API_TOKEN environment variable with a valid Notion API token
  * - NOTION_TEST_PAGE_ID environment variable with a test page ID for creating children
  */
+@Tags("Integration", "RequiresApi")
 class ValidationIntegrationTest :
     FunSpec({
 

@@ -19,6 +19,7 @@ import no.saabelit.kotlinnotionclient.models.users.UserType
  * 2. Set environment variable: export NOTION_API_TOKEN="your_token_here"
  * 3. Run: ./gradlew integrationTest
  */
+@Tags("Integration", "RequiresApi")
 class NotionClientIntegrationTest :
     BehaviorSpec({
 

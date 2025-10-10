@@ -1,5 +1,6 @@
 package integration
 
+import io.kotest.core.annotation.Tags
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
@@ -34,6 +35,7 @@ import kotlin.io.path.createTempFile
  * 2. Set environment variable: export NOTION_TEST_PAGE_ID="your_parent_page_id"
  * 3. Optional: Set NOTION_CLEANUP_AFTER_TEST="false" to keep test objects
  */
+@Tags("Integration", "RequiresApi")
 class EnhancedFileUploadIntegrationTest :
     StringSpec({
 

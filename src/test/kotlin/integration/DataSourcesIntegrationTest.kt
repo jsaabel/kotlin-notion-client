@@ -31,6 +31,7 @@ import no.saabelit.kotlinnotionclient.config.NotionConfig
  *
  * Run with: ./gradlew integrationTest
  */
+@Tags("Integration", "RequiresApi")
 class DataSourcesIntegrationTest :
     StringSpec({
 

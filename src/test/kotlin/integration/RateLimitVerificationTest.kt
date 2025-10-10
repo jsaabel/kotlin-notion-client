@@ -18,6 +18,7 @@ import kotlin.time.measureTime
 /**
  * Verification test to ensure rate limiting works correctly.
  */
+@Tags("Integration", "RequiresApi")
 class RateLimitVerificationTest :
     FunSpec({
 

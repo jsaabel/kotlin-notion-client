@@ -30,6 +30,7 @@ import no.saabelit.kotlinnotionclient.models.requests.RequestBuilders
  * 2. Set environment variable: export NOTION_TEST_PAGE_ID="your_parent_page_id"
  * 3. Optional: Set NOTION_CLEANUP_AFTER_TEST="false" to keep test objects
  */
+@Tags("Integration", "RequiresApi")
 class CommentPaginationIntegrationTest :
     StringSpec({
 

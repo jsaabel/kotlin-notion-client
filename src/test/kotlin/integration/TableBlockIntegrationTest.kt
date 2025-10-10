@@ -26,6 +26,7 @@ import no.saabelit.kotlinnotionclient.models.pages.createPageRequest
  * 4. Optional: Set NOTION_CLEANUP_AFTER_TEST="false" to keep test objects for manual inspection
  *
  */
+@Tags("Integration", "RequiresApi")
 class TableBlockIntegrationTest :
     StringSpec({
 

@@ -2,6 +2,7 @@
 
 package integration
 
+import io.kotest.core.annotation.Tags
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
@@ -33,6 +34,7 @@ import no.saabelit.kotlinnotionclient.models.requests.RequestBuilders
  * 3. Your integration should have permissions to create/read/update pages and blocks
  * 4. Optional: Set NOTION_CLEANUP_AFTER_TEST="false" to keep test objects for manual inspection
  */
+@Tags("Integration", "RequiresApi")
 class MediaIntegrationTest :
     StringSpec({
 

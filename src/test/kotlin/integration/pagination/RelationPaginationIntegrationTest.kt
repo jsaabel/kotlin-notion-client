@@ -30,7 +30,7 @@ import no.saabelit.kotlinnotionclient.models.pages.PageReference
  * Note: This test creates two databases and many pages to test relation pagination.
  * It may take several minutes to complete and is tagged as "Slow" accordingly.
  */
-@Tags("Slow")
+@Tags("Integration", "RequiresApi", "Slow")
 class RelationPaginationIntegrationTest :
     StringSpec({
 

@@ -2,6 +2,7 @@ package integration.dsl
 
 import integration.integrationTestEnvVarsAreSet
 import integration.shouldCleanupAfterTest
+import io.kotest.core.annotation.Tags
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.nulls.shouldNotBeNull
@@ -26,6 +27,7 @@ import no.saabelit.kotlinnotionclient.models.databases.DatabaseProperty
  * 3. Your integration should have permissions to create/read/update databases
  * 4. Optional: Set NOTION_CLEANUP_AFTER_TEST="false" to keep test objects for manual inspection
  */
+@Tags("Integration", "RequiresApi")
 class DatabaseRequestBuilderIntegrationTest :
     StringSpec({
 

@@ -1,5 +1,6 @@
 package integration
 
+import io.kotest.core.annotation.Tags
 import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.matchers.collections.shouldNotBeEmpty
 import io.kotest.matchers.shouldBe
@@ -32,6 +33,7 @@ import no.saabelit.kotlinnotionclient.models.requests.RequestBuilders
  *    (Defaults to "true" - objects are archived after test completion)
  *
  */
+@Tags("Integration", "RequiresApi")
 class CommentsIntegrationTest :
     BehaviorSpec({
 
