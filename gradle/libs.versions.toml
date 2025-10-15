@@ -1,23 +1,27 @@
 [versions]
-kotest = "6.0.3"
+kotest = "6.0.4"
 ben-manes-versions = "0.53.0"
+dokka = "2.1.0"
 kotlin = "2.2.20"
 kotlinter = "5.2.0"
+maven-publish = "0.30.0"
 # kotlinx-datetime: Using 0.6.2 instead of 0.7.x because 0.7.x migrated to kotlin.time.Instant
 # which is still @ExperimentalTime in Kotlin 2.2. Using experimental APIs in a library is
 # problematic as it forces instability on users. 0.6.x uses stable kotlinx.datetime.Instant.
 # We'll upgrade to 0.7.x+ when kotlin.time types are stabilized (likely Kotlin 2.3+).
 kotlinx-datetime = "0.6.2"
 kotlinx-serialization-json = "1.9.0"
-ktor = "3.3.0"
+ktor = "3.3.1"
 logback = "1.5.19"
 slf4j = "2.0.17"
 
 [plugins]
 ben-manes-versions = { id = "com.github.ben-manes.versions", version.ref = "ben-manes-versions" }
+dokka = { id = "org.jetbrains.dokka", version.ref = "dokka" }
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 kotlinter = { id = "org.jmailen.kotlinter", version.ref = "kotlinter" }
+maven-publish = { id = "com.vanniktech.maven.publish", version.ref = "maven-publish" }
 
 [libraries]
 kotest-runner-junit5 = { group = "io.kotest", name = "kotest-runner-junit5", version.ref = "kotest" }
