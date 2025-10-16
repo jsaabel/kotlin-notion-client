@@ -47,7 +47,7 @@ class RateLimitVerificationTest :
                             ),
                     )
 
-                val client = NotionClient.create(config)
+                val client = NotionClient(config)
 
                 var successCount = 0
                 var rateLimitHandledCount = 0

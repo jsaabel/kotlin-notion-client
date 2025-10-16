@@ -40,7 +40,7 @@ class UpdatePageRequestBuilderIntegrationTest :
             "Should create database, add pages, then update them with comprehensive property DSL" {
                 val token = System.getenv("NOTION_API_TOKEN")
                 val parentPageId = System.getenv("NOTION_TEST_PAGE_ID")
-                val client = NotionClient.create(NotionConfig(apiToken = token))
+                val client = NotionClient(NotionConfig(apiToken = token))
 
                 try {
                     println("🗃️ Creating test database with comprehensive property types...")
@@ -274,7 +274,7 @@ class UpdatePageRequestBuilderIntegrationTest :
             "Should handle basic page updates without database properties" {
                 val token = System.getenv("NOTION_API_TOKEN")
                 val parentPageId = System.getenv("NOTION_TEST_PAGE_ID")
-                val client = NotionClient.create(NotionConfig(apiToken = token))
+                val client = NotionClient(NotionConfig(apiToken = token))
 
                 try {
                     println("📝 Testing basic page updates (non-database page)...")

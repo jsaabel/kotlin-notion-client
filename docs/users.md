@@ -49,7 +49,7 @@ enum class UserType {
 Always available, doesn't require special capabilities:
 
 ```kotlin
-val notion = NotionClient.create(NotionConfig(apiToken = "your-secret-token"))
+val notion = NotionClient(NotionConfig(apiToken = "your-secret-token"))
 
 val botUser = notion.users.getCurrentUser()
 println("Bot name: ${botUser.name}")
@@ -151,7 +151,7 @@ when (user.type) {
 
 ```kotlin
 suspend fun initializeNotionClient(token: String): NotionClient {
-    val client = NotionClient.create(NotionConfig(apiToken = token))
+    val client = NotionClient(NotionConfig(apiToken = token))
 
     try {
         val botUser = client.users.getCurrentUser()

@@ -37,12 +37,19 @@ import kotlinx.serialization.json.Json
  *
  * Example usage:
  * ```kotlin
- * val client = NotionClient.create(
- *     NotionConfig(token = "your-token-here")
+ * // Simple initialization
+ * val client = NotionClient("your-api-token")
+ *
+ * // Advanced initialization with custom config
+ * val client = NotionClient(
+ *     NotionConfig(
+ *         apiToken = "your-token-here",
+ *         logLevel = LogLevel.INFO
+ *     )
  * )
  *
  * // Access different API areas
- * val user = client.users.getCurrentUser()
+ * val user = client.users.me()
  * val page = client.pages.retrieve("page-id")
  * val database = client.databases.retrieve("db-id")
  * val dataSource = client.dataSources.retrieve("data-source-id")
@@ -53,44 +60,82 @@ import kotlinx.serialization.json.Json
  * client.close()
  * ```
  */
-class NotionClient private constructor(
-    private val httpClient: HttpClient,
-    val config: NotionConfig,
-) {
-    // API delegates - each area has its own specialized client
-    val users = UsersApi(httpClient, config)
-    val pages = PagesApi(httpClient, config)
-    val databases = DatabasesApi(httpClient, config)
-    val dataSources = DataSourcesApi(httpClient, config)
-    val blocks = BlocksApi(httpClient, config)
-    val comments = CommentsApi(httpClient, config)
-    val search = SearchApi(httpClient, config)
-    val fileUploads = FileUploadApi(httpClient, config)
-
-    /**
-     * Enhanced file upload API with advanced features like progress tracking,
-     * automatic chunking, retry logic, and comprehensive error handling.
-     */
-    val enhancedFileUploads = EnhancedFileUploadApi(httpClient, config, fileUploads)
-
-    companion object {
+class NotionClient
+    @JvmOverloads
+    constructor(
+        config: NotionConfig,
+        internal val client: HttpClient? = null,
+    ) {
         /**
-         * Creates a new NotionClient instance with just an API token.
-         * Uses default configuration with no logging.
+         * Convenience constructor for simple initialization with just an API token.
          *
          * @param apiToken The Notion API token
-         * @return Configured NotionClient instance
          */
-        fun create(apiToken: String): NotionClient = create(NotionConfig(apiToken = apiToken))
+        constructor(apiToken: String) : this(NotionConfig(apiToken = apiToken), null)
+
+        private val httpClient: HttpClient = client ?: createHttpClient(config)
+
+        // API delegates - each area has its own specialized client
+        val users = UsersApi(httpClient, config)
+        val pages = PagesApi(httpClient, config)
+        val databases = DatabasesApi(httpClient, config)
+        val dataSources = DataSourcesApi(httpClient, config)
+        val blocks = BlocksApi(httpClient, config)
+        val comments = CommentsApi(httpClient, config)
+        val search = SearchApi(httpClient, config)
+        val fileUploads = FileUploadApi(httpClient, config)
 
         /**
-         * Creates a new NotionClient instance with the provided configuration.
-         *
-         * @param config Configuration object containing API token and other settings
-         * @return Configured NotionClient instance
+         * Enhanced file upload API with advanced features like progress tracking,
+         * automatic chunking, retry logic, and comprehensive error handling.
          */
-        fun create(config: NotionConfig): NotionClient {
-            val httpClient =
+        val enhancedFileUploads = EnhancedFileUploadApi(httpClient, config, fileUploads)
+
+        companion object {
+            /**
+             * Creates a new NotionClient instance with just an API token.
+             * Uses default configuration with no logging.
+             *
+             * Alternative to primary constructor. Both patterns are supported:
+             * - `NotionClient(apiToken)` (constructor)
+             * - `NotionClient.create(apiToken)` (factory method)
+             *
+             * @param apiToken The Notion API token
+             * @return Configured NotionClient instance
+             */
+            fun create(apiToken: String): NotionClient = NotionClient(apiToken)
+
+            /**
+             * Creates a new NotionClient instance with the provided configuration.
+             *
+             * Alternative to primary constructor. Both patterns are supported:
+             * - `NotionClient(config)` (constructor)
+             * - `NotionClient.create(config)` (factory method)
+             *
+             * @param config Configuration object containing API token and other settings
+             * @return Configured NotionClient instance
+             */
+            fun create(config: NotionConfig): NotionClient = NotionClient(config)
+
+            /**
+             * Creates a NotionClient with a custom HttpClient (for testing).
+             *
+             * @param httpClient Custom HTTP client instance
+             * @param config Configuration object
+             * @return Configured NotionClient instance
+             */
+            internal fun createWithClient(
+                httpClient: HttpClient,
+                config: NotionConfig,
+            ): NotionClient = NotionClient(config, httpClient)
+
+            /**
+             * Creates the configured HTTP client for the Notion API.
+             *
+             * @param config Configuration object containing API token and settings
+             * @return Configured HttpClient instance
+             */
+            private fun createHttpClient(config: NotionConfig): HttpClient =
                 HttpClient(CIO) {
                     // Install JSON serialization
                     install(ContentNegotiation) {
@@ -153,28 +198,13 @@ class NotionClient private constructor(
                         headers.append("User-Agent", config.userAgent)
                     }
                 }
-
-            return NotionClient(httpClient, config)
         }
 
         /**
-         * Creates a NotionClient with a custom HttpClient (for testing).
-         *
-         * @param httpClient Custom HTTP client instance
-         * @param config Configuration object
-         * @return Configured NotionClient instance
+         * Closes the HTTP client and releases associated resources.
+         * Call this when you're done using the client.
          */
-        internal fun createWithClient(
-            httpClient: HttpClient,
-            config: NotionConfig,
-        ): NotionClient = NotionClient(httpClient, config)
+        fun close() {
+            httpClient.close()
+        }
     }
-
-    /**
-     * Closes the HTTP client and releases associated resources.
-     * Call this when you're done using the client.
-     */
-    fun close() {
-        httpClient.close()
-    }
-}

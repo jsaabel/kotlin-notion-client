@@ -53,7 +53,7 @@ class SelfContainedIntegrationTest :
             "Should create database, create page, retrieve both, then clean up" {
                 val token = System.getenv("NOTION_API_TOKEN")
                 val testPageId = System.getenv("NOTION_TEST_PAGE_ID")
-                val client = NotionClient.create(NotionConfig(apiToken = token))
+                val client = NotionClient(NotionConfig(apiToken = token))
 
                 try {
                     // Step 1: Create a test database with multiple property types (2025-09-03 API)
@@ -249,7 +249,7 @@ class SelfContainedIntegrationTest :
             "Should create standalone page, retrieve it, then clean up" {
                 val token = System.getenv("NOTION_API_TOKEN")
                 val parentPageId = System.getenv("NOTION_TEST_PAGE_ID")
-                val client = NotionClient.create(NotionConfig(apiToken = token))
+                val client = NotionClient(NotionConfig(apiToken = token))
 
                 try {
                     // Create a standalone page (not in a database)
@@ -312,7 +312,7 @@ class SelfContainedIntegrationTest :
             "Should demonstrate comprehensive property types in database" {
                 val token = System.getenv("NOTION_API_TOKEN")
                 val parentPageId = System.getenv("NOTION_TEST_PAGE_ID")
-                val client = NotionClient.create(NotionConfig(apiToken = token))
+                val client = NotionClient(NotionConfig(apiToken = token))
 
                 try {
                     // Create database with many property types (2025-09-03 API)

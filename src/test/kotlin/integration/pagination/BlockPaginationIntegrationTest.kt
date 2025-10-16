@@ -40,7 +40,7 @@ class BlockPaginationIntegrationTest :
             "Should automatically paginate block children for pages with many blocks" {
                 val token = System.getenv("NOTION_API_TOKEN")
                 val parentPageId = System.getenv("NOTION_TEST_PAGE_ID")
-                val client = NotionClient.create(NotionConfig(apiToken = token))
+                val client = NotionClient(NotionConfig(apiToken = token))
 
                 try {
                     // Create a page that will contain many blocks

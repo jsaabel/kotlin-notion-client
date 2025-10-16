@@ -39,7 +39,7 @@ class RichTextDslIntegrationTest :
             "Should create page with rich text DSL mixed formatting and verify with real API" {
                 val token = System.getenv("NOTION_API_TOKEN")
                 val parentPageId = System.getenv("NOTION_TEST_PAGE_ID")
-                val client = NotionClient.create(NotionConfig(apiToken = token))
+                val client = NotionClient(apiToken = token)
 
                 try {
                     // Step 1: Create initial page

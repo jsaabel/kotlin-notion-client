@@ -147,7 +147,7 @@ class MyServiceIntegrationTest : StringSpec({
             println("⏭️ Set NOTION_RUN_INTEGRATION_TESTS=true to run")
         }
     } else {
-        val notion = NotionClient.create(System.getenv("NOTION_API_TOKEN"))
+        val notion = NotionClient(System.getenv("NOTION_API_TOKEN"))
 
         "should create and retrieve task" {
             val task = MyService(notion).createTask("Test task")

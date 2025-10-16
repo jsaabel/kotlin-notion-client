@@ -267,7 +267,7 @@ val config = NotionConfig(
     )
 )
 
-val client = NotionClient.create(config)
+val client = NotionClient(config)
 ```
 
 **With `autoSplitLongText = true` (default):**
@@ -296,7 +296,7 @@ val config = NotionConfig(
     rateLimitConfig = RateLimitConfig.BALANCED  // Predefined strategy
 )
 
-val client = NotionClient.create(config)
+val client = NotionClient(config)
 ```
 
 ### Predefined Rate Limit Strategies

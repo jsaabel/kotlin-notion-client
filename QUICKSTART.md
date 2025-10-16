@@ -17,18 +17,18 @@ Get started with the Kotlin Notion Client in under 5 minutes.
 
 ```kotlin
 dependencies {
-    implementation("no.saabelit:kotlin-notion-client:0.1.0")
+    implementation("it.saabel:kotlin-notion-client:0.1.0")
 }
 ```
 
 ## Your First API Call
 
 ```kotlin
-import no.saabelit.kotlinnotionclient.NotionClient
+import it.saabel.kotlinnotionclient.NotionClient
 
 fun main() = runBlocking {
     // Initialize the client
-    val notion = NotionClient.create("your-api-token")
+    val notion = NotionClient("your-api-token")
 
     // Get current user (verifies token works)
     val user = notion.users.getCurrentUser()
@@ -37,6 +37,26 @@ fun main() = runBlocking {
     // Don't forget to close when done
     notion.close()
 }
+```
+
+### Client Initialization
+
+You can create a `NotionClient` instance using either pattern:
+
+```kotlin
+// 1. Direct constructor (recommended - idiomatic Kotlin)
+val notion = NotionClient("your-api-token")
+
+// 2. Factory method (also supported)
+val notion = NotionClient.create("your-api-token")
+
+// With custom configuration
+val notion = NotionClient(
+    NotionConfig(
+        apiToken = "your-api-token",
+        logLevel = LogLevel.INFO
+    )
+)
 ```
 
 ## Understanding the 2025-09-03 API
@@ -226,7 +246,7 @@ notion.close()
 Or use `.use` for automatic cleanup:
 
 ```kotlin
-NotionClient.create("token").use { notion ->
+NotionClient("token").use { notion ->
     // Your code here
 }
 ```

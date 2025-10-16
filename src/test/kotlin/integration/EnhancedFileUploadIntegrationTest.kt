@@ -46,7 +46,7 @@ class EnhancedFileUploadIntegrationTest :
             "Should upload small file with progress tracking" {
                 val token = System.getenv("NOTION_API_TOKEN")
                 val parentPageId = System.getenv("NOTION_TEST_PAGE_ID")
-                val client = NotionClient.create(NotionConfig(apiToken = token))
+                val client = NotionClient(NotionConfig(apiToken = token))
 
                 try {
                     println("📤 Testing small file upload with progress tracking...")
@@ -158,7 +158,7 @@ class EnhancedFileUploadIntegrationTest :
             "Should handle large file multi-part upload simulation" {
                 val token = System.getenv("NOTION_API_TOKEN")
                 val parentPageId = System.getenv("NOTION_TEST_PAGE_ID")
-                val client = NotionClient.create(NotionConfig(apiToken = token))
+                val client = NotionClient(NotionConfig(apiToken = token))
 
                 try {
                     println("📤 Testing large file upload simulation...")
@@ -323,7 +323,7 @@ class EnhancedFileUploadIntegrationTest :
             "Should import external file with validation" {
                 val token = System.getenv("NOTION_API_TOKEN")
                 val parentPageId = System.getenv("NOTION_TEST_PAGE_ID")
-                val client = NotionClient.create(NotionConfig(apiToken = token))
+                val client = NotionClient(NotionConfig(apiToken = token))
 
                 try {
                     println("🌐 Testing external file import...")

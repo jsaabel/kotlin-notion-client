@@ -39,7 +39,7 @@ class DataSourceFlowPaginationIntegrationTest :
             "queryAsFlow should emit all items across multiple pages" {
                 val token = System.getenv("NOTION_API_TOKEN")
                 val parentPageId = System.getenv("NOTION_TEST_PAGE_ID")
-                val client = NotionClient.create(NotionConfig(apiToken = token))
+                val client = NotionClient(NotionConfig(apiToken = token))
 
                 try {
                     println("🔍 Setting up test database for Flow pagination...")
@@ -174,7 +174,7 @@ class DataSourceFlowPaginationIntegrationTest :
             "queryAsFlow should handle empty results" {
                 val token = System.getenv("NOTION_API_TOKEN")
                 val parentPageId = System.getenv("NOTION_TEST_PAGE_ID")
-                val client = NotionClient.create(NotionConfig(apiToken = token))
+                val client = NotionClient(NotionConfig(apiToken = token))
 
                 try {
                     println("🔍 Testing queryAsFlow with empty results...")
@@ -223,7 +223,7 @@ class DataSourceFlowPaginationIntegrationTest :
             "queryPagedFlow should work with sorting and pagination" {
                 val token = System.getenv("NOTION_API_TOKEN")
                 val parentPageId = System.getenv("NOTION_TEST_PAGE_ID")
-                val client = NotionClient.create(NotionConfig(apiToken = token))
+                val client = NotionClient(NotionConfig(apiToken = token))
 
                 try {
                     println("🔍 Testing queryPagedFlow with sorting...")

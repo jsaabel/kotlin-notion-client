@@ -54,7 +54,7 @@ class MediaIntegrationTest :
             "Should create media blocks using external URLs" {
                 val token = System.getenv("NOTION_API_TOKEN")
                 val parentPageId = System.getenv("NOTION_TEST_PAGE_ID")
-                val client = NotionClient.create(NotionConfig(apiToken = token))
+                val client = NotionClient(NotionConfig(apiToken = token))
 
                 try {
                     // Step 1: Create test page
@@ -179,7 +179,7 @@ class MediaIntegrationTest :
             "Should upload file and create media blocks from uploads" {
                 val token = System.getenv("NOTION_API_TOKEN")
                 val parentPageId = System.getenv("NOTION_TEST_PAGE_ID")
-                val client = NotionClient.create(NotionConfig(apiToken = token))
+                val client = NotionClient(NotionConfig(apiToken = token))
 
                 try {
                     // Step 1: Create test page
@@ -308,7 +308,7 @@ class MediaIntegrationTest :
             "Should demonstrate complete media workflow with mixed sources" {
                 val token = System.getenv("NOTION_API_TOKEN")
                 val parentPageId = System.getenv("NOTION_TEST_PAGE_ID")
-                val client = NotionClient.create(NotionConfig(apiToken = token))
+                val client = NotionClient(NotionConfig(apiToken = token))
 
                 try {
                     // Create a comprehensive test page showing all media capabilities

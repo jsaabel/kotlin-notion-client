@@ -41,7 +41,7 @@ class DatabaseQueryDslIntegrationTest :
                 val apiToken = System.getenv("NOTION_API_TOKEN")
                 val testPageId = System.getenv("NOTION_TEST_PAGE_ID")
 
-                client = NotionClient.create(NotionConfig(apiToken))
+                client = NotionClient(NotionConfig(apiToken))
 
                 // Create a single test database with various property types for comprehensive testing
                 println("🗃️ Creating test database for Query DSL tests...")

@@ -60,7 +60,7 @@ class CommentsIntegrationTest :
                 }
 
                 When("creating a test page and testing comments workflow") {
-                    val client = NotionClient.create(NotionConfig(apiToken = token!!))
+                    val client = NotionClient(NotionConfig(apiToken = token!!))
 
                     Then("should successfully create page, create comments, retrieve them, and clean up") {
                         var createdPageId: String? = null
@@ -219,7 +219,7 @@ class CommentsIntegrationTest :
                 }
 
                 When("testing comment validation") {
-                    val client = NotionClient.create(NotionConfig(apiToken = token!!))
+                    val client = NotionClient(NotionConfig(apiToken = token!!))
 
                     Then("should handle validation errors correctly") {
                         try {
@@ -280,7 +280,7 @@ class CommentsIntegrationTest :
                 }
 
                 When("testing comments on blocks") {
-                    val client = NotionClient.create(NotionConfig(apiToken = token!!))
+                    val client = NotionClient(NotionConfig(apiToken = token!!))
 
                     Then("should successfully create comments on individual blocks") {
                         var createdPageId: String? = null
@@ -414,7 +414,7 @@ class CommentsIntegrationTest :
                 }
 
                 When("testing comments with file attachments") {
-                    val client = NotionClient.create(NotionConfig(apiToken = token!!))
+                    val client = NotionClient(NotionConfig(apiToken = token!!))
 
                     Then("should successfully create comments with file attachments") {
                         var createdPageId: String? = null
@@ -550,7 +550,7 @@ class CommentsIntegrationTest :
                 }
 
                 When("testing user mentions in comments") {
-                    val client = NotionClient.create(NotionConfig(apiToken = token!!))
+                    val client = NotionClient(NotionConfig(apiToken = token!!))
 
                     Then("should successfully create comments with user mentions") {
                         var createdPageId: String? = null
@@ -664,7 +664,7 @@ class CommentsIntegrationTest :
                 }
 
                 When("testing error handling with invalid page ID") {
-                    val client = NotionClient.create(NotionConfig(apiToken = token!!))
+                    val client = NotionClient(NotionConfig(apiToken = token!!))
 
                     Then("should handle API errors gracefully") {
                         try {

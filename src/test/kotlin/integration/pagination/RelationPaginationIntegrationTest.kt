@@ -41,7 +41,7 @@ class RelationPaginationIntegrationTest :
             "Should automatically paginate relation properties with >20 linked pages" {
                 val token = System.getenv("NOTION_API_TOKEN")
                 val parentPageId = System.getenv("NOTION_TEST_PAGE_ID")
-                val client = NotionClient.create(NotionConfig(apiToken = token))
+                val client = NotionClient(NotionConfig(apiToken = token))
                 val createdDatabases = mutableListOf<String>()
 
                 try {

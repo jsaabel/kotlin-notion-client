@@ -267,7 +267,7 @@ val page = notion.pages.create {
         code(
             language = "kotlin",
             code = """
-                val client = NotionClient.create(config)
+                val client = NotionClient(config)
                 val page = client.pages.retrieve(pageId)
             """.trimIndent()
         )
@@ -361,7 +361,7 @@ notion.blocks.appendChildren(pageId) {
     heading2("Quick Start")
     code(
         language = "kotlin",
-        code = "val client = NotionClient.create(config)"
+        code = "val client = NotionClient(config)"
     )
 }
 ```

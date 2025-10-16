@@ -19,7 +19,7 @@ suspend fun search(query: String): SearchResponse
 ## Quick Start
 
 ```kotlin
-val notion = NotionClient.create(NotionConfig(apiToken = "your_token"))
+val notion = NotionClient(NotionConfig(apiToken = "your_token"))
 
 // Simple text search
 val results = notion.search.search("meeting notes")

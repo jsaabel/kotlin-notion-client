@@ -39,7 +39,7 @@ class PageRequestBuilderIntegrationTest :
             "Should create child page with DSL and verify structure" {
                 val token = System.getenv("NOTION_API_TOKEN")
                 val parentPageId = System.getenv("NOTION_TEST_PAGE_ID")
-                val client = NotionClient.create(NotionConfig(apiToken = token))
+                val client = NotionClient(NotionConfig(apiToken = token))
 
                 try {
                     println("📄 Creating test page with PageRequestBuilder DSL...")
@@ -139,7 +139,7 @@ class PageRequestBuilderIntegrationTest :
             "Should validate DSL constraints properly" {
                 val token = System.getenv("NOTION_API_TOKEN")
                 val parentPageId = System.getenv("NOTION_TEST_PAGE_ID")
-                val client = NotionClient.create(NotionConfig(apiToken = token))
+                val client = NotionClient(NotionConfig(apiToken = token))
 
                 try {
                     println("🔍 Testing validation constraints...")

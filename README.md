@@ -48,8 +48,11 @@ dependencies {
 ```kotlin
 import it.saabel.kotlinnotionclient.NotionClient
 
-// Initialize the client
-val notion = NotionClient.create("your-notion-api-token")
+// Initialize the client (constructor - recommended)
+val notion = NotionClient("your-notion-api-token")
+
+// Alternative: factory method (also supported)
+// val notion = NotionClient.create("your-notion-api-token")
 
 // Retrieve a page
 val page = notion.pages.retrieve("page-id")
@@ -72,6 +75,29 @@ val results = notion.dataSources.query("data-source-id") {
     }
 }
 ```
+
+### Client Initialization
+
+You can create a `NotionClient` instance using either pattern:
+
+```kotlin
+// 1. Direct constructor (idiomatic Kotlin - recommended)
+val client = NotionClient("your-api-token")
+
+// 2. Factory method (also fully supported)
+val client = NotionClient.create("your-api-token")
+
+// With custom configuration
+val client = NotionClient(
+    NotionConfig(
+        apiToken = "your-api-token",
+        logLevel = LogLevel.INFO,
+        enableRateLimit = true
+    )
+)
+```
+
+Both patterns are fully supported - use whichever feels more natural to you.
 
 ## Understanding Databases vs. Data Sources
 

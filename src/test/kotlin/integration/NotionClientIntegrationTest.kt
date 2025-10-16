@@ -35,7 +35,7 @@ class NotionClientIntegrationTest :
 
                 When("calling the /users/me endpoint") {
                     val client =
-                        NotionClient.create(
+                        NotionClient(
                             NotionConfig(
                                 apiToken = token,
                                 logLevel = LogLevel.INFO,
@@ -46,8 +46,8 @@ class NotionClientIntegrationTest :
                         try {
                             println("📡 Calling /users/me endpoint...")
                             println("🔍 Debug info:")
-                            println("   Base URL: ${client.config.baseUrl}")
-                            println("   API Version: ${client.config.apiVersion}")
+//                            println("   Base URL: ${client.config.baseUrl}")
+//                            println("   API Version: ${client.config.apiVersion}")
                             println("   Token starts with: ${token.take(10)}...")
 
                             val user = client.users.getCurrentUser()

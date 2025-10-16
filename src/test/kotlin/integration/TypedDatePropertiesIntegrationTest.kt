@@ -48,7 +48,7 @@ class TypedDatePropertiesIntegrationTest :
                 val token = System.getenv("NOTION_API_TOKEN")
                 val parentPageId = System.getenv("NOTION_TEST_PAGE_ID")
 
-                val client = NotionClient.create(NotionConfig(apiToken = token))
+                val client = NotionClient(NotionConfig(apiToken = token))
 
                 try {
                     println("📊 Step 1: Creating database with date properties...")
@@ -243,7 +243,7 @@ class TypedDatePropertiesIntegrationTest :
                 val token = System.getenv("NOTION_API_TOKEN")
                 val parentPageId = System.getenv("NOTION_TEST_PAGE_ID")
 
-                val client = NotionClient.create(NotionConfig(apiToken = token))
+                val client = NotionClient(NotionConfig(apiToken = token))
 
                 try {
                     println("📊 Creating database for complex date filter test...")

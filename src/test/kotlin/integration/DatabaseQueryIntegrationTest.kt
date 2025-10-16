@@ -34,7 +34,7 @@ class DatabaseQueryIntegrationTest :
             "Should query database and return created pages with real API" {
                 val token = System.getenv("NOTION_API_TOKEN")
                 val parentPageId = System.getenv("NOTION_TEST_PAGE_ID")
-                val client = NotionClient.create(NotionConfig(apiToken = token))
+                val client = NotionClient(NotionConfig(apiToken = token))
 
                 try {
                     // Create test database
@@ -209,7 +209,7 @@ class DatabaseQueryIntegrationTest :
             "Should handle empty query results gracefully" {
                 val token = System.getenv("NOTION_API_TOKEN")
                 val parentPageId = System.getenv("NOTION_TEST_PAGE_ID")
-                val client = NotionClient.create(NotionConfig(apiToken = token))
+                val client = NotionClient(NotionConfig(apiToken = token))
 
                 try {
                     // Create empty database (no pages)

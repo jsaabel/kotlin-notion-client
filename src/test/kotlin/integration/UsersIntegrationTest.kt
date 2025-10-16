@@ -31,7 +31,7 @@ class UsersIntegrationTest :
                 println("⏭️ Skipping UsersIntegrationTest - missing environment variables")
             }
         } else {
-            val client = NotionClient.create(NotionConfig(apiToken = System.getenv("NOTION_API_TOKEN")))
+            val client = NotionClient(NotionConfig(apiToken = System.getenv("NOTION_API_TOKEN")))
 
             "getCurrentUser should return bot user" {
                 val user = client.users.getCurrentUser()

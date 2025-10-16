@@ -37,7 +37,7 @@ class TableBlockIntegrationTest :
                 val token = System.getenv("NOTION_API_TOKEN")
                 val parentPageId = System.getenv("NOTION_TEST_PAGE_ID")
 
-                val client = NotionClient.create(NotionConfig(apiToken = token))
+                val client = NotionClient(NotionConfig(apiToken = token))
 
                 try {
                     // Step 1: Create initial page using pageRequest DSL

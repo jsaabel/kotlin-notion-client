@@ -26,7 +26,7 @@ class SearchIntegrationTest :
                 println("⏭️ Skipping SearchIntegrationTest - missing environment variables")
             }
         } else {
-            val client = NotionClient.create(NotionConfig(apiToken = System.getenv("NOTION_API_TOKEN")))
+            val client = NotionClient(NotionConfig(apiToken = System.getenv("NOTION_API_TOKEN")))
 
             "search should return accessible content" {
                 val response = client.search.search()
