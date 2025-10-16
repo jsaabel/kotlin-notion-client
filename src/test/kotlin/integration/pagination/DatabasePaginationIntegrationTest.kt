@@ -7,7 +7,7 @@ import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 import it.saabel.kotlinnotionclient.NotionClient
 import it.saabel.kotlinnotionclient.config.NotionConfig
-import it.saabel.kotlinnotionclient.models.databases.DatabaseQueryBuilder
+import it.saabel.kotlinnotionclient.models.datasources.DataSourceQueryBuilder
 import it.saabel.kotlinnotionclient.models.pages.PageProperty
 import kotlinx.coroutines.delay
 
@@ -117,7 +117,7 @@ class DatabasePaginationIntegrationTest :
                     // Test 2: Query with explicit small page size to verify multiple fetches
                     println("\n🔍 Testing pagination with small page size...")
                     val smallPageSizeQuery =
-                        DatabaseQueryBuilder()
+                        DataSourceQueryBuilder()
                             .pageSize(10) // Small page size to trigger more API calls
                             .build()
 
@@ -131,7 +131,7 @@ class DatabasePaginationIntegrationTest :
                     // Test 3: Query with filter and sorting to ensure pagination works with complex queries
                     println("\n🔍 Testing pagination with filters and sorting...")
                     val complexQuery =
-                        DatabaseQueryBuilder()
+                        DataSourceQueryBuilder()
                             .filter {
                                 number("Index").greaterThan(50)
                             }.sortBy("Index")

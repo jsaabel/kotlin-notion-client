@@ -6,8 +6,8 @@ import io.kotest.matchers.collections.shouldNotBeEmpty
 import io.kotest.matchers.shouldBe
 import it.saabel.kotlinnotionclient.NotionClient
 import it.saabel.kotlinnotionclient.config.NotionConfig
-import it.saabel.kotlinnotionclient.models.databases.DatabaseQueryBuilder
-import it.saabel.kotlinnotionclient.models.databases.SortDirection
+import it.saabel.kotlinnotionclient.models.datasources.DataSourceQueryBuilder
+import it.saabel.kotlinnotionclient.models.datasources.SortDirection
 import unit.util.mockClient
 
 /**
@@ -17,7 +17,7 @@ import unit.util.mockClient
  * In 2025-09-03, queries target data sources instead of databases.
  */
 @Tags("Unit")
-class DatabaseQueryBuilderTest :
+class DataSourceQueryBuilderTest :
     StringSpec({
 
         fun createMockClient() =
@@ -29,7 +29,7 @@ class DatabaseQueryBuilderTest :
             val client = NotionClient.createWithClient(createMockClient(), NotionConfig("test-token"))
 
             val query =
-                DatabaseQueryBuilder()
+                DataSourceQueryBuilder()
                     .filter {
                         title("Name").contains("Important")
                     }.build()
@@ -43,7 +43,7 @@ class DatabaseQueryBuilderTest :
             val client = NotionClient.createWithClient(createMockClient(), NotionConfig("test-token"))
 
             val query =
-                DatabaseQueryBuilder()
+                DataSourceQueryBuilder()
                     .sortBy("Priority", SortDirection.DESCENDING)
                     .sortBy("Name", SortDirection.ASCENDING)
                     .build()
@@ -57,7 +57,7 @@ class DatabaseQueryBuilderTest :
             val client = NotionClient.createWithClient(createMockClient(), NotionConfig("test-token"))
 
             val query =
-                DatabaseQueryBuilder()
+                DataSourceQueryBuilder()
                     .sortByTimestamp("created_time", SortDirection.DESCENDING)
                     .sortByTimestamp("last_edited_time", SortDirection.ASCENDING)
                     .build()
@@ -71,7 +71,7 @@ class DatabaseQueryBuilderTest :
             val client = NotionClient.createWithClient(createMockClient(), NotionConfig("test-token"))
 
             val query =
-                DatabaseQueryBuilder()
+                DataSourceQueryBuilder()
                     .startCursor("test-cursor-123")
                     .pageSize(10)
                     .build()
@@ -83,14 +83,14 @@ class DatabaseQueryBuilderTest :
 
         "Should clamp page size to valid limits" {
             val queryOverLimit =
-                DatabaseQueryBuilder()
+                DataSourceQueryBuilder()
                     .pageSize(150) // Over the 100 limit
                     .build()
 
             queryOverLimit.pageSize shouldBe 100
 
             val queryUnderLimit =
-                DatabaseQueryBuilder()
+                DataSourceQueryBuilder()
                     .pageSize(0) // Under the 1 minimum
                     .build()
 
@@ -101,7 +101,7 @@ class DatabaseQueryBuilderTest :
             val client = NotionClient.createWithClient(createMockClient(), NotionConfig("test-token"))
 
             val query =
-                DatabaseQueryBuilder()
+                DataSourceQueryBuilder()
                     .filter {
                         title("Name").contains("Project")
                     }.sortBy("Priority", SortDirection.DESCENDING)

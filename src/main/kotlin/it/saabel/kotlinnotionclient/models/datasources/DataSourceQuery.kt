@@ -1,6 +1,6 @@
 @file:OptIn(ExperimentalSerializationApi::class)
 
-package it.saabel.kotlinnotionclient.models.databases
+package it.saabel.kotlinnotionclient.models.datasources
 
 import it.saabel.kotlinnotionclient.models.base.EmptyObject
 import it.saabel.kotlinnotionclient.models.pages.Page
@@ -16,11 +16,11 @@ import kotlinx.serialization.Serializable
  * The query endpoint returns pages that match the specified criteria.
  */
 @Serializable
-data class DatabaseQueryRequest(
+data class DataSourceQueryRequest(
     @SerialName("filter")
-    val filter: DatabaseFilter? = null,
+    val filter: DataSourceFilter? = null,
     @SerialName("sorts")
-    val sorts: List<DatabaseSort>? = null,
+    val sorts: List<DataSourceSort>? = null,
     @SerialName("start_cursor")
     val startCursor: String? = null,
     @SerialName("page_size")
@@ -28,12 +28,12 @@ data class DatabaseQueryRequest(
 )
 
 /**
- * Response model for database queries.
+ * Response model for data source queries.
  *
  * Contains the matching pages and pagination information for handling large result sets.
  */
 @Serializable
-data class DatabaseQueryResponse(
+data class DataSourceQueryResponse(
     @SerialName("object")
     val objectType: String, // Always "list"
     @SerialName("results")
@@ -49,13 +49,13 @@ data class DatabaseQueryResponse(
 ) : PaginatedResponse<Page>
 
 /**
- * Database filter specification.
+ * Data source filter specification.
  *
  * Filters can be simple property filters or compound filters using logical operators.
  * All pages that match the filter criteria will be returned.
  */
 @Serializable
-data class DatabaseFilter(
+data class DataSourceFilter(
     // Property information (for property-based filters)
     @SerialName("property")
     val property: String? = null,
@@ -82,19 +82,19 @@ data class DatabaseFilter(
     val phoneNumber: PropertyCondition? = null,
     // Compound conditions
     @SerialName("and")
-    val and: List<DatabaseFilter>? = null,
+    val and: List<DataSourceFilter>? = null,
     @SerialName("or")
-    val or: List<DatabaseFilter>? = null,
+    val or: List<DataSourceFilter>? = null,
 )
 
 /**
- * Sort specification for database queries.
+ * Sort specification for data source queries.
  *
  * Results can be sorted by property values in ascending or descending order.
  * Multiple sorts can be applied - earlier sorts take precedence.
  */
 @Serializable
-data class DatabaseSort(
+data class DataSourceSort(
     @SerialName("property")
     val property: String? = null,
     @SerialName("timestamp")

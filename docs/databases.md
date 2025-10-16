@@ -1,7 +1,5 @@
 # Databases API
 
-> **⚠️ WORK IN PROGRESS**: This documentation is being actively developed and may be incomplete or subject to change.
-
 > **📝 Example Validation**: ✅ All examples verified - validated against live Notion API (see `src/test/kotlin/examples/DatabasesExamples.kt`)
 
 ## Overview
@@ -384,51 +382,6 @@ parent.block("block-id")
 
 // At workspace root (requires admin permissions)
 parent.workspace()
-```
-
-## Migration from Pre-2025-09-03
-
-If you're migrating from an older API version:
-
-**Old way (2022-06-28)**:
-```kotlin
-// Create database
-val db = notion.databases.create {
-    parent.page("...")
-    title("...")
-    properties { /* schema here */ }
-}
-
-// Query it directly
-val pages = notion.databases.query(db.id) {}
-
-// Create page in it
-notion.pages.create {
-    parent.database(db.id)  // database_id
-    // ...
-}
-```
-
-**New way (2025-09-03)**:
-```kotlin
-// Create database (similar but uses initialDataSource)
-val db = notion.databases.create {
-    parent.page("...")
-    title("...")
-    properties { /* schema here */ }  // Wrapped as initialDataSource
-}
-
-// Get data source ID first
-val dataSourceId = db.dataSources.first().id
-
-// Query the data source
-val pages = notion.dataSources.query(dataSourceId) {}
-
-// Create page in data source
-notion.pages.create {
-    parent.dataSource(dataSourceId)  // data_source_id
-    // ...
-}
 ```
 
 ## Related APIs

@@ -3,6 +3,8 @@
 package it.saabel.kotlinnotionclient.models.pages
 
 import it.saabel.kotlinnotionclient.models.base.RichText
+import it.saabel.kotlinnotionclient.models.richtext.RichTextBuilder
+import it.saabel.kotlinnotionclient.models.richtext.richText
 import kotlinx.datetime.Instant
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
@@ -15,7 +17,44 @@ import kotlinx.datetime.toInstant
  * This builder provides a convenient way to construct property maps for page creation
  * and updates, dramatically reducing boilerplate compared to manual property construction.
  *
- * Example usage:
+ * ## Rich Text Property Patterns
+ *
+ * The `richText` property type (for database properties) supports three input patterns:
+ *
+ * 1. **Simple String** (most common for plain text):
+ * ```kotlin
+ * pageProperties {
+ *     richText("Description", "Plain text description")
+ * }
+ * ```
+ *
+ * 2. **Pre-built RichText List** (when building programmatically):
+ * ```kotlin
+ * val formattedText = richText {
+ *     text("Complex ")
+ *     bold("formatted")
+ *     text(" content")
+ * }
+ * pageProperties {
+ *     richText("Description", formattedText)
+ * }
+ * ```
+ *
+ * 3. **Inline DSL Lambda** (for formatted database properties):
+ * ```kotlin
+ * pageProperties {
+ *     richText("Description") {
+ *         text("Created by ")
+ *         userMention(userId)
+ *         text(" on ")
+ *         dateMention(LocalDate.now())
+ *     }
+ * }
+ * ```
+ *
+ * **Note**: Title properties only support plain text. Use `title("Name", "text")` for titles.
+ *
+ * ## General Usage Example
  * ```kotlin
  * val properties = pageProperties {
  *     title("Name", "My Task")
@@ -82,6 +121,39 @@ class PagePropertiesBuilder {
         richText: List<RichText>,
     ) {
         properties[name] = PagePropertyValue.RichTextValue(richText = richText)
+    }
+
+    /**
+     * Adds a rich text property value using the rich text DSL.
+     *
+     * This provides a consistent API with block content creation, allowing
+     * inline rich text formatting for rich text properties.
+     *
+     * Example:
+     * ```kotlin
+     * properties {
+     *     richText("Description") {
+     *         text("Created by ")
+     *         userMention(userId)
+     *         text(" on ")
+     *         dateMention(LocalDate.now())
+     *     }
+     * }
+     * ```
+     *
+     * Note: For simple text, prefer `richText(name, "text")`.
+     * Use this lambda form for moderately complex formatting with multiple
+     * styles, links, or mentions. For highly complex content, consider using
+     * block content instead of properties.
+     *
+     * @param name The property name
+     * @param block The rich text DSL builder block
+     */
+    fun richText(
+        name: String,
+        block: RichTextBuilder.() -> Unit,
+    ) {
+        properties[name] = PagePropertyValue.RichTextValue(richText = richText(block))
     }
 
     /**

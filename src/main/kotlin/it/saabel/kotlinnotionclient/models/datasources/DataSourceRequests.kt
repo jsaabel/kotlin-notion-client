@@ -1,7 +1,8 @@
-package it.saabel.kotlinnotionclient.models.databases
+package it.saabel.kotlinnotionclient.models.datasources
 
 import it.saabel.kotlinnotionclient.models.base.Parent
 import it.saabel.kotlinnotionclient.models.base.RichText
+import it.saabel.kotlinnotionclient.models.databases.CreateDatabaseProperty
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 

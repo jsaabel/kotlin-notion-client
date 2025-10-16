@@ -6,8 +6,8 @@ import io.kotest.matchers.collections.shouldNotBeEmpty
 import io.kotest.matchers.shouldBe
 import it.saabel.kotlinnotionclient.NotionClient
 import it.saabel.kotlinnotionclient.config.NotionConfig
-import it.saabel.kotlinnotionclient.models.databases.DatabaseQueryBuilder
-import it.saabel.kotlinnotionclient.models.databases.SortDirection
+import it.saabel.kotlinnotionclient.models.datasources.DataSourceQueryBuilder
+import it.saabel.kotlinnotionclient.models.datasources.SortDirection
 import it.saabel.kotlinnotionclient.models.pages.getNumberProperty
 import it.saabel.kotlinnotionclient.models.pages.getTitleAsPlainText
 import kotlinx.coroutines.delay
@@ -102,7 +102,7 @@ class DatabaseQueryIntegrationTest :
                     // Test 2: Query with checkbox filter
                     println("🔍 Testing checkbox filter...")
                     val completedQuery =
-                        DatabaseQueryBuilder()
+                        DataSourceQueryBuilder()
                             .filter {
                                 checkbox("Completed").equals(true)
                             }.build()
@@ -114,7 +114,7 @@ class DatabaseQueryIntegrationTest :
                     // Test 3: Query with number filter
                     println("🔍 Testing number filter...")
                     val highScoreQuery =
-                        DatabaseQueryBuilder()
+                        DataSourceQueryBuilder()
                             .filter {
                                 number("Score").greaterThan(80)
                             }.build()
@@ -126,7 +126,7 @@ class DatabaseQueryIntegrationTest :
                     // Test 4: Query with title filter
                     println("🔍 Testing title filter...")
                     val titleQuery =
-                        DatabaseQueryBuilder()
+                        DataSourceQueryBuilder()
                             .filter {
                                 title("Name").contains("Priority")
                             }.build()
@@ -138,7 +138,7 @@ class DatabaseQueryIntegrationTest :
                     // Test 5: Query with AND filter
                     println("🔍 Testing AND filter...")
                     val andQuery =
-                        DatabaseQueryBuilder()
+                        DataSourceQueryBuilder()
                             .filter {
                                 and(
                                     checkbox("Completed").equals(false),
@@ -158,7 +158,7 @@ class DatabaseQueryIntegrationTest :
                     // Test 6: Query with sorting
                     println("🔍 Testing sorting...")
                     val sortQuery =
-                        DatabaseQueryBuilder()
+                        DataSourceQueryBuilder()
                             .sortBy("Score", SortDirection.DESCENDING)
                             .build()
 
@@ -177,7 +177,7 @@ class DatabaseQueryIntegrationTest :
                     // Test 7: Query with pagination
                     println("🔍 Testing pagination...")
                     val pageQuery =
-                        DatabaseQueryBuilder()
+                        DataSourceQueryBuilder()
                             .pageSize(2)
                             .build()
 
@@ -235,7 +235,7 @@ class DatabaseQueryIntegrationTest :
 
                     // Query with filter that matches nothing
                     val noMatchQuery =
-                        DatabaseQueryBuilder()
+                        DataSourceQueryBuilder()
                             .filter {
                                 title("Name").contains("NonexistentText12345")
                             }.build()

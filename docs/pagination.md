@@ -144,7 +144,7 @@ val pages = notion.dataSources.query(dataSourceId) { /* query builder */ }
 // Flow (item-level) - returns Flow<Page>
 notion.dataSources.queryAsFlow(dataSourceId) { /* query builder */ }
 
-// Flow (page-level) - returns Flow<DatabaseQueryResponse>
+// Flow (page-level) - returns Flow<DataSourceQueryResponse>
 notion.dataSources.queryPagedFlow(dataSourceId) { /* query builder */ }
 ```
 

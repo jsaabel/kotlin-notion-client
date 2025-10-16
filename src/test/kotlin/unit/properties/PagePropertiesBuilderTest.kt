@@ -8,6 +8,7 @@ import io.kotest.matchers.maps.shouldHaveSize
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import it.saabel.kotlinnotionclient.models.base.Color
 import it.saabel.kotlinnotionclient.models.pages.PagePropertyValue
 import it.saabel.kotlinnotionclient.models.pages.pageProperties
 
@@ -287,5 +288,157 @@ class PagePropertiesBuilderTest :
             (properties["Urgent"] as PagePropertyValue.CheckboxValue).checkbox shouldBe true
             (properties["Status"] as PagePropertyValue.SelectValue).select!!.name shouldBe "In Progress"
             (properties["Due"] as PagePropertyValue.DateValue).date!!.start shouldBe "2024-12-31"
+        }
+
+        // ========================================
+        // Tests for Rich Text DSL Lambda Overloads
+        // ========================================
+        // Note: Title properties do not support DSL lambdas because Notion strips formatting from titles.
+        // Only richText properties (for database fields) support DSL lambda formatting.
+
+        "Should build richText property using rich text DSL with simple formatting" {
+            val properties =
+                pageProperties {
+                    richText("Description") {
+                        text("This is ")
+                        bold("important")
+                        text(" information!")
+                    }
+                }
+
+            properties shouldContainKey "Description"
+            properties["Description"].shouldBeInstanceOf<PagePropertyValue.RichTextValue>()
+            val richTextValue = properties["Description"] as PagePropertyValue.RichTextValue
+            richTextValue.richText shouldHaveSize 3
+            richTextValue.richText[0].plainText shouldBe "This is "
+            richTextValue.richText[1].plainText shouldBe "important"
+            richTextValue.richText[1].annotations.bold shouldBe true
+            richTextValue.richText[2].plainText shouldBe " information!"
+        }
+
+        "Should build richText property using rich text DSL with mentions and links" {
+            val properties =
+                pageProperties {
+                    richText("Description") {
+                        text("Created by ")
+                        userMention("user-123")
+                        text(" - See ")
+                        link("https://notion.so", "documentation")
+                    }
+                }
+
+            properties shouldContainKey "Description"
+            val richTextValue = properties["Description"] as PagePropertyValue.RichTextValue
+            richTextValue.richText shouldHaveSize 4
+            richTextValue.richText[0].plainText shouldBe "Created by "
+            richTextValue.richText[1].type shouldBe "mention"
+            richTextValue.richText[2].plainText shouldBe " - See "
+            richTextValue.richText[3].plainText shouldBe "documentation"
+            richTextValue.richText[3].href shouldBe "https://notion.so"
+        }
+
+        "Should build richText property using rich text DSL with colors" {
+            val properties =
+                pageProperties {
+                    richText("Status") {
+                        colored("Active", Color.GREEN)
+                        text(" - ")
+                        backgroundColored("Highlighted", Color.YELLOW_BACKGROUND)
+                    }
+                }
+
+            properties shouldContainKey "Status"
+            val richTextValue = properties["Status"] as PagePropertyValue.RichTextValue
+            richTextValue.richText shouldHaveSize 3
+            richTextValue.richText[0].plainText shouldBe "Active"
+            richTextValue.richText[0].annotations.color shouldBe Color.GREEN
+            richTextValue.richText[2].plainText shouldBe "Highlighted"
+            richTextValue.richText[2].annotations.color shouldBe Color.YELLOW_BACKGROUND
+        }
+
+        "Should build richText property using rich text DSL with all formatting options" {
+            val properties =
+                pageProperties {
+                    richText("Complex") {
+                        text("Start ")
+                        bold("bold ")
+                        italic("italic ")
+                        boldItalic("bold-italic ")
+                        code("code ")
+                        strikethrough("strike ")
+                        underline("underline ")
+                        text("end")
+                    }
+                }
+
+            properties shouldContainKey "Complex"
+            val richTextValue = properties["Complex"] as PagePropertyValue.RichTextValue
+            richTextValue.richText shouldHaveSize 8
+            // Verify each formatting type exists
+            richTextValue.richText.any { it.annotations.bold && !it.annotations.italic } shouldBe true
+            richTextValue.richText.any { it.annotations.italic && !it.annotations.bold } shouldBe true
+            richTextValue.richText.any { it.annotations.bold && it.annotations.italic } shouldBe true
+            richTextValue.richText.any { it.annotations.code } shouldBe true
+            richTextValue.richText.any { it.annotations.strikethrough } shouldBe true
+            richTextValue.richText.any { it.annotations.underline } shouldBe true
+        }
+
+        "Should build properties mixing DSL and non-DSL approaches" {
+            val properties =
+                pageProperties {
+                    title("Simple", "Plain Text Title")
+                    richText("Complex") {
+                        text("Formatted ")
+                        bold("Rich Text")
+                    }
+                    richText("AlsoSimple", "Another Plain Text")
+                }
+
+            properties shouldHaveSize 3
+
+            // Simple title (string overload)
+            val simpleTitle = properties["Simple"] as PagePropertyValue.TitleValue
+            simpleTitle.title shouldHaveSize 1
+            simpleTitle.title.first().plainText shouldBe "Plain Text Title"
+
+            // Complex rich text (DSL overload)
+            val complexRichText = properties["Complex"] as PagePropertyValue.RichTextValue
+            complexRichText.richText shouldHaveSize 2
+            complexRichText.richText[1].annotations.bold shouldBe true
+
+            // Simple rich text (string overload)
+            val simpleRichText = properties["AlsoSimple"] as PagePropertyValue.RichTextValue
+            simpleRichText.richText shouldHaveSize 1
+            simpleRichText.richText.first().plainText shouldBe "Another Plain Text"
+        }
+
+        "Should build comprehensive property set with DSL lambda overloads" {
+            val properties =
+                pageProperties {
+                    title("Title", "Plain Text Title") // Titles only support plain text
+                    richText("Description") {
+                        text("A ")
+                        bold("type-safe")
+                        text(" Kotlin client for the ")
+                        link("https://developers.notion.com", "Notion API")
+                    }
+                    number("Priority", 1)
+                    checkbox("Active", true)
+                    select("Status", "In Progress")
+                    date("Due", "2024-12-31")
+                }
+
+            properties shouldHaveSize 6
+
+            // Verify title (plain text only)
+            val titleValue = properties["Title"] as PagePropertyValue.TitleValue
+            titleValue.title shouldHaveSize 1
+            titleValue.title[0].plainText shouldBe "Plain Text Title"
+
+            // Verify rich text with DSL
+            val descValue = properties["Description"] as PagePropertyValue.RichTextValue
+            descValue.richText shouldHaveSize 4
+            descValue.richText[1].annotations.bold shouldBe true
+            descValue.richText[3].href shouldBe "https://developers.notion.com"
         }
     })

@@ -5,7 +5,7 @@ import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.collections.shouldNotBeEmpty
 import it.saabel.kotlinnotionclient.NotionClient
 import it.saabel.kotlinnotionclient.config.NotionConfig
-import it.saabel.kotlinnotionclient.models.databases.DatabaseQueryRequest
+import it.saabel.kotlinnotionclient.models.datasources.DataSourceQueryRequest
 import unit.util.mockClient
 
 /**
@@ -15,7 +15,7 @@ import unit.util.mockClient
  * In 2025-09-03, queries target data sources instead of databases.
  */
 @Tags("Unit")
-class DatabaseQueryBasicTest :
+class DataSourceQueryBasicTest :
     StringSpec({
 
         fun createMockClient() =
@@ -35,7 +35,7 @@ class DatabaseQueryBasicTest :
         "Should query data source with basic pagination" {
             val client = NotionClient.createWithClient(createMockClient(), NotionConfig("test-token"))
 
-            val query = DatabaseQueryRequest(pageSize = 50)
+            val query = DataSourceQueryRequest(pageSize = 50)
             val pages = client.dataSources.query("test-data-source-id", query)
 
             pages.shouldNotBeEmpty()
@@ -45,7 +45,7 @@ class DatabaseQueryBasicTest :
             val client = NotionClient.createWithClient(createMockClient(), NotionConfig("test-token"))
 
             val query =
-                DatabaseQueryRequest(
+                DataSourceQueryRequest(
                     startCursor = "test-cursor-123",
                     pageSize = 25,
                 )

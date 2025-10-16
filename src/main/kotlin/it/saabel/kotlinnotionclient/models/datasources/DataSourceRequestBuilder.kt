@@ -1,9 +1,11 @@
 @file:Suppress("unused")
 
-package it.saabel.kotlinnotionclient.models.databases
+package it.saabel.kotlinnotionclient.models.datasources
 
 import it.saabel.kotlinnotionclient.models.base.Parent
 import it.saabel.kotlinnotionclient.models.base.RichText
+import it.saabel.kotlinnotionclient.models.databases.CreateDatabaseProperty
+import it.saabel.kotlinnotionclient.models.databases.DatabasePropertiesBuilder
 
 /**
  * Builder for creating data source requests (API version 2025-09-03+).

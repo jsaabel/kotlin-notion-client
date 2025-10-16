@@ -1,7 +1,5 @@
 # Quick Start Guide
 
-> **⚠️ WORK IN PROGRESS**: This documentation is being actively developed and may be incomplete or subject to change.
-
 Get started with the Kotlin Notion Client in under 5 minutes.
 
 ## Prerequisites

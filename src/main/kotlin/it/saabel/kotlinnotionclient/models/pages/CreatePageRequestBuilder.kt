@@ -77,6 +77,8 @@ class CreatePageRequestBuilder {
      * For database pages: sets the "title" property (database must have a title property)
      * For child pages: sets the page title directly in properties
      *
+     * Note: Page titles only support plain text. Notion strips any formatting from titles.
+     *
      * @param titleText The title text
      */
     fun title(titleText: String) {

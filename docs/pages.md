@@ -1,7 +1,5 @@
 # Pages API
 
-> **⚠️ WORK IN PROGRESS**: This documentation is being actively developed and may be incomplete or subject to change.
-
 > **📝 Example Validation**: ✅ All examples verified - validated against live Notion API (see `src/test/kotlin/examples/PagesExamples.kt`)
 
 ## Overview

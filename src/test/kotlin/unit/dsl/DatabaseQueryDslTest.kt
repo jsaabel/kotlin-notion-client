@@ -6,9 +6,9 @@ import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeTypeOf
 import it.saabel.kotlinnotionclient.NotionClient
 import it.saabel.kotlinnotionclient.config.NotionConfig
-import it.saabel.kotlinnotionclient.models.databases.DatabaseQueryRequest
-import it.saabel.kotlinnotionclient.models.databases.SortDirection
-import it.saabel.kotlinnotionclient.models.databases.databaseQuery
+import it.saabel.kotlinnotionclient.models.datasources.DataSourceQueryRequest
+import it.saabel.kotlinnotionclient.models.datasources.SortDirection
+import it.saabel.kotlinnotionclient.models.datasources.dataSourceQuery
 import unit.util.mockClient
 
 /**
@@ -28,7 +28,7 @@ class DatabaseQueryDslTest :
 
         "databaseQuery function should create proper request object" {
             val request =
-                databaseQuery {
+                dataSourceQuery {
                     filter {
                         title("Name").contains("Test")
                     }
@@ -36,7 +36,7 @@ class DatabaseQueryDslTest :
                     pageSize(25)
                 }
 
-            request.shouldBeTypeOf<DatabaseQueryRequest>()
+            request.shouldBeTypeOf<DataSourceQueryRequest>()
             request.filter?.property shouldBe "Name"
             request.filter?.title?.contains shouldBe "Test"
             request.sorts?.size shouldBe 1
@@ -47,7 +47,7 @@ class DatabaseQueryDslTest :
 
         "databaseQuery should support complex nested filters" {
             val request =
-                databaseQuery {
+                dataSourceQuery {
                     filter {
                         and(
                             title("Project").isNotEmpty(),
@@ -73,7 +73,7 @@ class DatabaseQueryDslTest :
 
         "databaseQuery should support all property filter types" {
             val request =
-                databaseQuery {
+                dataSourceQuery {
                     filter {
                         and(
                             title("Title").startsWith("Project"),
@@ -95,7 +95,7 @@ class DatabaseQueryDslTest :
 
         "databaseQuery should support multiple sorts and pagination" {
             val request =
-                databaseQuery {
+                dataSourceQuery {
                     sortBy("Priority", SortDirection.DESCENDING)
                     sortBy("Name", SortDirection.ASCENDING)
                     sortByTimestamp("created_time", SortDirection.DESCENDING)

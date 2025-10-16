@@ -7,7 +7,7 @@ import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 import it.saabel.kotlinnotionclient.NotionClient
 import it.saabel.kotlinnotionclient.config.NotionConfig
-import it.saabel.kotlinnotionclient.models.databases.DatabaseQueryBuilder
+import it.saabel.kotlinnotionclient.models.datasources.DataSourceQueryBuilder
 import kotlinx.coroutines.delay
 
 /**
@@ -101,7 +101,7 @@ class PaginationEdgeCasesIntegrationTest :
                     // Test edge case: Exactly at page boundary
                     println("\n🔍 Testing pagination at exact page boundary...")
                     val boundaryQuery =
-                        DatabaseQueryBuilder()
+                        DataSourceQueryBuilder()
                             .pageSize(25) // Exactly divides 50
                             .build()
 

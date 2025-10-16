@@ -9,7 +9,7 @@ import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import it.saabel.kotlinnotionclient.NotionClient
 import it.saabel.kotlinnotionclient.config.NotionConfig
-import it.saabel.kotlinnotionclient.models.databases.SortDirection
+import it.saabel.kotlinnotionclient.models.datasources.SortDirection
 import it.saabel.kotlinnotionclient.models.pages.PageProperty
 import kotlinx.coroutines.delay
 

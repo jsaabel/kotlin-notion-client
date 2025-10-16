@@ -1,7 +1,5 @@
 # Documentation Index
 
-> **⚠️ WORK IN PROGRESS**: This documentation is being actively developed and may be incomplete or subject to change.
-
 ## API Guides
 
 ### Core APIs

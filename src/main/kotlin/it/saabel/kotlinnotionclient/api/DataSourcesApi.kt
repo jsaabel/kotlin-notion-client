@@ -13,17 +13,17 @@ import io.ktor.http.isSuccess
 import it.saabel.kotlinnotionclient.config.NotionApiLimits
 import it.saabel.kotlinnotionclient.config.NotionConfig
 import it.saabel.kotlinnotionclient.exceptions.NotionException
-import it.saabel.kotlinnotionclient.models.databases.CreateDataSourceRequest
-import it.saabel.kotlinnotionclient.models.databases.CreateDataSourceRequestBuilder
-import it.saabel.kotlinnotionclient.models.databases.DataSource
-import it.saabel.kotlinnotionclient.models.databases.DatabaseQueryBuilder
-import it.saabel.kotlinnotionclient.models.databases.DatabaseQueryRequest
-import it.saabel.kotlinnotionclient.models.databases.DatabaseQueryResponse
-import it.saabel.kotlinnotionclient.models.databases.UpdateDataSourceRequest
-import it.saabel.kotlinnotionclient.models.databases.UpdateDataSourceRequestBuilder
-import it.saabel.kotlinnotionclient.models.databases.createDataSourceRequest
-import it.saabel.kotlinnotionclient.models.databases.databaseQuery
-import it.saabel.kotlinnotionclient.models.databases.updateDataSourceRequest
+import it.saabel.kotlinnotionclient.models.datasources.CreateDataSourceRequest
+import it.saabel.kotlinnotionclient.models.datasources.CreateDataSourceRequestBuilder
+import it.saabel.kotlinnotionclient.models.datasources.DataSource
+import it.saabel.kotlinnotionclient.models.datasources.DataSourceQueryBuilder
+import it.saabel.kotlinnotionclient.models.datasources.DataSourceQueryRequest
+import it.saabel.kotlinnotionclient.models.datasources.DataSourceQueryResponse
+import it.saabel.kotlinnotionclient.models.datasources.UpdateDataSourceRequest
+import it.saabel.kotlinnotionclient.models.datasources.UpdateDataSourceRequestBuilder
+import it.saabel.kotlinnotionclient.models.datasources.createDataSourceRequest
+import it.saabel.kotlinnotionclient.models.datasources.dataSourceQuery
+import it.saabel.kotlinnotionclient.models.datasources.updateDataSourceRequest
 import it.saabel.kotlinnotionclient.ratelimit.executeWithRateLimit
 import it.saabel.kotlinnotionclient.utils.Pagination
 import it.saabel.kotlinnotionclient.validation.RequestValidator
@@ -113,9 +113,9 @@ class DataSourcesApi(
      */
     suspend fun query(
         dataSourceId: String,
-        builder: DatabaseQueryBuilder.() -> Unit,
+        builder: DataSourceQueryBuilder.() -> Unit,
     ): List<it.saabel.kotlinnotionclient.models.pages.Page> {
-        val request = databaseQuery(builder)
+        val request = dataSourceQuery(builder)
         return query(dataSourceId, request)
     }
 
@@ -134,7 +134,7 @@ class DataSourcesApi(
      */
     suspend fun query(
         dataSourceId: String,
-        request: DatabaseQueryRequest = DatabaseQueryRequest(),
+        request: DataSourceQueryRequest = DataSourceQueryRequest(),
     ): List<it.saabel.kotlinnotionclient.models.pages.Page> {
         val allPages = mutableListOf<it.saabel.kotlinnotionclient.models.pages.Page>()
         var currentCursor: String? = null
@@ -182,8 +182,8 @@ class DataSourcesApi(
      */
     private suspend fun querySinglePage(
         dataSourceId: String,
-        request: DatabaseQueryRequest,
-    ): DatabaseQueryResponse =
+        request: DataSourceQueryRequest,
+    ): DataSourceQueryResponse =
         httpClient.executeWithRateLimit {
             try {
                 val response: HttpResponse =
@@ -193,7 +193,7 @@ class DataSourcesApi(
                     }
 
                 if (response.status.isSuccess()) {
-                    response.body<DatabaseQueryResponse>()
+                    response.body<DataSourceQueryResponse>()
                 } else {
                     val errorBody =
                         try {
@@ -382,9 +382,9 @@ class DataSourcesApi(
      */
     fun queryAsFlow(
         dataSourceId: String,
-        builder: DatabaseQueryBuilder.() -> Unit,
+        builder: DataSourceQueryBuilder.() -> Unit,
     ): Flow<it.saabel.kotlinnotionclient.models.pages.Page> {
-        val request = databaseQuery(builder)
+        val request = dataSourceQuery(builder)
         return queryAsFlow(dataSourceId, request)
     }
 
@@ -397,7 +397,7 @@ class DataSourcesApi(
      */
     fun queryAsFlow(
         dataSourceId: String,
-        request: DatabaseQueryRequest = DatabaseQueryRequest(),
+        request: DataSourceQueryRequest = DataSourceQueryRequest(),
     ): Flow<it.saabel.kotlinnotionclient.models.pages.Page> =
         Pagination.asFlow { cursor ->
             querySinglePage(
@@ -412,7 +412,7 @@ class DataSourcesApi(
     /**
      * Queries a data source and returns response pages as a Flow.
      *
-     * Unlike [queryAsFlow], this emits complete [DatabaseQueryResponse] objects,
+     * Unlike [queryAsFlow], this emits complete [DataSourceQueryResponse] objects,
      * allowing access to pagination metadata alongside results.
      *
      * Example usage:
@@ -431,9 +431,9 @@ class DataSourcesApi(
      */
     fun queryPagedFlow(
         dataSourceId: String,
-        builder: DatabaseQueryBuilder.() -> Unit,
-    ): Flow<DatabaseQueryResponse> {
-        val request = databaseQuery(builder)
+        builder: DataSourceQueryBuilder.() -> Unit,
+    ): Flow<DataSourceQueryResponse> {
+        val request = dataSourceQuery(builder)
         return queryPagedFlow(dataSourceId, request)
     }
 
@@ -446,8 +446,8 @@ class DataSourcesApi(
      */
     fun queryPagedFlow(
         dataSourceId: String,
-        request: DatabaseQueryRequest = DatabaseQueryRequest(),
-    ): Flow<DatabaseQueryResponse> =
+        request: DataSourceQueryRequest = DataSourceQueryRequest(),
+    ): Flow<DataSourceQueryResponse> =
         Pagination.asPagesFlow { cursor ->
             querySinglePage(
                 dataSourceId,

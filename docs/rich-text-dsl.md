@@ -1,7 +1,5 @@
 # Rich Text DSL
 
-> **⚠️ WORK IN PROGRESS**: This documentation is being actively developed and may be incomplete or subject to change.
-
 ## Overview
 
 The Rich Text DSL provides an intuitive Kotlin builder for creating formatted text with annotations, mentions, links, and equations.

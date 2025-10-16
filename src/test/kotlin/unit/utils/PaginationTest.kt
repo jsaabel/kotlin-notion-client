@@ -4,7 +4,8 @@ import io.kotest.core.annotation.Tags
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.shouldBe
-import it.saabel.kotlinnotionclient.models.databases.DatabaseQueryResponse
+import it.saabel.kotlinnotionclient.models.base.EmptyObject
+import it.saabel.kotlinnotionclient.models.datasources.DataSourceQueryResponse
 import it.saabel.kotlinnotionclient.models.pages.Page
 import it.saabel.kotlinnotionclient.utils.PaginatedResponse
 import it.saabel.kotlinnotionclient.utils.Pagination
@@ -23,7 +24,7 @@ class PaginationTest :
             val mockPages = listOf(createMockPage("1"), createMockPage("2"), createMockPage("3"))
             val mockResponse = createMockQueryResponse(mockPages, hasMore = false, nextCursor = null)
 
-            val fetcher: suspend (String?) -> DatabaseQueryResponse = { mockResponse }
+            val fetcher: suspend (String?) -> DataSourceQueryResponse = { mockResponse }
 
             val result = Pagination.collectAll(fetcher)
 
@@ -37,7 +38,7 @@ class PaginationTest :
             val page2Items = listOf(createMockPage("3"), createMockPage("4"))
             val page3Items = listOf(createMockPage("5"))
 
-            val fetcher: suspend (String?) -> DatabaseQueryResponse = { cursor ->
+            val fetcher: suspend (String?) -> DataSourceQueryResponse = { cursor ->
                 when (callCount++) {
                     0 -> {
                         cursor shouldBe null
@@ -63,7 +64,7 @@ class PaginationTest :
 
         "collectAll should handle empty results" {
             val mockResponse = createMockQueryResponse(emptyList(), hasMore = false, nextCursor = null)
-            val fetcher: suspend (String?) -> DatabaseQueryResponse = { mockResponse }
+            val fetcher: suspend (String?) -> DataSourceQueryResponse = { mockResponse }
 
             val result = Pagination.collectAll(fetcher)
 
@@ -74,7 +75,7 @@ class PaginationTest :
             val mockPages = listOf(createMockPage("1"), createMockPage("2"), createMockPage("3"))
             val mockResponse = createMockQueryResponse(mockPages, hasMore = false, nextCursor = null)
 
-            val fetcher: suspend (String?) -> DatabaseQueryResponse = { mockResponse }
+            val fetcher: suspend (String?) -> DataSourceQueryResponse = { mockResponse }
 
             val result = Pagination.asFlow(fetcher).toList()
 
@@ -88,7 +89,7 @@ class PaginationTest :
             val page2Items = listOf(createMockPage("3"), createMockPage("4"))
             val page3Items = listOf(createMockPage("5"))
 
-            val fetcher: suspend (String?) -> DatabaseQueryResponse = { cursor ->
+            val fetcher: suspend (String?) -> DataSourceQueryResponse = { cursor ->
                 when (callCount++) {
                     0 -> {
                         cursor shouldBe null
@@ -114,7 +115,7 @@ class PaginationTest :
 
         "asFlow should handle empty results" {
             val mockResponse = createMockQueryResponse(emptyList(), hasMore = false, nextCursor = null)
-            val fetcher: suspend (String?) -> DatabaseQueryResponse = { mockResponse }
+            val fetcher: suspend (String?) -> DataSourceQueryResponse = { mockResponse }
 
             val result = Pagination.asFlow(fetcher).toList()
 
@@ -127,7 +128,7 @@ class PaginationTest :
             val page2Items = listOf(createMockPage("3"), createMockPage("4"))
             val page3Items = listOf(createMockPage("5"))
 
-            val fetcher: suspend (String?) -> DatabaseQueryResponse = { cursor ->
+            val fetcher: suspend (String?) -> DataSourceQueryResponse = { cursor ->
                 when (callCount++) {
                     0 -> {
                         cursor shouldBe null
@@ -166,7 +167,7 @@ class PaginationTest :
             val mockPages = listOf(createMockPage("1"), createMockPage("2"))
             val mockResponse = createMockQueryResponse(mockPages, hasMore = false, nextCursor = null)
 
-            val fetcher: suspend (String?) -> DatabaseQueryResponse = { mockResponse }
+            val fetcher: suspend (String?) -> DataSourceQueryResponse = { mockResponse }
 
             val pages = Pagination.asPagesFlow(fetcher).toList()
 
@@ -225,14 +226,13 @@ private fun createMockQueryResponse(
     pages: List<Page>,
     hasMore: Boolean,
     nextCursor: String?,
-): DatabaseQueryResponse =
-    DatabaseQueryResponse(
+): DataSourceQueryResponse =
+    DataSourceQueryResponse(
         objectType = "list",
         results = pages,
         nextCursor = nextCursor,
         hasMore = hasMore,
         type = "page_or_database",
         pageOrDatabase =
-            it.saabel.kotlinnotionclient.models.base
-                .EmptyObject(),
+            EmptyObject(),
     )

@@ -1,7 +1,5 @@
 # Data Sources API
 
-> **⚠️ WORK IN PROGRESS**: This documentation is being actively developed and may be incomplete or subject to change.
-
 > **📝 Example Validation**: ✅ All examples verified - validated against live Notion API (see `src/test/kotlin/examples/DataSourcesExamples.kt`)
 
 ## Overview
@@ -153,22 +151,21 @@ val updated = notion.dataSources.update("data-source-id") {
 
 ## Understanding Data Sources vs. Databases
 
-**In older API versions (pre-2025-09-03)**:
-- You would query a "database" to get pages
-- You would add pages to a "database"
-
-**In 2025-09-03**:
-- **Databases** are containers (like folders)
-- **Data sources** are the tables inside those containers
-- You query **data sources** to get pages
+**Important terminology in the 2025-09-03 API**:
+- **Databases** are containers (like folders) that hold data sources
+- **Data sources** are the actual tables with properties and rows
+- You query **data sources** to get pages (not databases)
 - You add pages to **data sources** (using `dataSourceId` as parent)
 
 ```kotlin
-// ❌ This was the old way:
-// notion.databases.query("database-id")
-
-// ✅ This is the new way:
+// ✅ Query a data source (table)
 notion.dataSources.query("data-source-id")
+
+// ✅ Create a page in a data source
+notion.pages.create {
+    parent.dataSource("data-source-id")
+    // ...
+}
 ```
 
 ## Common Patterns

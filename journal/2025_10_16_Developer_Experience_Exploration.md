@@ -381,6 +381,115 @@ For each task, capture:
 
 ---
 
+## Follow-up Session: Terminology Consistency Cleanup (2025-10-16)
+
+**Goal**: Ensure consistent use of "database" vs "data source" terminology throughout the codebase, aligning with Notion API 2025-09-03 naming conventions.
+
+### Context & Rationale
+
+In Notion API version 2025-09-03:
+- **"Database"** = Container object (like a folder) that holds data sources
+- **"Data Source"** = The actual table with properties and rows that you query
+
+The codebase had inconsistent terminology where query-related code used "database" names (`DatabaseQueryBuilder`, `databaseQuery()`) even though they operate on data sources. This creates confusion about what's being queried.
+
+**Impact**: Pre-1.0 cleanup - library hasn't been released yet, so this is the ideal time to fix terminology.
+
+### Phase 1: Documentation Updates ✅
+
+**Completed**:
+1. **Constructor Pattern Consistency** (30 min)
+   - Updated `docs/search.md` - Simplified from `NotionClient(NotionConfig(...))` to `NotionClient("token")`
+   - Updated `docs/users.md` - Same simplification in 2 places
+   - **Result**: All documentation now shows `NotionClient("token")` as primary pattern
+
+### Phase 2: Query Terminology Cleanup 🚧
+
+**Strategy**: Use IntelliJ's intelligent rename to ensure all references are updated correctly.
+
+**Completed So Far**:
+1. ✅ Renamed class: `DatabaseQueryBuilder` → `DataSourceQueryBuilder`
+2. ✅ Renamed function: `databaseQuery()` → `dataSourceQuery()`
+3. ✅ Renamed file: `DatabaseQueryDslTest.kt` → `DataSourceQueryDslTest.kt`
+4. ✅ Updated docstrings in `DataSourceQueryBuilder.kt`:
+   - "building database queries" → "building data source queries"
+   - "construct complex database queries" → "construct complex data source queries"
+   - "constructing database filters" → "constructing data source filters"
+
+**Remaining Renames** (to be done with IntelliJ intelligent rename):
+
+| Current Name | New Name | File Location | Impact |
+|--------------|----------|---------------|--------|
+| `DatabaseQueryRequest` | `DataSourceQueryRequest` | `models/databases/DatabaseQueryRequest.kt` | Used in `DataSourcesApi`, builder, tests |
+| `DatabaseQueryResponse` | `DataSourceQueryResponse` | `models/databases/DatabaseQueryResponse.kt` | Used in `DataSourcesApi`, pagination, tests |
+| `DatabaseFilter` | `DataSourceFilter` | `models/databases/DatabaseFilter.kt` | Used extensively in all filter builders |
+| `DatabaseSort` | `DataSourceSort` | `models/databases/DatabaseSort.kt` | Used in query builder |
+
+**Files Affected**:
+- `DataSourcesApi.kt` - Main API using these models
+- `DataSourceQueryBuilder.kt` - Builder using filter/sort types
+- All filter builder classes - Return `DataSourceFilter` instances
+- Test files - Unit and integration tests
+- Pagination helpers - Use response types
+
+**Recommended Rename Order**:
+1. `DatabaseSort` → `DataSourceSort` (fewest dependencies)
+2. `DatabaseFilter` → `DataSourceFilter` (used by builders)
+3. `DatabaseQueryRequest` → `DataSourceQueryRequest` (used by API)
+4. `DatabaseQueryResponse` → `DataSourceQueryResponse` (used by API)
+
+### Design Decision: What NOT to Rename
+
+**Keeping "Database" terminology for**:
+- Property/column-related naming (these are database concepts)
+- Condition classes: `PropertyCondition`, `NumberCondition`, `SelectCondition`, etc.
+- These represent database query primitives, not Notion-specific entities
+
+**Why this makes sense**:
+- "Database filter" and "database sort" are generic query concepts
+- "Data source filter" is more specific and accurate for Notion's API
+- We're querying data sources, applying filters and sorts to them
+
+### Testing Strategy
+
+**Before each rename**:
+- Ensure all tests pass: `./gradlew test`
+- Format code: `./gradlew formatKotlin`
+
+**After all renames complete**:
+- Run full test suite: `./gradlew test`
+- Run limited integration tests if needed
+- Verify no compilation errors
+
+### Expected Outcomes
+
+**After completion**:
+- ✅ Consistent "data source" terminology for query operations
+- ✅ Code aligns with Notion API 2025-09-03 naming
+- ✅ Reduced confusion about what's being queried
+- ✅ Zero breaking changes (library not released)
+- ✅ All tests passing
+- ✅ Documentation accurate
+
+**Time Estimate**: 45-60 minutes total
+- Documentation updates: 15 min ✅
+- Function/class renames: 10 min ✅
+- Model renames: 20 min 🚧
+- Testing & verification: 15 min ⏳
+
+### Status: IN PROGRESS
+
+**Next Steps**:
+1. Use IntelliJ to rename `DatabaseSort` → `DataSourceSort`
+2. Rename `DatabaseFilter` → `DataSourceFilter`
+3. Rename `DatabaseQueryRequest` → `DataSourceQueryRequest`
+4. Rename `DatabaseQueryResponse` → `DataSourceQueryResponse`
+5. Format code: `./gradlew formatKotlin`
+6. Run tests: `./gradlew test`
+7. Update this journal with final results
+
+---
+
 ## Post-Session Summary
 
 **Date Completed**: 2025-10-16
@@ -413,12 +522,15 @@ For each task, capture:
    - Impact: Inconsistent API - some places use lambdas, others don't
    - Recommendation: Either support both patterns everywhere or document why not
 
-5. **[FINDING #5] Rich Text DSL in Page Content Blocks** ❌ DOES NOT WORK
+5. **[FINDING #5] Rich Text DSL in Page Content Blocks** ✅ FIXED (Partially)
    - User expects: `pages.create { content { paragraph { richText { text("..."); bold("...") } } } }`
-   - Status: **This pattern does NOT work** - needs implementation
-   - Current workaround: Use simpler paragraph patterns
-   - Impact: Can't use rich formatting DSL in page content blocks
-   - **Priority fix**: This should work to provide consistent DSL experience
+   - Investigation revealed: Pattern works differently than expected
+   - **Reality**: Paragraph lambda IS the RichTextBuilder scope - no extra `richText {}` wrapper needed
+   - Correct pattern: `paragraph { text("..."); bold("...") }` (direct calls)
+   - **Issue identified**: No DSL lambda support for page **properties** (only for database richText properties)
+   - **Fix Applied**: Added `richText(name, block: RichTextBuilder.() -> Unit)` to `PagePropertiesBuilder`
+   - **Result**: Database rich text properties now support DSL lambda formatting
+   - **Limitation Documented**: Page/database titles don't support formatting (Notion strips it)
 
 6. **[FINDING #6] Query DSL** ⭐ Excellent!
    - Filter nesting with `and()`, `or()` works intuitively
@@ -624,7 +736,158 @@ Need to update documentation to show constructor as primary pattern and explain 
 - ✅ Both NotionClient patterns supported without warnings
 - ✅ Unit tests complete in <1 second
 - ✅ Integration tests use idiomatic constructor pattern
-- ⏳ Rich text DSL works in page content blocks (or documented why not)
+- ✅ Rich text DSL works in page content blocks (or documented why not)
 - ⏳ Documentation clean and current
 - ⏳ Terminology consistent (dataSource not database)
 - ⏳ Known limitations clearly documented
+
+---
+
+## Follow-up Session: Rich Text DSL Properties Fix (2025-10-16)
+
+**Issue**: FINDING #5 revealed confusion about rich text DSL support in properties
+
+### Investigation & Resolution ✅
+
+**Initial Misconception**:
+- User expected: `title("Name") { text("x"); bold("y") }` to work for page titles
+- Reality: Page titles in Notion **don't support rich text formatting** (Notion strips it)
+
+**Actual Gap Found**:
+- Page content blocks (`paragraph`, `heading`, etc.) already supported DSL via lambda: `paragraph { text("x"); bold("y") }`
+- Database `richText` properties did NOT support DSL lambda (inconsistency)
+
+**Fix Implemented**:
+
+1. **Added `richText()` Lambda Overload to `PagePropertiesBuilder`**:
+   ```kotlin
+   fun richText(name: String, block: RichTextBuilder.() -> Unit) {
+       properties[name] = PagePropertyValue.RichTextValue(richText = richText(block))
+   }
+   ```
+
+2. **Did NOT Add `title()` Lambda** - Because:
+   - Notion page/database titles are **always plain text only**
+   - Formatting is silently stripped by Notion
+   - Would mislead users into thinking formatting works
+
+3. **Updated Documentation**:
+   - `PagePropertiesBuilder` now documents that titles only support plain text
+   - `CreatePageRequestBuilder.title()` notes: "Page titles only support plain text. Notion strips any formatting from titles."
+
+4. **Comprehensive Testing**:
+   - Added 6 unit tests for `richText()` lambda DSL
+   - Tests cover: simple formatting, mentions, links, colors, all formatting options
+   - Removed 2 invalid `title()` lambda tests (since it doesn't make sense)
+   - All tests pass ✅
+
+### API Consistency Achieved
+
+**Now Consistent Across APIs**:
+
+| **Context** | **DSL Lambda Support** | **Reason** |
+|------------|----------------------|-----------|
+| `richText()` database property | ✅ **Supported** | Rich text fields support formatting |
+| `title()` properties | ❌ **Not Supported** | Titles are always plain text in Notion |
+| Content blocks (`paragraph`, etc.) | ✅ **Already Supported** | Block content supports rich formatting |
+
+**Example Usage**:
+```kotlin
+pageProperties {
+    // ✅ Works - database rich text property
+    richText("Description") {
+        text("Created by ")
+        userMention(userId)
+        text(" on ")
+        dateMention(LocalDate.now())
+    }
+
+    // ✅ Works - plain text title
+    title("Name", "Plain Text Only")
+
+    // ❌ Removed - would be misleading
+    // title("Name") { bold("text") }  // Notion strips this anyway!
+}
+```
+
+### Results
+- ✅ DSL lambda support added where it makes sense (`richText` properties)
+- ✅ Avoided misleading API (no `title` lambda since formatting doesn't work)
+- ✅ Documentation clarifies Notion's limitations
+- ✅ All unit tests pass (~40 tests total)
+- ✅ Zero breaking changes
+
+### Files Modified
+1. `PagePropertiesBuilder.kt` - Added `richText()` lambda, updated docs
+2. `CreatePageRequestBuilder.kt` - Added note about titles being plain text only
+3. `PagePropertiesBuilderTest.kt` - Added 6 tests, removed 2 invalid tests
+4. `PageRequestBuilderIntegrationTest.kt` - Removed invalid integration test
+
+**Time**: ~1 hour
+**Status**: ✅ Complete
+
+---
+
+## Follow-up Session: Documentation Cleanup (2025-10-16)
+
+**Goal**: Clean up documentation to remove WIP notices, migration sections, and ensure consistency
+
+### Tasks Completed ✅
+
+#### 1. Removed "Work in Progress" Notices
+Removed all "⚠️ WORK IN PROGRESS" notices from documentation files:
+- `QUICKSTART.md`
+- `docs/README.md`
+- `docs/pages.md`
+- `docs/databases.md`
+- `docs/data-sources.md`
+- `docs/rich-text-dsl.md`
+
+**Rationale**: Documentation is comprehensive and validated against live API. The library is ready for 0.1.0 release - keeping WIP notices undermines confidence in the docs.
+
+#### 2. Removed Migration Sections
+Removed all references to "migrating from older APIs" and "old way vs new way" comparisons:
+- `docs/databases.md` - Removed entire "Migration from Pre-2025-09-03" section
+- `docs/data-sources.md` - Rewrote "Understanding Data Sources vs. Databases" section to focus on concepts, not migration
+
+**Rationale**: This library **only supports API version 2025-09-03**. Migration sections imply we support older versions, which is incorrect and confusing. Users should understand the current API, not compare to versions we don't support.
+
+#### 3. Updated Terminology
+Changed language from "older API" comparisons to straightforward explanations:
+```markdown
+# Before
+**In older API versions (pre-2025-09-03)**:
+- You would query a "database" to get pages
+**In 2025-09-03**:
+- **Databases** are containers (like folders)
+
+# After
+**Important terminology in the 2025-09-03 API**:
+- **Databases** are containers (like folders) that hold data sources
+- **Data sources** are the actual tables with properties and rows
+```
+
+### Files Modified
+1. `QUICKSTART.md` - Removed WIP notice
+2. `docs/README.md` - Removed WIP notice
+3. `docs/pages.md` - Removed WIP notice
+4. `docs/databases.md` - Removed WIP notice and entire migration section
+5. `docs/data-sources.md` - Removed WIP notice, rewrote database comparison section
+6. `docs/rich-text-dsl.md` - Removed WIP notice
+
+### Verification
+Confirmed zero remaining WIP notices:
+```bash
+$ grep -r "WORK IN PROGRESS" docs/ QUICKSTART.md README.md | wc -l
+0
+```
+
+### Results
+- ✅ All WIP notices removed (6 files)
+- ✅ All migration sections removed/rewritten
+- ✅ Documentation focuses solely on 2025-09-03 API
+- ✅ Language is clear and non-comparative
+- ✅ Zero breaking changes to examples
+
+**Time**: ~30 minutes
+**Status**: ✅ Complete

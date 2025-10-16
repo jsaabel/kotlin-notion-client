@@ -9,6 +9,7 @@ import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
 import io.kotest.matchers.shouldBe
 import it.saabel.kotlinnotionclient.NotionClient
 import it.saabel.kotlinnotionclient.config.NotionConfig
+import it.saabel.kotlinnotionclient.models.datasources.SortDirection
 import it.saabel.kotlinnotionclient.models.pages.PageProperty
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.toList
@@ -269,7 +270,7 @@ class DataSourceFlowPaginationIntegrationTest :
                     val sortedPages =
                         client.dataSources
                             .queryAsFlow(dataSourceId) {
-                                sortBy("Priority", it.saabel.kotlinnotionclient.models.databases.SortDirection.DESCENDING)
+                                sortBy("Priority", SortDirection.DESCENDING)
                             }.toList()
 
                     sortedPages.size shouldBe priorities.size

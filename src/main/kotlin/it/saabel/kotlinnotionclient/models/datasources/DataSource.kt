@@ -1,10 +1,11 @@
 @file:Suppress("unused")
 
-package it.saabel.kotlinnotionclient.models.databases
+package it.saabel.kotlinnotionclient.models.datasources
 
 import it.saabel.kotlinnotionclient.models.base.NotionObject
 import it.saabel.kotlinnotionclient.models.base.Parent
 import it.saabel.kotlinnotionclient.models.base.RichText
+import it.saabel.kotlinnotionclient.models.databases.DatabaseProperty
 import it.saabel.kotlinnotionclient.models.users.User
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable

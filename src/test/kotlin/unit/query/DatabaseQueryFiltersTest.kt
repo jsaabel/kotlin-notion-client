@@ -4,7 +4,7 @@ import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.collections.shouldNotBeEmpty
 import it.saabel.kotlinnotionclient.NotionClient
 import it.saabel.kotlinnotionclient.config.NotionConfig
-import it.saabel.kotlinnotionclient.models.databases.DatabaseQueryBuilder
+import it.saabel.kotlinnotionclient.models.datasources.DataSourceQueryBuilder
 import unit.util.mockClient
 
 /**
@@ -25,7 +25,7 @@ class DatabaseQueryFiltersTest :
             val client = NotionClient.createWithClient(createMockClient(), NotionConfig("test-token"))
 
             val query =
-                DatabaseQueryBuilder()
+                DataSourceQueryBuilder()
                     .filter {
                         and(
                             title("Task Name").contains("Urgent"),
@@ -43,7 +43,7 @@ class DatabaseQueryFiltersTest :
             val client = NotionClient.createWithClient(createMockClient(), NotionConfig("test-token"))
 
             val query =
-                DatabaseQueryBuilder()
+                DataSourceQueryBuilder()
                     .filter {
                         or(
                             select("Status").equals("In Progress"),
@@ -61,7 +61,7 @@ class DatabaseQueryFiltersTest :
             val client = NotionClient.createWithClient(createMockClient(), NotionConfig("test-token"))
 
             val query =
-                DatabaseQueryBuilder()
+                DataSourceQueryBuilder()
                     .filter {
                         and(
                             title("Project").isNotEmpty(),
@@ -84,7 +84,7 @@ class DatabaseQueryFiltersTest :
             val client = NotionClient.createWithClient(createMockClient(), NotionConfig("test-token"))
 
             val query =
-                DatabaseQueryBuilder()
+                DataSourceQueryBuilder()
                     .filter {
                         and(
                             title("Title").startsWith("Project"),
@@ -104,7 +104,7 @@ class DatabaseQueryFiltersTest :
             val client = NotionClient.createWithClient(createMockClient(), NotionConfig("test-token"))
 
             val query =
-                DatabaseQueryBuilder()
+                DataSourceQueryBuilder()
                     .filter {
                         and(
                             number("Score").greaterThan(80),
@@ -123,7 +123,7 @@ class DatabaseQueryFiltersTest :
             val client = NotionClient.createWithClient(createMockClient(), NotionConfig("test-token"))
 
             val query =
-                DatabaseQueryBuilder()
+                DataSourceQueryBuilder()
                     .filter {
                         and(
                             select("Category").equals("Project"),
@@ -141,7 +141,7 @@ class DatabaseQueryFiltersTest :
             val client = NotionClient.createWithClient(createMockClient(), NotionConfig("test-token"))
 
             val query =
-                DatabaseQueryBuilder()
+                DataSourceQueryBuilder()
                     .filter {
                         and(
                             date("Created").after("2024-01-01"),
@@ -159,7 +159,7 @@ class DatabaseQueryFiltersTest :
             val client = NotionClient.createWithClient(createMockClient(), NotionConfig("test-token"))
 
             val query =
-                DatabaseQueryBuilder()
+                DataSourceQueryBuilder()
                     .filter {
                         or(
                             date("Created").pastWeek(),
@@ -177,7 +177,7 @@ class DatabaseQueryFiltersTest :
             val client = NotionClient.createWithClient(createMockClient(), NotionConfig("test-token"))
 
             val query =
-                DatabaseQueryBuilder()
+                DataSourceQueryBuilder()
                     .filter {
                         and(
                             title("Required Field").isNotEmpty(),
@@ -196,7 +196,7 @@ class DatabaseQueryFiltersTest :
             val client = NotionClient.createWithClient(createMockClient(), NotionConfig("test-token"))
 
             val query =
-                DatabaseQueryBuilder()
+                DataSourceQueryBuilder()
                     .filter {
                         and(
                             checkbox("Active").equals(true),
