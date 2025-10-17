@@ -1,7 +1,6 @@
 import com.github.benmanes.gradle.versions.updates.DependencyUpdatesTask
 
 plugins {
-    application
     alias(libs.plugins.ben.manes.versions)
     alias(libs.plugins.dokka)
     alias(libs.plugins.kotlin.jvm)
@@ -10,12 +9,9 @@ plugins {
     alias(libs.plugins.maven.publish)
 }
 
-group = "it.saabel"
-version = "0.1.0"
-
-application {
-    mainClass.set("it.saabel.kotlinnotionclient.MainKt")
-}
+// Read from gradle.properties
+group = project.property("group") as String
+version = project.property("version") as String
 
 repositories {
     mavenCentral()
@@ -73,7 +69,7 @@ mavenPublishing {
     signAllPublications()
 
     // Configure POM metadata
-    coordinates("it.saabel", "kotlin-notion-client", "0.1.0")
+    coordinates(group as String, "kotlin-notion-client", version as String)
 
     pom {
         name.set("Kotlin Notion Client")

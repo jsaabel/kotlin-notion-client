@@ -59,7 +59,7 @@ This is the first public release of the Kotlin Notion Client library.
 
 #### 🔧 Technical Details
 
-- **Language**: Kotlin 1.9+
+- **Language**: Kotlin 2.2+
 - **HTTP Client**: Ktor
 - **Serialization**: kotlinx.serialization
 - **DateTime**: kotlinx-datetime
@@ -82,4 +82,4 @@ This is the first public release of the Kotlin Notion Client library.
 
 **Note**: This is an early release (0.1.0). While comprehensive testing has been performed, users should expect potential issues and are encouraged to report them via GitHub Issues.
 
-[0.1.0]: https://github.com/yourusername/kotlin-notion-client/releases/tag/v0.1.0
+[0.1.0]: https://github.com/jsaabel/kotlin-notion-client/releases/tag/v0.1.0

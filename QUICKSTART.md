@@ -11,7 +11,7 @@ Get started with the Kotlin Notion Client in under 5 minutes.
 
 ## Installation
 
-> **Note**: Not yet published to Maven Central. See [Building from Source](README.md#building-from-source)
+Add the dependency to your `build.gradle.kts`:
 
 ```kotlin
 dependencies {

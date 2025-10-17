@@ -165,7 +165,7 @@ All notebooks use live Notion API and can be run in IntelliJ IDEA or Jupyter.
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/kotlin-notion-client.git
+git clone https://github.com/jsaabel/kotlin-notion-client.git
 cd kotlin-notion-client
 
 # Build the project
