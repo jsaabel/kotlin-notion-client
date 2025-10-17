@@ -3,6 +3,7 @@
 package it.saabel.kotlinnotionclient.models.blocks
 
 import it.saabel.kotlinnotionclient.models.base.Color
+import it.saabel.kotlinnotionclient.models.base.ExternalFile
 import it.saabel.kotlinnotionclient.models.base.NotionObject
 import it.saabel.kotlinnotionclient.models.base.Parent
 import it.saabel.kotlinnotionclient.models.base.RichText
@@ -1319,15 +1320,6 @@ data class CalloutIcon(
     val external: ExternalFile? = null,
     @SerialName("file")
     val file: FileReference? = null,
-)
-
-/**
- * Represents an external file reference.
- */
-@Serializable
-data class ExternalFile(
-    @SerialName("url")
-    val url: String,
 )
 
 /**

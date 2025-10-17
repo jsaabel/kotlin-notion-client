@@ -36,11 +36,7 @@ class CreateCommentRequestBuilderTest :
                             }
                         }
 
-                    request.parent shouldBe
-                        Parent(
-                            type = "page_id",
-                            pageId = "test-page-id",
-                        )
+                    request.parent shouldBe Parent.PageParent(pageId = "test-page-id")
                     request.richText shouldHaveSize 1
                     request.richText[0].plainText shouldBe "Hello world"
                     request.discussionId.shouldBeNull()
@@ -57,11 +53,7 @@ class CreateCommentRequestBuilderTest :
                             }
                         }
 
-                    request.parent shouldBe
-                        Parent(
-                            type = "block_id",
-                            blockId = "test-block-id",
-                        )
+                    request.parent shouldBe Parent.BlockParent(blockId = "test-block-id")
                     request.richText shouldHaveSize 1
                     request.richText[0].plainText shouldBe "Comment on block"
                 }
@@ -78,8 +70,8 @@ class CreateCommentRequestBuilderTest :
                         }
 
                     request.parent.type shouldBe "page_id"
+                    require(request.parent is Parent.PageParent)
                     request.parent.pageId shouldBe "12345678-1234-1234-1234-123456789abc"
-                    request.parent.blockId.shouldBeNull()
                 }
 
                 it("should support block parent configuration") {
@@ -92,8 +84,8 @@ class CreateCommentRequestBuilderTest :
                         }
 
                     request.parent.type shouldBe "block_id"
+                    require(request.parent is Parent.BlockParent)
                     request.parent.blockId shouldBe "87654321-4321-4321-4321-210987654321"
-                    request.parent.pageId.shouldBeNull()
                 }
 
                 it("should overwrite parent if set multiple times") {
@@ -107,8 +99,8 @@ class CreateCommentRequestBuilderTest :
                         }
 
                     request.parent.type shouldBe "block_id"
+                    require(request.parent is Parent.BlockParent)
                     request.parent.blockId shouldBe "block-id"
-                    request.parent.pageId.shouldBeNull()
                 }
 
                 it("should support page() alias for pageId()") {
@@ -121,6 +113,7 @@ class CreateCommentRequestBuilderTest :
                         }
 
                     request.parent.type shouldBe "page_id"
+                    require(request.parent is Parent.PageParent)
                     request.parent.pageId shouldBe "page-id-123"
                 }
 
@@ -134,6 +127,7 @@ class CreateCommentRequestBuilderTest :
                         }
 
                     request.parent.type shouldBe "block_id"
+                    require(request.parent is Parent.BlockParent)
                     request.parent.blockId shouldBe "block-id-456"
                 }
             }
@@ -425,6 +419,7 @@ class CreateCommentRequestBuilderTest :
 
                     // Verify parent
                     request.parent.type shouldBe "block_id"
+                    require(request.parent is Parent.BlockParent)
                     request.parent.blockId shouldBe "block-123"
 
                     // Verify rich text content
@@ -460,12 +455,12 @@ class CreateCommentRequestBuilderTest :
                         }
 
                     // Verify they're independent
+                    require(request1.parent is Parent.PageParent)
                     request1.parent.pageId shouldBe "page-1"
-                    request1.parent.blockId.shouldBeNull()
                     request1.discussionId.shouldBeNull()
 
+                    require(request2.parent is Parent.BlockParent)
                     request2.parent.blockId shouldBe "block-2"
-                    request2.parent.pageId.shouldBeNull()
                     request2.discussionId shouldBe "discussion-2"
                     request2.richText[0].annotations.bold shouldBe true
                 }

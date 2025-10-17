@@ -11,6 +11,8 @@ import io.kotest.matchers.shouldBe
 import it.saabel.kotlinnotionclient.NotionClient
 import it.saabel.kotlinnotionclient.config.NotionConfig
 import it.saabel.kotlinnotionclient.models.base.SelectOptionColor
+import it.saabel.kotlinnotionclient.models.pages.PageCover
+import it.saabel.kotlinnotionclient.models.pages.PageIcon
 import kotlinx.coroutines.delay
 
 /**
@@ -211,8 +213,8 @@ class DatabasesExamples :
                 database.shouldNotBeNull()
                 val title = database.title.firstOrNull()?.plainText
                 title shouldBe "Product Roadmap"
-                database.icon?.emoji shouldBe "🗺️"
-                database.cover?.external?.url shouldBe "https://images.unsplash.com/photo-1557683316-973673baf926"
+                (database.icon as? PageIcon.Emoji)?.emoji shouldBe "🗺️"
+                (database.cover as? PageCover.External)?.external?.url shouldBe "https://images.unsplash.com/photo-1557683316-973673baf926"
 
                 // Verify data source was created
                 val dataSource = notion.dataSources.retrieve(database.dataSources.first().id)

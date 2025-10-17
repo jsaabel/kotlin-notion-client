@@ -48,10 +48,7 @@ class PageRequestBuilderTest :
                         }
 
                     request.parent shouldBe
-                        Parent(
-                            type = "page_id",
-                            pageId = "test-page-id",
-                        )
+                        Parent.PageParent(pageId = "test-page-id")
                 }
 
                 it("should create a minimal page request with block parent") {
@@ -61,10 +58,7 @@ class PageRequestBuilderTest :
                         }
 
                     request.parent shouldBe
-                        Parent(
-                            type = "block_id",
-                            blockId = "test-block-id",
-                        )
+                        Parent.BlockParent(blockId = "test-block-id")
                 }
 
                 it("should create a minimal page request with workspace parent") {
@@ -73,11 +67,7 @@ class PageRequestBuilderTest :
                             parent.workspace()
                         }
 
-                    request.parent shouldBe
-                        Parent(
-                            type = "workspace",
-                            workspace = true,
-                        )
+                    request.parent shouldBe Parent.WorkspaceParent
                 }
 
                 it("should fail when parent is not specified") {

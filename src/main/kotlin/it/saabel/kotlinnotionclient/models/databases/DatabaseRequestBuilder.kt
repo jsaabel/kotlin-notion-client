@@ -2,11 +2,11 @@
 
 package it.saabel.kotlinnotionclient.models.databases
 
+import it.saabel.kotlinnotionclient.models.base.ExternalFile
+import it.saabel.kotlinnotionclient.models.base.NotionFile
 import it.saabel.kotlinnotionclient.models.base.Parent
 import it.saabel.kotlinnotionclient.models.base.RichText
 import it.saabel.kotlinnotionclient.models.base.SelectOptionColor
-import it.saabel.kotlinnotionclient.models.pages.ExternalFile
-import it.saabel.kotlinnotionclient.models.pages.NotionFile
 import it.saabel.kotlinnotionclient.models.pages.PageCover
 import it.saabel.kotlinnotionclient.models.pages.PageIcon
 
@@ -132,11 +132,7 @@ class DatabaseRequestBuilder {
          * @param pageId The parent page ID
          */
         fun page(pageId: String) {
-            this@DatabaseRequestBuilder.parentValue =
-                Parent(
-                    type = "page_id",
-                    pageId = pageId,
-                )
+            this@DatabaseRequestBuilder.parentValue = Parent.PageParent(pageId = pageId)
         }
 
         /**
@@ -145,22 +141,14 @@ class DatabaseRequestBuilder {
          * @param blockId The parent block ID
          */
         fun block(blockId: String) {
-            this@DatabaseRequestBuilder.parentValue =
-                Parent(
-                    type = "block_id",
-                    blockId = blockId,
-                )
+            this@DatabaseRequestBuilder.parentValue = Parent.BlockParent(blockId = blockId)
         }
 
         /**
          * Sets the parent to workspace.
          */
         fun workspace() {
-            this@DatabaseRequestBuilder.parentValue =
-                Parent(
-                    type = "workspace",
-                    workspace = true,
-                )
+            this@DatabaseRequestBuilder.parentValue = Parent.WorkspaceParent
         }
     }
 
@@ -175,11 +163,7 @@ class DatabaseRequestBuilder {
          * @param emoji The emoji character(s)
          */
         fun emoji(emoji: String) {
-            this@DatabaseRequestBuilder.iconValue =
-                PageIcon(
-                    type = "emoji",
-                    emoji = emoji,
-                )
+            this@DatabaseRequestBuilder.iconValue = PageIcon.Emoji(emoji = emoji)
         }
 
         /**
@@ -188,11 +172,7 @@ class DatabaseRequestBuilder {
          * @param url The external image URL
          */
         fun external(url: String) {
-            this@DatabaseRequestBuilder.iconValue =
-                PageIcon(
-                    type = "external",
-                    external = ExternalFile(url = url),
-                )
+            this@DatabaseRequestBuilder.iconValue = PageIcon.External(external = ExternalFile(url = url))
         }
 
         /**
@@ -206,10 +186,7 @@ class DatabaseRequestBuilder {
             expiryTime: String? = null,
         ) {
             this@DatabaseRequestBuilder.iconValue =
-                PageIcon(
-                    type = "file",
-                    file = NotionFile(url = url, expiryTime = expiryTime),
-                )
+                PageIcon.File(file = NotionFile(url = url, expiryTime = expiryTime))
         }
     }
 
@@ -224,11 +201,7 @@ class DatabaseRequestBuilder {
          * @param url The external image URL
          */
         fun external(url: String) {
-            this@DatabaseRequestBuilder.coverValue =
-                PageCover(
-                    type = "external",
-                    external = ExternalFile(url = url),
-                )
+            this@DatabaseRequestBuilder.coverValue = PageCover.External(external = ExternalFile(url = url))
         }
 
         /**
@@ -242,10 +215,7 @@ class DatabaseRequestBuilder {
             expiryTime: String? = null,
         ) {
             this@DatabaseRequestBuilder.coverValue =
-                PageCover(
-                    type = "file",
-                    file = NotionFile(url = url, expiryTime = expiryTime),
-                )
+                PageCover.File(file = NotionFile(url = url, expiryTime = expiryTime))
         }
     }
 }

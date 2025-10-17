@@ -85,7 +85,7 @@ class CreateDataSourceRequestBuilder {
         require(properties.isNotEmpty()) { "Data source must have at least one property" }
 
         return CreateDataSourceRequest(
-            parent = Parent(type = "database_id", databaseId = databaseIdValue),
+            parent = Parent.DatabaseParent(databaseId = databaseIdValue!!),
             properties = properties,
             title = titleValue,
         )

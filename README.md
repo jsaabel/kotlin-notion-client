@@ -143,10 +143,23 @@ See [docs/databases.md](docs/databases.md) and [docs/data-sources.md](docs/data-
 ## Documentation
 
 - **[Quick Start Guide](QUICKSTART.md)** - Get up and running in 5 minutes
+- **[Kotlin Notebooks](notebooks/)** - Interactive Jupyter notebooks with 50+ examples (recommended for learning)
 - **[API Documentation](docs/)** - Detailed guides for each API category
 - **[Rich Text DSL](docs/rich-text-dsl.md)** - Working with formatted text
 - **[Error Handling](docs/error-handling.md)** - Understanding and handling errors
 - **[Testing](docs/testing.md)** - Testing your Notion integrations
+
+### Learning Resources
+
+The **[Kotlin Notebooks](notebooks/)** are the best way to learn the library:
+1. [Getting Started](notebooks/01-getting-started.ipynb) - Authentication and basic operations
+2. [Reading Databases](notebooks/02-reading-databases.ipynb) - Querying with filters and sorting
+3. [Creating Pages](notebooks/03-creating-pages.ipynb) - Pages, properties, icons, and covers
+4. [Working with Blocks](notebooks/04-working-with-blocks.ipynb) - All block types and operations
+5. [Rich Text DSL](notebooks/05-rich-text-dsl.ipynb) - Formatting, colors, links, dates, equations
+6. [Advanced Queries](notebooks/06-advanced-queries.ipynb) - Complex filtering, AND/OR logic, pagination
+
+All notebooks use live Notion API and can be run in IntelliJ IDEA or Jupyter.
 
 ## Building from Source
 

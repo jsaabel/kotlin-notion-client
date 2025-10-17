@@ -47,7 +47,7 @@ class BlockPaginationIntegrationTest :
                     println("📄 Creating test page for block pagination...")
                     val pageRequest =
                         CreatePageRequest(
-                            parent = Parent(type = "page_id", pageId = parentPageId),
+                            parent = Parent.PageParent(pageId = parentPageId),
                             icon = RequestBuilders.createEmojiIcon("📝"),
                             properties =
                                 mapOf(

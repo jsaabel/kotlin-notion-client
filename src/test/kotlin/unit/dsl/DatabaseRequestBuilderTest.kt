@@ -8,6 +8,8 @@ import io.kotest.matchers.maps.shouldHaveSize
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import it.saabel.kotlinnotionclient.models.base.ExternalFile
+import it.saabel.kotlinnotionclient.models.base.NotionFile
 import it.saabel.kotlinnotionclient.models.base.Parent
 import it.saabel.kotlinnotionclient.models.base.RichText
 import it.saabel.kotlinnotionclient.models.base.SelectOptionColor
@@ -15,8 +17,6 @@ import it.saabel.kotlinnotionclient.models.databases.CreateDatabaseProperty
 import it.saabel.kotlinnotionclient.models.databases.CreateSelectOption
 import it.saabel.kotlinnotionclient.models.databases.RelationConfiguration
 import it.saabel.kotlinnotionclient.models.databases.databaseRequest
-import it.saabel.kotlinnotionclient.models.pages.ExternalFile
-import it.saabel.kotlinnotionclient.models.pages.NotionFile
 import it.saabel.kotlinnotionclient.models.pages.PageCover
 import it.saabel.kotlinnotionclient.models.pages.PageIcon
 import io.kotest.matchers.collections.shouldHaveSize as shouldHaveSizeList
@@ -36,7 +36,7 @@ class DatabaseRequestBuilderTest :
                         }
                     }
 
-                request.parent shouldBe Parent(type = "page_id", pageId = "test-page-id")
+                request.parent shouldBe Parent.PageParent(pageId = "test-page-id")
                 request.title shouldBe listOf(RichText.fromPlainText("Test Database"))
                 request.initialDataSource.properties shouldHaveSize 1
                 request.initialDataSource.properties shouldContainKey "Name"
@@ -57,7 +57,7 @@ class DatabaseRequestBuilderTest :
                             }
                         }
 
-                    request.parent shouldBe Parent(type = "page_id", pageId = "page-id")
+                    request.parent shouldBe Parent.PageParent(pageId = "page-id")
                 }
 
                 "block parent" {
@@ -70,7 +70,7 @@ class DatabaseRequestBuilderTest :
                             }
                         }
 
-                    request.parent shouldBe Parent(type = "block_id", blockId = "block-id")
+                    request.parent shouldBe Parent.BlockParent(blockId = "block-id")
                 }
 
                 "workspace parent" {
@@ -83,7 +83,7 @@ class DatabaseRequestBuilderTest :
                             }
                         }
 
-                    request.parent shouldBe Parent(type = "workspace", workspace = true)
+                    request.parent shouldBe Parent.WorkspaceParent
                 }
             }
 
@@ -113,7 +113,7 @@ class DatabaseRequestBuilderTest :
                             }
                         }
 
-                    request.icon shouldBe PageIcon(type = "emoji", emoji = "📊")
+                    request.icon shouldBe PageIcon.Emoji(emoji = "📊")
                 }
 
                 "external icon" {
@@ -127,7 +127,7 @@ class DatabaseRequestBuilderTest :
                             }
                         }
 
-                    request.icon shouldBe PageIcon(type = "external", external = ExternalFile(url = "https://example.com/icon.png"))
+                    request.icon shouldBe PageIcon.External(external = ExternalFile(url = "https://example.com/icon.png"))
                 }
 
                 "file icon" {
@@ -142,8 +142,7 @@ class DatabaseRequestBuilderTest :
                         }
 
                     request.icon shouldBe
-                        PageIcon(
-                            type = "file",
+                        PageIcon.File(
                             file = NotionFile(url = "https://files.notion.so/icon.png", expiryTime = "2023-01-01T00:00:00.000Z"),
                         )
                 }
@@ -160,8 +159,7 @@ class DatabaseRequestBuilderTest :
                         }
 
                     request.icon shouldBe
-                        PageIcon(
-                            type = "file",
+                        PageIcon.File(
                             file = NotionFile(url = "https://files.notion.so/icon.png", expiryTime = null),
                         )
                 }
@@ -180,8 +178,7 @@ class DatabaseRequestBuilderTest :
                         }
 
                     request.cover shouldBe
-                        PageCover(
-                            type = "external",
+                        PageCover.External(
                             external = ExternalFile(url = "https://example.com/cover.jpg"),
                         )
                 }
@@ -198,8 +195,7 @@ class DatabaseRequestBuilderTest :
                         }
 
                     request.cover shouldBe
-                        PageCover(
-                            type = "file",
+                        PageCover.File(
                             file =
                                 NotionFile(
                                     url = "https://files.notion.so/cover.jpg",
@@ -220,8 +216,7 @@ class DatabaseRequestBuilderTest :
                         }
 
                     request.cover shouldBe
-                        PageCover(
-                            type = "file",
+                        PageCover.File(
                             file =
                                 NotionFile(
                                     url = "https://files.notion.so/cover.jpg",
@@ -435,11 +430,11 @@ class DatabaseRequestBuilderTest :
                         }
                     }
 
-                request.parent shouldBe Parent(type = "page_id", pageId = "parent-page-id")
+                request.parent shouldBe Parent.PageParent(pageId = "parent-page-id")
                 request.title shouldBe listOf(RichText.fromPlainText("Comprehensive Database"))
                 request.description shouldBe listOf(RichText.fromPlainText("A database with all possible features"))
-                request.icon shouldBe PageIcon(type = "emoji", emoji = "🚀")
-                request.cover shouldBe PageCover(type = "external", external = ExternalFile(url = "https://example.com/cover.jpg"))
+                request.icon shouldBe PageIcon.Emoji(emoji = "🚀")
+                request.cover shouldBe PageCover.External(external = ExternalFile(url = "https://example.com/cover.jpg"))
                 request.initialDataSource.properties shouldHaveSize 12
             }
 

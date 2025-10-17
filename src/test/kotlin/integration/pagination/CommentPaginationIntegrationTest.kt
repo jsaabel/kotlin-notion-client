@@ -47,7 +47,7 @@ class CommentPaginationIntegrationTest :
                     println("📄 Creating test page for comment pagination...")
                     val pageRequest =
                         CreatePageRequest(
-                            parent = Parent(type = "page_id", pageId = parentPageId),
+                            parent = Parent.PageParent(pageId = parentPageId),
                             icon = RequestBuilders.createEmojiIcon("💬"),
                             properties =
                                 mapOf(
@@ -78,7 +78,7 @@ class CommentPaginationIntegrationTest :
                         val comment =
                             client.comments.create(
                                 CreateCommentRequest(
-                                    parent = Parent(type = "page_id", pageId = page.id),
+                                    parent = Parent.PageParent(pageId = page.id),
                                     richText =
                                         listOf(
                                             RequestBuilders.createSimpleRichText(

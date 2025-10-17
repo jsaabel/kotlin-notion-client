@@ -75,7 +75,7 @@ class CommentsIntegrationTest :
                             println("📄 Creating test page for comments...")
                             val pageRequest =
                                 CreatePageRequest(
-                                    parent = Parent(type = "page_id", pageId = parentPageId!!),
+                                    parent = Parent.PageParent(parentPageId!!),
                                     icon = RequestBuilders.createEmojiIcon("💬"),
                                     properties =
                                         mapOf(
@@ -111,7 +111,7 @@ class CommentsIntegrationTest :
                             println("✍️ Creating first test comment...")
                             val firstComment =
                                 CreateCommentRequest(
-                                    parent = Parent(type = "page_id", pageId = createdPage.id),
+                                    parent = Parent.PageParent(createdPage.id),
                                     richText =
                                         listOf(
                                             RequestBuilders.createSimpleRichText(
@@ -137,7 +137,12 @@ class CommentsIntegrationTest :
                                 .first()
                                 .plainText
                                 .shouldNotBeBlank()
-                            createdComment1.parent.pageId shouldBe createdPage.id
+                            val parentId =
+                                when (val c = createdComment1.parent) {
+                                    is Parent.PageParent -> c.pageId
+                                    else -> error("Unexpected parent type: ${c::class.simpleName}")
+                                }
+                            parentId shouldBe createdPage.id
 
                             // Step 4: Create second test comment in same discussion
                             println("✍️ Creating second test comment...")
@@ -145,7 +150,7 @@ class CommentsIntegrationTest :
 
                             val secondComment =
                                 CreateCommentRequest(
-                                    parent = Parent(type = "page_id", pageId = createdPage.id),
+                                    parent = Parent.PageParent(pageId = createdPage.id),
                                     discussionId = createdComment1.discussionId, // Reply to same discussion
                                     richText =
                                         listOf(
@@ -162,7 +167,7 @@ class CommentsIntegrationTest :
 
                             // Validate second comment is in same discussion
                             createdComment2.discussionId shouldBe createdComment1.discussionId
-                            createdComment2.parent.pageId shouldBe createdPage.id
+                            createdComment2.parent.id shouldBe createdPage.id
 
                             // Step 5: Retrieve all comments to verify both were created
                             println("🔄 Retrieving all comments to verify creation...")
@@ -228,7 +233,7 @@ class CommentsIntegrationTest :
                             // Create a minimal test page for validation tests
                             val pageRequest =
                                 CreatePageRequest(
-                                    parent = Parent(type = "page_id", pageId = parentPageId!!),
+                                    parent = Parent.PageParent(pageId = parentPageId!!),
                                     properties =
                                         mapOf(
                                             "title" to
@@ -244,7 +249,7 @@ class CommentsIntegrationTest :
                                 println("   Testing empty rich text validation...")
                                 val invalidRequest =
                                     CreateCommentRequest(
-                                        parent = Parent(type = "page_id", pageId = testPage.id),
+                                        parent = Parent.PageParent(pageId = testPage.id),
                                         richText = emptyList(), // This should trigger validation error
                                     )
 
@@ -292,7 +297,7 @@ class CommentsIntegrationTest :
                             println("📄 Creating test page with content blocks...")
                             val pageRequest =
                                 CreatePageRequest(
-                                    parent = Parent(type = "page_id", pageId = parentPageId!!),
+                                    parent = Parent.PageParent(pageId = parentPageId!!),
                                     icon = RequestBuilders.createEmojiIcon("🧱"),
                                     properties =
                                         mapOf(
@@ -333,7 +338,7 @@ class CommentsIntegrationTest :
 
                             val blockComment =
                                 CreateCommentRequest(
-                                    parent = Parent(type = "block_id", blockId = firstBlock.id),
+                                    parent = Parent.BlockParent(blockId = firstBlock.id),
                                     richText =
                                         listOf(
                                             RequestBuilders.createSimpleRichText(
@@ -346,13 +351,13 @@ class CommentsIntegrationTest :
 
                             println("✅ Successfully created comment on block:")
                             println("   Comment ID: ${createdBlockComment.id}")
-                            println("   Block ID: ${createdBlockComment.parent.blockId}")
+                            println("   Block ID: ${createdBlockComment.parent.id}")
                             println("   Content: ${createdBlockComment.richText.first().plainText}")
 
                             // Validate the block comment
                             createdBlockComment.id.shouldNotBeBlank()
                             createdBlockComment.objectType shouldBe "comment"
-                            createdBlockComment.parent.blockId shouldBe firstBlock.id
+                            createdBlockComment.parent.id shouldBe firstBlock.id
                             createdBlockComment.richText.shouldNotBeEmpty()
                             createdBlockComment.richText
                                 .first()
@@ -372,7 +377,7 @@ class CommentsIntegrationTest :
 
                             val secondBlockComment =
                                 CreateCommentRequest(
-                                    parent = Parent(type = "block_id", blockId = secondBlock.id),
+                                    parent = Parent.BlockParent(blockId = secondBlock.id),
                                     richText =
                                         listOf(
                                             RequestBuilders.createSimpleRichText(
@@ -385,8 +390,8 @@ class CommentsIntegrationTest :
                             println("✅ Created second block comment: ${createdSecondComment.id}")
 
                             // Validate different blocks have different comments
-                            createdSecondComment.parent.blockId shouldBe secondBlock.id
-                            createdSecondComment.parent.blockId shouldBe secondBlock.id
+                            createdSecondComment.parent.id shouldBe secondBlock.id
+                            createdSecondComment.parent.id shouldBe secondBlock.id
 
                             println("🎉 Block comments test completed successfully!")
                         } catch (e: NotionException) {
@@ -427,7 +432,7 @@ class CommentsIntegrationTest :
                             println("📄 Creating test page for file attachment comments...")
                             val pageRequest =
                                 CreatePageRequest(
-                                    parent = Parent(type = "page_id", pageId = parentPageId!!),
+                                    parent = Parent.PageParent(pageId = parentPageId!!),
                                     icon = RequestBuilders.createEmojiIcon("📎"),
                                     properties =
                                         mapOf(
@@ -466,7 +471,7 @@ class CommentsIntegrationTest :
 
                             val commentWithAttachment =
                                 CreateCommentRequest(
-                                    parent = Parent(type = "page_id", pageId = createdPage.id),
+                                    parent = Parent.PageParent(pageId = createdPage.id),
                                     richText =
                                         listOf(
                                             RequestBuilders.createSimpleRichText("📎 This comment includes a file attachment!"),
@@ -491,7 +496,7 @@ class CommentsIntegrationTest :
                             createdCommentWithFile.id.shouldNotBeBlank()
                             createdCommentWithFile.objectType shouldBe "comment"
                             createdCommentWithFile.richText.shouldNotBeEmpty()
-                            createdCommentWithFile.parent.pageId shouldBe createdPage.id
+                            createdCommentWithFile.parent.id shouldBe createdPage.id
                             // Note: attachments might not be immediately available due to processing
 
                             // Step 4: Test attachment limit validation
@@ -501,7 +506,7 @@ class CommentsIntegrationTest :
                             try {
                                 val tooManyAttachments =
                                     CreateCommentRequest(
-                                        parent = Parent(type = "page_id", pageId = createdPage.id),
+                                        parent = Parent.PageParent(pageId = createdPage.id),
                                         richText =
                                             listOf(
                                                 RequestBuilders.createSimpleRichText("This comment has too many attachments"),
@@ -562,7 +567,7 @@ class CommentsIntegrationTest :
                             println("📄 Creating test page for user mention comments...")
                             val pageRequest =
                                 CreatePageRequest(
-                                    parent = Parent(type = "page_id", pageId = parentPageId!!),
+                                    parent = Parent.PageParent(pageId = parentPageId!!),
                                     icon = RequestBuilders.createEmojiIcon("👤"),
                                     properties =
                                         mapOf(
@@ -584,7 +589,7 @@ class CommentsIntegrationTest :
                             val testUserId = System.getenv("NOTION_TEST_USER_ID")
                             val commentWithMention =
                                 CreateCommentRequest(
-                                    parent = Parent(type = "page_id", pageId = createdPage.id),
+                                    parent = Parent.PageParent(pageId = createdPage.id),
                                     richText =
                                         listOf(
                                             RequestBuilders.createSimpleRichText("Hey "),
@@ -604,7 +609,7 @@ class CommentsIntegrationTest :
                             createdCommentWithMention.id.shouldNotBeBlank()
                             createdCommentWithMention.objectType shouldBe "comment"
                             createdCommentWithMention.richText.shouldNotBeEmpty()
-                            createdCommentWithMention.parent.pageId shouldBe createdPage.id
+                            createdCommentWithMention.parent.id shouldBe createdPage.id
 
                             // Validate the mention is in the rich text
                             val mentionElement = createdCommentWithMention.richText.find { it.type == "mention" }
@@ -617,7 +622,7 @@ class CommentsIntegrationTest :
 
                             val complexComment =
                                 CreateCommentRequest(
-                                    parent = Parent(type = "page_id", pageId = createdPage.id),
+                                    parent = Parent.PageParent(pageId = createdPage.id),
                                     richText =
                                         listOf(
                                             RequestBuilders.createSimpleRichText("👋 Hello "),

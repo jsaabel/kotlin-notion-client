@@ -83,7 +83,7 @@ class CreateCommentRequestBuilder {
          * @param pageId The ID of the page to comment on
          */
         fun pageId(pageId: String) {
-            this@CreateCommentRequestBuilder.parentValue = Parent(type = "page_id", pageId = pageId)
+            this@CreateCommentRequestBuilder.parentValue = Parent.PageParent(pageId = pageId)
         }
 
         /**
@@ -101,7 +101,7 @@ class CreateCommentRequestBuilder {
          * @param blockId The ID of the block to comment on
          */
         fun blockId(blockId: String) {
-            this@CreateCommentRequestBuilder.parentValue = Parent(type = "block_id", blockId = blockId)
+            this@CreateCommentRequestBuilder.parentValue = Parent.BlockParent(blockId = blockId)
         }
 
         /**

@@ -20,6 +20,8 @@ import it.saabel.kotlinnotionclient.models.blocks.BlockRequest
 import it.saabel.kotlinnotionclient.models.blocks.ParagraphRequestContent
 import it.saabel.kotlinnotionclient.models.databases.Database
 import it.saabel.kotlinnotionclient.models.pages.Page
+import it.saabel.kotlinnotionclient.models.pages.PageCover
+import it.saabel.kotlinnotionclient.models.pages.PageIcon
 import it.saabel.kotlinnotionclient.models.pages.PageProperty
 import it.saabel.kotlinnotionclient.models.requests.RequestBuilders
 import kotlinx.coroutines.delay
@@ -73,9 +75,9 @@ class ApiOverloadsIntegrationTest :
                     createdPage.shouldBeInstanceOf<Page>()
                     createdPage.objectType shouldBe "page"
                     createdPage.archived shouldBe false
-                    createdPage.parent.pageId?.replace("-", "") shouldBe parentPageId.replace("-", "")
-                    createdPage.icon?.emoji shouldBe "🧪"
-                    createdPage.cover?.external?.url shouldContain "placehold"
+                    createdPage.parent.id?.replace("-", "") shouldBe parentPageId.replace("-", "")
+                    (createdPage.icon as? PageIcon.Emoji)?.emoji shouldBe "🧪"
+                    (createdPage.cover as? PageCover.External)?.external?.url shouldContain "placehold"
 
                     // Verify title property
                     val titleProperty = createdPage.properties["title"]
@@ -158,11 +160,11 @@ class ApiOverloadsIntegrationTest :
                     createdDatabase.shouldBeInstanceOf<Database>()
                     createdDatabase.objectType shouldBe "database"
                     createdDatabase.archived shouldBe false
-                    createdDatabase.parent.pageId?.replace("-", "") shouldBe parentPageId.replace("-", "")
+                    createdDatabase.parent.id?.replace("-", "") shouldBe parentPageId.replace("-", "")
 
                     // Icon and cover are returned in creation response (but may not persist - see known issue below)
-                    createdDatabase.icon?.emoji shouldBe "📊"
-                    createdDatabase.cover?.external?.url shouldContain "placehold"
+                    (createdDatabase.icon as? PageIcon.Emoji)?.emoji shouldBe "📊"
+                    (createdDatabase.cover as? PageCover.External)?.external?.url shouldContain "placehold"
 
                     // KNOWN ISSUE: Icon/cover may not persist in Notion UI (2025-09-03 API behavior)
                     // See DatabaseRequestBuilderIntegrationTest for detailed explanation
@@ -564,7 +566,7 @@ class ApiOverloadsIntegrationTest :
                     page.shouldBeInstanceOf<Page>()
                     blocks.shouldBeInstanceOf<BlockList>()
 
-                    page.parent.dataSourceId shouldBe dataSourceId
+                    page.parent.id shouldBe dataSourceId
                     blocks.results shouldHaveSize 6
 
                     println("✅ Combined workflow completed successfully!")

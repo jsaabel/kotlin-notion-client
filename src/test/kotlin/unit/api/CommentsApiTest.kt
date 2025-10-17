@@ -73,7 +73,7 @@ class CommentsApiTest :
             test("should serialize create comment request correctly") {
                 val request =
                     CreateCommentRequest(
-                        parent = Parent(type = "page_id", pageId = "test-page-id"),
+                        parent = Parent.PageParent(pageId = "test-page-id"),
                         richText = listOf(RequestBuilders.createSimpleRichText("Test comment")),
                         attachments =
                             listOf(
@@ -101,7 +101,7 @@ class CommentsApiTest :
             test("should serialize create comment request with user mentions correctly") {
                 val request =
                     CreateCommentRequest(
-                        parent = Parent(type = "page_id", pageId = "test-page-id"),
+                        parent = Parent.PageParent(pageId = "test-page-id"),
                         richText =
                             listOf(
                                 RequestBuilders.createSimpleRichText("Hello "),
@@ -196,7 +196,7 @@ class CommentsApiTest :
 
                 val request =
                     CreateCommentRequest(
-                        parent = Parent(type = "page_id", pageId = "test-page-id"),
+                        parent = Parent.PageParent(pageId = "test-page-id"),
                         richText = listOf(RequestBuilders.createSimpleRichText("Hello world")),
                     )
 
@@ -221,7 +221,7 @@ class CommentsApiTest :
 
                 val request =
                     CreateCommentRequest(
-                        parent = Parent(type = "block_id", blockId = "test-block-id"),
+                        parent = Parent.BlockParent(blockId = "test-block-id"),
                         richText = listOf(RequestBuilders.createSimpleRichText("Comment with attachment")),
                         attachments =
                             listOf(
@@ -242,7 +242,7 @@ class CommentsApiTest :
 
                 val request =
                     CreateCommentRequest(
-                        parent = Parent(type = "page_id", pageId = "test-page-id"),
+                        parent = Parent.PageParent(pageId = "test-page-id"),
                         richText = listOf(RequestBuilders.createSimpleRichText("Too many attachments")),
                         attachments =
                             listOf(
@@ -267,7 +267,7 @@ class CommentsApiTest :
 
                 val request =
                     CreateCommentRequest(
-                        parent = Parent(type = "page_id", pageId = "test-page-id"),
+                        parent = Parent.PageParent(pageId = "test-page-id"),
                         richText = emptyList(), // Empty rich text
                     )
 
@@ -293,7 +293,7 @@ class CommentsApiTest :
 
                 val request =
                     CreateCommentRequest(
-                        parent = Parent(type = "page_id", pageId = "invalid-page-id"),
+                        parent = Parent.PageParent(pageId = "invalid-page-id"),
                         richText = listOf(RequestBuilders.createSimpleRichText("This will fail")),
                     )
 

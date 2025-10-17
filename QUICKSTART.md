@@ -221,6 +221,18 @@ val results = notion.search.search {
 
 ## Next Steps
 
+### Interactive Learning (Recommended)
+
+The **[Kotlin Notebooks](notebooks/)** provide the best learning experience with 50+ live examples:
+1. [Getting Started](notebooks/01-getting-started.ipynb) - Authentication and basic operations
+2. [Reading Databases](notebooks/02-reading-databases.ipynb) - Querying with filters and sorting
+3. [Creating Pages](notebooks/03-creating-pages.ipynb) - Pages, properties, icons, and covers
+4. [Working with Blocks](notebooks/04-working-with-blocks.ipynb) - All block types and operations
+5. [Rich Text DSL](notebooks/05-rich-text-dsl.ipynb) - Formatting, colors, links, dates, equations
+6. [Advanced Queries](notebooks/06-advanced-queries.ipynb) - Complex filtering, AND/OR logic, pagination
+
+### API Documentation
+
 - **[Pages API](docs/pages.md)** - Learn all page operations
 - **[Data Sources API](docs/data-sources.md)** - Master querying and filtering
 - **[Databases API](docs/databases.md)** - Understand container operations

@@ -49,10 +49,7 @@ class ContentDslIntegrationTest :
                     val initialPageRequest =
                         CreatePageRequest(
                             parent =
-                                Parent(
-                                    type = "page_id",
-                                    pageId = parentPageId,
-                                ),
+                                Parent.PageParent(pageId = parentPageId),
                             icon = RequestBuilders.createEmojiIcon("🎨"),
                             properties =
                                 mapOf(

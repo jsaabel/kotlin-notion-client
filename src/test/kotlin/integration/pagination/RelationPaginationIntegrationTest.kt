@@ -89,7 +89,7 @@ class RelationPaginationIntegrationTest :
                         client.dataSources.create(
                             CreateDataSourceRequest(
                                 parent =
-                                    Parent(type = "database_id", databaseId = database.id),
+                                    Parent.DatabaseParent(databaseId = database.id),
                                 title =
                                     listOf(
                                         RichText.fromPlainText(

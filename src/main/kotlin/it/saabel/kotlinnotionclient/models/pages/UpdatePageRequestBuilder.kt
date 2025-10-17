@@ -2,6 +2,9 @@
 
 package it.saabel.kotlinnotionclient.models.pages
 
+import it.saabel.kotlinnotionclient.models.base.ExternalFile
+import it.saabel.kotlinnotionclient.models.base.NotionFile
+
 /**
  * Builder class for updating page requests with a fluent DSL.
  *
@@ -104,11 +107,7 @@ class UpdatePageRequestBuilder {
          * @param emoji The emoji character(s)
          */
         fun emoji(emoji: String) {
-            this@UpdatePageRequestBuilder.iconValue =
-                PageIcon(
-                    type = "emoji",
-                    emoji = emoji,
-                )
+            this@UpdatePageRequestBuilder.iconValue = PageIcon.Emoji(emoji = emoji)
         }
 
         /**
@@ -117,11 +116,7 @@ class UpdatePageRequestBuilder {
          * @param url The external image URL
          */
         fun external(url: String) {
-            this@UpdatePageRequestBuilder.iconValue =
-                PageIcon(
-                    type = "external",
-                    external = ExternalFile(url = url),
-                )
+            this@UpdatePageRequestBuilder.iconValue = PageIcon.External(external = ExternalFile(url = url))
         }
 
         /**
@@ -135,10 +130,7 @@ class UpdatePageRequestBuilder {
             expiryTime: String? = null,
         ) {
             this@UpdatePageRequestBuilder.iconValue =
-                PageIcon(
-                    type = "file",
-                    file = NotionFile(url = url, expiryTime = expiryTime),
-                )
+                PageIcon.File(file = NotionFile(url = url, expiryTime = expiryTime))
         }
 
         /**
@@ -163,11 +155,7 @@ class UpdatePageRequestBuilder {
          * @param url The external image URL
          */
         fun external(url: String) {
-            this@UpdatePageRequestBuilder.coverValue =
-                PageCover(
-                    type = "external",
-                    external = ExternalFile(url = url),
-                )
+            this@UpdatePageRequestBuilder.coverValue = PageCover.External(external = ExternalFile(url = url))
         }
 
         /**
@@ -181,10 +169,7 @@ class UpdatePageRequestBuilder {
             expiryTime: String? = null,
         ) {
             this@UpdatePageRequestBuilder.coverValue =
-                PageCover(
-                    type = "file",
-                    file = NotionFile(url = url, expiryTime = expiryTime),
-                )
+                PageCover.File(file = NotionFile(url = url, expiryTime = expiryTime))
         }
 
         /**

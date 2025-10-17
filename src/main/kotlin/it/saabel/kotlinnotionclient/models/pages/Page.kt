@@ -49,48 +49,6 @@ data class Page(
 }
 
 /**
- * Represents an icon for a page.
- */
-@Serializable
-data class PageIcon(
-    @SerialName("type")
-    val type: String,
-    @SerialName("emoji")
-    val emoji: String? = null,
-    @SerialName("external")
-    val external: ExternalFile? = null,
-    @SerialName("file")
-    val file: NotionFile? = null,
-)
-
-/**
- * Represents a cover image for a page.
- */
-@Serializable
-data class PageCover(
-    @SerialName("type")
-    val type: String,
-    @SerialName("external")
-    val external: ExternalFile? = null,
-    @SerialName("file")
-    val file: NotionFile? = null,
-)
-
-@Serializable
-data class ExternalFile(
-    @SerialName("url")
-    val url: String,
-)
-
-@Serializable
-data class NotionFile(
-    @SerialName("url")
-    val url: String,
-    @SerialName("expiry_time")
-    val expiryTime: String? = null,
-)
-
-/**
  * Represents the title of a page.
  */
 @Serializable

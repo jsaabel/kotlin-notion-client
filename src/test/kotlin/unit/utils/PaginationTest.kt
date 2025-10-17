@@ -210,11 +210,7 @@ private fun createMockPage(id: String): Page =
         lastEditedTime = "2025-01-01T00:00:00.000Z",
         archived = false,
         properties = emptyMap(),
-        parent =
-            it.saabel.kotlinnotionclient.models.base.Parent(
-                type = "workspace",
-                workspace = true,
-            ),
+        parent = it.saabel.kotlinnotionclient.models.base.Parent.WorkspaceParent,
         url = "https://notion.so/$id",
         publicUrl = null,
     )

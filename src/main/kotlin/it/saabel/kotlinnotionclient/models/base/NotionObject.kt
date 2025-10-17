@@ -22,27 +22,110 @@ interface NotionObject {
 /**
  * Represents a parent reference in Notion (API version 2025-09-03+).
  *
- * Objects in Notion can have different types of parents.
+ * Objects in Notion can have different types of parents. This sealed class provides
+ * type-safe access to parent information with compile-time guarantees.
  *
  * As of the 2025-09-03 API version:
- * - Pages should use data_source_id instead of database_id when parented by a database
- * - database_id is deprecated for page parents but still used in other contexts
+ * - Pages should use [DataSourceParent] instead of database_id when parented by a database
+ * - [DatabaseParent] is deprecated for page parents but still used in other contexts
+ *
+ * ## Example usage:
+ * ```kotlin
+ * when (page.parent) {
+ *     is Parent.PageParent -> println("Parent page: ${page.parent.pageId}")
+ *     is Parent.DataSourceParent -> println("Parent data source: ${page.parent.dataSourceId}")
+ *     is Parent.DatabaseParent -> println("Parent database: ${page.parent.databaseId}")
+ *     is Parent.BlockParent -> println("Parent block: ${page.parent.blockId}")
+ *     is Parent.WorkspaceParent -> println("Parent is workspace")
+ * }
+ * ```
  */
-@Serializable
-data class Parent(
-    @SerialName("type")
-    val type: String,
-    @SerialName("data_source_id")
-    val dataSourceId: String? = null,
-    @SerialName("database_id")
-    val databaseId: String? = null,
-    @SerialName("page_id")
-    val pageId: String? = null,
-    @SerialName("block_id")
-    val blockId: String? = null,
-    @SerialName("workspace")
-    val workspace: Boolean? = null,
-)
+@Serializable(with = ParentSerializer::class)
+sealed class Parent {
+    abstract val type: String
+
+    /**
+     * Convenience property to get the ID regardless of parent type.
+     * Returns null for WorkspaceParent since it has no ID.
+     *
+     * This is useful when you only care about the ID value and not the specific parent type.
+     *
+     * ## Example:
+     * ```kotlin
+     * // Instead of:
+     * val id = when (parent) {
+     *     is Parent.PageParent -> parent.pageId
+     *     is Parent.BlockParent -> parent.blockId
+     *     // ...
+     * }
+     *
+     * // You can simply use:
+     * val id = parent.id
+     * ```
+     */
+    val id: String?
+        get() =
+            when (this) {
+                is PageParent -> this.pageId
+                is DataSourceParent -> this.dataSourceId
+                is DatabaseParent -> this.databaseId
+                is BlockParent -> this.blockId
+                is WorkspaceParent -> null
+            }
+
+    /**
+     * Parent is a page.
+     */
+    @Serializable
+    data class PageParent(
+        @SerialName("page_id")
+        val pageId: String,
+    ) : Parent() {
+        override val type: String = "page_id"
+    }
+
+    /**
+     * Parent is a data source (table within a database) - API version 2025-09-03+.
+     */
+    @Serializable
+    data class DataSourceParent(
+        @SerialName("data_source_id")
+        val dataSourceId: String,
+    ) : Parent() {
+        override val type: String = "data_source_id"
+    }
+
+    /**
+     * Parent is a database (container).
+     * Note: For page parents, prefer [DataSourceParent] in API version 2025-09-03+.
+     */
+    @Serializable
+    data class DatabaseParent(
+        @SerialName("database_id")
+        val databaseId: String,
+    ) : Parent() {
+        override val type: String = "database_id"
+    }
+
+    /**
+     * Parent is a block.
+     */
+    @Serializable
+    data class BlockParent(
+        @SerialName("block_id")
+        val blockId: String,
+    ) : Parent() {
+        override val type: String = "block_id"
+    }
+
+    /**
+     * Parent is the workspace root.
+     */
+    @Serializable
+    data object WorkspaceParent : Parent() {
+        override val type: String = "workspace"
+    }
+}
 
 /**
  * Represents rich text content in Notion.

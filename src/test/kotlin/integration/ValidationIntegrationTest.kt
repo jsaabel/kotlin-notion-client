@@ -88,7 +88,7 @@ class ValidationIntegrationTest :
                         }
                     val request =
                         CreatePageRequest(
-                            parent = Parent(type = "page_id", pageId = testPageId),
+                            parent = Parent.PageParent(pageId = testPageId),
                             properties =
                                 mapOf(
                                     "title" to PagePropertyValue.TitleValue(title = listOf(createNormalRichText("Test Page"))),
@@ -153,7 +153,7 @@ class ValidationIntegrationTest :
                     // Create a normal page (should be fast with validation)
                     val request =
                         CreatePageRequest(
-                            parent = Parent(type = "page_id", pageId = testPageId),
+                            parent = Parent.PageParent(pageId = testPageId),
                             properties =
                                 mapOf(
                                     "title" to PagePropertyValue.TitleValue(title = listOf(createNormalRichText("Performance Test Page"))),
@@ -177,7 +177,7 @@ class ValidationIntegrationTest :
                     val exactLimitText = createLongRichText(NotionApiLimits.Content.MAX_RICH_TEXT_LENGTH)
                     val request =
                         CreatePageRequest(
-                            parent = Parent(type = "page_id", pageId = testPageId),
+                            parent = Parent.PageParent(pageId = testPageId),
                             properties =
                                 mapOf(
                                     "title" to PagePropertyValue.TitleValue(title = listOf(exactLimitText)),
@@ -199,7 +199,7 @@ class ValidationIntegrationTest :
                 test("should handle normal requests without modification") {
                     val normalRequest =
                         CreatePageRequest(
-                            parent = Parent(type = "page_id", pageId = testPageId),
+                            parent = Parent.PageParent(pageId = testPageId),
                             properties =
                                 mapOf(
                                     "title" to PagePropertyValue.TitleValue(title = listOf(createNormalRichText("Normal Page Title"))),
@@ -226,7 +226,7 @@ class ValidationIntegrationTest :
                         // Create a simple page first
                         val pageRequest =
                             CreatePageRequest(
-                                parent = Parent(type = "page_id", pageId = testPageId),
+                                parent = Parent.PageParent(pageId = testPageId),
                                 properties =
                                     mapOf(
                                         "title" to PagePropertyValue.TitleValue(title = listOf(createNormalRichText("Block Content Test"))),
@@ -261,7 +261,7 @@ class ValidationIntegrationTest :
                         // Create a simple page first
                         val pageRequest =
                             CreatePageRequest(
-                                parent = Parent(type = "page_id", pageId = testPageId),
+                                parent = Parent.PageParent(pageId = testPageId),
                                 properties =
                                     mapOf(
                                         "title" to
@@ -294,7 +294,7 @@ class ValidationIntegrationTest :
                         // Create a simple page first
                         val pageRequest =
                             CreatePageRequest(
-                                parent = Parent(type = "page_id", pageId = testPageId),
+                                parent = Parent.PageParent(pageId = testPageId),
                                 properties =
                                     mapOf(
                                         "title" to
@@ -366,7 +366,7 @@ class ValidationIntegrationTest :
 
                         val pageRequest =
                             CreatePageRequest(
-                                parent = Parent(type = "data_source_id", dataSourceId = dataSourceId),
+                                parent = Parent.DataSourceParent(dataSourceId = dataSourceId),
                                 properties =
                                     mapOf(
                                         "Name" to PagePropertyValue.TitleValue(title = listOf(createNormalRichText("Test Entry"))),

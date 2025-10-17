@@ -62,10 +62,7 @@ class MediaIntegrationTest :
                     val pageRequest =
                         CreatePageRequest(
                             parent =
-                                Parent(
-                                    type = "page_id",
-                                    pageId = parentPageId,
-                                ),
+                                Parent.PageParent(pageId = parentPageId),
                             icon = RequestBuilders.createEmojiIcon("🖼️"),
                             properties =
                                 mapOf(
@@ -187,10 +184,7 @@ class MediaIntegrationTest :
                     val pageRequest =
                         CreatePageRequest(
                             parent =
-                                Parent(
-                                    type = "page_id",
-                                    pageId = parentPageId,
-                                ),
+                                Parent.PageParent(pageId = parentPageId),
                             icon = RequestBuilders.createEmojiIcon("📁"),
                             properties =
                                 mapOf(
@@ -317,10 +311,7 @@ class MediaIntegrationTest :
                     val pageRequest =
                         CreatePageRequest(
                             parent =
-                                Parent(
-                                    type = "page_id",
-                                    pageId = parentPageId,
-                                ),
+                                Parent.PageParent(pageId = parentPageId),
                             icon = RequestBuilders.createEmojiIcon("🎬"),
                             properties =
                                 mapOf(

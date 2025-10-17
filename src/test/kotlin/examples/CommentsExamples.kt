@@ -151,7 +151,7 @@ class CommentsExamples :
                         }
                     }
 
-                println("Created comment on block: ${comment.parent.blockId}")
+                println("Created comment on block: ${comment.parent.id}")
                 println("Comment content: ${comment.richText.first().plainText}")
             }
 

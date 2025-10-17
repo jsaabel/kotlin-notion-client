@@ -12,6 +12,8 @@ import io.kotest.matchers.types.shouldBeInstanceOf
 import it.saabel.kotlinnotionclient.NotionClient
 import it.saabel.kotlinnotionclient.config.NotionConfig
 import it.saabel.kotlinnotionclient.models.blocks.Block
+import it.saabel.kotlinnotionclient.models.pages.PageCover
+import it.saabel.kotlinnotionclient.models.pages.PageIcon
 import it.saabel.kotlinnotionclient.models.pages.PageProperty
 import it.saabel.kotlinnotionclient.models.pages.createPageRequest
 import kotlinx.coroutines.delay
@@ -87,9 +89,9 @@ class PageRequestBuilderIntegrationTest :
                     delay(500)
 
                     // Verify page properties (normalize UUID format)
-                    createdPage.parent.pageId?.replace("-", "") shouldBe parentPageId.replace("-", "")
-                    createdPage.icon?.emoji shouldBe "🚀"
-                    createdPage.cover?.external?.url shouldContain "placehold"
+                    createdPage.parent.id?.replace("-", "") shouldBe parentPageId.replace("-", "")
+                    (createdPage.icon as? PageIcon.Emoji)?.emoji shouldBe "🚀"
+                    (createdPage.cover as? PageCover.External)?.external?.url shouldContain "placehold"
 
                     // Verify the title was set correctly
                     val titleProperty = createdPage.properties["title"]

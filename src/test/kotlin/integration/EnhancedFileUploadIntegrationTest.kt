@@ -102,7 +102,7 @@ class EnhancedFileUploadIntegrationTest :
                     // Create a page to test the uploaded file
                     val pageRequest =
                         CreatePageRequest(
-                            parent = Parent(type = "page_id", pageId = parentPageId),
+                            parent = Parent.PageParent(pageId = parentPageId),
                             icon = RequestBuilders.createEmojiIcon("📤"),
                             properties =
                                 mapOf(
@@ -243,7 +243,7 @@ class EnhancedFileUploadIntegrationTest :
                             // Create a page to demonstrate the upload
                             val pageRequest =
                                 CreatePageRequest(
-                                    parent = Parent(type = "page_id", pageId = parentPageId),
+                                    parent = Parent.PageParent(pageId = parentPageId),
                                     icon = RequestBuilders.createEmojiIcon("🗂️"),
                                     properties =
                                         mapOf(
@@ -363,7 +363,7 @@ class EnhancedFileUploadIntegrationTest :
                     // Create a page to demonstrate the import
                     val pageRequest =
                         CreatePageRequest(
-                            parent = Parent(type = "page_id", pageId = parentPageId),
+                            parent = Parent.PageParent(pageId = parentPageId),
                             icon = RequestBuilders.createEmojiIcon("🌐"),
                             properties =
                                 mapOf(

@@ -3,6 +3,7 @@
 package it.saabel.kotlinnotionclient.models.requests
 
 import it.saabel.kotlinnotionclient.models.base.Annotations
+import it.saabel.kotlinnotionclient.models.base.ExternalFile
 import it.saabel.kotlinnotionclient.models.base.Mention
 import it.saabel.kotlinnotionclient.models.base.Parent
 import it.saabel.kotlinnotionclient.models.base.RichText
@@ -11,7 +12,6 @@ import it.saabel.kotlinnotionclient.models.databases.CreateDatabaseProperty
 import it.saabel.kotlinnotionclient.models.databases.CreateDatabaseRequest
 import it.saabel.kotlinnotionclient.models.databases.InitialDataSource
 import it.saabel.kotlinnotionclient.models.pages.CreatePageRequest
-import it.saabel.kotlinnotionclient.models.pages.ExternalFile
 import it.saabel.kotlinnotionclient.models.pages.PageIcon
 import it.saabel.kotlinnotionclient.models.pages.PagePropertyValue
 import it.saabel.kotlinnotionclient.models.users.User
@@ -41,11 +41,7 @@ object RequestBuilders {
         title: String,
     ): CreateDatabaseRequest =
         CreateDatabaseRequest(
-            parent =
-                Parent(
-                    type = "page_id",
-                    pageId = parentPageId,
-                ),
+            parent = Parent.PageParent(pageId = parentPageId),
             title = listOf(createSimpleRichText(title)),
             initialDataSource =
                 InitialDataSource(
@@ -68,11 +64,7 @@ object RequestBuilders {
         title: String,
     ): CreatePageRequest =
         CreatePageRequest(
-            parent =
-                Parent(
-                    type = "database_id",
-                    databaseId = databaseId,
-                ),
+            parent = Parent.DatabaseParent(databaseId = databaseId),
             properties =
                 mapOf(
                     "Name" to
@@ -94,11 +86,7 @@ object RequestBuilders {
         title: String,
     ): CreatePageRequest =
         CreatePageRequest(
-            parent =
-                Parent(
-                    type = "page_id",
-                    pageId = parentPageId,
-                ),
+            parent = Parent.PageParent(pageId = parentPageId),
             properties =
                 mapOf(
                     "title" to
@@ -155,11 +143,7 @@ object RequestBuilders {
      * @param emoji The emoji character (e.g., "🗄️", "📄", "✅")
      * @return Configured PageIcon for emoji
      */
-    fun createEmojiIcon(emoji: String): PageIcon =
-        PageIcon(
-            type = "emoji",
-            emoji = emoji,
-        )
+    fun createEmojiIcon(emoji: String): PageIcon = PageIcon.Emoji(emoji = emoji)
 
     /**
      * Creates an external file icon for pages and databases.
@@ -167,9 +151,5 @@ object RequestBuilders {
      * @param url The URL of the external icon file
      * @return Configured PageIcon for external file
      */
-    fun createExternalIcon(url: String): PageIcon =
-        PageIcon(
-            type = "external",
-            external = ExternalFile(url = url),
-        )
+    fun createExternalIcon(url: String): PageIcon = PageIcon.External(external = ExternalFile(url = url))
 }

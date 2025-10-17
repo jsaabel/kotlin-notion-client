@@ -26,7 +26,7 @@
       },
       "parent": {
         "type": "data_source_id",
-        "database_id": "d9824bdc-8445-4327-be8b-5b47500af6ce"
+        "database_id": "d9824bdc-8445-4327-be8b-5b47500af6ce",
         "data_source_id": "27a2eeb5-b4f6-4dbe-b3b5-609a7ab26620"
       },
       "archived": false,

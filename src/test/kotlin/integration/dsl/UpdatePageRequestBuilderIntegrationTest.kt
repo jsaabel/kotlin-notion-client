@@ -10,6 +10,8 @@ import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
 import it.saabel.kotlinnotionclient.NotionClient
 import it.saabel.kotlinnotionclient.config.NotionConfig
+import it.saabel.kotlinnotionclient.models.pages.PageCover
+import it.saabel.kotlinnotionclient.models.pages.PageIcon
 import it.saabel.kotlinnotionclient.models.pages.PageProperty
 import it.saabel.kotlinnotionclient.models.pages.updatePageRequest
 import kotlinx.coroutines.delay
@@ -192,8 +194,8 @@ class UpdatePageRequestBuilderIntegrationTest :
                     updatedPhone.phoneNumber shouldBe "+1-555-0999"
 
                     // Verify icon and cover updates
-                    updatedPage.icon?.emoji shouldBe "✅"
-                    updatedPage.cover?.external?.url shouldContain "UPDATED"
+                    (updatedPage.icon as? PageIcon.Emoji)?.emoji shouldBe "✅"
+                    (updatedPage.cover as? PageCover.External)?.external?.url shouldContain "UPDATED"
 
                     println("✅ All property types successfully updated via DSL!")
 
@@ -308,8 +310,8 @@ class UpdatePageRequestBuilderIntegrationTest :
                     // Verify basic updates
                     val updatedTitle = updatedPage.properties["title"] as PageProperty.Title
                     updatedTitle.plainText shouldBe "Basic Update Test Page - UPDATED!"
-                    updatedPage.icon?.emoji shouldBe "✅"
-                    updatedPage.cover?.external?.url shouldContain "Basic+Update"
+                    (updatedPage.icon as? PageIcon.Emoji)?.emoji shouldBe "✅"
+                    (updatedPage.cover as? PageCover.External)?.external?.url shouldContain "Basic+Update"
 
                     println("✅ Basic page updates verified!")
 

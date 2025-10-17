@@ -1,6 +1,7 @@
 package it.saabel.kotlinnotionclient.models.blocks
 
 import it.saabel.kotlinnotionclient.models.base.Color
+import it.saabel.kotlinnotionclient.models.base.ExternalFile
 import it.saabel.kotlinnotionclient.models.base.RichText
 import it.saabel.kotlinnotionclient.models.files.FileUploadReference
 import kotlinx.serialization.SerialName

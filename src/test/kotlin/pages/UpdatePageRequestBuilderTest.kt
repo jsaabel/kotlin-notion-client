@@ -33,11 +33,11 @@ class UpdatePageRequestBuilderTest :
 
             request.icon shouldNotBe null
             request.icon!!.type shouldBe "emoji"
-            request.icon.emoji shouldBe "✅"
+            (request.icon as? PageIcon.Emoji)?.emoji shouldBe "✅"
 
             request.cover shouldNotBe null
             request.cover!!.type shouldBe "external"
-            request.cover.external!!.url shouldBe "https://example.com/cover.jpg"
+            (request.cover as? PageCover.External)?.external?.url shouldBe "https://example.com/cover.jpg"
 
             request.properties shouldBe null
             request.archived shouldBe null
@@ -85,7 +85,7 @@ class UpdatePageRequestBuilderTest :
 
             request.icon shouldNotBe null
             request.icon!!.type shouldBe "external"
-            request.icon.external?.url shouldBe "https://example.com/icon.png"
+            (request.icon as? PageIcon.External)?.external?.url shouldBe "https://example.com/icon.png"
 
             request.cover shouldNotBe null
             request.cover!!.type shouldBe "file"

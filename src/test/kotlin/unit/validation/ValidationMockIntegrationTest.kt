@@ -147,7 +147,7 @@ class ValidationMockIntegrationTest :
                 val longTitle = createLongRichText()
                 val request =
                     CreatePageRequest(
-                        parent = Parent(type = "page_id", pageId = "test-parent-id"),
+                        parent = Parent.PageParent(pageId = "test-parent-id"),
                         properties =
                             mapOf(
                                 "title" to PagePropertyValue.TitleValue(title = listOf(longTitle)),
@@ -175,7 +175,7 @@ class ValidationMockIntegrationTest :
                     }
                 val request =
                     CreatePageRequest(
-                        parent = Parent(type = "page_id", pageId = "test-parent-id"),
+                        parent = Parent.PageParent(pageId = "test-parent-id"),
                         properties =
                             mapOf(
                                 "multiSelect" to PagePropertyValue.MultiSelectValue(multiSelect = tooManyOptions),
@@ -219,7 +219,7 @@ class ValidationMockIntegrationTest :
                 val longTitle = createLongRichText()
                 val request =
                     CreateDatabaseRequest(
-                        parent = Parent(type = "page_id", pageId = "test-parent-id"),
+                        parent = Parent.PageParent(pageId = "test-parent-id"),
                         title = listOf(longTitle),
                         initialDataSource = InitialDataSource(properties = mapOf()),
                     )
@@ -239,7 +239,7 @@ class ValidationMockIntegrationTest :
                 val longDescription = createLongRichText()
                 val request =
                     CreateDatabaseRequest(
-                        parent = Parent(type = "page_id", pageId = "test-parent-id"),
+                        parent = Parent.PageParent(pageId = "test-parent-id"),
                         title = listOf(longTitle),
                         initialDataSource = InitialDataSource(properties = mapOf()),
                         description = listOf(longDescription),
@@ -329,7 +329,7 @@ class ValidationMockIntegrationTest :
                 val normalTitle = createNormalRichText("Normal length title")
                 val request =
                     CreatePageRequest(
-                        parent = Parent(type = "page_id", pageId = "test-parent-id"),
+                        parent = Parent.PageParent(pageId = "test-parent-id"),
                         properties =
                             mapOf(
                                 "title" to PagePropertyValue.TitleValue(title = listOf(normalTitle)),
@@ -352,7 +352,7 @@ class ValidationMockIntegrationTest :
                 // Test 1: Page creation with auto-truncation
                 val pageRequest =
                     CreatePageRequest(
-                        parent = Parent(type = "page_id", pageId = "test-parent-id"),
+                        parent = Parent.PageParent(pageId = "test-parent-id"),
                         properties =
                             mapOf(
                                 "title" to PagePropertyValue.TitleValue(title = listOf(createLongRichText())),
@@ -364,7 +364,7 @@ class ValidationMockIntegrationTest :
                 // Test 2: Database creation with auto-truncation (2025-09-03 API)
                 val databaseRequest =
                     CreateDatabaseRequest(
-                        parent = Parent(type = "page_id", pageId = "test-parent-id"),
+                        parent = Parent.PageParent(pageId = "test-parent-id"),
                         title = listOf(createLongRichText()),
                         initialDataSource = InitialDataSource(properties = mapOf()),
                     )

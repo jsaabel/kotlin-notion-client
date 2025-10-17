@@ -61,10 +61,7 @@ class SelfContainedIntegrationTest :
                     val databaseRequest =
                         CreateDatabaseRequest(
                             parent =
-                                Parent(
-                                    type = "page_id",
-                                    pageId = testPageId,
-                                ),
+                                Parent.PageParent(pageId = testPageId),
                             title = listOf(RequestBuilders.createSimpleRichText("Test Database - Kotlin Client")),
                             icon = RequestBuilders.createEmojiIcon("🗄️"),
                             initialDataSource =
@@ -106,10 +103,7 @@ class SelfContainedIntegrationTest :
                     val pageRequest =
                         CreatePageRequest(
                             parent =
-                                Parent(
-                                    type = "data_source_id",
-                                    dataSourceId = dataSourceId,
-                                ),
+                                Parent.DataSourceParent(dataSourceId = dataSourceId),
                             icon = RequestBuilders.createEmojiIcon("📋"),
                             properties =
                                 pageProperties {
@@ -129,7 +123,7 @@ class SelfContainedIntegrationTest :
                     // Verify page creation (2025-09-03: pages have data_source_id parent)
                     createdPage.objectType shouldBe "page"
                     createdPage.archived shouldBe false
-                    createdPage.parent.dataSourceId!!.withOrWithoutHyphens() shouldContainAnyOf dataSourceId.withOrWithoutHyphens()
+                    createdPage.parent.id!!.withOrWithoutHyphens() shouldContainAnyOf dataSourceId.withOrWithoutHyphens()
 
                     println("✅ Page created successfully: ${createdPage.id}")
 
@@ -151,7 +145,7 @@ class SelfContainedIntegrationTest :
 
                     retrievedPage.id shouldBe createdPage.id
                     retrievedPage.archived shouldBe false
-                    retrievedPage.parent.dataSourceId!!.withOrWithoutHyphens() shouldContainAnyOf dataSourceId.withOrWithoutHyphens()
+                    retrievedPage.parent.id!!.withOrWithoutHyphens() shouldContainAnyOf dataSourceId.withOrWithoutHyphens()
 
                     // Verify properties using type-safe access (demonstrating our new API!)
                     println("🔍 Verifying properties with type-safe access...")
@@ -257,10 +251,7 @@ class SelfContainedIntegrationTest :
                     val pageRequest =
                         CreatePageRequest(
                             parent =
-                                Parent(
-                                    type = "page_id",
-                                    pageId = parentPageId,
-                                ),
+                                Parent.PageParent(pageId = parentPageId),
                             icon = RequestBuilders.createEmojiIcon("📄"),
                             properties =
                                 mapOf(
@@ -276,7 +267,7 @@ class SelfContainedIntegrationTest :
                     // Verify creation
                     createdPage.objectType shouldBe "page"
                     createdPage.archived shouldBe false
-                    createdPage.parent.pageId!!.withOrWithoutHyphens() shouldContainAnyOf parentPageId.withOrWithoutHyphens()
+                    createdPage.parent.id!!.withOrWithoutHyphens() shouldContainAnyOf parentPageId.withOrWithoutHyphens()
 
                     println("✅ Standalone page created: ${createdPage.id}")
 
@@ -319,7 +310,7 @@ class SelfContainedIntegrationTest :
                     println("🗄️ Creating comprehensive test database with initial data source...")
                     val comprehensiveRequest =
                         CreateDatabaseRequest(
-                            parent = Parent(type = "page_id", pageId = parentPageId),
+                            parent = Parent.PageParent(pageId = parentPageId),
                             title = listOf(RequestBuilders.createSimpleRichText("Comprehensive Properties Test")),
                             icon = RequestBuilders.createEmojiIcon("🧪"),
                             initialDataSource =
@@ -360,7 +351,7 @@ class SelfContainedIntegrationTest :
 
                     val pageRequest =
                         CreatePageRequest(
-                            parent = Parent(type = "data_source_id", dataSourceId = dataSourceId),
+                            parent = Parent.DataSourceParent(dataSourceId = dataSourceId),
                             icon = RequestBuilders.createEmojiIcon("⭐"),
                             properties =
                                 pageProperties {

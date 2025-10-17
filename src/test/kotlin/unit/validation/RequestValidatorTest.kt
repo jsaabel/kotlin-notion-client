@@ -69,7 +69,7 @@ class RequestValidatorTest :
             children: List<BlockRequest>? = null,
         ): CreatePageRequest =
             CreatePageRequest(
-                parent = Parent(type = "page_id", pageId = "test-parent-id"),
+                parent = Parent.PageParent(pageId = "test-parent-id"),
                 properties =
                     mapOf(
                         "title" to PagePropertyValue.TitleValue(title = listOf(createRichText(title))),
@@ -160,7 +160,7 @@ class RequestValidatorTest :
                     )
                 val request =
                     CreatePageRequest(
-                        parent = Parent(type = "page_id", pageId = "test-parent-id"),
+                        parent = Parent.PageParent(pageId = "test-parent-id"),
                         properties = mapOf("MultiSelect" to multiSelectProperty),
                     )
 
@@ -188,7 +188,7 @@ class RequestValidatorTest :
                     )
                 val request =
                     CreatePageRequest(
-                        parent = Parent(type = "page_id", pageId = "test-parent-id"),
+                        parent = Parent.PageParent(pageId = "test-parent-id"),
                         properties = mapOf("Relations" to relationProperty),
                     )
 
@@ -216,7 +216,7 @@ class RequestValidatorTest :
                     )
                 val request =
                     CreatePageRequest(
-                        parent = Parent(type = "page_id", pageId = "test-parent-id"),
+                        parent = Parent.PageParent(pageId = "test-parent-id"),
                         properties = mapOf("People" to peopleProperty),
                     )
 
@@ -239,7 +239,7 @@ class RequestValidatorTest :
                     )
                 val request =
                     CreatePageRequest(
-                        parent = Parent(type = "page_id", pageId = "test-parent-id"),
+                        parent = Parent.PageParent(pageId = "test-parent-id"),
                         properties = mapOf("URL" to urlProperty),
                     )
 
@@ -262,7 +262,7 @@ class RequestValidatorTest :
                     )
                 val request =
                     CreatePageRequest(
-                        parent = Parent(type = "page_id", pageId = "test-parent-id"),
+                        parent = Parent.PageParent(pageId = "test-parent-id"),
                         properties = mapOf("Email" to emailProperty),
                     )
 
@@ -285,7 +285,7 @@ class RequestValidatorTest :
                     )
                 val request =
                     CreatePageRequest(
-                        parent = Parent(type = "page_id", pageId = "test-parent-id"),
+                        parent = Parent.PageParent(pageId = "test-parent-id"),
                         properties = mapOf("Phone" to phoneProperty),
                     )
 
@@ -403,7 +403,7 @@ class RequestValidatorTest :
             test("should validate normal database request without violations") {
                 val request =
                     CreateDatabaseRequest(
-                        parent = Parent(type = "page_id", pageId = "test-parent-id"),
+                        parent = Parent.PageParent(pageId = "test-parent-id"),
                         title = listOf(createRichText("Test Database")),
                         initialDataSource = InitialDataSource(properties = emptyMap()),
                     )
@@ -416,7 +416,7 @@ class RequestValidatorTest :
             test("should detect violations in database title") {
                 val request =
                     CreateDatabaseRequest(
-                        parent = Parent(type = "page_id", pageId = "test-parent-id"),
+                        parent = Parent.PageParent(pageId = "test-parent-id"),
                         title = listOf(createLongRichText()),
                         initialDataSource = InitialDataSource(properties = emptyMap()),
                     )
@@ -431,7 +431,7 @@ class RequestValidatorTest :
             test("should detect violations in database description") {
                 val request =
                     CreateDatabaseRequest(
-                        parent = Parent(type = "page_id", pageId = "test-parent-id"),
+                        parent = Parent.PageParent(pageId = "test-parent-id"),
                         title = listOf(createRichText("Test Database")),
                         initialDataSource = InitialDataSource(properties = emptyMap()),
                         description = listOf(createLongRichText()),
@@ -553,7 +553,7 @@ class RequestValidatorTest :
                     val longContent = createLongRichText() // 2100 chars
                     val request =
                         CreatePageRequest(
-                            parent = Parent(type = "page_id", pageId = "test-page-id"),
+                            parent = Parent.PageParent(pageId = "test-page-id"),
                             properties =
                                 mapOf(
                                     "title" to PagePropertyValue.TitleValue(title = listOf(createRichText("My Page Title"))),
@@ -599,7 +599,7 @@ class RequestValidatorTest :
                     val longContent = createLongRichText()
                     val request =
                         CreatePageRequest(
-                            parent = Parent(type = "page_id", pageId = "test-page-id"),
+                            parent = Parent.PageParent(pageId = "test-page-id"),
                             properties =
                                 mapOf(
                                     "title" to PagePropertyValue.TitleValue(title = listOf(createRichText("My Page Title"))),
@@ -625,7 +625,7 @@ class RequestValidatorTest :
                         }
                     val request =
                         CreatePageRequest(
-                            parent = Parent(type = "page_id", pageId = "test-page-id"),
+                            parent = Parent.PageParent(pageId = "test-page-id"),
                             properties =
                                 mapOf(
                                     "multiSelect" to PagePropertyValue.MultiSelectValue(multiSelect = tooManyOptions),
@@ -658,7 +658,7 @@ class RequestValidatorTest :
 
                     val request =
                         CreatePageRequest(
-                            parent = Parent(type = "page_id", pageId = "test-page-id"),
+                            parent = Parent.PageParent(pageId = "test-page-id"),
                             properties =
                                 mapOf(
                                     "title" to PagePropertyValue.TitleValue(title = listOf(createRichText("My Page Title"))),
@@ -729,7 +729,7 @@ class RequestValidatorTest :
                     val longTitle = createLongRichText()
                     val request =
                         CreateDatabaseRequest(
-                            parent = Parent(type = "page_id", pageId = "test-page-id"),
+                            parent = Parent.PageParent(pageId = "test-page-id"),
                             title = listOf(longTitle),
                             initialDataSource = InitialDataSource(properties = mapOf()),
                         )
@@ -757,7 +757,7 @@ class RequestValidatorTest :
                     val longDescription = createLongRichText()
                     val request =
                         CreateDatabaseRequest(
-                            parent = Parent(type = "page_id", pageId = "test-page-id"),
+                            parent = Parent.PageParent(pageId = "test-page-id"),
                             title = listOf(createRichText("Normal title")),
                             initialDataSource = InitialDataSource(properties = mapOf()),
                             description = listOf(longDescription),
@@ -841,7 +841,7 @@ class RequestValidatorTest :
 
                     val request =
                         CreatePageRequest(
-                            parent = Parent(type = "page_id", pageId = "test-page-id"),
+                            parent = Parent.PageParent(pageId = "test-page-id"),
                             properties =
                                 mapOf(
                                     "title" to PagePropertyValue.TitleValue(title = listOf(createRichText("Valid title"))),

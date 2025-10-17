@@ -13,6 +13,7 @@ import it.saabel.kotlinnotionclient.models.base.Link
 import it.saabel.kotlinnotionclient.models.base.RichText
 import it.saabel.kotlinnotionclient.models.base.TextContent
 import it.saabel.kotlinnotionclient.models.pages.Page
+import it.saabel.kotlinnotionclient.models.pages.PageCover
 import it.saabel.kotlinnotionclient.models.pages.PageProperty
 import it.saabel.kotlinnotionclient.models.pages.getProperty
 import kotlinx.serialization.json.Json
@@ -254,7 +255,7 @@ class NotionApiLimitsTest :
                 val samplePage = loadSamplePage()
                 val photoProperty = samplePage.getProperty<PageProperty.Url>("Photo")
                 val photoUrl = photoProperty?.url ?: ""
-                val coverUrl = samplePage.cover?.external?.url ?: ""
+                val coverUrl = (samplePage.cover as? PageCover.External)?.external?.url ?: ""
 
                 // Sample URLs should be valid and within limits
                 photoUrl shouldNotBe ""

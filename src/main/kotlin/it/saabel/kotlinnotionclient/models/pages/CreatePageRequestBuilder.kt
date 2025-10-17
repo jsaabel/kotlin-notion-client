@@ -2,6 +2,8 @@
 
 package it.saabel.kotlinnotionclient.models.pages
 
+import it.saabel.kotlinnotionclient.models.base.ExternalFile
+import it.saabel.kotlinnotionclient.models.base.NotionFile
 import it.saabel.kotlinnotionclient.models.base.Parent
 import it.saabel.kotlinnotionclient.models.blocks.BlockRequest
 import it.saabel.kotlinnotionclient.models.blocks.PageContentBuilder
@@ -152,11 +154,7 @@ class CreatePageRequestBuilder {
          * @param pageId The parent page ID
          */
         fun page(pageId: String) {
-            this@CreatePageRequestBuilder.parentValue =
-                Parent(
-                    type = "page_id",
-                    pageId = pageId,
-                )
+            this@CreatePageRequestBuilder.parentValue = Parent.PageParent(pageId = pageId)
         }
 
         /**
@@ -170,11 +168,7 @@ class CreatePageRequestBuilder {
          * @param dataSourceId The parent data source ID
          */
         fun dataSource(dataSourceId: String) {
-            this@CreatePageRequestBuilder.parentValue =
-                Parent(
-                    type = "data_source_id",
-                    dataSourceId = dataSourceId,
-                )
+            this@CreatePageRequestBuilder.parentValue = Parent.DataSourceParent(dataSourceId = dataSourceId)
         }
 
         /**
@@ -183,22 +177,14 @@ class CreatePageRequestBuilder {
          * @param blockId The parent block ID
          */
         fun block(blockId: String) {
-            this@CreatePageRequestBuilder.parentValue =
-                Parent(
-                    type = "block_id",
-                    blockId = blockId,
-                )
+            this@CreatePageRequestBuilder.parentValue = Parent.BlockParent(blockId = blockId)
         }
 
         /**
          * Sets the parent to workspace.
          */
         fun workspace() {
-            this@CreatePageRequestBuilder.parentValue =
-                Parent(
-                    type = "workspace",
-                    workspace = true,
-                )
+            this@CreatePageRequestBuilder.parentValue = Parent.WorkspaceParent
         }
     }
 
@@ -213,11 +199,7 @@ class CreatePageRequestBuilder {
          * @param emoji The emoji character(s)
          */
         fun emoji(emoji: String) {
-            this@CreatePageRequestBuilder.iconValue =
-                PageIcon(
-                    type = "emoji",
-                    emoji = emoji,
-                )
+            this@CreatePageRequestBuilder.iconValue = PageIcon.Emoji(emoji = emoji)
         }
 
         /**
@@ -226,11 +208,7 @@ class CreatePageRequestBuilder {
          * @param url The external image URL
          */
         fun external(url: String) {
-            this@CreatePageRequestBuilder.iconValue =
-                PageIcon(
-                    type = "external",
-                    external = ExternalFile(url = url),
-                )
+            this@CreatePageRequestBuilder.iconValue = PageIcon.External(external = ExternalFile(url = url))
         }
 
         /**
@@ -244,10 +222,7 @@ class CreatePageRequestBuilder {
             expiryTime: String? = null,
         ) {
             this@CreatePageRequestBuilder.iconValue =
-                PageIcon(
-                    type = "file",
-                    file = NotionFile(url = url, expiryTime = expiryTime),
-                )
+                PageIcon.File(file = NotionFile(url = url, expiryTime = expiryTime))
         }
     }
 
@@ -262,11 +237,7 @@ class CreatePageRequestBuilder {
          * @param url The external image URL
          */
         fun external(url: String) {
-            this@CreatePageRequestBuilder.coverValue =
-                PageCover(
-                    type = "external",
-                    external = ExternalFile(url = url),
-                )
+            this@CreatePageRequestBuilder.coverValue = PageCover.External(external = ExternalFile(url = url))
         }
 
         /**
@@ -280,10 +251,7 @@ class CreatePageRequestBuilder {
             expiryTime: String? = null,
         ) {
             this@CreatePageRequestBuilder.coverValue =
-                PageCover(
-                    type = "file",
-                    file = NotionFile(url = url, expiryTime = expiryTime),
-                )
+                PageCover.File(file = NotionFile(url = url, expiryTime = expiryTime))
         }
     }
 }
