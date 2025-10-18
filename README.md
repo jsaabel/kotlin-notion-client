@@ -13,7 +13,7 @@ A modern, type-safe Kotlin client for the Notion API with comprehensive DSL supp
 
 ## Why This Client?
 
-- **🆕 Latest API Support** - Built for Notion API version **2025-09-03** with full support for data sources, search, and all current features
+- **🆕 Latest API Support** - Built for Notion API version **2025-09-03** with full support for data sources, search, and all current features (currently the only Kotlin client supporting this API version)
 - **🛡️ Type-Safe DSLs** - Intuitive builder patterns for pages, databases, blocks, and queries with compile-time safety
 - **⚡ Kotlin-First** - Leverages coroutines for non-blocking I/O, null-safety, and functional programming patterns
 - **✅ Extensively Tested** - Validated against official Notion API sample responses with comprehensive test coverage
@@ -136,7 +136,8 @@ See [docs/databases.md](docs/databases.md) and [docs/data-sources.md](docs/data-
 - **Advanced query DSL** with complex filters, sorting, and pagination
 - **Rich text DSL** for formatted content with mentions, equations, and links
 - **30+ block types** including tables, callouts, code blocks, and embeds
-- **Property types** - All database property types supported (formulas, relations, rollups, etc.)
+- **Property types** - Full support for the most important data source property types, with more coming up
+- **Kotlin datetime types** - Native support for `kotlinx-datetime` types (`LocalDate`, `LocalDateTime`, `Instant`) with explicit timezone handling
 - **File operations** - Upload and manage files/images
 - **Comprehensive error handling** with detailed error types
 
@@ -207,10 +208,11 @@ This library covers virtually all aspects of the Notion API (2025-09-03 version)
 - Review the test coverage for your specific use cases
 - Test thoroughly with your Notion workspace
 - Be aware that the API version support is fixed to 2025-09-03
+- **Date/time properties with timezones**: While the library provides comprehensive support for `kotlinx-datetime` types with explicit timezone handling (including timezone-aware conversions via `toLocalDateTime(timeZone)`), this area may benefit from additional real-world validation, particularly around timezone edge cases and complex datetime scenarios
 
 ## Contributing
 
-Contributions are welcome! This project is in pre-release, so now is a great time to help shape its direction.
+Contributions are welcome!
 
 **Areas where contributions are especially valued:**
 - Real-world usage feedback and bug reports
@@ -228,6 +230,7 @@ This project is licensed under the MIT License.
 - **Anthropic** for Claude and Claude Code
 - **JetBrains** for Kotlin and the fantastic language ecosystem
 - The **Kotlin community** for patterns and best practices
+- **Previous Kotlin implementations** ([klibnotion](https://github.com/BoD/klibnotion) and [notion-sdk-kotlin](https://github.com/notionsdk/notion-sdk-kotlin)) for pioneering Kotlin-based Notion API clients and serving as valuable references during development
 
 ---
 
