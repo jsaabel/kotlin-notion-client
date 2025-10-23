@@ -128,7 +128,7 @@ See [docs/databases.md](docs/databases.md) and [docs/data-sources.md](docs/data-
 | **Search** | ✅ Complete | [docs/search.md](docs/search.md) |
 | **Users** | ✅ Complete | [docs/users.md](docs/users.md) |
 | **Comments** | ✅ Complete | [docs/comments.md](docs/comments.md) |
-| **File Uploads** | ✅ Complete | Integrated with blocks/pages |
+| **File Uploads** | ✅ Complete | [docs/file-uploads.md](docs/file-uploads.md) |
 
 ### Feature Highlights
 
@@ -144,7 +144,7 @@ See [docs/databases.md](docs/databases.md) and [docs/data-sources.md](docs/data-
 ## Documentation
 
 - **[Quick Start Guide](QUICKSTART.md)** - Get up and running in 5 minutes
-- **[Kotlin Notebooks](notebooks/)** - Interactive Jupyter notebooks with 50+ examples (recommended for learning)
+- **[Kotlin Notebooks](notebooks/)** - Interactive Jupyter notebooks with 55+ examples (recommended for learning)
 - **[API Documentation](docs/)** - Detailed guides for each API category
 - **[Rich Text DSL](docs/rich-text-dsl.md)** - Working with formatted text
 - **[Error Handling](docs/error-handling.md)** - Understanding and handling errors
@@ -159,6 +159,7 @@ The **[Kotlin Notebooks](notebooks/)** are the best way to learn the library:
 4. [Working with Blocks](notebooks/04-working-with-blocks.ipynb) - All block types and operations
 5. [Rich Text DSL](notebooks/05-rich-text-dsl.ipynb) - Formatting, colors, links, dates, equations
 6. [Advanced Queries](notebooks/06-advanced-queries.ipynb) - Complex filtering, AND/OR logic, pagination
+7. [File Uploads](notebooks/07-file-uploads.ipynb) - Uploading files, external imports, media blocks
 
 All notebooks use live Notion API and can be run in IntelliJ IDEA or Jupyter.
 

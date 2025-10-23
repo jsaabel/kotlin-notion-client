@@ -240,13 +240,10 @@ notion.dataSources.queryAsFlow("data-source-id") {
 ### Early Termination
 
 ```kotlin
-// Stop after finding what you need
+// Stop after finding what you need (using extension functions)
 val targetPage = notion.dataSources.queryAsFlow("data-source-id") {}
     .firstOrNull { page ->
-        // Find first page matching condition
-        page.properties["Name"]?.let {
-            (it as? PageProperty.Title)?.plainText == "Target Page"
-        } ?: false
+        page.getTitleAsPlainText("Name") == "Target Page"
     }
 ```
 
@@ -257,14 +254,13 @@ val targetPage = notion.dataSources.queryAsFlow("data-source-id") {}
 notion.dataSources.queryAsFlow("data-source-id") {}
     .filter { page ->
         // Only process pages with status "Active"
-        val status = page.properties["Status"] as? PageProperty.Select
-        status?.select?.name == "Active"
+        page.getSelectPropertyName("Status") == "Active"
     }
     .map { page ->
         // Transform to simpler representation
         PageSummary(
             id = page.id,
-            name = (page.properties["Name"] as? PageProperty.Title)?.plainText ?: ""
+            name = page.getTitleAsPlainText("Name") ?: ""
         )
     }
     .take(10) // Limit to first 10 matching items

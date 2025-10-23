@@ -259,10 +259,45 @@ notion.pages.create {
 
 ### Accessing Properties from Retrieved Pages
 
+The library provides three patterns for accessing page properties:
+
+#### Pattern 1: Extension Functions
+
+The cleanest and most convenient approach - use extension functions for direct access to property values:
+
 ```kotlin
 val page = notion.pages.retrieve("page-id")
 
-// Type-safe property access
+// Simple value access
+val title = page.getTitleAsPlainText("Name") ?: "Untitled"
+val status = page.getSelectPropertyName("Status") ?: "No status"
+val priority = page.getNumberProperty("Priority") ?: 0.0
+val dueDate = page.getDateProperty("Due Date")?.start
+val assignees = page.getPeopleProperty("Assignee")
+
+// Rich text access (preserves formatting)
+val descriptionRichText = page.getRichTextProperty("Description")
+val descriptionPlainText = page.getRichTextAsPlainText("Description")
+
+// Other convenience methods
+val checkboxValue = page.getCheckboxProperty("Is Complete")
+val url = page.getUrlProperty("Link")
+val email = page.getEmailProperty("Contact")
+val phoneNumber = page.getPhoneNumberProperty("Phone")
+val multiSelectNames = page.getMultiSelectPropertyNames("Tags")
+val relatedPages = page.getRelationProperty("Related Items")
+```
+
+**Use when:** You want clean, concise code and only need the property value (recommended for most cases).
+
+#### Pattern 2: Type-Safe Casting (Full Control)
+
+Cast to the specific property type for explicit control:
+
+```kotlin
+val page = notion.pages.retrieve("page-id")
+
+// Access specific property types
 val titleProp = page.properties["Name"] as? PageProperty.Title
 val title = titleProp?.plainText ?: "Untitled"
 
@@ -278,6 +313,25 @@ val dueDate = dateProp?.date?.start  // ISO date string
 val peopleProp = page.properties["Assignee"] as? PageProperty.People
 val assignees = peopleProp?.people ?: emptyList()
 ```
+
+**Use when:** You need full control over the property object or want to access multiple fields from the same property.
+
+#### Pattern 3: Generic Plain Text Extractor
+
+For cases where you just need a string representation of any property:
+
+```kotlin
+val page = notion.pages.retrieve("page-id")
+
+// Works with any property type
+val title = page.getPlainTextForProperty("Name")           // "My Page"
+val status = page.getPlainTextForProperty("Status")        // "In Progress"
+val priority = page.getPlainTextForProperty("Priority")    // "8.0"
+val tags = page.getPlainTextForProperty("Tags")            // "urgent, bug"
+val relations = page.getPlainTextForProperty("Related")    // "3 relation(s)"
+```
+
+**Use when:** Writing tests, debugging, or when you need a quick string representation without caring about the specific type.
 
 ### Property Type Reference
 

@@ -271,13 +271,24 @@ val results = notion.dataSources.query("data-source-id") {
 
 ### Working with Properties
 
-After querying, access page properties:
+After querying, access page properties using extension functions (recommended):
 
 ```kotlin
 val pages = notion.dataSources.query("data-source-id") {}
 
 pages.forEach { page ->
-    // Access different property types
+    // Use extension functions for clean access
+    val title = page.getTitleAsPlainText("Task Name")
+    val status = page.getSelectPropertyName("Status")
+
+    println("$title - $status")
+}
+```
+
+Alternatively, use type-safe casting for more control:
+
+```kotlin
+pages.forEach { page ->
     val titleProp = page.properties["Task Name"] as? PageProperty.Title
     val title = titleProp?.plainText
 
@@ -287,6 +298,8 @@ pages.forEach { page ->
     println("$title - $status")
 }
 ```
+
+See [Pages API - Working with Properties](pages.md#working-with-page-properties) for all access patterns.
 
 ### Best Practices
 
