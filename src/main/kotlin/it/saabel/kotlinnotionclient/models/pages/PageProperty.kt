@@ -8,6 +8,7 @@ import kotlinx.datetime.Instant
 import kotlinx.datetime.toLocalDateTime
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.JsonElement
 
 /**
  * Typed models for page properties as returned from the Notion API.
@@ -40,7 +41,7 @@ import kotlinx.serialization.Serializable
  * val score = page.getNumberProperty("Score") ?: 0.0
  * ```
  */
-@Serializable
+@Serializable(with = PagePropertySerializer::class)
 sealed class PageProperty {
     abstract val id: String
     abstract val type: String
@@ -210,6 +211,23 @@ sealed class PageProperty {
         @SerialName("id") override val id: String,
         @SerialName("type") override val type: String,
         @SerialName("last_edited_by") val lastEditedBy: User,
+    ) : PageProperty()
+
+    /**
+     * Represents an unsupported or unknown property type.
+     *
+     * This type is used as a fallback when the Notion API returns a property type
+     * that isn't explicitly supported by the client (e.g., "button", "unique_id",
+     * "verification", etc.). This ensures forward compatibility as Notion adds new
+     * property types.
+     *
+     * The raw JSON is preserved so users can inspect it or handle it manually.
+     */
+    @Serializable
+    data class Unknown(
+        @SerialName("id") override val id: String,
+        @SerialName("type") override val type: String,
+        val rawContent: JsonElement,
     ) : PageProperty()
 }
 
