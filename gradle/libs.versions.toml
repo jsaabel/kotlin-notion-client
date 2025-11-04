@@ -2,9 +2,9 @@
 kotest = "6.0.4"
 ben-manes-versions = "0.53.0"
 dokka = "2.1.0"
-kotlin = "2.2.20"
+kotlin = "2.2.21"
 kotlinter = "5.2.0"
-maven-publish = "0.30.0"
+maven-publish = "0.34.0"
 # kotlinx-datetime: Using 0.6.2 instead of 0.7.x because 0.7.x migrated to kotlin.time.Instant
 # which is still @ExperimentalTime in Kotlin 2.2. Using experimental APIs in a library is
 # problematic as it forces instability on users. 0.6.x uses stable kotlinx.datetime.Instant.
@@ -12,7 +12,7 @@ maven-publish = "0.30.0"
 kotlinx-datetime = "0.6.2"
 kotlinx-serialization-json = "1.9.0"
 ktor = "3.3.1"
-logback = "1.5.19"
+logback = "1.5.20"
 slf4j = "2.0.17"
 
 [plugins]

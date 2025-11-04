@@ -62,8 +62,7 @@ java {
 
 // Vanniktech Maven Publish Plugin Configuration
 mavenPublishing {
-    // Publish to Maven Central Portal (new system)
-    publishToMavenCentral(com.vanniktech.maven.publish.SonatypeHost.CENTRAL_PORTAL)
+    // Maven Central publishing is configured via gradle.properties (mavenCentralPublishing=true)
 
     // Sign all publications with GPG
     signAllPublications()
