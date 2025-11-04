@@ -5,6 +5,38 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.0] - 2025-11-04
+
+### ✨ Added
+
+**Query Filters** - New property type filters for advanced querying:
+- **Relation filter**: Filter by related pages with `relation("Property").contains(pageId)`, `doesNotContain()`, `isEmpty()`, `isNotEmpty()`
+- **People filter**: Filter by users/assignees with `people("Property").contains(userId)`, `doesNotContain()`, `isEmpty()`, `isNotEmpty()`
+- **Status filter**: Filter by workflow status with `status("Property").equals("Status")`, `doesNotEqual()`, `isEmpty()`, `isNotEmpty()`
+- **Unique ID filter**: Filter by auto-incrementing IDs with numeric comparisons (`equals()`, `greaterThan()`, `lessThan()`, etc.)
+- **Files filter**: Filter by attachment presence with `files("Property").isEmpty()`, `isNotEmpty()`
+
+**Property Types**:
+- **Place property**: Full support for location data with `PageProperty.Place` including:
+  - Structured access to latitude/longitude coordinates
+  - Name and address fields
+  - Convenience accessors: `getPlaceProperty()`, `getPlaceAsString()`, `formattedLocation`
+- **Unique ID property**: Enhanced with convenience accessors (`getUniqueIdProperty()`, properly integrated with `getPlainTextForProperty()`)
+
+### 🐛 Fixed
+
+- **Unknown property types**: Library now gracefully handles property types it doesn't recognize, returning `PageProperty.Unsupported` instead of failing deserialization
+
+### 🔧 Changed
+
+- **Dependencies**: Updated to latest versions of Kotlin, Ktor, and other dependencies
+- **Gradle**: Updated Gradle wrapper to latest version
+
+### 📊 Statistics
+
+- **Test coverage**: 514+ unit tests (up from 481)
+- **New test suites**: Integration tests for all new filter types
+
 ## [0.1.0] - 2025-10-10
 
 ### 🎉 Initial Release
@@ -82,4 +114,5 @@ This is the first public release of the Kotlin Notion Client library.
 
 **Note**: This is an early release (0.1.0). While comprehensive testing has been performed, users should expect potential issues and are encouraged to report them via GitHub Issues.
 
+[0.2.0]: https://github.com/jsaabel/kotlin-notion-client/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/jsaabel/kotlin-notion-client/releases/tag/v0.1.0

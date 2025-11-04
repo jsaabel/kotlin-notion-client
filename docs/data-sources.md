@@ -269,6 +269,8 @@ val results = notion.dataSources.query("data-source-id") {
 }
 ```
 
+**Additional Filter Types** (v0.2.0+): The query DSL also supports filters for `relation` (related pages), `people` (users/assignees), `status` (workflow status), `unique_id` (auto-incrementing IDs), and `files` (attachment presence). All follow the same DSL pattern as shown above.
+
 ### Working with Properties
 
 After querying, access page properties using extension functions (recommended):

@@ -352,6 +352,8 @@ Common property types you can set when creating/updating pages:
 | Phone | `phoneNumber(name, phoneString)` | `phoneNumber("Phone", "+1-555-0123")` |
 | Files | `files(name, ...)` | (See file upload documentation) |
 | Relation | `relation(name, pageIds)` | `relation("Related", "page-1", "page-2")` |
+| Place (v0.2.0+) | Read location data | Access with `getPlaceProperty()` |
+| Unique ID | Read auto-incrementing ID | Access with `getUniqueIdProperty()` |
 
 **Read-only properties** (cannot be set via create/update):
 - Formula
@@ -360,6 +362,8 @@ Common property types you can set when creating/updating pages:
 - Last edited time
 - Created by
 - Last edited by
+- Place (read-only in API)
+- Unique ID (auto-generated)
 
 ## Common Patterns
 

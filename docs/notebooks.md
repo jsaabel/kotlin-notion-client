@@ -43,7 +43,7 @@ Our integration tests provide excellent, verified examples:
 
 ```kotlin
 // Load dependencies
-@file:DependsOn("it.saabel:kotlin-notion-client:0.1.0")
+@file:DependsOn("it.saabel:kotlin-notion-client:0.2.0")
 
 // Imports
 import it.saabel.kotlinnotionclient.NotionClient

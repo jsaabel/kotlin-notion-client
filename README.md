@@ -25,7 +25,7 @@ A modern, type-safe Kotlin client for the Notion API with comprehensive DSL supp
 ```kotlin
 // Gradle (Kotlin DSL)
 dependencies {
-    implementation("it.saabel:kotlin-notion-client:0.1.0")
+    implementation("it.saabel:kotlin-notion-client:0.2.0")
 }
 ```
 
@@ -34,7 +34,7 @@ dependencies {
 <dependency>
     <groupId>it.saabel</groupId>
     <artifactId>kotlin-notion-client</artifactId>
-    <version>0.1.0</version>
+    <version>0.2.0</version>
 </dependency>
 ```
 

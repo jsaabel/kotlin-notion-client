@@ -15,7 +15,7 @@ Add the dependency to your `build.gradle.kts`:
 
 ```kotlin
 dependencies {
-    implementation("it.saabel:kotlin-notion-client:0.1.0")
+    implementation("it.saabel:kotlin-notion-client:0.2.0")
 }
 ```
 
