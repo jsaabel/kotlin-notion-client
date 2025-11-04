@@ -131,6 +131,32 @@ sealed class PageProperty {
     }
 
     @Serializable
+    @SerialName("place")
+    data class Place(
+        @SerialName("id") override val id: String,
+        @SerialName("type") override val type: String,
+        @SerialName("place") val place: PlaceValue?,
+    ) : PageProperty() {
+        /**
+         * Returns the formatted location string with coordinates (e.g., "Oslo Airport (60.19116, 11.10242)").
+         * Returns null if the place value is not set.
+         */
+        val formattedLocation: String?
+            get() =
+                place?.let {
+                    buildString {
+                        if (it.name != null) {
+                            append(it.name)
+                        }
+                        if (it.lat != null && it.lon != null) {
+                            if (it.name != null) append(" ")
+                            append("(${it.lat}, ${it.lon})")
+                        }
+                    }.takeIf { it.isNotEmpty() }
+                }
+    }
+
+    @Serializable
     @SerialName("select")
     data class Select(
         @SerialName("id") override val id: String,

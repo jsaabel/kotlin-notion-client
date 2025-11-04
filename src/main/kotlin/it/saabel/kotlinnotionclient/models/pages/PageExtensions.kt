@@ -53,6 +53,26 @@ fun Page.getEmailProperty(name: String): String? = getProperty<PageProperty.Emai
 fun Page.getPhoneNumberProperty(name: String): String? = getProperty<PageProperty.PhoneNumber>(name)?.phoneNumber
 
 /**
+ * Get a unique_id property value (returns the full UniqueIdValue object).
+ */
+fun Page.getUniqueIdProperty(name: String): UniqueIdValue? = getProperty<PageProperty.UniqueId>(name)?.uniqueId
+
+/**
+ * Get a unique_id property as formatted string (e.g., "TASK-123" or "42").
+ */
+fun Page.getUniqueIdAsString(name: String): String? = getProperty<PageProperty.UniqueId>(name)?.formattedId
+
+/**
+ * Get a place property value (returns the full PlaceValue object).
+ */
+fun Page.getPlaceProperty(name: String): PlaceValue? = getProperty<PageProperty.Place>(name)?.place
+
+/**
+ * Get a place property as formatted location string (e.g., "Oslo Airport (60.19, 11.10)").
+ */
+fun Page.getPlaceAsString(name: String): String? = getProperty<PageProperty.Place>(name)?.formattedLocation
+
+/**
  * Get a select property option (returns the full SelectOption object).
  */
 fun Page.getSelectProperty(name: String): SelectOption? = getProperty<PageProperty.Select>(name)?.select
@@ -140,6 +160,8 @@ fun Page.getPlainTextForProperty(name: String): String? {
         is PageProperty.Url -> property.url
         is PageProperty.Email -> property.email
         is PageProperty.PhoneNumber -> property.phoneNumber
+        is PageProperty.UniqueId -> property.formattedId
+        is PageProperty.Place -> property.formattedLocation
         is PageProperty.Select -> property.select?.name
         is PageProperty.MultiSelect -> property.multiSelect.joinToString(", ") { it.name }
         is PageProperty.Status -> property.status?.name

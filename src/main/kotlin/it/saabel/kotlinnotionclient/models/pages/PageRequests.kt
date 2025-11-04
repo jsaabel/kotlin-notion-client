@@ -395,6 +395,22 @@ data class UniqueIdValue(
 )
 
 @Serializable
+data class PlaceValue(
+    @SerialName("lat")
+    val lat: Double?,
+    @SerialName("lon")
+    val lon: Double?,
+    @SerialName("name")
+    val name: String?,
+    @SerialName("address")
+    val address: String?,
+    @SerialName("aws_place_id")
+    val awsPlaceId: String?,
+    @SerialName("google_place_id")
+    val googlePlaceId: String?,
+)
+
+@Serializable
 sealed class FileObject {
     @Serializable
     @SerialName("external")
