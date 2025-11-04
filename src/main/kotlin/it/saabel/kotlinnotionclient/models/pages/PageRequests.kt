@@ -387,6 +387,14 @@ data class PageReference(
 )
 
 @Serializable
+data class UniqueIdValue(
+    @SerialName("prefix")
+    val prefix: String?,
+    @SerialName("number")
+    val number: Int,
+)
+
+@Serializable
 sealed class FileObject {
     @Serializable
     @SerialName("external")

@@ -13,7 +13,7 @@ import kotlinx.serialization.json.Json
  * Unit tests for handling unknown/unsupported page property types.
  *
  * This test ensures that when Notion adds new property types (like "button",
- * "unique_id", "verification", etc.), the client gracefully handles them as
+ * "verification", etc.), the client gracefully handles them as
  * [PageProperty.Unknown] instead of failing deserialization entirely.
  *
  * This is critical for forward compatibility and production use.
@@ -115,14 +115,6 @@ class PagePropertyUnknownTypeTest :
                       "type": "button",
                       "button": {}
                     },
-                    "UniqueID": {
-                      "id": "unique-id",
-                      "type": "unique_id",
-                      "unique_id": {
-                        "prefix": "ID",
-                        "number": 123
-                      }
-                    },
                     "Verification": {
                       "id": "verification-id",
                       "type": "verification",
@@ -142,11 +134,10 @@ class PagePropertyUnknownTypeTest :
 
             // Verify page deserialized successfully with mixed property types
             page.id shouldBe "test-page-id"
-            page.properties.size shouldBe 4
+            page.properties.size shouldBe 3
 
             // Verify unknown types
             page.properties["Button"]!!.shouldBeInstanceOf<PageProperty.Unknown>()
-            page.properties["UniqueID"]!!.shouldBeInstanceOf<PageProperty.Unknown>()
             page.properties["Verification"]!!.shouldBeInstanceOf<PageProperty.Unknown>()
 
             // Verify known type still works

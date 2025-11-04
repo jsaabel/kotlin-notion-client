@@ -25,7 +25,7 @@ import kotlinx.serialization.json.jsonPrimitive
  * adds new property types (e.g., "button", "unique_id", "verification", etc.).
  *
  * ## Supported Property Types
- * - title, rich_text, number, checkbox, url, email, phone_number
+ * - title, rich_text, number, checkbox, url, email, phone_number, unique_id
  * - select, multi_select, status
  * - date, people, files
  * - relation, formula, rollup
@@ -60,6 +60,7 @@ object PagePropertySerializer : KSerializer<PageProperty> {
             "url" -> decoder.json.decodeFromJsonElement(PageProperty.Url.serializer(), element)
             "email" -> decoder.json.decodeFromJsonElement(PageProperty.Email.serializer(), element)
             "phone_number" -> decoder.json.decodeFromJsonElement(PageProperty.PhoneNumber.serializer(), element)
+            "unique_id" -> decoder.json.decodeFromJsonElement(PageProperty.UniqueId.serializer(), element)
             "select" -> decoder.json.decodeFromJsonElement(PageProperty.Select.serializer(), element)
             "multi_select" -> decoder.json.decodeFromJsonElement(PageProperty.MultiSelect.serializer(), element)
             "status" -> decoder.json.decodeFromJsonElement(PageProperty.Status.serializer(), element)
@@ -102,6 +103,7 @@ object PagePropertySerializer : KSerializer<PageProperty> {
             is PageProperty.Url -> encoder.encodeSerializableValue(PageProperty.Url.serializer(), value)
             is PageProperty.Email -> encoder.encodeSerializableValue(PageProperty.Email.serializer(), value)
             is PageProperty.PhoneNumber -> encoder.encodeSerializableValue(PageProperty.PhoneNumber.serializer(), value)
+            is PageProperty.UniqueId -> encoder.encodeSerializableValue(PageProperty.UniqueId.serializer(), value)
             is PageProperty.Select -> encoder.encodeSerializableValue(PageProperty.Select.serializer(), value)
             is PageProperty.MultiSelect -> encoder.encodeSerializableValue(PageProperty.MultiSelect.serializer(), value)
             is PageProperty.Status -> encoder.encodeSerializableValue(PageProperty.Status.serializer(), value)

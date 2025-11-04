@@ -109,6 +109,28 @@ sealed class PageProperty {
     ) : PageProperty()
 
     @Serializable
+    @SerialName("unique_id")
+    data class UniqueId(
+        @SerialName("id") override val id: String,
+        @SerialName("type") override val type: String,
+        @SerialName("unique_id") val uniqueId: UniqueIdValue?,
+    ) : PageProperty() {
+        /**
+         * Returns the formatted unique ID string (e.g., "TEST-123" or "123" if no prefix).
+         * Returns null if the unique_id value is not set.
+         */
+        val formattedId: String?
+            get() =
+                uniqueId?.let {
+                    if (it.prefix != null) {
+                        "${it.prefix}-${it.number}"
+                    } else {
+                        it.number.toString()
+                    }
+                }
+    }
+
+    @Serializable
     @SerialName("select")
     data class Select(
         @SerialName("id") override val id: String,
