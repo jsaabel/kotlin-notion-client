@@ -208,4 +208,115 @@ class DatabaseQueryFiltersTest :
 
             pages.shouldNotBeEmpty()
         }
+
+        "Should build query with relation property filters" {
+            val client = NotionClient.createWithClient(createMockClient(), NotionConfig("test-token"))
+
+            val query =
+                DataSourceQueryBuilder()
+                    .filter {
+                        and(
+                            relation("Related Project").contains("12345678-1234-1234-1234-123456789abc"),
+                            relation("Blocked By").isEmpty(),
+                            relation("Dependencies").isNotEmpty(),
+                        )
+                    }.build()
+
+            val pages = client.dataSources.query("test-data-source-id", query)
+
+            pages.shouldNotBeEmpty()
+        }
+
+        "Should build query with people property filters" {
+            val client = NotionClient.createWithClient(createMockClient(), NotionConfig("test-token"))
+
+            val query =
+                DataSourceQueryBuilder()
+                    .filter {
+                        and(
+                            people("Assignee").contains("87654321-4321-4321-4321-cba987654321"),
+                            people("Collaborators").isNotEmpty(),
+                            people("Reviewer").doesNotContain("11111111-1111-1111-1111-111111111111"),
+                        )
+                    }.build()
+
+            val pages = client.dataSources.query("test-data-source-id", query)
+
+            pages.shouldNotBeEmpty()
+        }
+
+        "Should build query with status property filters" {
+            val client = NotionClient.createWithClient(createMockClient(), NotionConfig("test-token"))
+
+            val query =
+                DataSourceQueryBuilder()
+                    .filter {
+                        and(
+                            status("Status").equals("In Progress"),
+                            status("Priority Status").doesNotEqual("Archived"),
+                            status("Review Status").isNotEmpty(),
+                        )
+                    }.build()
+
+            val pages = client.dataSources.query("test-data-source-id", query)
+
+            pages.shouldNotBeEmpty()
+        }
+
+        "Should build query with unique_id property filters" {
+            val client = NotionClient.createWithClient(createMockClient(), NotionConfig("test-token"))
+
+            val query =
+                DataSourceQueryBuilder()
+                    .filter {
+                        and(
+                            uniqueId("ID").greaterThan(100),
+                            uniqueId("ID").lessThanOrEqualTo(999),
+                            uniqueId("Ticket Number").doesNotEqual(42),
+                        )
+                    }.build()
+
+            val pages = client.dataSources.query("test-data-source-id", query)
+
+            pages.shouldNotBeEmpty()
+        }
+
+        "Should build query with files property filters" {
+            val client = NotionClient.createWithClient(createMockClient(), NotionConfig("test-token"))
+
+            val query =
+                DataSourceQueryBuilder()
+                    .filter {
+                        and(
+                            files("Attachments").isNotEmpty(),
+                            files("Documents").isEmpty(),
+                        )
+                    }.build()
+
+            val pages = client.dataSources.query("test-data-source-id", query)
+
+            pages.shouldNotBeEmpty()
+        }
+
+        "Should build query with mixed new and existing property filters" {
+            val client = NotionClient.createWithClient(createMockClient(), NotionConfig("test-token"))
+
+            val query =
+                DataSourceQueryBuilder()
+                    .filter {
+                        and(
+                            title("Task Name").contains("Feature"),
+                            status("Status").equals("Active"),
+                            people("Assignee").isNotEmpty(),
+                            relation("Epic").contains("abc12345-6789-0abc-def0-123456789abc"),
+                            uniqueId("ID").greaterThan(1),
+                            files("Screenshots").isNotEmpty(),
+                            checkbox("Urgent").equals(true),
+                        )
+                    }.build()
+
+            val pages = client.dataSources.query("test-data-source-id", query)
+
+            pages.shouldNotBeEmpty()
+        }
     })

@@ -80,6 +80,16 @@ data class DataSourceFilter(
     val email: PropertyCondition? = null,
     @SerialName("phone_number")
     val phoneNumber: PropertyCondition? = null,
+    @SerialName("relation")
+    val relation: RelationCondition? = null,
+    @SerialName("people")
+    val people: PeopleCondition? = null,
+    @SerialName("status")
+    val status: StatusCondition? = null,
+    @SerialName("unique_id")
+    val uniqueId: UniqueIdCondition? = null,
+    @SerialName("files")
+    val files: FilesCondition? = null,
     // Compound conditions
     @SerialName("and")
     val and: List<DataSourceFilter>? = null,
@@ -233,4 +243,80 @@ data class CheckboxCondition(
     val equals: Boolean? = null,
     @SerialName("does_not_equal")
     val doesNotEqual: Boolean? = null,
+)
+
+/**
+ * Relation property condition for filtering by related pages.
+ */
+@Serializable
+data class RelationCondition(
+    @SerialName("contains")
+    val contains: String? = null, // UUID
+    @SerialName("does_not_contain")
+    val doesNotContain: String? = null, // UUID
+    @SerialName("is_empty")
+    val isEmpty: Boolean? = null,
+    @SerialName("is_not_empty")
+    val isNotEmpty: Boolean? = null,
+)
+
+/**
+ * People property condition for filtering by users.
+ * Also applies to created_by and last_edited_by property types.
+ */
+@Serializable
+data class PeopleCondition(
+    @SerialName("contains")
+    val contains: String? = null, // UUID
+    @SerialName("does_not_contain")
+    val doesNotContain: String? = null, // UUID
+    @SerialName("is_empty")
+    val isEmpty: Boolean? = null,
+    @SerialName("is_not_empty")
+    val isNotEmpty: Boolean? = null,
+)
+
+/**
+ * Status property condition.
+ */
+@Serializable
+data class StatusCondition(
+    @SerialName("equals")
+    val equals: String? = null,
+    @SerialName("does_not_equal")
+    val doesNotEqual: String? = null,
+    @SerialName("is_empty")
+    val isEmpty: Boolean? = null,
+    @SerialName("is_not_empty")
+    val isNotEmpty: Boolean? = null,
+)
+
+/**
+ * Unique ID property condition for filtering by auto-incrementing IDs.
+ */
+@Serializable
+data class UniqueIdCondition(
+    @SerialName("equals")
+    val equals: Int? = null,
+    @SerialName("does_not_equal")
+    val doesNotEqual: Int? = null,
+    @SerialName("greater_than")
+    val greaterThan: Int? = null,
+    @SerialName("less_than")
+    val lessThan: Int? = null,
+    @SerialName("greater_than_or_equal_to")
+    val greaterThanOrEqualTo: Int? = null,
+    @SerialName("less_than_or_equal_to")
+    val lessThanOrEqualTo: Int? = null,
+)
+
+/**
+ * Files property condition for checking file attachment presence.
+ */
+@Serializable
+data class FilesCondition(
+    @SerialName("is_empty")
+    val isEmpty: Boolean? = null,
+    @SerialName("is_not_empty")
+    val isNotEmpty: Boolean? = null,
 )

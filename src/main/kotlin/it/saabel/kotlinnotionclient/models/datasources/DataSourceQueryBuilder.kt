@@ -183,6 +183,32 @@ class FilterBuilder {
      * Creates a phone number property filter builder.
      */
     fun phoneNumber(propertyName: String): TextFilterBuilder = TextFilterBuilder(propertyName, "phone_number")
+
+    /**
+     * Creates a relation property filter builder.
+     */
+    fun relation(propertyName: String): RelationFilterBuilder = RelationFilterBuilder(propertyName)
+
+    /**
+     * Creates a people property filter builder.
+     * Also applies to created_by and last_edited_by property types.
+     */
+    fun people(propertyName: String): PeopleFilterBuilder = PeopleFilterBuilder(propertyName)
+
+    /**
+     * Creates a status property filter builder.
+     */
+    fun status(propertyName: String): StatusFilterBuilder = StatusFilterBuilder(propertyName)
+
+    /**
+     * Creates a unique_id property filter builder.
+     */
+    fun uniqueId(propertyName: String): UniqueIdFilterBuilder = UniqueIdFilterBuilder(propertyName)
+
+    /**
+     * Creates a files property filter builder.
+     */
+    fun files(propertyName: String): FilesFilterBuilder = FilesFilterBuilder(propertyName)
 }
 
 /**
@@ -437,5 +463,111 @@ class CheckboxFilterBuilder(
         DataSourceFilter(
             property = propertyName,
             checkbox = condition,
+        )
+}
+
+/**
+ * Builder for relation property filters.
+ */
+class RelationFilterBuilder(
+    private val propertyName: String,
+) {
+    fun contains(pageId: String): DataSourceFilter = createFilter(RelationCondition(contains = pageId))
+
+    fun doesNotContain(pageId: String): DataSourceFilter = createFilter(RelationCondition(doesNotContain = pageId))
+
+    fun isEmpty(): DataSourceFilter = createFilter(RelationCondition(isEmpty = true))
+
+    fun isNotEmpty(): DataSourceFilter = createFilter(RelationCondition(isNotEmpty = true))
+
+    private fun createFilter(condition: RelationCondition): DataSourceFilter =
+        DataSourceFilter(
+            property = propertyName,
+            relation = condition,
+        )
+}
+
+/**
+ * Builder for people property filters.
+ * Also applies to created_by and last_edited_by property types.
+ */
+class PeopleFilterBuilder(
+    private val propertyName: String,
+) {
+    fun contains(userId: String): DataSourceFilter = createFilter(PeopleCondition(contains = userId))
+
+    fun doesNotContain(userId: String): DataSourceFilter = createFilter(PeopleCondition(doesNotContain = userId))
+
+    fun isEmpty(): DataSourceFilter = createFilter(PeopleCondition(isEmpty = true))
+
+    fun isNotEmpty(): DataSourceFilter = createFilter(PeopleCondition(isNotEmpty = true))
+
+    private fun createFilter(condition: PeopleCondition): DataSourceFilter =
+        DataSourceFilter(
+            property = propertyName,
+            people = condition,
+        )
+}
+
+/**
+ * Builder for status property filters.
+ */
+class StatusFilterBuilder(
+    private val propertyName: String,
+) {
+    fun equals(value: String): DataSourceFilter = createFilter(StatusCondition(equals = value))
+
+    fun doesNotEqual(value: String): DataSourceFilter = createFilter(StatusCondition(doesNotEqual = value))
+
+    fun isEmpty(): DataSourceFilter = createFilter(StatusCondition(isEmpty = true))
+
+    fun isNotEmpty(): DataSourceFilter = createFilter(StatusCondition(isNotEmpty = true))
+
+    private fun createFilter(condition: StatusCondition): DataSourceFilter =
+        DataSourceFilter(
+            property = propertyName,
+            status = condition,
+        )
+}
+
+/**
+ * Builder for unique_id property filters.
+ */
+class UniqueIdFilterBuilder(
+    private val propertyName: String,
+) {
+    fun equals(value: Int): DataSourceFilter = createFilter(UniqueIdCondition(equals = value))
+
+    fun doesNotEqual(value: Int): DataSourceFilter = createFilter(UniqueIdCondition(doesNotEqual = value))
+
+    fun greaterThan(value: Int): DataSourceFilter = createFilter(UniqueIdCondition(greaterThan = value))
+
+    fun lessThan(value: Int): DataSourceFilter = createFilter(UniqueIdCondition(lessThan = value))
+
+    fun greaterThanOrEqualTo(value: Int): DataSourceFilter = createFilter(UniqueIdCondition(greaterThanOrEqualTo = value))
+
+    fun lessThanOrEqualTo(value: Int): DataSourceFilter = createFilter(UniqueIdCondition(lessThanOrEqualTo = value))
+
+    private fun createFilter(condition: UniqueIdCondition): DataSourceFilter =
+        DataSourceFilter(
+            property = propertyName,
+            uniqueId = condition,
+        )
+}
+
+/**
+ * Builder for files property filters.
+ */
+class FilesFilterBuilder(
+    private val propertyName: String,
+) {
+    fun isEmpty(): DataSourceFilter = createFilter(FilesCondition(isEmpty = true))
+
+    fun isNotEmpty(): DataSourceFilter = createFilter(FilesCondition(isNotEmpty = true))
+
+    private fun createFilter(condition: FilesCondition): DataSourceFilter =
+        DataSourceFilter(
+            property = propertyName,
+            files = condition,
         )
 }
