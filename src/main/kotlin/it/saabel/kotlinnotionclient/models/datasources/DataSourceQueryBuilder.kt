@@ -3,11 +3,11 @@
 package it.saabel.kotlinnotionclient.models.datasources
 
 import it.saabel.kotlinnotionclient.models.base.EmptyObject
-import kotlinx.datetime.Instant
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toInstant
+import kotlin.time.Instant
 
 /**
  * Top-level DSL function for creating data source queries with a fluent API.

@@ -2,11 +2,11 @@
 
 package it.saabel.kotlinnotionclient.models.pages
 
-import kotlinx.datetime.Instant
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toInstant
+import kotlin.time.Instant
 
 /**
  * DSL marker for date range builders to prevent nested usage.

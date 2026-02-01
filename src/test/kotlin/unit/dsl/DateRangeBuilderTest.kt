@@ -8,10 +8,10 @@ import io.kotest.matchers.string.shouldContain
 import it.saabel.kotlinnotionclient.models.pages.DateRangeBuilder
 import it.saabel.kotlinnotionclient.models.pages.InstantRangeBuilder
 import it.saabel.kotlinnotionclient.models.pages.LocalDateTimeRangeBuilder
-import kotlinx.datetime.Instant
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.TimeZone
+import kotlin.time.Instant
 
 /**
  * Tests for date range DSL builders.

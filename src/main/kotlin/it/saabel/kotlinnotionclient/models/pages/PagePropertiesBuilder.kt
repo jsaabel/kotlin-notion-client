@@ -5,11 +5,11 @@ package it.saabel.kotlinnotionclient.models.pages
 import it.saabel.kotlinnotionclient.models.base.RichText
 import it.saabel.kotlinnotionclient.models.richtext.RichTextBuilder
 import it.saabel.kotlinnotionclient.models.richtext.richText
-import kotlinx.datetime.Instant
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toInstant
+import kotlin.time.Instant
 
 /**
  * Builder class for creating page properties with a fluent DSL.

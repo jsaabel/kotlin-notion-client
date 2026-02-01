@@ -13,9 +13,9 @@ import it.saabel.kotlinnotionclient.models.pages.instantValue
 import it.saabel.kotlinnotionclient.models.pages.localDateTimeNaive
 import it.saabel.kotlinnotionclient.models.pages.localDateValue
 import it.saabel.kotlinnotionclient.models.pages.stringValue
-import kotlinx.datetime.Instant
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
+import kotlin.time.Instant
 
 /**
  * Tests for PageProperty.Date extension properties.

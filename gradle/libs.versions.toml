@@ -5,11 +5,7 @@ dokka = "2.1.0"
 kotlin = "2.3.0"
 kotlinter = "5.4.0"
 maven-publish = "0.36.0"
-# kotlinx-datetime: Using 0.6.2 instead of 0.7.x because 0.7.x migrated to kotlin.time.Instant
-# which is still @ExperimentalTime in Kotlin 2.2. Using experimental APIs in a library is
-# problematic as it forces instability on users. 0.6.x uses stable kotlinx.datetime.Instant.
-# We'll upgrade to 0.7.x+ when kotlin.time types are stabilized (likely Kotlin 2.3+).
-kotlinx-datetime = "0.6.2"
+kotlinx-datetime = "0.7.1"
 kotlinx-serialization-json = "1.10.0"
 ktor = "3.4.0"
 logback = "1.5.27"

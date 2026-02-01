@@ -7,10 +7,10 @@ import io.kotest.matchers.string.shouldContain
 import io.kotest.matchers.types.shouldBeInstanceOf
 import it.saabel.kotlinnotionclient.models.pages.PagePropertyValue
 import it.saabel.kotlinnotionclient.models.pages.pageProperties
-import kotlinx.datetime.Instant
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.TimeZone
+import kotlin.time.Instant
 
 /**
  * Tests for typed date/datetime property creation using kotlinx-datetime types.

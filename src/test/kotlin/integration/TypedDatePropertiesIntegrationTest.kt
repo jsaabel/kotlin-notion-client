@@ -12,10 +12,10 @@ import it.saabel.kotlinnotionclient.models.pages.instantValue
 import it.saabel.kotlinnotionclient.models.pages.localDateValue
 import it.saabel.kotlinnotionclient.models.pages.toLocalDateTime
 import kotlinx.coroutines.delay
-import kotlinx.datetime.Instant
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.TimeZone
+import kotlin.time.Instant
 
 /**
  * Comprehensive integration test for typed date/datetime property API.

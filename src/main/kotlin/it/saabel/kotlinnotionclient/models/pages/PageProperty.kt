@@ -4,11 +4,11 @@ package it.saabel.kotlinnotionclient.models.pages
 
 import it.saabel.kotlinnotionclient.models.base.RichText
 import it.saabel.kotlinnotionclient.models.users.User
-import kotlinx.datetime.Instant
 import kotlinx.datetime.toLocalDateTime
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonElement
+import kotlin.time.Instant
 
 /**
  * Typed models for page properties as returned from the Notion API.

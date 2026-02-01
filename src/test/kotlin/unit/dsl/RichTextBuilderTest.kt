@@ -11,10 +11,10 @@ import it.saabel.kotlinnotionclient.models.base.Link
 import it.saabel.kotlinnotionclient.models.base.Mention
 import it.saabel.kotlinnotionclient.models.richtext.richText
 import it.saabel.kotlinnotionclient.models.users.User
-import kotlinx.datetime.Instant
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.TimeZone
+import kotlin.time.Instant
 
 class RichTextBuilderTest :
     FunSpec({
@@ -519,7 +519,7 @@ class RichTextBuilderTest :
             val dateMention = result[0].mention as? Mention.Date
             dateMention?.date?.start shouldContain "2025-10-15T14:30:00"
             dateMention?.date?.end shouldBe null
-            dateMention?.date?.timeZone shouldBe "Z" // TimeZone.UTC.id returns "Z"
+            dateMention?.date?.timeZone shouldBe "UTC" // TimeZone.UTC.id returns "UTC" in kotlinx-datetime 0.7+
         }
 
         test("dateMention should create datetime range using LocalDateTime with timezone") {

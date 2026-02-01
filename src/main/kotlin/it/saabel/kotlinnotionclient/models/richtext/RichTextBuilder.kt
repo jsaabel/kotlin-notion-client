@@ -13,11 +13,11 @@ import it.saabel.kotlinnotionclient.models.base.PageReference
 import it.saabel.kotlinnotionclient.models.base.RichText
 import it.saabel.kotlinnotionclient.models.base.TextContent
 import it.saabel.kotlinnotionclient.models.users.User
-import kotlinx.datetime.Instant
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toInstant
+import kotlin.time.Instant
 
 /**
  * DSL marker to prevent nested scopes in rich text builders.
