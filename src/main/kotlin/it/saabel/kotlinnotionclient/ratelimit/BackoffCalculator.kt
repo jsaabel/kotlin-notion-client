@@ -107,9 +107,15 @@ class BackoffCalculator(
      */
     private fun applyStrategyModifier(delay: Duration): Duration =
         when (config.strategy) {
-            RateLimitStrategy.CONSERVATIVE -> delay * 1.5 // 50% longer delays
-            RateLimitStrategy.AGGRESSIVE -> delay * 0.7 // 30% shorter delays
-            RateLimitStrategy.BALANCED -> delay // No modification
+            RateLimitStrategy.CONSERVATIVE -> delay * 1.5
+
+            // 50% longer delays
+            RateLimitStrategy.AGGRESSIVE -> delay * 0.7
+
+            // 30% shorter delays
+            RateLimitStrategy.BALANCED -> delay
+
+            // No modification
             RateLimitStrategy.CUSTOM -> delay // User-configured, no modification
         }
 
@@ -180,7 +186,9 @@ class BackoffCalculator(
             is java.net.ConnectException,
             is java.net.UnknownHostException,
             is java.io.IOException,
-            -> true
+            -> {
+                true
+            }
 
             else -> {
                 val message = error.message?.lowercase() ?: ""

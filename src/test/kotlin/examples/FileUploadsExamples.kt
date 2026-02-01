@@ -86,6 +86,7 @@ class FileUploadsExamples :
                         uploadedFiles.add(result.uploadId)
                         println("✅ Enhanced upload successful: ${result.uploadId}")
                     }
+
                     is FileUploadResult.Failure -> {
                         error("Upload failed: ${result.error}")
                     }
@@ -110,6 +111,7 @@ class FileUploadsExamples :
                         uploadedFiles.add(result.uploadId)
                         println("✅ Path upload successful: ${result.uploadId}")
                     }
+
                     is FileUploadResult.Failure -> {
                         error("Upload failed: ${result.error}")
                     }
@@ -133,6 +135,7 @@ class FileUploadsExamples :
                         uploadedFiles.add(result.uploadId)
                         println("✅ Byte array upload successful: ${result.uploadId}")
                     }
+
                     is FileUploadResult.Failure -> {
                         error("Upload failed: ${result.error}")
                     }
@@ -172,6 +175,7 @@ class FileUploadsExamples :
                         uploadedFiles.add(result.uploadId)
                         println("✅ Progress tracking upload successful: ${result.uploadId}")
                     }
+
                     is FileUploadResult.Failure -> {
                         error("Upload failed: ${result.error}")
                     }
@@ -206,6 +210,7 @@ class FileUploadsExamples :
 
                         println("✅ External URL import successful: ${result.uploadId}")
                     }
+
                     is FileUploadResult.Failure -> {
                         error("Upload failed: ${result.error}")
                     }

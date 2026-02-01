@@ -153,21 +153,66 @@ fun Page.getPlainTextForProperty(name: String): String? {
     val property = properties[name] ?: return null
 
     return when (property) {
-        is PageProperty.Title -> property.plainText
-        is PageProperty.RichTextProperty -> property.plainText
-        is PageProperty.Number -> property.number?.toString()
-        is PageProperty.Checkbox -> property.checkbox.toString()
-        is PageProperty.Url -> property.url
-        is PageProperty.Email -> property.email
-        is PageProperty.PhoneNumber -> property.phoneNumber
-        is PageProperty.UniqueId -> property.formattedId
-        is PageProperty.Place -> property.formattedLocation
-        is PageProperty.Select -> property.select?.name
-        is PageProperty.MultiSelect -> property.multiSelect.joinToString(", ") { it.name }
-        is PageProperty.Status -> property.status?.name
-        is PageProperty.Date -> property.date?.start
-        is PageProperty.People -> property.people.joinToString(", ") { it.name ?: it.id }
-        is PageProperty.Relation -> "${property.relation.size} relation(s)"
+        is PageProperty.Title -> {
+            property.plainText
+        }
+
+        is PageProperty.RichTextProperty -> {
+            property.plainText
+        }
+
+        is PageProperty.Number -> {
+            property.number?.toString()
+        }
+
+        is PageProperty.Checkbox -> {
+            property.checkbox.toString()
+        }
+
+        is PageProperty.Url -> {
+            property.url
+        }
+
+        is PageProperty.Email -> {
+            property.email
+        }
+
+        is PageProperty.PhoneNumber -> {
+            property.phoneNumber
+        }
+
+        is PageProperty.UniqueId -> {
+            property.formattedId
+        }
+
+        is PageProperty.Place -> {
+            property.formattedLocation
+        }
+
+        is PageProperty.Select -> {
+            property.select?.name
+        }
+
+        is PageProperty.MultiSelect -> {
+            property.multiSelect.joinToString(", ") { it.name }
+        }
+
+        is PageProperty.Status -> {
+            property.status?.name
+        }
+
+        is PageProperty.Date -> {
+            property.date?.start
+        }
+
+        is PageProperty.People -> {
+            property.people.joinToString(", ") { it.name ?: it.id }
+        }
+
+        is PageProperty.Relation -> {
+            "${property.relation.size} relation(s)"
+        }
+
         is PageProperty.Formula -> {
             when (val formula = property.formula) {
                 is FormulaResult.StringResult -> formula.string
@@ -176,6 +221,7 @@ fun Page.getPlainTextForProperty(name: String): String? {
                 is FormulaResult.DateResult -> formula.date?.start
             }
         }
+
         is PageProperty.Rollup -> {
             when (val rollup = property.rollup) {
                 is RollupResult.NumberResult -> rollup.number?.toString()
@@ -183,10 +229,25 @@ fun Page.getPlainTextForProperty(name: String): String? {
                 is RollupResult.ArrayResult -> "${rollup.array.size} item(s)"
             }
         }
-        is PageProperty.CreatedTime -> property.createdTime
-        is PageProperty.LastEditedTime -> property.lastEditedTime
-        is PageProperty.CreatedBy -> property.createdBy.name ?: property.createdBy.id
-        is PageProperty.LastEditedBy -> property.lastEditedBy.name ?: property.lastEditedBy.id
-        else -> null
+
+        is PageProperty.CreatedTime -> {
+            property.createdTime
+        }
+
+        is PageProperty.LastEditedTime -> {
+            property.lastEditedTime
+        }
+
+        is PageProperty.CreatedBy -> {
+            property.createdBy.name ?: property.createdBy.id
+        }
+
+        is PageProperty.LastEditedBy -> {
+            property.lastEditedBy.name ?: property.lastEditedBy.id
+        }
+
+        else -> {
+            null
+        }
     }
 }

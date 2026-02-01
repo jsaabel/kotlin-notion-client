@@ -44,10 +44,12 @@ class PaginationTest :
                         cursor shouldBe null
                         createMockQueryResponse(page1Items, hasMore = true, nextCursor = "cursor1")
                     }
+
                     1 -> {
                         cursor shouldBe "cursor1"
                         createMockQueryResponse(page2Items, hasMore = true, nextCursor = "cursor2")
                     }
+
                     else -> {
                         cursor shouldBe "cursor2"
                         createMockQueryResponse(page3Items, hasMore = false, nextCursor = null)
@@ -95,10 +97,12 @@ class PaginationTest :
                         cursor shouldBe null
                         createMockQueryResponse(page1Items, hasMore = true, nextCursor = "cursor1")
                     }
+
                     1 -> {
                         cursor shouldBe "cursor1"
                         createMockQueryResponse(page2Items, hasMore = true, nextCursor = "cursor2")
                     }
+
                     else -> {
                         cursor shouldBe "cursor2"
                         createMockQueryResponse(page3Items, hasMore = false, nextCursor = null)
@@ -134,10 +138,12 @@ class PaginationTest :
                         cursor shouldBe null
                         createMockQueryResponse(page1Items, hasMore = true, nextCursor = "cursor1")
                     }
+
                     1 -> {
                         cursor shouldBe "cursor1"
                         createMockQueryResponse(page2Items, hasMore = true, nextCursor = "cursor2")
                     }
+
                     else -> {
                         cursor shouldBe "cursor2"
                         createMockQueryResponse(page3Items, hasMore = false, nextCursor = null)

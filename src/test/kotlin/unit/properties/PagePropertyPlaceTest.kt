@@ -67,20 +67,20 @@ class PagePropertyPlaceTest :
             // Verify place property
             val placeProperty = page.properties["Location"]
             placeProperty shouldNotBe null
-            placeProperty.shouldBeInstanceOf<PageProperty.Place>()
-            placeProperty!!.type shouldBe "place"
-            placeProperty.id shouldBe "%3FJG%7D"
+            val place = placeProperty.shouldBeInstanceOf<PageProperty.Place>()
+            place.type shouldBe "place"
+            place.id shouldBe "%3FJG%7D"
 
             // Verify place value
-            val place = (placeProperty as PageProperty.Place)
             place.place shouldNotBe null
-            place.place!!.lat shouldBe 60.19116
-            place.place!!.lon shouldBe 11.10242
-            place.place!!.name shouldBe "Oslo Airport"
-            place.place!!.address shouldBe "Oslo Airport, E16, 2060 Gardermoen, Norway"
-            place.place!!.awsPlaceId shouldBe
+            val placeValue = place.place!!
+            placeValue.lat shouldBe 60.19116
+            placeValue.lon shouldBe 11.10242
+            placeValue.name shouldBe "Oslo Airport"
+            placeValue.address shouldBe "Oslo Airport, E16, 2060 Gardermoen, Norway"
+            placeValue.awsPlaceId shouldBe
                 "AQAAAFUAJOZ89r-mb1SYL7-SoMdRt07f78RSAwxxWdEftbKanfZs-NqGy40xt67lWhjfJzRfiogmMr75O8PZ3b4T0PKbYS3OTBLMB8cgTubHqwS7sTFnIVYYShVzNMhVJtBKJPu03EeEWbfslnPMluRM9eImLnrMM_bz"
-            place.place!!.googlePlaceId shouldBe null
+            placeValue.googlePlaceId shouldBe null
 
             // Verify formatted location
             place.formattedLocation shouldBe "Oslo Airport (60.19116, 11.10242)"
@@ -127,15 +127,15 @@ class PagePropertyPlaceTest :
             // Verify place property
             val placeProperty = page.properties["Location"]
             placeProperty shouldNotBe null
-            placeProperty.shouldBeInstanceOf<PageProperty.Place>()
+            val place = placeProperty.shouldBeInstanceOf<PageProperty.Place>()
 
             // Verify place value
-            val place = (placeProperty as PageProperty.Place)
             place.place shouldNotBe null
-            place.place!!.lat shouldBe 40.7128
-            place.place!!.lon shouldBe -74.0060
-            place.place!!.name shouldBe null
-            place.place!!.address shouldBe null
+            val placeValue = place.place!!
+            placeValue.lat shouldBe 40.7128
+            placeValue.lon shouldBe -74.0060
+            placeValue.name shouldBe null
+            placeValue.address shouldBe null
 
             // Verify formatted location (coordinates only, no name)
             place.formattedLocation shouldBe "(40.7128, -74.006)"
@@ -181,16 +181,16 @@ class PagePropertyPlaceTest :
             // Verify place property
             val placeProperty = page.properties["Location"]
             placeProperty shouldNotBe null
-            placeProperty.shouldBeInstanceOf<PageProperty.Place>()
+            val place = placeProperty.shouldBeInstanceOf<PageProperty.Place>()
 
             // Verify place value
-            val place = (placeProperty as PageProperty.Place)
             place.place shouldNotBe null
-            place.place!!.lat shouldBe null
-            place.place!!.lon shouldBe null
-            place.place!!.name shouldBe "Eiffel Tower"
-            place.place!!.address shouldBe "Champ de Mars, Paris, France"
-            place.place!!.googlePlaceId shouldBe "ChIJLU7jZClu5kcR4PcOOO6p3I0"
+            val placeValue = place.place!!
+            placeValue.lat shouldBe null
+            placeValue.lon shouldBe null
+            placeValue.name shouldBe "Eiffel Tower"
+            placeValue.address shouldBe "Champ de Mars, Paris, France"
+            placeValue.googlePlaceId shouldBe "ChIJLU7jZClu5kcR4PcOOO6p3I0"
 
             // Verify formatted location (name only, no coordinates)
             place.formattedLocation shouldBe "Eiffel Tower"
@@ -267,10 +267,12 @@ class PagePropertyPlaceTest :
             page.properties["Visited"]!!.shouldBeInstanceOf<PageProperty.Checkbox>()
 
             // Verify place specific values
-            val destination = page.properties["Destination"] as PageProperty.Place
-            destination.place!!.name shouldBe "Oslo"
-            destination.place!!.lat shouldBe 59.9139
-            destination.place!!.lon shouldBe 10.7522
+            val destination = page.properties["Destination"].shouldBeInstanceOf<PageProperty.Place>()
+            destination.place shouldNotBe null
+            val destPlace = destination.place!!
+            destPlace.name shouldBe "Oslo"
+            destPlace.lat shouldBe 59.9139
+            destPlace.lon shouldBe 10.7522
             destination.formattedLocation shouldBe "Oslo (59.9139, 10.7522)"
         }
 
@@ -307,9 +309,7 @@ class PagePropertyPlaceTest :
             // Verify place property with null value
             val placeProperty = page.properties["Location"]
             placeProperty shouldNotBe null
-            placeProperty.shouldBeInstanceOf<PageProperty.Place>()
-
-            val place = (placeProperty as PageProperty.Place)
+            val place = placeProperty.shouldBeInstanceOf<PageProperty.Place>()
             place.place shouldBe null
             place.formattedLocation shouldBe null
         }
@@ -354,14 +354,13 @@ class PagePropertyPlaceTest :
             // Verify place property
             val placeProperty = page.properties["Location"]
             placeProperty shouldNotBe null
-            placeProperty.shouldBeInstanceOf<PageProperty.Place>()
-
-            val place = (placeProperty as PageProperty.Place)
+            val place = placeProperty.shouldBeInstanceOf<PageProperty.Place>()
             place.place shouldNotBe null
-            place.place!!.lat shouldBe null
-            place.place!!.lon shouldBe null
-            place.place!!.name shouldBe null
-            place.place!!.address shouldBe null
+            val placeValue = place.place!!
+            placeValue.lat shouldBe null
+            placeValue.lon shouldBe null
+            placeValue.name shouldBe null
+            placeValue.address shouldBe null
             place.formattedLocation shouldBe null
         }
     })

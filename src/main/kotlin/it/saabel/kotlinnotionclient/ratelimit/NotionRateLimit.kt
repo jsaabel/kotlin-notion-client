@@ -123,6 +123,7 @@ class NotionRateLimit private constructor(
                             // This shouldn't happen for 429 errors, but just in case
                             throw e
                         }
+
                         is RateLimitDecision.Wait -> {
                             // Wait and retry
                             delay(decision.delay)
@@ -131,6 +132,7 @@ class NotionRateLimit private constructor(
                             lastError = e
                             // Continue to next iteration
                         }
+
                         is RateLimitDecision.Reject -> {
                             // Max retries exceeded
                             throw NotionException.ApiError(

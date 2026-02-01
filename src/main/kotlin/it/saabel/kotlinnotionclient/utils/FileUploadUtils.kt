@@ -39,71 +39,119 @@ object FileUploadUtils {
         return when (extension) {
             // Images
             "jpg", "jpeg" -> "image/jpeg"
+
             "png" -> "image/png"
+
             "gif" -> "image/gif"
+
             "webp" -> "image/webp"
+
             "bmp" -> "image/bmp"
+
             "svg" -> "image/svg+xml"
+
             "ico" -> "image/x-icon"
 
             // Videos
             "mp4" -> "video/mp4"
+
             "avi" -> "video/x-msvideo"
+
             "mov" -> "video/quicktime"
+
             "wmv" -> "video/x-ms-wmv"
+
             "flv" -> "video/x-flv"
+
             "webm" -> "video/webm"
+
             "mkv" -> "video/x-matroska"
 
             // Audio
             "mp3" -> "audio/mpeg"
+
             "wav" -> "audio/wav"
+
             "ogg" -> "audio/ogg"
+
             "flac" -> "audio/flac"
+
             "aac" -> "audio/aac"
+
             "m4a" -> "audio/mp4"
 
             // Documents
             "pdf" -> "application/pdf"
+
             "doc" -> "application/msword"
+
             "docx" -> "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+
             "xls" -> "application/vnd.ms-excel"
+
             "xlsx" -> "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+
             "ppt" -> "application/vnd.ms-powerpoint"
+
             "pptx" -> "application/vnd.openxmlformats-officedocument.presentationml.presentation"
+
             "odt" -> "application/vnd.oasis.opendocument.text"
+
             "ods" -> "application/vnd.oasis.opendocument.spreadsheet"
+
             "odp" -> "application/vnd.oasis.opendocument.presentation"
 
             // Text
             "txt" -> "text/plain"
+
             "csv" -> "text/csv"
+
             "html", "htm" -> "text/html"
+
             "xml" -> "text/xml"
+
             "css" -> "text/css"
+
             "js" -> "text/javascript"
+
             "json" -> "application/json"
+
             "md", "markdown" -> "text/markdown"
+
             "rtf" -> "application/rtf"
 
             // Archives
             "zip" -> "application/zip"
+
             "rar" -> "application/vnd.rar"
+
             "7z" -> "application/x-7z-compressed"
+
             "tar" -> "application/x-tar"
+
             "gz" -> "application/gzip"
 
             // Code
             "java" -> "text/x-java-source"
+
             "kt" -> "text/x-kotlin"
+
             "py" -> "text/x-python"
+
             "cpp", "cc", "cxx" -> "text/x-c++"
+
             "c" -> "text/x-c"
+
             "h" -> "text/x-c-header"
+
             "php" -> "text/x-php"
+
             "rb" -> "text/x-ruby"
+
             "go" -> "text/x-go"
+
             "rs" -> "text/x-rust"
+
             "swift" -> "text/x-swift"
 
             // Default
@@ -116,12 +164,18 @@ object FileUploadUtils {
      */
     fun validateFileSize(sizeBytes: Long): ValidationResult =
         when {
-            sizeBytes <= 0 -> ValidationResult.Invalid("File size must be greater than 0")
+            sizeBytes <= 0 -> {
+                ValidationResult.Invalid("File size must be greater than 0")
+            }
+
             sizeBytes > MAX_FILE_SIZE_BYTES -> {
                 val maxSizeMB = MAX_FILE_SIZE_BYTES / (1024 * 1024)
                 ValidationResult.Invalid("File size exceeds maximum limit of ${maxSizeMB}MB")
             }
-            else -> ValidationResult.Valid
+
+            else -> {
+                ValidationResult.Valid
+            }
         }
 
     /**

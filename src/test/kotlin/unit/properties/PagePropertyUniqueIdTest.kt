@@ -63,15 +63,15 @@ class PagePropertyUniqueIdTest :
             // Verify unique_id property
             val uniqueIdProperty = page.properties["ID"]
             uniqueIdProperty shouldNotBe null
-            uniqueIdProperty.shouldBeInstanceOf<PageProperty.UniqueId>()
-            uniqueIdProperty!!.type shouldBe "unique_id"
-            uniqueIdProperty.id shouldBe "unique-id-prop"
+            val uniqueId = uniqueIdProperty.shouldBeInstanceOf<PageProperty.UniqueId>()
+            uniqueId.type shouldBe "unique_id"
+            uniqueId.id shouldBe "unique-id-prop"
 
             // Verify unique_id value
-            val uniqueId = (uniqueIdProperty as PageProperty.UniqueId)
             uniqueId.uniqueId shouldNotBe null
-            uniqueId.uniqueId!!.prefix shouldBe "TEST"
-            uniqueId.uniqueId!!.number shouldBe 123
+            val uniqueIdValue = uniqueId.uniqueId!!
+            uniqueIdValue.prefix shouldBe "TEST"
+            uniqueIdValue.number shouldBe 123
 
             // Verify formatted ID
             uniqueId.formattedId shouldBe "TEST-123"
@@ -114,13 +114,13 @@ class PagePropertyUniqueIdTest :
             // Verify unique_id property
             val uniqueIdProperty = page.properties["ID"]
             uniqueIdProperty shouldNotBe null
-            uniqueIdProperty.shouldBeInstanceOf<PageProperty.UniqueId>()
+            val uniqueId = uniqueIdProperty.shouldBeInstanceOf<PageProperty.UniqueId>()
 
             // Verify unique_id value
-            val uniqueId = (uniqueIdProperty as PageProperty.UniqueId)
             uniqueId.uniqueId shouldNotBe null
-            uniqueId.uniqueId!!.prefix shouldBe null
-            uniqueId.uniqueId!!.number shouldBe 42
+            val uniqueIdValue = uniqueId.uniqueId!!
+            uniqueIdValue.prefix shouldBe null
+            uniqueIdValue.number shouldBe 42
 
             // Verify formatted ID (no prefix, just number)
             uniqueId.formattedId shouldBe "42"
@@ -197,9 +197,11 @@ class PagePropertyUniqueIdTest :
             page.properties["Status"]!!.shouldBeInstanceOf<PageProperty.Select>()
 
             // Verify unique_id specific values
-            val taskId = page.properties["TaskID"] as PageProperty.UniqueId
-            taskId.uniqueId!!.prefix shouldBe "TASK"
-            taskId.uniqueId!!.number shouldBe 456
+            val taskId = page.properties["TaskID"].shouldBeInstanceOf<PageProperty.UniqueId>()
+            taskId.uniqueId shouldNotBe null
+            val taskIdValue = taskId.uniqueId!!
+            taskIdValue.prefix shouldBe "TASK"
+            taskIdValue.number shouldBe 456
             taskId.formattedId shouldBe "TASK-456"
         }
 
@@ -236,9 +238,7 @@ class PagePropertyUniqueIdTest :
             // Verify unique_id property with null value
             val uniqueIdProperty = page.properties["ID"]
             uniqueIdProperty shouldNotBe null
-            uniqueIdProperty.shouldBeInstanceOf<PageProperty.UniqueId>()
-
-            val uniqueId = (uniqueIdProperty as PageProperty.UniqueId)
+            val uniqueId = uniqueIdProperty.shouldBeInstanceOf<PageProperty.UniqueId>()
             uniqueId.uniqueId shouldBe null
             uniqueId.formattedId shouldBe null
         }

@@ -113,6 +113,7 @@ class UnknownPropertyTypesIntegrationTest :
                                     unknownCount++
                                     println("   ✨ $name: ${prop.type} (unknown - handled)")
                                 }
+
                                 else -> {
                                     supportedCount++
                                     println("   ✓ $name: ${prop.type}")

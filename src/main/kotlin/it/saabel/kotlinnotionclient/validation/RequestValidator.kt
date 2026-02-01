@@ -201,9 +201,11 @@ class RequestValidator(
             is PagePropertyValue.TitleValue -> {
                 violations.addAll(validateRichTextArray("$propertyName.title", property.title))
             }
+
             is PagePropertyValue.RichTextValue -> {
                 violations.addAll(validateRichTextArray("$propertyName.richText", property.richText))
             }
+
             is PagePropertyValue.MultiSelectValue -> {
                 if (property.multiSelect.size > NotionApiLimits.Collections.MAX_MULTI_SELECT_OPTIONS) {
                     violations.add(
@@ -220,6 +222,7 @@ class RequestValidator(
                     )
                 }
             }
+
             is PagePropertyValue.RelationValue -> {
                 if (property.relation.size > NotionApiLimits.Collections.MAX_RELATION_PAGES) {
                     violations.add(
@@ -236,6 +239,7 @@ class RequestValidator(
                     )
                 }
             }
+
             is PagePropertyValue.PeopleValue -> {
                 if (property.people.size > NotionApiLimits.Collections.MAX_PEOPLE_USERS) {
                     violations.add(
@@ -252,6 +256,7 @@ class RequestValidator(
                     )
                 }
             }
+
             is PagePropertyValue.UrlValue -> {
                 property.url?.let { url ->
                     if (NotionApiLimits.Utils.isUrlTooLong(url)) {
@@ -268,6 +273,7 @@ class RequestValidator(
                     }
                 }
             }
+
             is PagePropertyValue.EmailValue -> {
                 property.email?.let { email ->
                     if (email.length > NotionApiLimits.Content.MAX_EMAIL_LENGTH) {
@@ -284,6 +290,7 @@ class RequestValidator(
                     }
                 }
             }
+
             is PagePropertyValue.PhoneNumberValue -> {
                 property.phoneNumber?.let { phone ->
                     if (phone.length > NotionApiLimits.Content.MAX_PHONE_LENGTH) {
@@ -300,6 +307,7 @@ class RequestValidator(
                     }
                 }
             }
+
             // Other property types don't have size constraints
             else -> { /* No validation needed */ }
         }
@@ -400,94 +408,123 @@ class RequestValidator(
             is BlockRequest.Paragraph -> {
                 richTextArrays["paragraph.richText"] = block.paragraph.richText
             }
+
             is BlockRequest.Heading1 -> {
                 richTextArrays["heading1.richText"] = block.heading1.richText
             }
+
             is BlockRequest.Heading2 -> {
                 richTextArrays["heading2.richText"] = block.heading2.richText
             }
+
             is BlockRequest.Heading3 -> {
                 richTextArrays["heading3.richText"] = block.heading3.richText
             }
+
             is BlockRequest.BulletedListItem -> {
                 richTextArrays["bulletedListItem.richText"] = block.bulletedListItem.richText
             }
+
             is BlockRequest.NumberedListItem -> {
                 richTextArrays["numberedListItem.richText"] = block.numberedListItem.richText
             }
+
             is BlockRequest.ToDo -> {
                 richTextArrays["toDo.richText"] = block.toDo.richText
             }
+
             is BlockRequest.Toggle -> {
                 richTextArrays["toggle.richText"] = block.toggle.richText
             }
+
             is BlockRequest.Quote -> {
                 richTextArrays["quote.richText"] = block.quote.richText
             }
+
             is BlockRequest.Callout -> {
                 richTextArrays["callout.richText"] = block.callout.richText
             }
+
             is BlockRequest.Code -> {
                 richTextArrays["code.richText"] = block.code.richText
                 richTextArrays["code.caption"] = block.code.caption
             }
+
             is BlockRequest.Image -> {
                 richTextArrays["image.caption"] = block.image.caption
             }
+
             is BlockRequest.Video -> {
                 richTextArrays["video.caption"] = block.video.caption
             }
+
             is BlockRequest.Audio -> {
                 richTextArrays["audio.caption"] = block.audio.caption
             }
+
             is BlockRequest.File -> {
                 richTextArrays["file.caption"] = block.file.caption
             }
+
             is BlockRequest.PDF -> {
                 richTextArrays["pdf.caption"] = block.pdf.caption
             }
+
             is BlockRequest.Divider -> {
                 // Divider blocks don't have rich text content
             }
+
             is BlockRequest.Table -> {
                 // Table blocks don't have rich text content directly
             }
+
             is BlockRequest.TableRow -> {
                 // Extract rich text from table row cells
                 block.tableRow.cells.forEachIndexed { cellIndex, cell ->
                     richTextArrays["tableRow.cells[$cellIndex]"] = cell
                 }
             }
+
             is BlockRequest.Bookmark -> {
                 richTextArrays["bookmark.caption"] = block.bookmark.caption
             }
+
             is BlockRequest.Embed -> {
                 // Embed blocks don't have rich text content
             }
+
             is BlockRequest.ChildPage -> {
                 // Child page blocks don't have rich text content
             }
+
             is BlockRequest.ChildDatabase -> {
                 // Child database blocks don't have rich text content
             }
+
             is BlockRequest.ColumnList -> {
                 // Column list blocks don't have rich text content directly
             }
+
             is BlockRequest.Column -> {
                 // Column blocks don't have rich text content directly
             }
+
             is BlockRequest.Breadcrumb -> {
                 // Breadcrumb blocks don't have rich text content
             }
+
             is BlockRequest.TableOfContents -> {
                 // Table of contents blocks don't have rich text content
             }
+
             is BlockRequest.Equation -> {
                 // Equation blocks don't have rich text content
             }
+
             is BlockRequest.SyncedBlock -> {
                 // Synced blocks don't have rich text content directly
             }
+
             is BlockRequest.Template -> {
                 richTextArrays["template.richText"] = block.template.richText
             }
@@ -562,6 +599,7 @@ class RequestValidator(
                         fixedRequest = fixedRequest.copy(properties = newProperties)
                     }
                 }
+
                 violation.field.contains(".richText[") || violation.field.contains(".title[") -> {
                     val propertyName = violation.field.substringBefore('.')
                     val originalProperty = fixedRequest.properties[propertyName]
@@ -617,6 +655,7 @@ class RequestValidator(
                     val fixedTitle = fixRichTextArray(fixedRequest.title)
                     fixedRequest = fixedRequest.copy(title = fixedTitle)
                 }
+
                 violation.field.startsWith("description[") -> {
                     fixedRequest.description?.let { desc ->
                         val fixedDescription = fixRichTextArray(desc)
@@ -645,6 +684,7 @@ class RequestValidator(
                     null
                 }
             }
+
             is PagePropertyValue.RichTextValue -> {
                 if (violationField.contains("richText[")) {
                     val fixedRichText = fixRichTextArray(property.richText)
@@ -653,7 +693,10 @@ class RequestValidator(
                     null
                 }
             }
-            else -> null
+
+            else -> {
+                null
+            }
         }
 
     /**

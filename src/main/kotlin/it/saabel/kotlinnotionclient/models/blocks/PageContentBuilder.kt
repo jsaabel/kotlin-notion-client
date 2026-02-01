@@ -65,89 +65,106 @@ class PageContentBuilder {
                         errors.add("Paragraph blocks must have content")
                     }
                 }
+
                 is BlockRequest.Heading1 -> {
                     if (block.heading1.richText.isEmpty()) {
                         errors.add("Heading blocks must have content")
                     }
                 }
+
                 is BlockRequest.Heading2 -> {
                     if (block.heading2.richText.isEmpty()) {
                         errors.add("Heading blocks must have content")
                     }
                 }
+
                 is BlockRequest.Heading3 -> {
                     if (block.heading3.richText.isEmpty()) {
                         errors.add("Heading blocks must have content")
                     }
                 }
+
                 is BlockRequest.BulletedListItem -> {
                     if (block.bulletedListItem.richText.isEmpty()) {
                         errors.add("List item blocks must have content")
                     }
                 }
+
                 is BlockRequest.NumberedListItem -> {
                     if (block.numberedListItem.richText.isEmpty()) {
                         errors.add("List item blocks must have content")
                     }
                 }
+
                 is BlockRequest.ToDo -> {
                     if (block.toDo.richText.isEmpty()) {
                         errors.add("To-do blocks must have content")
                     }
                 }
+
                 is BlockRequest.Toggle -> {
                     if (block.toggle.richText.isEmpty()) {
                         errors.add("Toggle blocks must have content")
                     }
                 }
+
                 is BlockRequest.Code -> {
                     if (block.code.richText.isEmpty()) {
                         errors.add("Code blocks must have content")
                     }
                 }
+
                 is BlockRequest.Quote -> {
                     if (block.quote.richText.isEmpty()) {
                         errors.add("Quote blocks must have content")
                     }
                 }
+
                 is BlockRequest.Callout -> {
                     if (block.callout.richText.isEmpty()) {
                         errors.add("Callout blocks must have content")
                     }
                 }
+
                 is BlockRequest.Image -> {
                     // Image blocks need valid file reference - basic validation
                     if (block.image.external == null && block.image.file == null && block.image.fileUpload == null) {
                         errors.add("Image blocks must have a file reference (external, file, or file_upload)")
                     }
                 }
+
                 is BlockRequest.Video -> {
                     // Video blocks need valid file reference - basic validation
                     if (block.video.external == null && block.video.file == null && block.video.fileUpload == null) {
                         errors.add("Video blocks must have a file reference (external, file, or file_upload)")
                     }
                 }
+
                 is BlockRequest.Audio -> {
                     // Audio blocks need valid file reference - basic validation
                     if (block.audio.external == null && block.audio.file == null && block.audio.fileUpload == null) {
                         errors.add("Audio blocks must have a file reference (external, file, or file_upload)")
                     }
                 }
+
                 is BlockRequest.File -> {
                     // File blocks need valid file reference - basic validation
                     if (block.file.external == null && block.file.file == null && block.file.fileUpload == null) {
                         errors.add("File blocks must have a file reference (external, file, or file_upload)")
                     }
                 }
+
                 is BlockRequest.PDF -> {
                     // PDF blocks need valid file reference - basic validation
                     if (block.pdf.external == null && block.pdf.file == null && block.pdf.fileUpload == null) {
                         errors.add("PDF blocks must have a file reference (external, file, or file_upload)")
                     }
                 }
+
                 is BlockRequest.Divider -> {
                     // Dividers don't need validation
                 }
+
                 is BlockRequest.Table -> {
                     // Tables need valid width and at least one row
                     if (block.table.tableWidth <= 0) {
@@ -157,63 +174,75 @@ class PageContentBuilder {
                         errors.add("Tables must have at least one row")
                     }
                 }
+
                 is BlockRequest.TableRow -> {
                     // Table rows need cells
                     if (block.tableRow.cells.isEmpty()) {
                         errors.add("Table rows must have at least one cell")
                     }
                 }
+
                 is BlockRequest.Bookmark -> {
                     // Bookmarks need a URL
                     if (block.bookmark.url.isBlank()) {
                         errors.add("Bookmark blocks must have a URL")
                     }
                 }
+
                 is BlockRequest.Embed -> {
                     // Embeds need a URL
                     if (block.embed.url.isBlank()) {
                         errors.add("Embed blocks must have a URL")
                     }
                 }
+
                 is BlockRequest.ChildPage -> {
                     // Child pages need a title
                     if (block.childPage.title.isBlank()) {
                         errors.add("Child page blocks must have a title")
                     }
                 }
+
                 is BlockRequest.ChildDatabase -> {
                     // Child databases need a title
                     if (block.childDatabase.title.isBlank()) {
                         errors.add("Child database blocks must have a title")
                     }
                 }
+
                 is BlockRequest.ColumnList -> {
                     // Column lists need at least one column
                     if (block.columnList.children.isNullOrEmpty()) {
                         errors.add("Column lists must have at least one column")
                     }
                 }
+
                 is BlockRequest.Column -> {
                     // Columns can have empty content, so no validation needed
                 }
+
                 is BlockRequest.Breadcrumb -> {
                     // Breadcrumbs don't need validation
                 }
+
                 is BlockRequest.TableOfContents -> {
                     // Table of contents don't need validation
                 }
+
                 is BlockRequest.Equation -> {
                     // Equations need an expression
                     if (block.equation.expression.isBlank()) {
                         errors.add("Equation blocks must have an expression")
                     }
                 }
+
                 is BlockRequest.SyncedBlock -> {
                     // Synced blocks either need children (original) or syncedFrom (reference)
                     if (block.syncedBlock.syncedFrom == null && block.syncedBlock.children.isNullOrEmpty()) {
                         errors.add("Synced blocks must have either content or reference to original block")
                     }
                 }
+
                 is BlockRequest.Template -> {
                     // Templates need rich text content
                     if (block.template.richText.isEmpty()) {

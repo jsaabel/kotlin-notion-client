@@ -96,7 +96,7 @@ class RateLimitIntegrationTest :
                 val mockEngine =
                     MockEngine { request ->
                         when (request.url.encodedPath) {
-                            "/v1/pages/test-page-1" ->
+                            "/v1/pages/test-page-1" -> {
                                 respond(
                                     content = TestFixtures.Pages.retrievePageAsString(),
                                     status = HttpStatusCode.OK,
@@ -108,7 +108,9 @@ class RateLimitIntegrationTest :
                                             "x-ratelimit-reset" to listOf("${System.currentTimeMillis() / 1000 + 60}"),
                                         ),
                                 )
-                            "/v1/pages/test-page-2" ->
+                            }
+
+                            "/v1/pages/test-page-2" -> {
                                 respond(
                                     content = TestFixtures.Pages.retrievePageAsString(),
                                     status = HttpStatusCode.OK,
@@ -120,7 +122,11 @@ class RateLimitIntegrationTest :
                                             "x-ratelimit-reset" to listOf("${System.currentTimeMillis() / 1000 + 60}"),
                                         ),
                                 )
-                            else -> error("Unexpected request: ${request.url}")
+                            }
+
+                            else -> {
+                                error("Unexpected request: ${request.url}")
+                            }
                         }
                     }
 
@@ -260,7 +266,7 @@ class RateLimitIntegrationTest :
                     MockEngine { request ->
                         requestCount++
                         when (request.url.encodedPath) {
-                            "/v1/pages/test-page-1" ->
+                            "/v1/pages/test-page-1" -> {
                                 respond(
                                     content = TestFixtures.Pages.retrievePageAsString(),
                                     status = HttpStatusCode.OK,
@@ -272,7 +278,9 @@ class RateLimitIntegrationTest :
                                             "x-ratelimit-reset" to listOf("${System.currentTimeMillis() / 1000 + 60}"),
                                         ),
                                 )
-                            "/v1/pages/test-page-2" ->
+                            }
+
+                            "/v1/pages/test-page-2" -> {
                                 respond(
                                     content = TestFixtures.Pages.retrievePageAsString(),
                                     status = HttpStatusCode.OK,
@@ -284,7 +292,9 @@ class RateLimitIntegrationTest :
                                             "x-ratelimit-reset" to listOf("${System.currentTimeMillis() / 1000 + 60}"),
                                         ),
                                 )
-                            "/v1/pages/test-page-3" ->
+                            }
+
+                            "/v1/pages/test-page-3" -> {
                                 respond(
                                     content = TestFixtures.Pages.retrievePageAsString(),
                                     status = HttpStatusCode.OK,
@@ -296,7 +306,11 @@ class RateLimitIntegrationTest :
                                             "x-ratelimit-reset" to listOf("${System.currentTimeMillis() / 1000 + 60}"),
                                         ),
                                 )
-                            else -> error("Unexpected request: ${request.url}")
+                            }
+
+                            else -> {
+                                error("Unexpected request: ${request.url}")
+                            }
                         }
                     }
 

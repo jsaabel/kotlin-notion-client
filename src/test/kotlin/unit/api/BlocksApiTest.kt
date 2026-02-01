@@ -65,7 +65,9 @@ class BlocksApiTest :
                         block.heading2.color shouldBe Color.DEFAULT
                     }
 
-                    else -> throw AssertionError("Expected Heading2 block")
+                    else -> {
+                        throw AssertionError("Expected Heading2 block")
+                    }
                 }
             }
 
@@ -213,7 +215,9 @@ class BlocksApiTest :
                             .color shouldBe Color.GREEN
                     }
 
-                    else -> throw AssertionError("Expected Heading2 block")
+                    else -> {
+                        throw AssertionError("Expected Heading2 block")
+                    }
                 }
             }
 

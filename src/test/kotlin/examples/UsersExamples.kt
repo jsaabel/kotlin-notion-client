@@ -86,10 +86,14 @@ class UsersExamples :
                                 println("Email: $email")
                             }
                         }
+
                         UserType.BOT -> {
                             println("Bot: ${user.name}")
                         }
-                        else -> println("Unknown user type")
+
+                        else -> {
+                            println("Unknown user type")
+                        }
                     }
                 } catch (e: NotionException.ApiError) {
                     if (e.status == 403) {
@@ -165,13 +169,17 @@ class UsersExamples :
                             val email = user.person?.email ?: "Email not available"
                             println("Email: $email")
                         }
+
                         UserType.BOT -> {
                             println("This is a bot integration")
                             user.bot?.owner?.let { owner ->
                                 println("Owner type: ${owner.type}")
                             }
                         }
-                        null -> println("User type not specified")
+
+                        null -> {
+                            println("User type not specified")
+                        }
                     }
                 } catch (e: NotionException.ApiError) {
                     if (e.status == 403) {
@@ -197,11 +205,15 @@ class UsersExamples :
                                 println("Integration lacks user capabilities")
                                 null
                             }
+
                             404 -> {
                                 println("User not found")
                                 null
                             }
-                            else -> throw e
+
+                            else -> {
+                                throw e
+                            }
                         }
                     }
 

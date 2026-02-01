@@ -85,9 +85,9 @@ class PagePropertyUnknownTypeTest :
             // Verify button property was handled as Unknown
             val buttonProperty = page.properties["Action"]
             buttonProperty shouldNotBe null
-            buttonProperty.shouldBeInstanceOf<PageProperty.Unknown>()
-            buttonProperty!!.type shouldBe "button"
-            buttonProperty.id shouldBe "button-prop-id"
+            val unknownProp = buttonProperty.shouldBeInstanceOf<PageProperty.Unknown>()
+            unknownProp.type shouldBe "button"
+            unknownProp.id shouldBe "button-prop-id"
 
             // Verify title property still works normally
             val titleProperty = page.properties["Title"]
@@ -142,8 +142,8 @@ class PagePropertyUnknownTypeTest :
 
             // Verify known type still works
             val priceProperty = page.properties["Price"]
-            priceProperty.shouldBeInstanceOf<PageProperty.Number>()
-            (priceProperty as PageProperty.Number).number shouldBe 42.0
+            val numberProp = priceProperty.shouldBeInstanceOf<PageProperty.Number>()
+            numberProp.number shouldBe 42.0
         }
 
         "Should preserve raw JSON in Unknown property for inspection" {

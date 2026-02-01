@@ -463,24 +463,29 @@ class RelationBuilder(
      */
     fun build(): RelationConfiguration =
         when (configurationType) {
-            RelationConfigurationType.Single ->
+            RelationConfigurationType.Single -> {
                 RelationConfiguration.singleProperty(
                     targetDatabaseId,
                     targetDataSourceId,
                 )
-            RelationConfigurationType.Dual ->
+            }
+
+            RelationConfigurationType.Dual -> {
                 RelationConfiguration.dualProperty(
                     targetDatabaseId,
                     targetDataSourceId,
                     syncedPropertyName!!,
                     syncedPropertyId,
                 )
-            RelationConfigurationType.Synced ->
+            }
+
+            RelationConfigurationType.Synced -> {
                 RelationConfiguration.synced(
                     targetDatabaseId,
                     targetDataSourceId,
                     syncedPropertyName!!,
                 )
+            }
         }
 
     private enum class RelationConfigurationType {

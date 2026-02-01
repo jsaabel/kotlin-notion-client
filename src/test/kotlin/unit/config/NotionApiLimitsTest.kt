@@ -230,7 +230,8 @@ class NotionApiLimitsTest :
                 chunks.forEachIndexed { index, chunk ->
                     if (index == chunks.lastIndex) {
                         // Last chunk may be smaller
-                        chunk.size shouldBe (largeRichTextArray.size % 25).takeIf { it != 0 } ?: 25
+                        val remainder = largeRichTextArray.size % 25
+                        chunk.size shouldBe if (remainder == 0) 25 else remainder
                     } else {
                         chunk.size shouldBe 25
                     }

@@ -191,6 +191,7 @@ class CreateFileUploadRequestBuilder {
                     throw IllegalStateException("Number of parts is required for multi-part uploads")
                 }
             }
+
             FileUploadMode.EXTERNAL_URL -> {
                 if (filenameValue == null) {
                     throw IllegalStateException("Filename is required for external URL uploads")
@@ -199,6 +200,7 @@ class CreateFileUploadRequestBuilder {
                     throw IllegalStateException("External URL is required for external URL uploads")
                 }
             }
+
             FileUploadMode.SINGLE_PART -> {
                 // Single-part uploads are more flexible with requirements
                 if (numberOfPartsValue != null) {
