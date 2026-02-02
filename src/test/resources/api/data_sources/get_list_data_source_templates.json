@@ -1,0 +1,22 @@
+{
+  "object": "list",
+  "templates": [
+    {
+      "id": "12345678-1234-1234-1234-123456789abc",
+      "name": "Project Template",
+      "is_default": true
+    },
+    {
+      "id": "87654321-4321-4321-4321-cba987654321",
+      "name": "Meeting Notes Template",
+      "is_default": false
+    },
+    {
+      "id": "abcdef12-3456-7890-abcd-ef1234567890",
+      "name": "Task Template",
+      "is_default": false
+    }
+  ],
+  "has_more": false,
+  "next_cursor": null
+}

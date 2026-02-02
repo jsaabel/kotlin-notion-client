@@ -102,6 +102,8 @@ object TestFixtures {
 
         fun queryDataSource() = loadSampleResponse("data_sources", "post_query_a_data_source")
 
+        fun listTemplates() = loadSampleResponse("data_sources", "get_list_data_source_templates")
+
         fun retrieveDataSourceAsString() = loadSampleResponseAsString("data_sources", "get_retrieve_a_data_source")
 
         fun createDataSourceAsString() = loadSampleResponseAsString("data_sources", "post_create_a_data_source")
@@ -109,6 +111,8 @@ object TestFixtures {
         fun updateDataSourceAsString() = loadSampleResponseAsString("data_sources", "patch_update_a_data_source")
 
         fun queryDataSourceAsString() = loadSampleResponseAsString("data_sources", "post_query_a_data_source")
+
+        fun listTemplatesAsString() = loadSampleResponseAsString("data_sources", "get_list_data_source_templates")
     }
 
     // Page-specific helpers (2025-09-03 API)

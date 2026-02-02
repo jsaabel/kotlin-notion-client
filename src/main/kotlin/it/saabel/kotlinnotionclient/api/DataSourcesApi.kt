@@ -19,6 +19,8 @@ import it.saabel.kotlinnotionclient.models.datasources.DataSource
 import it.saabel.kotlinnotionclient.models.datasources.DataSourceQueryBuilder
 import it.saabel.kotlinnotionclient.models.datasources.DataSourceQueryRequest
 import it.saabel.kotlinnotionclient.models.datasources.DataSourceQueryResponse
+import it.saabel.kotlinnotionclient.models.datasources.Template
+import it.saabel.kotlinnotionclient.models.datasources.TemplatesResponse
 import it.saabel.kotlinnotionclient.models.datasources.UpdateDataSourceRequest
 import it.saabel.kotlinnotionclient.models.datasources.UpdateDataSourceRequestBuilder
 import it.saabel.kotlinnotionclient.models.datasources.createDataSourceRequest
@@ -337,6 +339,108 @@ class DataSourcesApi(
 
                 if (response.status.isSuccess()) {
                     response.body<DataSource>()
+                } else {
+                    val errorBody =
+                        try {
+                            response.body<String>()
+                        } catch (e: Exception) {
+                            "Could not read error response body"
+                        }
+
+                    throw NotionException.ApiError(
+                        code = response.status.value.toString(),
+                        status = response.status.value,
+                        details = "HTTP ${response.status.value}: ${response.status.description}. Response: $errorBody",
+                    )
+                }
+            } catch (e: NotionException) {
+                throw e // Re-throw our own exceptions
+            } catch (e: Exception) {
+                throw NotionException.NetworkError(e)
+            }
+        }
+
+    /**
+     * Lists available templates for a data source.
+     *
+     * Templates allow creating pages with pre-populated content and structure.
+     * This method automatically handles pagination and returns all templates.
+     *
+     * Example usage:
+     * ```kotlin
+     * val templates = client.dataSources.listTemplates("data-source-id")
+     * val defaultTemplate = templates.find { it.isDefault }
+     * ```
+     *
+     * @param dataSourceId The ID of the data source
+     * @param nameFilter Optional substring to filter templates by name (case-insensitive)
+     * @return List of all templates for the data source
+     * @throws NotionException.NetworkError for network-related failures
+     * @throws NotionException.ApiError for API-related errors (4xx, 5xx responses)
+     * @throws NotionException.AuthenticationError for authentication failures
+     */
+    suspend fun listTemplates(
+        dataSourceId: String,
+        nameFilter: String? = null,
+    ): List<Template> {
+        val allTemplates = mutableListOf<Template>()
+        var currentCursor: String? = null
+        var pageCount = 0
+
+        do {
+            val response = listTemplatesSinglePage(dataSourceId, nameFilter, currentCursor)
+            allTemplates.addAll(response.templates)
+
+            currentCursor = response.nextCursor
+            pageCount++
+
+            // Safety check to prevent infinite loops
+            val maxPages = 100 // Reasonable limit for templates
+            if (pageCount >= maxPages) {
+                throw NotionException.ApiError(
+                    code = "PAGINATION_LIMIT_EXCEEDED",
+                    status = 500,
+                    details =
+                        "Template listing exceeded $maxPages pages. " +
+                            "This may indicate an infinite loop or an issue with the API.",
+                )
+            }
+        } while (response.hasMore)
+
+        return allTemplates
+    }
+
+    /**
+     * Lists a single page of templates for a data source.
+     *
+     * This is the low-level method that handles a single API request. Most users should
+     * use the `listTemplates` method instead, which automatically handles pagination.
+     *
+     * @param dataSourceId The ID of the data source
+     * @param nameFilter Optional substring to filter templates by name
+     * @param startCursor Optional pagination cursor
+     * @return TemplatesResponse containing a single page of results
+     */
+    private suspend fun listTemplatesSinglePage(
+        dataSourceId: String,
+        nameFilter: String? = null,
+        startCursor: String? = null,
+    ): TemplatesResponse =
+        httpClient.executeWithRateLimit {
+            try {
+                val response: HttpResponse =
+                    httpClient.get("${config.baseUrl}/data_sources/$dataSourceId/templates") {
+                        if (nameFilter != null) {
+                            url.parameters.append("name", nameFilter)
+                        }
+                        if (startCursor != null) {
+                            url.parameters.append("start_cursor", startCursor)
+                        }
+                        url.parameters.append("page_size", NotionApiLimits.Response.MAX_PAGE_SIZE.toString())
+                    }
+
+                if (response.status.isSuccess()) {
+                    response.body<TemplatesResponse>()
                 } else {
                     val errorBody =
                         try {

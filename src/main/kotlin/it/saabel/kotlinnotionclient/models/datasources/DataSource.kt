@@ -64,3 +64,37 @@ data class DataSourceRef(
     @SerialName("name")
     val name: String,
 )
+
+/**
+ * Represents a template available for a data source.
+ *
+ * Templates allow creating pages with pre-populated content and structure.
+ * Template application is asynchronous - the API returns immediately with a blank page,
+ * and content is populated in the background.
+ */
+@Serializable
+data class Template(
+    @SerialName("id")
+    val id: String,
+    @SerialName("name")
+    val name: String,
+    @SerialName("is_default")
+    val isDefault: Boolean,
+)
+
+/**
+ * Response from listing templates for a data source.
+ *
+ * Returned by GET /v1/data_sources/{data_source_id}/templates
+ */
+@Serializable
+data class TemplatesResponse(
+    @SerialName("object")
+    val objectType: String = "list",
+    @SerialName("templates")
+    val templates: List<Template>,
+    @SerialName("has_more")
+    val hasMore: Boolean,
+    @SerialName("next_cursor")
+    val nextCursor: String? = null,
+)

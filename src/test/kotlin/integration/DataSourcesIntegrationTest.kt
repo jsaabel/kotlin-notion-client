@@ -222,6 +222,71 @@ class DataSourcesIntegrationTest :
                 }
             }
 
+            "List templates for a data source" {
+                val token = System.getenv("NOTION_API_TOKEN")
+                val parentPageId = System.getenv("NOTION_TEST_PAGE_ID")
+
+                val client = NotionClient(NotionConfig(apiToken = token))
+
+                try {
+                    println("📊 Creating database for template test...")
+                    val database =
+                        client.databases.create {
+                            parent.page(parentPageId)
+                            title("Template Test Database")
+                            properties {
+                                title("Name")
+                                richText("Description")
+                            }
+                        }
+
+                    println("✅ Database created: ${database.url}")
+
+                    delay(1000)
+
+                    val retrievedDb = client.databases.retrieve(database.id)
+                    val dataSourceId = retrievedDb.dataSources.first().id
+
+                    println("🔍 Listing templates for data source...")
+                    val templates = client.dataSources.listTemplates(dataSourceId)
+
+                    // Templates may or may not exist - just verify the call succeeds
+                    templates.shouldNotBeNull()
+                    println("✅ Template listing succeeded: found ${templates.size} template(s)")
+
+                    if (templates.isNotEmpty()) {
+                        val defaultTemplate = templates.find { it.isDefault }
+                        if (defaultTemplate != null) {
+                            println("   📋 Default template: ${defaultTemplate.name} (${defaultTemplate.id})")
+                        }
+                        templates.forEach { template ->
+                            println("   📄 ${template.name} (${template.id}) - default: ${template.isDefault}")
+                        }
+                    } else {
+                        println("   ℹ️  No templates found for this data source")
+                    }
+
+                    // Test with name filter
+                    println("\n🔍 Testing name filter...")
+                    val filteredTemplates = client.dataSources.listTemplates(dataSourceId, nameFilter = "test")
+                    filteredTemplates.shouldNotBeNull()
+                    println("✅ Template listing with filter succeeded: found ${filteredTemplates.size} template(s)")
+
+                    if (shouldCleanupAfterTest()) {
+                        println("\n🧹 Cleaning up test database...")
+                        client.databases.archive(database.id)
+                        println("✅ Cleanup complete")
+                    } else {
+                        println("\n⚠️ Skipping cleanup (NOTION_CLEANUP_AFTER_TEST=false)")
+                        println("📌 Database URL: ${database.url}")
+                        println("📌 Database ID: ${database.id}")
+                        println("📌 Data Source ID: $dataSourceId")
+                    }
+                } finally {
+                    client.close()
+                }
+            }
+
             "Data source query with filters" {
                 val token = System.getenv("NOTION_API_TOKEN")
                 val parentPageId = System.getenv("NOTION_TEST_PAGE_ID")
