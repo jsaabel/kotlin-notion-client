@@ -57,6 +57,8 @@ class CreatePageRequestBuilder {
     private var iconValue: PageIcon? = null
     private var coverValue: PageCover? = null
     private var children: List<BlockRequest>? = null
+    private var templateValue: PageTemplate? = null
+    private var positionValue: PagePosition? = null
 
     /**
      * Builder for parent configuration.
@@ -72,6 +74,16 @@ class CreatePageRequestBuilder {
      * Builder for cover configuration.
      */
     val cover = CoverBuilder()
+
+    /**
+     * Builder for template configuration.
+     */
+    val template = TemplateBuilder()
+
+    /**
+     * Builder for position configuration.
+     */
+    val position = PositionBuilder()
 
     /**
      * Sets the page title.
@@ -116,7 +128,7 @@ class CreatePageRequestBuilder {
      * Builds the CreatePageRequest.
      *
      * @return The configured CreatePageRequest
-     * @throws IllegalStateException if parent is not set
+     * @throws IllegalStateException if parent is not set or if template and children are both specified
      */
     fun build(): CreatePageRequest {
         require(parentValue != null) { "Parent must be specified" }
@@ -132,12 +144,22 @@ class CreatePageRequestBuilder {
             )
         }
 
+        // Validate that template and children are mutually exclusive
+        if (templateValue != null && children != null) {
+            throw IllegalStateException(
+                "Template and children are mutually exclusive. " +
+                    "When using a template, do not specify children - the template content will be applied.",
+            )
+        }
+
         return CreatePageRequest(
             parent = parentValue!!,
             properties = properties,
             icon = iconValue,
             cover = coverValue,
             children = children,
+            template = templateValue,
+            position = positionValue,
         )
     }
 
@@ -252,6 +274,69 @@ class CreatePageRequestBuilder {
         ) {
             this@CreatePageRequestBuilder.coverValue =
                 PageCover.File(file = NotionFile(url = url, expiryTime = expiryTime))
+        }
+    }
+
+    /**
+     * Builder for template configuration.
+     *
+     * Templates allow creating pages from predefined blueprints in the data source.
+     * Note: When using a template, the children (content) parameter is prohibited.
+     */
+    @PageRequestDslMarker
+    inner class TemplateBuilder {
+        /**
+         * Creates the page with no template content.
+         */
+        fun none() {
+            this@CreatePageRequestBuilder.templateValue = PageTemplate.None
+        }
+
+        /**
+         * Uses the data source's default template.
+         */
+        fun default() {
+            this@CreatePageRequestBuilder.templateValue = PageTemplate.Default
+        }
+
+        /**
+         * Uses a specific template by ID.
+         *
+         * @param templateId The ID of the template page to use
+         */
+        fun byId(templateId: String) {
+            this@CreatePageRequestBuilder.templateValue = PageTemplate.TemplateId(templateId = templateId)
+        }
+    }
+
+    /**
+     * Builder for position configuration.
+     *
+     * Controls where the new page is placed within its parent.
+     */
+    @PageRequestDslMarker
+    inner class PositionBuilder {
+        /**
+         * Places the page after a specific block.
+         *
+         * @param blockId The ID of the block to place the page after
+         */
+        fun afterBlock(blockId: String) {
+            this@CreatePageRequestBuilder.positionValue = PagePosition.AfterBlock(afterBlock = blockId)
+        }
+
+        /**
+         * Places the page at the start of the parent.
+         */
+        fun pageStart() {
+            this@CreatePageRequestBuilder.positionValue = PagePosition.PageStart
+        }
+
+        /**
+         * Places the page at the end of the parent.
+         */
+        fun pageEnd() {
+            this@CreatePageRequestBuilder.positionValue = PagePosition.PageEnd
         }
     }
 }

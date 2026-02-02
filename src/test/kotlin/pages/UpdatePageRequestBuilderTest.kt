@@ -3,6 +3,7 @@ package it.saabel.kotlinnotionclient.models.pages
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
+import io.kotest.matchers.types.shouldBeInstanceOf
 
 class UpdatePageRequestBuilderTest :
     StringSpec({
@@ -134,5 +135,113 @@ class UpdatePageRequestBuilderTest :
             multiSelectValue.multiSelect.forEach { option ->
                 option.color shouldBe null // No colors by default to avoid conflicts
             }
+        }
+
+        "should build update request with lock" {
+            val request =
+                updatePageRequest {
+                    lock()
+                }
+
+            request.isLocked shouldBe true
+        }
+
+        "should build update request with lock(true)" {
+            val request =
+                updatePageRequest {
+                    lock(true)
+                }
+
+            request.isLocked shouldBe true
+        }
+
+        "should build update request with unlock" {
+            val request =
+                updatePageRequest {
+                    unlock()
+                }
+
+            request.isLocked shouldBe false
+        }
+
+        "should build update request with lock(false)" {
+            val request =
+                updatePageRequest {
+                    lock(false)
+                }
+
+            request.isLocked shouldBe false
+        }
+
+        "should build update request with eraseContent" {
+            val request =
+                updatePageRequest {
+                    eraseContent()
+                }
+
+            request.eraseContent shouldBe true
+        }
+
+        "should build update request with eraseContent(true)" {
+            val request =
+                updatePageRequest {
+                    eraseContent(true)
+                }
+
+            request.eraseContent shouldBe true
+        }
+
+        "should build update request with eraseContent(false)" {
+            val request =
+                updatePageRequest {
+                    eraseContent(false)
+                }
+
+            request.eraseContent shouldBe false
+        }
+
+        "should build update request with default template" {
+            val request =
+                updatePageRequest {
+                    template.default()
+                }
+
+            request.template shouldBe PageTemplate.Default
+        }
+
+        "should build update request with template by ID" {
+            val request =
+                updatePageRequest {
+                    template.byId("template-123")
+                }
+
+            request.template.shouldBeInstanceOf<PageTemplate.TemplateId>().templateId shouldBe "template-123"
+        }
+
+        "should have null values for new fields by default" {
+            val request = updatePageRequest { }
+
+            request.isLocked shouldBe null
+            request.template shouldBe null
+            request.eraseContent shouldBe null
+        }
+
+        "should build comprehensive update request with all new fields" {
+            val request =
+                updatePageRequest {
+                    properties {
+                        checkbox("Done", true)
+                    }
+                    lock()
+                    eraseContent()
+                    template.default()
+                    archive()
+                }
+
+            request.properties shouldNotBe null
+            request.isLocked shouldBe true
+            request.eraseContent shouldBe true
+            request.template shouldBe PageTemplate.Default
+            request.archived shouldBe true
         }
     })

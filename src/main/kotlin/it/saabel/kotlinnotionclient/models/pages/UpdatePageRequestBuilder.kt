@@ -49,6 +49,9 @@ class UpdatePageRequestBuilder {
     private var iconValue: PageIcon? = null
     private var coverValue: PageCover? = null
     private var archivedValue: Boolean? = null
+    private var isLockedValue: Boolean? = null
+    private var templateValue: PageTemplate? = null
+    private var eraseContentValue: Boolean? = null
 
     /**
      * Builder for icon configuration.
@@ -59,6 +62,11 @@ class UpdatePageRequestBuilder {
      * Builder for cover configuration.
      */
     val cover = CoverBuilder()
+
+    /**
+     * Builder for template configuration.
+     */
+    val template = TemplateBuilder()
 
     /**
      * Configures page properties to update using the PagePropertiesBuilder DSL.
@@ -84,6 +92,34 @@ class UpdatePageRequestBuilder {
     }
 
     /**
+     * Locks the page from editing in the Notion app UI.
+     *
+     * @param locked Whether to lock (true) or unlock (false) the page. Defaults to true.
+     */
+    fun lock(locked: Boolean = true) {
+        isLockedValue = locked
+    }
+
+    /**
+     * Unlocks the page for editing in the Notion app UI.
+     */
+    fun unlock() {
+        isLockedValue = false
+    }
+
+    /**
+     * Erases all existing content from the page.
+     *
+     * **Warning**: This is destructive and irreversible.
+     * When used with a template, the template content replaces existing content.
+     *
+     * @param erase Whether to erase content. Defaults to true.
+     */
+    fun eraseContent(erase: Boolean = true) {
+        eraseContentValue = erase
+    }
+
+    /**
      * Builds the UpdatePageRequest.
      *
      * @return The configured UpdatePageRequest
@@ -94,6 +130,9 @@ class UpdatePageRequestBuilder {
             icon = iconValue,
             cover = coverValue,
             archived = archivedValue,
+            isLocked = isLockedValue,
+            template = templateValue,
+            eraseContent = eraseContentValue,
         )
 
     /**
@@ -180,6 +219,28 @@ class UpdatePageRequestBuilder {
          */
         fun remove() {
             this@UpdatePageRequestBuilder.coverValue = null
+        }
+    }
+
+    /**
+     * Builder for template configuration.
+     */
+    @UpdatePageRequestDslMarker
+    inner class TemplateBuilder {
+        /**
+         * Uses the data source's default template.
+         */
+        fun default() {
+            this@UpdatePageRequestBuilder.templateValue = PageTemplate.Default
+        }
+
+        /**
+         * Uses a specific template by ID.
+         *
+         * @param templateId The ID of the template page to use
+         */
+        fun byId(templateId: String) {
+            this@UpdatePageRequestBuilder.templateValue = PageTemplate.TemplateId(templateId = templateId)
         }
     }
 }

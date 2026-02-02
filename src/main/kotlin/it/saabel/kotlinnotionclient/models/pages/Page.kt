@@ -43,6 +43,8 @@ data class Page(
     val cover: PageCover? = null,
     @SerialName("in_trash")
     val inTrash: Boolean = false,
+    @SerialName("is_locked")
+    val isLocked: Boolean = false,
 ) : NotionObject {
     @SerialName("object")
     override val objectType: String = "page"

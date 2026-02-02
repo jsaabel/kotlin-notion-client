@@ -18,6 +18,8 @@ import it.saabel.kotlinnotionclient.exceptions.NotionException
 import it.saabel.kotlinnotionclient.models.pages.ArchivePageRequest
 import it.saabel.kotlinnotionclient.models.pages.CreatePageRequest
 import it.saabel.kotlinnotionclient.models.pages.CreatePageRequestBuilder
+import it.saabel.kotlinnotionclient.models.pages.MovePageParent
+import it.saabel.kotlinnotionclient.models.pages.MovePageRequest
 import it.saabel.kotlinnotionclient.models.pages.Page
 import it.saabel.kotlinnotionclient.models.pages.PagePropertyItemResponse
 import it.saabel.kotlinnotionclient.models.pages.PropertyItem
@@ -340,6 +342,100 @@ class PagesApi(
                 throw NotionException.NetworkError(e)
             }
         }
+
+    /**
+     * Moves a page to a new parent location.
+     *
+     * The page being moved must be a regular Notion page, not a database.
+     * The integration must have appropriate permissions on both source and destination.
+     *
+     * @param pageId The ID of the page to move
+     * @param parent The new parent (page or data source)
+     * @return Page object representing the moved page
+     * @throws NotionException.NetworkError for network-related failures
+     * @throws NotionException.ApiError for API-related errors (4xx, 5xx responses)
+     * @throws NotionException.AuthenticationError for authentication failures
+     */
+    suspend fun move(
+        pageId: String,
+        parent: MovePageParent,
+    ): Page =
+        httpClient.executeWithRateLimit {
+            try {
+                val request = MovePageRequest(parent = parent)
+
+                val response: HttpResponse =
+                    httpClient.post("${config.baseUrl}/pages/$pageId/move") {
+                        contentType(ContentType.Application.Json)
+                        setBody(request)
+                    }
+
+                if (response.status.isSuccess()) {
+                    response.body<Page>()
+                } else {
+                    val errorBody =
+                        try {
+                            response.body<String>()
+                        } catch (e: Exception) {
+                            "Could not read error response body"
+                        }
+
+                    throw NotionException.ApiError(
+                        code = response.status.value.toString(),
+                        status = response.status.value,
+                        details = "HTTP ${response.status.value}: ${response.status.description}. Response: $errorBody",
+                    )
+                }
+            } catch (e: NotionException) {
+                throw e // Re-throw our own exceptions
+            } catch (e: ClientRequestException) {
+                // Handle HTTP client errors (4xx)
+                val errorBody =
+                    try {
+                        e.response.body<String>()
+                    } catch (ex: Exception) {
+                        "Could not read error response body"
+                    }
+
+                throw NotionException.ApiError(
+                    code =
+                        e.response.status.value
+                            .toString(),
+                    status = e.response.status.value,
+                    details = "HTTP ${e.response.status.value}: ${e.response.status.description}. Response: $errorBody",
+                )
+            } catch (e: Exception) {
+                throw NotionException.NetworkError(e)
+            }
+        }
+
+    /**
+     * Moves a page to be a child of another page.
+     *
+     * Convenience method for moving to a page parent.
+     *
+     * @param pageId The ID of the page to move
+     * @param parentPageId The ID of the new parent page
+     * @return Page object representing the moved page
+     */
+    suspend fun moveToPage(
+        pageId: String,
+        parentPageId: String,
+    ): Page = move(pageId, MovePageParent.PageParent(pageId = parentPageId))
+
+    /**
+     * Moves a page into a data source (database).
+     *
+     * Convenience method for moving to a data source parent.
+     *
+     * @param pageId The ID of the page to move
+     * @param dataSourceId The ID of the target data source
+     * @return Page object representing the moved page
+     */
+    suspend fun moveToDataSource(
+        pageId: String,
+        dataSourceId: String,
+    ): Page = move(pageId, MovePageParent.DataSourceParent(dataSourceId = dataSourceId))
 
     /**
      * Retrieves all items for a specific page property that may be paginated.

@@ -3,9 +3,13 @@ package unit.dsl
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.maps.shouldContainKey
+import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
+import io.kotest.matchers.types.shouldBeInstanceOf
 import it.saabel.kotlinnotionclient.models.base.Parent
+import it.saabel.kotlinnotionclient.models.pages.PagePosition
+import it.saabel.kotlinnotionclient.models.pages.PageTemplate
 import it.saabel.kotlinnotionclient.models.pages.createPageRequest
 
 // TODO: Adjust/replace following API version update
@@ -151,6 +155,100 @@ class PageRequestBuilderTest :
 
                 request.properties shouldContainKey "title"
                 // Should not throw exception
+            }
+        }
+
+        describe("template configuration") {
+            it("should set template to none") {
+                val request =
+                    createPageRequest {
+                        parent.dataSource("test-ds-id")
+                        template.none()
+                    }
+
+                request.template shouldBe PageTemplate.None
+            }
+
+            it("should set template to default") {
+                val request =
+                    createPageRequest {
+                        parent.dataSource("test-ds-id")
+                        template.default()
+                    }
+
+                request.template shouldBe PageTemplate.Default
+            }
+
+            it("should set template by ID") {
+                val request =
+                    createPageRequest {
+                        parent.dataSource("test-ds-id")
+                        template.byId("template-123")
+                    }
+
+                request.template.shouldBeInstanceOf<PageTemplate.TemplateId>().templateId shouldBe "template-123"
+            }
+
+            it("should have null template when not specified") {
+                val request =
+                    createPageRequest {
+                        parent.page("test-page-id")
+                    }
+
+                request.template.shouldBeNull()
+            }
+
+            it("should fail when both template and children are specified") {
+                shouldThrow<IllegalStateException> {
+                    createPageRequest {
+                        parent.dataSource("test-ds-id")
+                        template.default()
+                        content {
+                            paragraph("This should cause an error")
+                        }
+                    }
+                }.message shouldContain "Template and children are mutually exclusive"
+            }
+        }
+
+        describe("position configuration") {
+            it("should set position after block") {
+                val request =
+                    createPageRequest {
+                        parent.dataSource("test-ds-id")
+                        position.afterBlock("block-123")
+                    }
+
+                request.position.shouldBeInstanceOf<PagePosition.AfterBlock>().afterBlock shouldBe "block-123"
+            }
+
+            it("should set position at page start") {
+                val request =
+                    createPageRequest {
+                        parent.dataSource("test-ds-id")
+                        position.pageStart()
+                    }
+
+                request.position shouldBe PagePosition.PageStart
+            }
+
+            it("should set position at page end") {
+                val request =
+                    createPageRequest {
+                        parent.dataSource("test-ds-id")
+                        position.pageEnd()
+                    }
+
+                request.position shouldBe PagePosition.PageEnd
+            }
+
+            it("should have null position when not specified") {
+                val request =
+                    createPageRequest {
+                        parent.page("test-page-id")
+                    }
+
+                request.position.shouldBeNull()
             }
         }
 

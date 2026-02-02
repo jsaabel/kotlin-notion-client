@@ -15,6 +15,9 @@ import kotlinx.serialization.Serializable
  * This model represents the data structure required to create a page
  * in Notion. Pages can be created as children of other pages or as
  * entries in databases.
+ *
+ * Note: When using templates, the children parameter is prohibited.
+ * Template application occurs asynchronously.
  */
 @Serializable
 data class CreatePageRequest(
@@ -28,6 +31,10 @@ data class CreatePageRequest(
     val cover: PageCover? = null,
     @SerialName("children")
     val children: List<BlockRequest>? = null,
+    @SerialName("template")
+    val template: PageTemplate? = null,
+    @SerialName("position")
+    val position: PagePosition? = null,
 )
 
 /**
@@ -44,7 +51,8 @@ data class ArchivePageRequest(
 /**
  * Request model for updating page properties.
  *
- * This allows updating properties, icon, cover, and archived status.
+ * This allows updating properties, icon, cover, archived status, lock state,
+ * and optionally applying templates or erasing content.
  */
 @Serializable
 data class UpdatePageRequest(
@@ -56,6 +64,12 @@ data class UpdatePageRequest(
     val cover: PageCover? = null,
     @SerialName("archived")
     val archived: Boolean? = null,
+    @SerialName("is_locked")
+    val isLocked: Boolean? = null,
+    @SerialName("template")
+    val template: PageTemplate? = null,
+    @SerialName("erase_content")
+    val eraseContent: Boolean? = null,
 )
 
 /**
@@ -444,3 +458,100 @@ data class UploadedFileUrl(
     @SerialName("expiry_time")
     val expiryTime: String? = null,
 )
+
+/**
+ * Request model for moving a page to a new parent.
+ *
+ * Pages can be moved to another page or into a database (data source).
+ */
+@Serializable
+data class MovePageRequest(
+    @SerialName("parent")
+    val parent: MovePageParent,
+)
+
+/**
+ * Parent specification for move page requests.
+ *
+ * Supports moving to a page or a data source (database).
+ */
+@Serializable
+sealed class MovePageParent {
+    @Serializable
+    @SerialName("page_id")
+    data class PageParent(
+        @SerialName("page_id")
+        val pageId: String,
+    ) : MovePageParent()
+
+    @Serializable
+    @SerialName("data_source_id")
+    data class DataSourceParent(
+        @SerialName("data_source_id")
+        val dataSourceId: String,
+    ) : MovePageParent()
+}
+
+/**
+ * Template specification for page creation and updates.
+ *
+ * Templates allow creating pages from predefined blueprints.
+ */
+@Serializable
+sealed class PageTemplate {
+    /**
+     * No template - page is created with no preset content.
+     */
+    @Serializable
+    @SerialName("none")
+    data object None : PageTemplate()
+
+    /**
+     * Use the data source's default template.
+     */
+    @Serializable
+    @SerialName("default")
+    data object Default : PageTemplate()
+
+    /**
+     * Use a specific template by ID.
+     */
+    @Serializable
+    @SerialName("template_id")
+    data class TemplateId(
+        @SerialName("template_id")
+        val templateId: String,
+    ) : PageTemplate()
+}
+
+/**
+ * Position specification for page creation.
+ *
+ * Controls where a new page is placed within its parent.
+ */
+@Serializable
+sealed class PagePosition {
+    /**
+     * Place the page after a specific block.
+     */
+    @Serializable
+    @SerialName("after_block")
+    data class AfterBlock(
+        @SerialName("after_block")
+        val afterBlock: String,
+    ) : PagePosition()
+
+    /**
+     * Place the page at the start of the parent.
+     */
+    @Serializable
+    @SerialName("page_start")
+    data object PageStart : PagePosition()
+
+    /**
+     * Place the page at the end of the parent.
+     */
+    @Serializable
+    @SerialName("page_end")
+    data object PageEnd : PagePosition()
+}
