@@ -209,6 +209,20 @@ class FilterBuilder {
      * Creates a files property filter builder.
      */
     fun files(propertyName: String): FilesFilterBuilder = FilesFilterBuilder(propertyName)
+
+    /**
+     * Creates a created_time timestamp filter builder.
+     *
+     * Note: Timestamp filters do not require a property name.
+     */
+    fun createdTime(): TimestampFilterBuilder = TimestampFilterBuilder("created_time")
+
+    /**
+     * Creates a last_edited_time timestamp filter builder.
+     *
+     * Note: Timestamp filters do not require a property name.
+     */
+    fun lastEditedTime(): TimestampFilterBuilder = TimestampFilterBuilder("last_edited_time")
 }
 
 /**
@@ -570,4 +584,126 @@ class FilesFilterBuilder(
             property = propertyName,
             files = condition,
         )
+}
+
+/**
+ * Builder for timestamp filters (created_time and last_edited_time).
+ *
+ * Note: Unlike property filters, timestamp filters do not have a property name.
+ * They filter based on the page's created_time or last_edited_time metadata.
+ */
+class TimestampFilterBuilder(
+    private val timestampType: String, // "created_time" or "last_edited_time"
+) {
+    // String-based methods
+    fun equals(date: String): DataSourceFilter = createFilter(DateCondition(equals = date))
+
+    fun before(date: String): DataSourceFilter = createFilter(DateCondition(before = date))
+
+    fun after(date: String): DataSourceFilter = createFilter(DateCondition(after = date))
+
+    fun onOrBefore(date: String): DataSourceFilter = createFilter(DateCondition(onOrBefore = date))
+
+    fun onOrAfter(date: String): DataSourceFilter = createFilter(DateCondition(onOrAfter = date))
+
+    // Typed overloads using kotlinx-datetime
+
+    /** Filter for timestamps equal to the given LocalDate. */
+    fun equals(date: LocalDate): DataSourceFilter = equals(date.toString())
+
+    /** Filter for timestamps before the given LocalDate. */
+    fun before(date: LocalDate): DataSourceFilter = before(date.toString())
+
+    /** Filter for timestamps after the given LocalDate. */
+    fun after(date: LocalDate): DataSourceFilter = after(date.toString())
+
+    /** Filter for timestamps on or before the given LocalDate. */
+    fun onOrBefore(date: LocalDate): DataSourceFilter = onOrBefore(date.toString())
+
+    /** Filter for timestamps on or after the given LocalDate. */
+    fun onOrAfter(date: LocalDate): DataSourceFilter = onOrAfter(date.toString())
+
+    /** Filter for timestamps equal to the given LocalDateTime in the specified timezone. */
+    fun equals(
+        dateTime: LocalDateTime,
+        timeZone: TimeZone = TimeZone.UTC,
+    ): DataSourceFilter = equals(dateTime.toInstant(timeZone).toString())
+
+    /** Filter for timestamps before the given LocalDateTime in the specified timezone. */
+    fun before(
+        dateTime: LocalDateTime,
+        timeZone: TimeZone = TimeZone.UTC,
+    ): DataSourceFilter = before(dateTime.toInstant(timeZone).toString())
+
+    /** Filter for timestamps after the given LocalDateTime in the specified timezone. */
+    fun after(
+        dateTime: LocalDateTime,
+        timeZone: TimeZone = TimeZone.UTC,
+    ): DataSourceFilter = after(dateTime.toInstant(timeZone).toString())
+
+    /** Filter for timestamps on or before the given LocalDateTime in the specified timezone. */
+    fun onOrBefore(
+        dateTime: LocalDateTime,
+        timeZone: TimeZone = TimeZone.UTC,
+    ): DataSourceFilter = onOrBefore(dateTime.toInstant(timeZone).toString())
+
+    /** Filter for timestamps on or after the given LocalDateTime in the specified timezone. */
+    fun onOrAfter(
+        dateTime: LocalDateTime,
+        timeZone: TimeZone = TimeZone.UTC,
+    ): DataSourceFilter = onOrAfter(dateTime.toInstant(timeZone).toString())
+
+    /** Filter for timestamps equal to the given Instant. */
+    fun equals(instant: Instant): DataSourceFilter = equals(instant.toString())
+
+    /** Filter for timestamps before the given Instant. */
+    fun before(instant: Instant): DataSourceFilter = before(instant.toString())
+
+    /** Filter for timestamps after the given Instant. */
+    fun after(instant: Instant): DataSourceFilter = after(instant.toString())
+
+    /** Filter for timestamps on or before the given Instant. */
+    fun onOrBefore(instant: Instant): DataSourceFilter = onOrBefore(instant.toString())
+
+    /** Filter for timestamps on or after the given Instant. */
+    fun onOrAfter(instant: Instant): DataSourceFilter = onOrAfter(instant.toString())
+
+    // Condition-based filters (no date parameter needed)
+
+    fun isEmpty(): DataSourceFilter = createFilter(DateCondition(isEmpty = true))
+
+    fun isNotEmpty(): DataSourceFilter = createFilter(DateCondition(isNotEmpty = true))
+
+    fun pastWeek(): DataSourceFilter = createFilter(DateCondition(pastWeek = EmptyObject()))
+
+    fun pastMonth(): DataSourceFilter = createFilter(DateCondition(pastMonth = EmptyObject()))
+
+    fun pastYear(): DataSourceFilter = createFilter(DateCondition(pastYear = EmptyObject()))
+
+    fun nextWeek(): DataSourceFilter = createFilter(DateCondition(nextWeek = EmptyObject()))
+
+    fun nextMonth(): DataSourceFilter = createFilter(DateCondition(nextMonth = EmptyObject()))
+
+    fun nextYear(): DataSourceFilter = createFilter(DateCondition(nextYear = EmptyObject()))
+
+    private fun createFilter(condition: DateCondition): DataSourceFilter =
+        when (timestampType) {
+            "created_time" -> {
+                DataSourceFilter(
+                    timestamp = timestampType,
+                    createdTime = condition,
+                )
+            }
+
+            "last_edited_time" -> {
+                DataSourceFilter(
+                    timestamp = timestampType,
+                    lastEditedTime = condition,
+                )
+            }
+
+            else -> {
+                throw IllegalArgumentException("Invalid timestamp type: $timestampType")
+            }
+        }
 }

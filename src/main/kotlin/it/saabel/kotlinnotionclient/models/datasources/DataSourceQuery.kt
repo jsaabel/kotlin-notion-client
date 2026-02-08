@@ -90,6 +90,13 @@ data class DataSourceFilter(
     val uniqueId: UniqueIdCondition? = null,
     @SerialName("files")
     val files: FilesCondition? = null,
+    // Timestamp conditions (for created_time and last_edited_time filters)
+    @SerialName("timestamp")
+    val timestamp: String? = null, // "created_time" or "last_edited_time"
+    @SerialName("created_time")
+    val createdTime: DateCondition? = null,
+    @SerialName("last_edited_time")
+    val lastEditedTime: DateCondition? = null,
     // Compound conditions
     @SerialName("and")
     val and: List<DataSourceFilter>? = null,

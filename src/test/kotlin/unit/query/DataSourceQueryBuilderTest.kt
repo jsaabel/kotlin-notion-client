@@ -112,4 +112,72 @@ class DataSourceQueryBuilderTest :
 
             pages.shouldNotBeEmpty()
         }
+
+        "Should build query with created_time timestamp filter" {
+            val client = NotionClient.createWithClient(createMockClient(), NotionConfig("test-token"))
+
+            val query =
+                DataSourceQueryBuilder()
+                    .filter {
+                        createdTime().after("2024-01-01")
+                    }.build()
+
+            val pages = client.dataSources.query("test-data-source-id", query)
+
+            pages.shouldNotBeEmpty()
+        }
+
+        "Should build query with last_edited_time timestamp filter" {
+            val client = NotionClient.createWithClient(createMockClient(), NotionConfig("test-token"))
+
+            val query =
+                DataSourceQueryBuilder()
+                    .filter {
+                        lastEditedTime().onOrBefore("2024-12-31")
+                    }.build()
+
+            val pages = client.dataSources.query("test-data-source-id", query)
+
+            pages.shouldNotBeEmpty()
+        }
+
+        "Should build query combining timestamp filter with property filters" {
+            val client = NotionClient.createWithClient(createMockClient(), NotionConfig("test-token"))
+
+            val query =
+                DataSourceQueryBuilder()
+                    .filter {
+                        and(
+                            createdTime().after("2024-01-01"),
+                            title("Name").contains("Important"),
+                            checkbox("Completed").equals(false),
+                        )
+                    }.build()
+
+            val pages = client.dataSources.query("test-data-source-id", query)
+
+            pages.shouldNotBeEmpty()
+        }
+
+        "Should build query with timestamp filter using relative date methods" {
+            val client = NotionClient.createWithClient(createMockClient(), NotionConfig("test-token"))
+
+            val queryPastWeek =
+                DataSourceQueryBuilder()
+                    .filter {
+                        createdTime().pastWeek()
+                    }.build()
+
+            val pagesPastWeek = client.dataSources.query("test-data-source-id", queryPastWeek)
+            pagesPastWeek.shouldNotBeEmpty()
+
+            val queryNextMonth =
+                DataSourceQueryBuilder()
+                    .filter {
+                        lastEditedTime().nextMonth()
+                    }.build()
+
+            val pagesNextMonth = client.dataSources.query("test-data-source-id", queryNextMonth)
+            pagesNextMonth.shouldNotBeEmpty()
+        }
     })
