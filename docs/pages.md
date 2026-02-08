@@ -29,6 +29,11 @@ suspend fun update(pageId: String, block: UpdatePageRequestBuilder.() -> Unit): 
 // Archive a page
 suspend fun archive(pageId: String): Page
 
+// Move a page to a different parent (v0.3.0+)
+suspend fun move(pageId: String, parent: MovePageParent): Page
+suspend fun moveToPage(pageId: String, parentPageId: String): Page
+suspend fun moveToDataSource(pageId: String, dataSourceId: String): Page
+
 // Retrieve property items (for paginated properties like relations)
 suspend fun retrievePropertyItems(pageId: String, propertyId: String): List<PropertyItem>
 ```
@@ -364,6 +369,124 @@ Common property types you can set when creating/updating pages:
 - Last edited by
 - Place (read-only in API)
 - Unique ID (auto-generated)
+
+### Move a Page (v0.3.0+)
+
+Move a page to a new parent (another page or a data source):
+
+```kotlin
+// Move to another page using convenience method
+notion.pages.moveToPage("page-id", "new-parent-page-id")
+
+// Move to a data source (make it a database row)
+notion.pages.moveToDataSource("page-id", "data-source-id")
+
+// Or use the generic method with explicit parent type
+import it.saabel.kotlinnotionclient.models.pages.MovePageParent
+
+notion.pages.move("page-id", MovePageParent.PageParent("new-parent-page-id"))
+notion.pages.move("page-id", MovePageParent.DataSourceParent("data-source-id"))
+```
+
+### Lock and Unlock Pages (v0.3.0+)
+
+Prevent or allow editing of a page. The `isLocked` field is also available on retrieved pages (`page.isLocked`):
+
+```kotlin
+// Lock a page
+notion.pages.update("page-id") {
+    lock()
+}
+
+// Unlock a page
+notion.pages.update("page-id") {
+    unlock()
+}
+
+// Lock with explicit boolean
+notion.pages.update("page-id") {
+    lock(true)   // Same as lock()
+    lock(false)  // Same as unlock()
+}
+
+// Check if a page is locked
+val page = notion.pages.retrieve("page-id")
+println("Locked: ${page.isLocked}")
+```
+
+### Erase Page Content (v0.3.0+)
+
+Clear all content (blocks) from a page while keeping its properties:
+
+```kotlin
+notion.pages.update("page-id") {
+    eraseContent()
+}
+```
+
+### Create a Page with Template (v0.3.0+)
+
+Create pages using predefined templates from a data source:
+
+```kotlin
+// Use the data source's default template
+val page = notion.pages.create {
+    parent.dataSource("data-source-id")
+    template.default()
+}
+
+// Use a specific template by ID
+val page = notion.pages.create {
+    parent.dataSource("data-source-id")
+    template.byId("template-id")
+}
+
+// Explicitly create without any template content
+val page = notion.pages.create {
+    parent.dataSource("data-source-id")
+    template.none()
+}
+```
+
+**Note**: Template and content (children) are mutually exclusive - you cannot specify both.
+
+You can also apply a template when updating an existing page:
+
+```kotlin
+notion.pages.update("page-id") {
+    template.default()
+}
+
+// Apply template and erase existing content
+notion.pages.update("page-id") {
+    template.byId("template-id")
+    eraseContent()
+}
+```
+
+### Create a Page with Position (v0.3.0+)
+
+Control where a new page appears within its parent:
+
+```kotlin
+// Place at the start of the parent
+val page = notion.pages.create {
+    parent.dataSource("data-source-id")
+    position.pageStart()
+}
+
+// Place at the end of the parent
+val page = notion.pages.create {
+    parent.dataSource("data-source-id")
+    position.pageEnd()
+}
+
+// Place after a specific block
+val page = notion.pages.create {
+    parent.dataSource("data-source-id")
+    position.afterBlock("block-id")
+}
+```
 
 ## Common Patterns
 

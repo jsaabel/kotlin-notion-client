@@ -5,6 +5,48 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0] - 2026-02-08
+
+### ✨ Added
+
+**Pages API Enhancements**:
+- **Move page**: Move pages between parents with `pages.move(pageId, parent)`, plus convenience methods `moveToPage()` and `moveToDataSource()`
+- **Lock/unlock pages**: Control page editing with `lock()` and `unlock()` in the update page DSL
+- **Page positioning**: Place new pages at specific positions with `position.afterBlock()`, `position.pageStart()`, and `position.pageEnd()`
+- **Page templates**: Create pages from templates with `template.default()`, `template.byId()`, or `template.none()`
+- **Erase content**: Clear page content with `eraseContent()` in the update page DSL
+
+**Templates API**:
+- **List templates**: Retrieve available templates for a data source with `dataSources.listTemplates(dataSourceId)`
+- Automatic pagination handling for template listings
+- Optional name filtering (case-insensitive substring match)
+
+**Timestamp Filters**:
+- **Filter by page timestamps**: Filter data source queries by `createdTime` and `lastEditedTime`
+- Supports all date conditions: `equals()`, `before()`, `after()`, `onOrBefore()`, `onOrAfter()`
+- Typed overloads for `LocalDate`, `LocalDateTime`, and `Instant`
+- Relative date filters: `pastWeek()`, `pastMonth()`, `pastYear()`, `nextWeek()`, `nextMonth()`, `nextYear()`
+
+### 🔧 Changed
+
+**Dependencies** - Major version updates:
+- Kotlin 2.2.21 → **2.3.0**
+- Ktor 3.3.1 → **3.4.0**
+- Kotest 6.0.4 → **6.1.2**
+- kotlinx-datetime 0.6.2 → **0.7.1** (migrated to stable `kotlin.time.Instant`)
+- kotlinx-serialization 1.8.1 → **1.10.0**
+- logback 1.5.20 → **1.5.27**
+- maven-publish plugin 0.34.0 → **0.36.0**
+
+### ⚠️ Known Issues
+
+- **Kotlin Notebooks**: v0.3.0 cannot be loaded in IntelliJ Kotlin Notebooks due to a binary incompatibility between the notebook kernel's bundled kotlinx-serialization and Ktor 3.4.0. Notebooks still work with v0.2.0. This is a kernel-level limitation that will be resolved in a future kernel update.
+
+### 📊 Statistics
+
+- **Test coverage**: 543+ unit tests (up from 514)
+- **New test suites**: Page move/lock/position integration tests, Templates API unit and integration tests, timestamp filter serialization tests
+
 ## [0.2.0] - 2025-11-04
 
 ### ✨ Added
@@ -114,5 +156,6 @@ This is the first public release of the Kotlin Notion Client library.
 
 **Note**: This is an early release (0.1.0). While comprehensive testing has been performed, users should expect potential issues and are encouraged to report them via GitHub Issues.
 
+[0.3.0]: https://github.com/jsaabel/kotlin-notion-client/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/jsaabel/kotlin-notion-client/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/jsaabel/kotlin-notion-client/releases/tag/v0.1.0

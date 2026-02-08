@@ -25,7 +25,7 @@ A modern, type-safe Kotlin client for the Notion API with comprehensive DSL supp
 ```kotlin
 // Gradle (Kotlin DSL)
 dependencies {
-    implementation("it.saabel:kotlin-notion-client:0.2.0")
+    implementation("it.saabel:kotlin-notion-client:0.3.0")
 }
 ```
 
@@ -34,13 +34,13 @@ dependencies {
 <dependency>
     <groupId>it.saabel</groupId>
     <artifactId>kotlin-notion-client</artifactId>
-    <version>0.2.0</version>
+    <version>0.3.0</version>
 </dependency>
 ```
 
 ### Requirements
 
-- Kotlin 2.2.0 or higher
+- Kotlin 2.3.0 or higher
 - JVM target 17+
 
 ## Quick Start
@@ -133,7 +133,9 @@ See [docs/databases.md](docs/databases.md) and [docs/data-sources.md](docs/data-
 ### Feature Highlights
 
 - **All CRUD operations** for pages, databases, and blocks
-- **Advanced query DSL** with complex filters, sorting, and pagination
+- **Page management** - Move pages between parents, lock/unlock pages, control page position
+- **Templates API** - List data source templates and create pages from templates
+- **Advanced query DSL** with complex filters, sorting, pagination, and timestamp filters
 - **Rich text DSL** for formatted content with mentions, equations, and links
 - **30+ block types** including tables, callouts, code blocks, and embeds
 - **Property types** - Full support for the most important data source property types, with more coming up
@@ -162,6 +164,10 @@ The **[Kotlin Notebooks](notebooks/)** are the best way to learn the library:
 7. [File Uploads](notebooks/07-file-uploads.ipynb) - Uploading files, external imports, media blocks
 
 All notebooks use live Notion API and can be run in IntelliJ IDEA or Jupyter.
+
+> **Note:** Notebooks currently use v0.2.0 due to a binary incompatibility between the IntelliJ Kotlin
+> Notebook kernel's bundled kotlinx-serialization and Ktor 3.4.0. This is a kernel-level limitation;
+> the library works correctly in all other environments.
 
 ## Building from Source
 

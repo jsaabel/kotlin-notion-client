@@ -36,6 +36,12 @@ suspend fun update(
     dataSourceId: String,
     block: UpdateDataSourceRequestBuilder.() -> Unit
 ): DataSource
+
+// List available templates for a data source (v0.3.0+)
+suspend fun listTemplates(
+    dataSourceId: String,
+    nameFilter: String? = null
+): List<Template>
 ```
 
 ## Examples
@@ -148,6 +154,85 @@ val updated = notion.dataSources.update("data-source-id") {
 - Adding new properties: Include them in the properties block
 - Updating existing properties: Re-define them with new configuration
 - Removing properties: Simply omit them from the properties block (they will be removed)
+
+### List Templates (v0.3.0+)
+
+Retrieve the templates available for a data source. Templates are page blueprints configured in the Notion UI.
+
+```kotlin
+// List all templates
+val templates = notion.dataSources.listTemplates("data-source-id")
+
+templates.forEach { template ->
+    println("${template.name} (ID: ${template.id}, default: ${template.isDefault})")
+}
+
+// Filter templates by name (case-insensitive substring match)
+val filtered = notion.dataSources.listTemplates("data-source-id", nameFilter = "weekly")
+```
+
+The method handles pagination automatically and returns all templates. To create pages from templates, see [Pages API - Create a Page with Template](pages.md#create-a-page-with-template-v030).
+
+### Timestamp Filters (v0.3.0+)
+
+Filter query results by page creation or modification timestamps. These filter on page metadata, not on date properties:
+
+```kotlin
+val recentPages = notion.dataSources.query("data-source-id") {
+    filter {
+        // Pages created in the past week
+        createdTime().pastWeek()
+    }
+}
+
+val modifiedRecently = notion.dataSources.query("data-source-id") {
+    filter {
+        // Pages edited after a specific date
+        lastEditedTime().after("2026-01-01")
+    }
+}
+```
+
+#### Available timestamp filter methods
+
+```kotlin
+// String-based date conditions
+createdTime().equals("2026-01-15")
+createdTime().before("2026-02-01")
+createdTime().after("2026-01-01")
+createdTime().onOrBefore("2026-01-31")
+createdTime().onOrAfter("2026-01-01")
+
+// Typed overloads (LocalDate, LocalDateTime, Instant)
+lastEditedTime().after(LocalDate(2026, 1, 1))
+lastEditedTime().before(LocalDateTime(2026, 2, 1, 0, 0), TimeZone.of("Europe/Berlin"))
+lastEditedTime().after(Clock.System.now())
+
+// Relative date filters
+createdTime().pastWeek()
+createdTime().pastMonth()
+createdTime().pastYear()
+lastEditedTime().nextWeek()
+lastEditedTime().nextMonth()
+lastEditedTime().nextYear()
+
+// Empty/not empty
+createdTime().isEmpty()
+createdTime().isNotEmpty()
+```
+
+Timestamp filters can be combined with property filters using `and()` / `or()`:
+
+```kotlin
+val results = notion.dataSources.query("data-source-id") {
+    filter {
+        and(
+            select("Status").equals("In Progress"),
+            createdTime().pastMonth(),
+        )
+    }
+}
+```
 
 ## Understanding Data Sources vs. Databases
 
@@ -269,7 +354,7 @@ val results = notion.dataSources.query("data-source-id") {
 }
 ```
 
-**Additional Filter Types** (v0.2.0+): The query DSL also supports filters for `relation` (related pages), `people` (users/assignees), `status` (workflow status), `unique_id` (auto-incrementing IDs), and `files` (attachment presence). All follow the same DSL pattern as shown above.
+**Additional Filter Types** (v0.2.0+): The query DSL also supports filters for `relation` (related pages), `people` (users/assignees), `status` (workflow status), `unique_id` (auto-incrementing IDs), and `files` (attachment presence). **v0.3.0** added `createdTime()` and `lastEditedTime()` timestamp filters for filtering by page metadata. All follow the same DSL pattern as shown above.
 
 ### Working with Properties
 

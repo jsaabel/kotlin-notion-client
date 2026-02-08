@@ -179,6 +179,8 @@ If the Kotlin kernel doesn't recognize imports:
 - Check dependency specification (`@file:DependsOn`)
 - Verify library is published/available in Maven Local
 
+**Known limitation (v0.3.0)**: The IntelliJ Kotlin Notebook kernel (0.12.0-398) bundles its own shadowed kotlinx-serialization, which conflicts with the version used by Ktor 3.4.0. This causes `JsonConvertException` errors at runtime. Notebooks currently work with v0.2.0 only. This is a kernel-level issue, not a library bug.
+
 ### API Errors
 
 Common issues:
