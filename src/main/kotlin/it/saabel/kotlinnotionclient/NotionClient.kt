@@ -20,6 +20,7 @@ import it.saabel.kotlinnotionclient.api.DataSourcesApi
 import it.saabel.kotlinnotionclient.api.DatabasesApi
 import it.saabel.kotlinnotionclient.api.EnhancedFileUploadApi
 import it.saabel.kotlinnotionclient.api.FileUploadApi
+import it.saabel.kotlinnotionclient.api.MarkdownApi
 import it.saabel.kotlinnotionclient.api.PagesApi
 import it.saabel.kotlinnotionclient.api.SearchApi
 import it.saabel.kotlinnotionclient.api.UsersApi
@@ -83,6 +84,7 @@ class NotionClient
         val blocks = BlocksApi(httpClient, config)
         val comments = CommentsApi(httpClient, config)
         val search = SearchApi(httpClient, config)
+        val markdown = MarkdownApi(httpClient, config)
         val fileUploads = FileUploadApi(httpClient, config)
 
         /**

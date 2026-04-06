@@ -57,6 +57,7 @@ class CreatePageRequestBuilder {
     private var iconValue: PageIcon? = null
     private var coverValue: PageCover? = null
     private var children: List<BlockRequest>? = null
+    private var markdownValue: String? = null
     private var templateValue: PageTemplate? = null
     private var positionValue: PagePosition? = null
 
@@ -118,10 +119,27 @@ class CreatePageRequestBuilder {
     /**
      * Configures page content using the PageContentBuilder DSL.
      *
+     * Mutually exclusive with [markdown] — the last call wins, but [build] enforces the constraint.
+     *
      * @param block Configuration block for content
      */
     fun content(block: PageContentBuilder.() -> Unit) {
         children = pageContent(block)
+    }
+
+    /**
+     * Sets page content as enhanced Markdown.
+     *
+     * Mutually exclusive with [content] and [template]. When provided, the API converts the markdown
+     * string into Notion blocks server-side. The first `# h1` heading in the markdown becomes the
+     * page title if no `properties.title` is set.
+     *
+     * Requires the integration to have `insert_content` capability on the target parent.
+     *
+     * @param content The enhanced Markdown string (use `\n` for line breaks)
+     */
+    fun markdown(content: String) {
+        markdownValue = content
     }
 
     /**
@@ -152,12 +170,27 @@ class CreatePageRequestBuilder {
             )
         }
 
+        // Validate that markdown is mutually exclusive with children and template
+        if (markdownValue != null && children != null) {
+            throw IllegalStateException(
+                "markdown and children are mutually exclusive. " +
+                    "Use either markdown() or content(), not both.",
+            )
+        }
+        if (markdownValue != null && templateValue != null) {
+            throw IllegalStateException(
+                "markdown and template are mutually exclusive. " +
+                    "Use either markdown() or template(), not both.",
+            )
+        }
+
         return CreatePageRequest(
             parent = parentValue!!,
             properties = properties,
             icon = iconValue,
             cover = coverValue,
             children = children,
+            markdown = markdownValue,
             template = templateValue,
             position = positionValue,
         )

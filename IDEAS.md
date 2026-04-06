@@ -12,3 +12,4 @@ Use `/capture-idea <your idea>` to add entries. Use `/implement-idea <row number
 |---|------|------|--------|
 | 1 | 2026-04-06 | Integration tests should print out links to created pages, to make verification more convenient | open |
 | 2 | 2026-04-06 | Reconsider the `PageIcon` sealed class name — icons are used across pages, databases, callouts, tabs, and (soon) native icons. A more neutral name like `NotionIcon` or `BlockIcon` might better reflect the concept's scope. Worth evaluating before the 0.4.0 release since it's a breaking rename. | open |
+| 3 | 2026-04-06 | the integration tests should be consolidated at some point. right now we have too many doing very dedicated things, which has its merits, but for verification it would be more convenient to reduce on the number of tests, combining functionality rather than removing tested features | open |

@@ -31,6 +31,8 @@ data class CreatePageRequest(
     val cover: PageCover? = null,
     @SerialName("children")
     val children: List<BlockRequest>? = null,
+    @SerialName("markdown")
+    val markdown: String? = null,
     @SerialName("template")
     val template: PageTemplate? = null,
     @SerialName("position")

@@ -456,5 +456,60 @@ class PageRequestBuilderTest :
                     children shouldHaveSize 2
                 }
             }
+
+            describe("markdown content") {
+
+                it("should set markdown field on the request") {
+                    val request =
+                        createPageRequest {
+                            parent.page("parent-page-id")
+                            markdown("# Hello\n\nSome content.")
+                        }
+
+                    request.markdown shouldBe "# Hello\n\nSome content."
+                    request.children.shouldBeNull()
+                }
+
+                it("should allow markdown with title property") {
+                    val request =
+                        createPageRequest {
+                            parent.page("parent-page-id")
+                            title("My Page")
+                            markdown("## Section\n\nContent here.")
+                        }
+
+                    request.markdown shouldBe "## Section\n\nContent here."
+                    request.properties shouldContainKey "title"
+                }
+
+                it("should fail when markdown and children are both set") {
+                    shouldThrow<IllegalStateException> {
+                        createPageRequest {
+                            parent.page("parent-page-id")
+                            content { paragraph("some content") }
+                            markdown("# Hello")
+                        }
+                    }.message shouldContain "mutually exclusive"
+                }
+
+                it("should fail when markdown and template are both set") {
+                    shouldThrow<IllegalStateException> {
+                        createPageRequest {
+                            parent.dataSource("ds-id")
+                            markdown("# Hello")
+                            template.default()
+                        }
+                    }.message shouldContain "mutually exclusive"
+                }
+
+                it("should have null markdown when not set") {
+                    val request =
+                        createPageRequest {
+                            parent.page("parent-page-id")
+                        }
+
+                    request.markdown.shouldBeNull()
+                }
+            }
         }
     })
