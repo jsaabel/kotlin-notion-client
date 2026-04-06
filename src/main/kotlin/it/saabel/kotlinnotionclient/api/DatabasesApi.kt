@@ -147,19 +147,19 @@ class DatabasesApi(
     }
 
     /**
-     * Archives a database by setting its archived property to true.
+     * Moves a database to trash by setting its in_trash property to true.
      *
-     * Notion doesn't support true deletion - objects are archived instead.
-     * Archived databases are no longer accessible through the UI but can still
+     * Notion doesn't support permanent deletion - databases are moved to trash instead.
+     * Databases in trash are no longer accessible through the UI but can still
      * be retrieved via the API.
      *
-     * @param databaseId The ID of the database to archive
-     * @return Database object representing the archived database
+     * @param databaseId The ID of the database to trash
+     * @return Database object representing the trashed database
      * @throws NotionException.NetworkError for network-related failures
      * @throws NotionException.ApiError for API-related errors (4xx, 5xx responses)
      * @throws NotionException.AuthenticationError for authentication failures
      */
-    suspend fun archive(databaseId: String): Database =
+    suspend fun trash(databaseId: String): Database =
         httpClient.executeWithRateLimit {
             try {
                 val request = ArchiveDatabaseRequest(inTrash = true)

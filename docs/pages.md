@@ -26,8 +26,8 @@ suspend fun create(block: CreatePageRequestBuilder.() -> Unit): Page
 // Update a page (DSL)
 suspend fun update(pageId: String, block: UpdatePageRequestBuilder.() -> Unit): Page
 
-// Archive a page
-suspend fun archive(pageId: String): Page
+// Move a page to trash
+suspend fun trash(pageId: String): Page
 
 // Move a page to a different parent (v0.3.0+)
 suspend fun move(pageId: String, parent: MovePageParent): Page
@@ -48,7 +48,7 @@ val page = notion.pages.retrieve("page-id")
 // Access page metadata
 println("Created: ${page.createdTime}")
 println("Last edited: ${page.lastEditedTime}")
-println("Archived: ${page.archived}")
+println("In trash: ${page.inTrash}")
 
 // Access properties
 val title = page.properties["Name"] as? PageProperty.Title

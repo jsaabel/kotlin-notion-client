@@ -133,7 +133,7 @@ class BlockPaginationIntegrationTest :
                     // Cleanup - just archive the page, which cleans up all blocks
                     if (shouldCleanupAfterTest()) {
                         println("\n🧹 Cleaning up test page...")
-                        client.pages.archive(page.id)
+                        client.pages.trash(page.id)
                         println("✅ Test page archived (all blocks cleaned up automatically)")
                     } else {
                         println("\n🔧 Test page preserved: ${page.id}")

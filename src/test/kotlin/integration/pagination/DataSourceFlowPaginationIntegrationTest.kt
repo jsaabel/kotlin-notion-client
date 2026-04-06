@@ -160,7 +160,7 @@ class DataSourceFlowPaginationIntegrationTest :
                     // Cleanup
                     if (shouldCleanupAfterTest()) {
                         println("\n🧹 Cleaning up test database...")
-                        client.databases.archive(database.id)
+                        client.databases.trash(database.id)
                         println("✅ Database archived")
                     } else {
                         println("\n🔧 Test database preserved: ${database.id}")
@@ -211,7 +211,7 @@ class DataSourceFlowPaginationIntegrationTest :
 
                     // Cleanup
                     if (shouldCleanupAfterTest()) {
-                        client.databases.archive(database.id)
+                        client.databases.trash(database.id)
                         println("🧹 Cleaned up empty database")
                     }
 
@@ -293,7 +293,7 @@ class DataSourceFlowPaginationIntegrationTest :
 
                     // Cleanup
                     if (shouldCleanupAfterTest()) {
-                        client.databases.archive(database.id)
+                        client.databases.trash(database.id)
                         println("🧹 Cleaned up sorted database")
                     }
 

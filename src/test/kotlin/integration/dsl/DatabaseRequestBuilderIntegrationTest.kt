@@ -74,7 +74,7 @@ class DatabaseRequestBuilderIntegrationTest :
                             }
                         }
                     createdDatabase.objectType shouldBe "database"
-                    createdDatabase.archived shouldBe false
+                    createdDatabase.inTrash shouldBe false
 
                     println("✅ Database created: ${createdDatabase.id}")
 
@@ -171,10 +171,10 @@ class DatabaseRequestBuilderIntegrationTest :
                     // Conditionally clean up
                     delay(500)
                     if (shouldCleanupAfterTest()) {
-                        println("🧹 Cleaning up - archiving test database...")
-                        val archivedDatabase = client.databases.archive(createdDatabase.id)
-                        archivedDatabase.archived shouldBe true
-                        println("✅ Test database archived successfully")
+                        println("🧹 Cleaning up - trashing test database...")
+                        val archivedDatabase = client.databases.trash(createdDatabase.id)
+                        archivedDatabase.inTrash shouldBe true
+                        println("✅ Test database trashed successfully")
                     } else {
                         println("🔧 Cleanup skipped (NOTION_CLEANUP_AFTER_TEST=false)")
                         println("   Created database: ${createdDatabase.id} (\"DSL Integration Test Database\")")

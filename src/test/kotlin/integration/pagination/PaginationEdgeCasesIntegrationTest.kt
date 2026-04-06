@@ -115,7 +115,7 @@ class PaginationEdgeCasesIntegrationTest :
                         println("\n🧹 Cleaning up edge case test databases...")
                         createdDatabases.forEach { databaseId ->
                             try {
-                                client.databases.archive(databaseId)
+                                client.databases.trash(databaseId)
                             } catch (e: Exception) {
                                 // Ignore cleanup errors
                                 println("   Warning: Failed to clean up database $databaseId")

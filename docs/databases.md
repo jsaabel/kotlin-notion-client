@@ -32,8 +32,8 @@ suspend fun retrieve(databaseId: String): Database
 // Create a new database with initial data source
 suspend fun create(block: DatabaseRequestBuilder.() -> Unit): Database
 
-// Archive a database
-suspend fun archive(databaseId: String): Database
+// Move a database to trash
+suspend fun trash(databaseId: String): Database
 ```
 
 **Note**: There is NO `databases.update()` or `databases.query()` in the 2025-09-03 API.
@@ -51,7 +51,7 @@ val database = notion.databases.retrieve("database-id")
 val title = database.title.firstOrNull()?.plainText ?: "Untitled"
 println("Database: $title")
 println("Created: ${database.createdTime}")
-println("Archived: ${database.archived}")
+println("In trash: ${database.inTrash}")
 
 // Get data sources within this database
 database.dataSources.forEach { dataSourceRef ->
@@ -185,15 +185,15 @@ val tasksDb = notion.databases.create {
 }
 ```
 
-### Archive a Database
+### Trash a Database
 
 ```kotlin
-val archived = notion.databases.archive("database-id")
+val trashed = notion.databases.trash("database-id")
 
-println("Database in trash: ${archived.inTrash}")
+println("Database in trash: ${trashed.inTrash}")
 ```
 
-**Note**: In the 2025-09-03 API, databases use the `in_trash` field (not `archived`). Databases in trash are hidden from the UI but remain accessible via the API. Notion doesn't support true deletion.
+**Note**: Notion doesn't support permanent deletion. Databases moved to trash are hidden from the UI but remain accessible via the API. The `in_trash` field reflects this status (introduced in API version `2026-03-11`).
 
 ## Common Patterns
 
@@ -311,7 +311,7 @@ Supported formats: `"number"`, `"number_with_commas"`, `"percent"`, `"dollar"`, 
 4. **Pre-plan your schema** - Think through your data model before creating the database
 5. **Use appropriate property types** - Match Notion property types to your data (e.g., `select` for status, `people` for assignments)
 6. **Consider relations early** - If you need to link databases, plan the relation structure upfront
-7. **Archive instead of delete** - Notion doesn't support deletion, use `archive()` instead
+7. **Trash instead of delete** - Notion doesn't support permanent deletion; use `trash()` to move a database to trash
 
 ## Gotchas and Tips
 

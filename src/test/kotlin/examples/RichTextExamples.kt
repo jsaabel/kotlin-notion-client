@@ -67,7 +67,7 @@ class RichTextExamples :
                 if (shouldCleanupAfterTest() && testPageId != null) {
                     println("🧹 Cleaning up test page...")
                     try {
-                        notion.pages.archive(testPageId)
+                        notion.pages.trash(testPageId)
                         println("✅ Cleanup complete")
                     } catch (e: Exception) {
                         println("⚠️ Cleanup failed: ${e.message}")

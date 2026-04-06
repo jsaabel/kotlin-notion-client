@@ -94,7 +94,7 @@ class CommentsIntegrationTest :
 
                             // Verify page creation
                             createdPage.objectType shouldBe "page"
-                            createdPage.archived shouldBe false
+                            createdPage.inTrash shouldBe false
                             println("✅ Test page created successfully: ${createdPage.id}")
 
                             // Small delay to ensure Notion has processed the page creation
@@ -205,8 +205,8 @@ class CommentsIntegrationTest :
                             if (createdPageId != null && shouldCleanupAfterTest()) {
                                 println("🧹 Cleaning up - archiving test page...")
                                 try {
-                                    val archivedPage = client.pages.archive(createdPageId)
-                                    archivedPage.archived shouldBe true
+                                    val archivedPage = client.pages.trash(createdPageId)
+                                    archivedPage.inTrash shouldBe true
                                     println("✅ Test page archived successfully")
                                 } catch (e: Exception) {
                                     println("⚠️ Warning: Failed to archive test page: ${e.message}")
@@ -268,7 +268,7 @@ class CommentsIntegrationTest :
                                 // Clean up test page
                                 if (shouldCleanupAfterTest()) {
                                     try {
-                                        client.pages.archive(testPage.id)
+                                        client.pages.trash(testPage.id)
                                     } catch (e: Exception) {
                                         println("⚠️ Warning: Failed to archive validation test page: ${e.message}")
                                     }
@@ -402,7 +402,7 @@ class CommentsIntegrationTest :
                             if (createdPageId != null && shouldCleanupAfterTest()) {
                                 println("🧹 Cleaning up block comments test page...")
                                 try {
-                                    client.pages.archive(createdPageId)
+                                    client.pages.trash(createdPageId)
                                     println("✅ Block comments test page archived")
                                 } catch (e: Exception) {
                                     println("⚠️ Warning: Failed to archive block comments test page: ${e.message}")
@@ -537,7 +537,7 @@ class CommentsIntegrationTest :
                             if (createdPageId != null && shouldCleanupAfterTest()) {
                                 println("🧹 Cleaning up file attachment test page...")
                                 try {
-                                    client.pages.archive(createdPageId)
+                                    client.pages.trash(createdPageId)
                                     println("✅ File attachment test page archived")
                                 } catch (e: Exception) {
                                     println("⚠️ Warning: Failed to archive file attachment test page: ${e.message}")
@@ -652,7 +652,7 @@ class CommentsIntegrationTest :
                             if (createdPageId != null && shouldCleanupAfterTest()) {
                                 println("🧹 Cleaning up user mention test page...")
                                 try {
-                                    client.pages.archive(createdPageId)
+                                    client.pages.trash(createdPageId)
                                     println("✅ User mention test page archived")
                                 } catch (e: Exception) {
                                     println("⚠️ Warning: Failed to archive user mention test page: ${e.message}")

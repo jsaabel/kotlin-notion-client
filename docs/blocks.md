@@ -15,8 +15,9 @@ suspend fun retrieve(blockId: String): Block
 // Retrieve children of a block
 suspend fun retrieveChildren(blockId: String): List<Block>
 
-// Append children to a block
-suspend fun appendChildren(blockId: String, builder: PageContentBuilder.() -> Unit): BlockList
+// Append children to a block (position is optional)
+suspend fun appendChildren(blockId: String, children: List<BlockRequest>, position: BlockAppendPosition? = null): BlockList
+suspend fun appendChildren(blockId: String, position: BlockAppendPosition? = null, builder: PageContentBuilder.() -> Unit): BlockList
 
 // Update a block
 suspend fun update(blockId: String, builder: PageContentBuilder.() -> Unit): Block
@@ -91,7 +92,34 @@ notion.blocks.appendChildren(pageId) {
 }
 ```
 
-### Example 3: Rich Text Formatting
+### Example 3: Append Blocks at a Specific Position (v0.4.0+)
+
+Control where appended blocks appear using the `position` parameter:
+
+```kotlin
+// Append at the start of the block (before all existing children)
+notion.blocks.appendChildren(pageId, position = BlockAppendPosition.Start) {
+    heading1("This appears first")
+}
+
+// Append at the end (default behaviour — same as omitting position)
+notion.blocks.appendChildren(pageId, position = BlockAppendPosition.End) {
+    paragraph("This appears last")
+}
+
+// Append immediately after a specific block
+val afterBlockId = existingBlocks.first().id
+notion.blocks.appendChildren(
+    pageId,
+    position = BlockAppendPosition.AfterBlock(BlockReference(afterBlockId))
+) {
+    paragraph("This appears right after the first block")
+}
+```
+
+**Note**: `BlockAppendPosition` is a sealed class with three variants: `Start`, `End`, and `AfterBlock(afterBlock: BlockReference)`. Omitting `position` defaults to appending at the end.
+
+### Example 4: Rich Text Formatting
 
 Create blocks with formatted text:
 
@@ -208,7 +236,7 @@ Archive a block (blocks are not permanently deleted, just archived):
 
 ```kotlin
 val deleted = notion.blocks.delete(blockId)
-println("Block archived: ${deleted.archived}") // true
+println("Block in trash: ${deleted.inTrash}") // true
 ```
 
 ### Example 11: Nested Blocks
@@ -435,7 +463,7 @@ try {
 1. **Batch Operations** - Use `appendChildren()` to add multiple blocks at once instead of individual calls
 2. **Block Type Validation** - Always check block types before accessing type-specific properties
 3. **Nested Content** - Remember that blocks can have children; use `hasChildren` to check
-4. **Archive vs Delete** - Understand that "delete" actually archives blocks, not permanently removing them
+4. **Delete moves to trash** - Understand that `delete()` moves blocks to trash (`in_trash: true`), not permanently removing them
 5. **Rich Text** - Use the rich text DSL for formatted content instead of plain strings
 6. **Code Language** - Specify the language for code blocks to enable syntax highlighting in Notion
 

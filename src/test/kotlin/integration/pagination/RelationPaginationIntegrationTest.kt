@@ -54,9 +54,9 @@ class RelationPaginationIntegrationTest :
                     // Check parent page status first
                     println("🔍 Checking parent page status...")
                     val parentPage = client.pages.retrieve(parentPageId)
-                    println("   Parent page archived: ${parentPage.archived}")
+                    println("   Parent page archived: ${parentPage.inTrash}")
 
-                    if (parentPage.archived) {
+                    if (parentPage.inTrash) {
                         println("⚠️  Parent page is archived - tests may fail")
                         println("   You may need to unarchive the parent page in Notion")
                     }
@@ -204,7 +204,7 @@ class RelationPaginationIntegrationTest :
                         println("\n🧹 Cleaning up test database...")
                         createdDatabases.forEach { databaseId ->
                             try {
-                                client.databases.archive(databaseId)
+                                client.databases.trash(databaseId)
                             } catch (e: Exception) {
                                 println("   Warning: Failed to clean up database $databaseId")
                             }

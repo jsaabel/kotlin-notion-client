@@ -57,7 +57,7 @@ class CommentsExamples :
             afterSpec {
                 if (shouldCleanupAfterTest()) {
                     createdPages.forEach { pageId ->
-                        runCatching { notion.pages.archive(pageId) }
+                        runCatching { notion.pages.trash(pageId) }
                     }
                 }
                 notion.close()

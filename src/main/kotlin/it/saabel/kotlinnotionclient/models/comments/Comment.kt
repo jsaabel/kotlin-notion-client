@@ -25,8 +25,8 @@ data class Comment(
     override val createdBy: User? = null,
     @SerialName("last_edited_by")
     override val lastEditedBy: User? = null,
-    @SerialName("archived")
-    override val archived: Boolean = false,
+    @SerialName("in_trash")
+    override val inTrash: Boolean = false,
     @SerialName("parent")
     val parent: Parent,
     @SerialName("discussion_id")

@@ -15,7 +15,6 @@ import io.ktor.http.contentType
 import io.ktor.http.isSuccess
 import it.saabel.kotlinnotionclient.config.NotionConfig
 import it.saabel.kotlinnotionclient.exceptions.NotionException
-import it.saabel.kotlinnotionclient.models.pages.ArchivePageRequest
 import it.saabel.kotlinnotionclient.models.pages.CreatePageRequest
 import it.saabel.kotlinnotionclient.models.pages.CreatePageRequestBuilder
 import it.saabel.kotlinnotionclient.models.pages.MovePageParent
@@ -23,6 +22,7 @@ import it.saabel.kotlinnotionclient.models.pages.MovePageRequest
 import it.saabel.kotlinnotionclient.models.pages.Page
 import it.saabel.kotlinnotionclient.models.pages.PagePropertyItemResponse
 import it.saabel.kotlinnotionclient.models.pages.PropertyItem
+import it.saabel.kotlinnotionclient.models.pages.TrashPageRequest
 import it.saabel.kotlinnotionclient.models.pages.UpdatePageRequest
 import it.saabel.kotlinnotionclient.models.pages.UpdatePageRequestBuilder
 import it.saabel.kotlinnotionclient.models.pages.createPageRequest
@@ -281,22 +281,22 @@ class PagesApi(
     }
 
     /**
-     * Archives a page by setting its archived property to true.
+     * Moves a page to trash by setting its in_trash property to true.
      *
-     * Notion doesn't support true deletion - objects are archived instead.
-     * Archived pages are no longer accessible through the UI but can still
+     * Notion doesn't support permanent deletion - pages are moved to trash instead.
+     * Pages in trash are no longer accessible through the UI but can still
      * be retrieved via the API.
      *
-     * @param pageId The ID of the page to archive
-     * @return Page object representing the archived page
+     * @param pageId The ID of the page to trash
+     * @return Page object representing the trashed page
      * @throws NotionException.NetworkError for network-related failures
      * @throws NotionException.ApiError for API-related errors (4xx, 5xx responses)
      * @throws NotionException.AuthenticationError for authentication failures
      */
-    suspend fun archive(pageId: String): Page =
+    suspend fun trash(pageId: String): Page =
         httpClient.executeWithRateLimit {
             try {
-                val request = ArchivePageRequest()
+                val request = TrashPageRequest()
 
                 val response: HttpResponse =
                     httpClient.patch("${config.baseUrl}/pages/$pageId") {

@@ -190,10 +190,10 @@ class DatabaseQueryIntegrationTest :
                     if (shouldCleanupAfterTest()) {
                         println("🧹 Cleaning up test data...")
                         createdPages.forEach { page ->
-                            client.pages.archive(page.id)
+                            client.pages.trash(page.id)
                             delay(100)
                         }
-                        client.databases.archive(database.id)
+                        client.databases.trash(database.id)
                         println("✅ Cleanup completed")
                     } else {
                         println("🔧 Cleanup skipped (NOTION_CLEANUP_AFTER_TEST=false)")
@@ -245,7 +245,7 @@ class DatabaseQueryIntegrationTest :
 
                     // Cleanup
                     if (shouldCleanupAfterTest()) {
-                        client.databases.archive(emptyDb.id)
+                        client.databases.trash(emptyDb.id)
                         println("✅ Empty query test completed")
                     }
                 } finally {

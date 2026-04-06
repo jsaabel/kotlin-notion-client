@@ -14,7 +14,7 @@ import kotlin.time.Duration.Companion.seconds
  *
  * @param apiToken The Notion API token (required)
  * @param baseUrl The base URL for the Notion API
- * @param apiVersion The API version to use (sent in Notion-Version header) - now uses 2025-09-03 for data sources support
+ * @param apiVersion The API version to use (sent in Notion-Version header)
  * @param userAgent The user agent string to send with requests
  * @param requestTimeout Maximum time to wait for a complete request
  * @param connectTimeout Maximum time to wait for connection establishment
@@ -28,8 +28,8 @@ import kotlin.time.Duration.Companion.seconds
 data class NotionConfig(
     val apiToken: String = System.getenv("NOTION_API_TOKEN"),
     val baseUrl: String = "https://api.notion.com/v1",
-    val apiVersion: String = "2025-09-03",
-    val userAgent: String = "kotlin-notion-client/0.0.1",
+    val apiVersion: String = "2026-03-11",
+    val userAgent: String = "kotlin-notion-client/0.4.0",
     val requestTimeout: Duration = 30.seconds,
     val connectTimeout: Duration = 10.seconds,
     val socketTimeout: Duration = 30.seconds,

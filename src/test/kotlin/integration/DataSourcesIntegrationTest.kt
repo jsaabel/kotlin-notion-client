@@ -209,7 +209,7 @@ class DataSourcesIntegrationTest :
 
                     if (shouldCleanupAfterTest()) {
                         println("\n🧹 Cleaning up test database...")
-                        client.databases.archive(database.id)
+                        client.databases.trash(database.id)
                         println("✅ Cleanup complete")
                     } else {
                         println("\n⚠️ Skipping cleanup (NOTION_CLEANUP_AFTER_TEST=false)")
@@ -274,7 +274,7 @@ class DataSourcesIntegrationTest :
 
                     if (shouldCleanupAfterTest()) {
                         println("\n🧹 Cleaning up test database...")
-                        client.databases.archive(database.id)
+                        client.databases.trash(database.id)
                         println("✅ Cleanup complete")
                     } else {
                         println("\n⚠️ Skipping cleanup (NOTION_CLEANUP_AFTER_TEST=false)")
@@ -351,7 +351,7 @@ class DataSourcesIntegrationTest :
                     println("✅ Filtered query returned ${activeHighPriority.size} page(s)")
 
                     if (shouldCleanupAfterTest()) {
-                        client.databases.archive(database.id)
+                        client.databases.trash(database.id)
                     }
                 } finally {
                     client.close()

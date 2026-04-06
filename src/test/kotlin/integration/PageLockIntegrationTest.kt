@@ -108,7 +108,7 @@ class PageLockIntegrationTest :
                     // Cleanup
                     if (shouldCleanupAfterTest()) {
                         println("🧹 Cleaning up test page...")
-                        client.pages.archive(testPage.id)
+                        client.pages.trash(testPage.id)
                         println("✅ Test page archived")
                     } else {
                         println("🔧 Cleanup skipped (NOTION_CLEANUP_AFTER_TEST=false)")

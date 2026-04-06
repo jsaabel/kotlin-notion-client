@@ -16,7 +16,7 @@ interface NotionObject {
     val lastEditedTime: String
     val createdBy: User?
     val lastEditedBy: User?
-    val archived: Boolean
+    val inTrash: Boolean
 }
 
 /**

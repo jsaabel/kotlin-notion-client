@@ -68,7 +68,7 @@ class BlocksExamples :
                 if (shouldCleanupAfterTest() && testPageId != null) {
                     println("🧹 Cleaning up test page...")
                     try {
-                        notion.pages.archive(testPageId)
+                        notion.pages.trash(testPageId)
                         println("✅ Cleanup complete")
                     } catch (e: Exception) {
                         println("⚠️ Cleanup failed: ${e.message}")
@@ -345,7 +345,7 @@ class BlocksExamples :
 
                 // Validation
                 deleted.shouldNotBeNull()
-                deleted.archived shouldBe true
+                deleted.inTrash shouldBe true
 
                 println("✅ Example 10 passed")
             }
@@ -484,7 +484,7 @@ class BlocksExamples :
 
                 // Cleanup
                 if (shouldCleanupAfterTest()) {
-                    notion.pages.archive(documentPage.id)
+                    notion.pages.trash(documentPage.id)
                 }
 
                 println("✅ Example 13 passed")

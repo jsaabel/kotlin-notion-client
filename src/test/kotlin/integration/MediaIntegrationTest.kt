@@ -163,7 +163,7 @@ class MediaIntegrationTest :
                     if (shouldCleanupAfterTest()) {
                         delay(500)
                         println("🧹 Cleaning up test page...")
-                        client.pages.archive(createdPage.id)
+                        client.pages.trash(createdPage.id)
                         println("✅ Test page archived")
                     } else {
                         println("🔧 Cleanup skipped - page preserved: ${createdPage.id}")
@@ -289,7 +289,7 @@ class MediaIntegrationTest :
                     if (shouldCleanupAfterTest()) {
                         delay(500)
                         println("🧹 Cleaning up test page...")
-                        client.pages.archive(createdPage.id)
+                        client.pages.trash(createdPage.id)
                         println("✅ Test page archived")
                     } else {
                         println("🔧 Cleanup skipped - page preserved: ${createdPage.id}")
@@ -470,7 +470,7 @@ class MediaIntegrationTest :
                     if (shouldCleanupAfterTest()) {
                         delay(500)
                         println("🧹 Cleaning up demonstration page...")
-                        client.pages.archive(createdPage.id)
+                        client.pages.trash(createdPage.id)
                         println("✅ Demonstration page archived")
                     } else {
                         println("🔧 Cleanup skipped - demonstration preserved: ${createdPage.id}")

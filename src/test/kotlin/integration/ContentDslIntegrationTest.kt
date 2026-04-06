@@ -62,7 +62,7 @@ class ContentDslIntegrationTest :
 
                     val createdPage = client.pages.create(initialPageRequest)
                     createdPage.objectType shouldBe "page"
-                    createdPage.archived shouldBe false
+                    createdPage.inTrash shouldBe false
 
                     println("✅ Initial page created: ${createdPage.id}")
 
@@ -249,8 +249,8 @@ class ContentDslIntegrationTest :
                     delay(500)
                     if (shouldCleanupAfterTest()) {
                         println("🧹 Cleaning up - archiving test page...")
-                        val archivedPage = client.pages.archive(createdPage.id)
-                        archivedPage.archived shouldBe true
+                        val archivedPage = client.pages.trash(createdPage.id)
+                        archivedPage.inTrash shouldBe true
                         println("✅ Test page archived successfully")
                     } else {
                         println("🔧 Cleanup skipped (NOTION_CLEANUP_AFTER_TEST=false)")

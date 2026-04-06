@@ -90,7 +90,7 @@ class SelfContainedIntegrationTest :
                     createdDatabase.objectType shouldBe "database"
                     createdDatabase.title.first().plainText shouldBe "Test Database - Kotlin Client"
                     createdDatabase.dataSources.size shouldBe 1
-                    createdDatabase.archived shouldBe false
+                    createdDatabase.inTrash shouldBe false
 
                     println("✅ Database created successfully: ${createdDatabase.id}")
                     println("✅ Data source ID: $dataSourceId")
@@ -122,7 +122,7 @@ class SelfContainedIntegrationTest :
 
                     // Verify page creation (2025-09-03: pages have data_source_id parent)
                     createdPage.objectType shouldBe "page"
-                    createdPage.archived shouldBe false
+                    createdPage.inTrash shouldBe false
                     createdPage.parent.id!!.withOrWithoutHyphens() shouldContainAnyOf dataSourceId.withOrWithoutHyphens()
 
                     println("✅ Page created successfully: ${createdPage.id}")
@@ -137,14 +137,14 @@ class SelfContainedIntegrationTest :
                     retrievedDatabase.id shouldBe createdDatabase.id
                     retrievedDatabase.title.first().plainText shouldBe "Test Database - Kotlin Client"
                     retrievedDatabase.dataSources.size shouldBe 1
-                    retrievedDatabase.archived shouldBe false
+                    retrievedDatabase.inTrash shouldBe false
 
                     // Step 4: Retrieve page and verify properties
                     println("🔍 Retrieving page to verify properties...")
                     val retrievedPage = client.pages.retrieve(createdPage.id)
 
                     retrievedPage.id shouldBe createdPage.id
-                    retrievedPage.archived shouldBe false
+                    retrievedPage.inTrash shouldBe false
                     retrievedPage.parent.id!!.withOrWithoutHyphens() shouldContainAnyOf dataSourceId.withOrWithoutHyphens()
 
                     // Verify properties using type-safe access (demonstrating our new API!)
@@ -204,16 +204,16 @@ class SelfContainedIntegrationTest :
                     // Step 6: Conditionally clean up based on environment variable
                     if (shouldCleanupAfterTest()) {
                         println("🧹 Cleaning up - archiving page...")
-                        val archivedPage = client.pages.archive(createdPage.id)
-                        archivedPage.archived shouldBe true
+                        val archivedPage = client.pages.trash(createdPage.id)
+                        archivedPage.inTrash shouldBe true
                         archivedPage.id shouldBe createdPage.id
 
                         println("✅ Page archived successfully")
 
                         // Step 7: Clean up - Archive the database
                         println("🧹 Cleaning up - archiving database...")
-                        val archivedDatabase = client.databases.archive(createdDatabase.id)
-                        archivedDatabase.archived shouldBe true
+                        val archivedDatabase = client.databases.trash(createdDatabase.id)
+                        archivedDatabase.inTrash shouldBe true
                         archivedDatabase.id.withOrWithoutHyphens() shouldContainAnyOf createdDatabase.id.withOrWithoutHyphens()
 
                         println("✅ Database archived successfully")
@@ -223,8 +223,8 @@ class SelfContainedIntegrationTest :
                         val finalPage = client.pages.retrieve(createdPage.id)
                         val finalDatabase = client.databases.retrieve(createdDatabase.id)
 
-                        finalPage.archived shouldBe true
-                        finalDatabase.archived shouldBe true
+                        finalPage.inTrash shouldBe true
+                        finalDatabase.inTrash shouldBe true
 
                         println("✅ Cleanup verified - both objects are archived")
                         println("🎉 Integration test completed successfully!")
@@ -266,7 +266,7 @@ class SelfContainedIntegrationTest :
 
                     // Verify creation
                     createdPage.objectType shouldBe "page"
-                    createdPage.archived shouldBe false
+                    createdPage.inTrash shouldBe false
                     createdPage.parent.id!!.withOrWithoutHyphens() shouldContainAnyOf parentPageId.withOrWithoutHyphens()
 
                     println("✅ Standalone page created: ${createdPage.id}")
@@ -277,15 +277,15 @@ class SelfContainedIntegrationTest :
                     // Retrieve and verify
                     val retrievedPage = client.pages.retrieve(createdPage.id)
                     retrievedPage.id.withOrWithoutHyphens() shouldContainAnyOf createdPage.id.withOrWithoutHyphens()
-                    retrievedPage.archived shouldBe false
+                    retrievedPage.inTrash shouldBe false
 
                     println("✅ Standalone page retrieved successfully")
 
                     // Conditionally clean up based on environment variable
                     if (shouldCleanupAfterTest()) {
                         println("🧹 Cleaning up standalone page...")
-                        val archivedPage = client.pages.archive(createdPage.id)
-                        archivedPage.archived shouldBe true
+                        val archivedPage = client.pages.trash(createdPage.id)
+                        archivedPage.inTrash shouldBe true
 
                         println("✅ Standalone page archived successfully")
                         println("🎉 Standalone page test completed!")
@@ -420,8 +420,8 @@ class SelfContainedIntegrationTest :
                     // Step 5: Conditionally clean up based on environment variable
                     delay(500)
                     if (shouldCleanupAfterTest()) {
-                        client.pages.archive(createdPage.id)
-                        client.databases.archive(database.id)
+                        client.pages.trash(createdPage.id)
+                        client.databases.trash(database.id)
                         println("✅ Comprehensive test completed and cleaned up")
                     } else {
                         println("🔧 Cleanup skipped (NOTION_CLEANUP_AFTER_TEST=false)")

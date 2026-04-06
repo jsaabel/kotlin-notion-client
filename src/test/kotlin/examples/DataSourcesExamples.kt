@@ -109,7 +109,7 @@ class DataSourcesExamples :
                 if (shouldCleanupAfterTest() && testDatabaseId != null) {
                     println("🧹 Cleaning up test database...")
                     try {
-                        notion.databases.archive(testDatabaseId)
+                        notion.databases.trash(testDatabaseId)
                         println("✅ Cleanup complete")
                     } catch (e: Exception) {
                         println("⚠️ Cleanup failed: ${e.message}")
@@ -286,7 +286,7 @@ class DataSourcesExamples :
 
                 // Cleanup
                 if (shouldCleanupAfterTest()) {
-                    notion.databases.archive(database.id)
+                    notion.databases.trash(database.id)
                 }
 
                 println("✅ Example 6 passed")

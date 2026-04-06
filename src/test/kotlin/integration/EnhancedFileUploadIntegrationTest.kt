@@ -145,7 +145,7 @@ class EnhancedFileUploadIntegrationTest :
                     // Cleanup if requested
                     if (shouldCleanupAfterTest()) {
                         delay(1000)
-                        client.pages.archive(page.id)
+                        client.pages.trash(page.id)
                         println("🧹 Test page archived")
                     } else {
                         println("🔧 Test page preserved: ${page.id}")
@@ -295,7 +295,7 @@ class EnhancedFileUploadIntegrationTest :
                             // Cleanup if requested
                             if (shouldCleanupAfterTest()) {
                                 delay(1000)
-                                client.pages.archive(page.id)
+                                client.pages.trash(page.id)
                                 println("🧹 Test page archived")
                             } else {
                                 println("🔧 Test page preserved: ${page.id}")
@@ -407,7 +407,7 @@ class EnhancedFileUploadIntegrationTest :
                     // Cleanup if requested
                     if (shouldCleanupAfterTest()) {
                         delay(1000)
-                        client.pages.archive(page.id)
+                        client.pages.trash(page.id)
                         println("🧹 Test page archived")
                     } else {
                         println("🔧 Test page preserved: ${page.id}")

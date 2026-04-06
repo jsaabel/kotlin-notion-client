@@ -29,8 +29,6 @@ data class DataSource(
     override val createdBy: User? = null,
     @SerialName("last_edited_by")
     override val lastEditedBy: User? = null,
-    @SerialName("archived")
-    override val archived: Boolean = false,
     @SerialName("title")
     val title: List<RichText>,
     @SerialName("description")
@@ -46,7 +44,7 @@ data class DataSource(
     @SerialName("public_url")
     val publicUrl: String? = null,
     @SerialName("in_trash")
-    val inTrash: Boolean = false,
+    override val inTrash: Boolean = false,
 ) : NotionObject {
     @SerialName("object")
     override val objectType: String = "data_source"

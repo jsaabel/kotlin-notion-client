@@ -22,7 +22,7 @@ class UpdatePageRequestBuilderTest :
             request.properties!!.size shouldBe 3
             request.icon shouldBe null
             request.cover shouldBe null
-            request.archived shouldBe null
+            request.inTrash shouldBe null
         }
 
         "should build update request with icon and cover" {
@@ -41,28 +41,28 @@ class UpdatePageRequestBuilderTest :
             (request.cover as? PageCover.External)?.external?.url shouldBe "https://example.com/cover.jpg"
 
             request.properties shouldBe null
-            request.archived shouldBe null
+            request.inTrash shouldBe null
         }
 
-        "should build update request with archive status" {
+        "should build update request with trash status" {
             val request =
                 updatePageRequest {
-                    archive()
+                    trash()
                 }
 
-            request.archived shouldBe true
+            request.inTrash shouldBe true
             request.properties shouldBe null
             request.icon shouldBe null
             request.cover shouldBe null
         }
 
-        "should build update request with archive false" {
+        "should build update request with trash false" {
             val request =
                 updatePageRequest {
-                    archive(false)
+                    trash(false)
                 }
 
-            request.archived shouldBe false
+            request.inTrash shouldBe false
         }
 
         "should build comprehensive update request" {
@@ -78,7 +78,7 @@ class UpdatePageRequestBuilderTest :
                     }
                     icon.external("https://example.com/icon.png")
                     cover.file("https://example.com/cover.jpg", "2024-12-31T23:59:59.000Z")
-                    archive()
+                    trash()
                 }
 
             request.properties shouldNotBe null
@@ -91,7 +91,7 @@ class UpdatePageRequestBuilderTest :
             request.cover shouldNotBe null
             request.cover!!.type shouldBe "file"
 
-            request.archived shouldBe true
+            request.inTrash shouldBe true
         }
 
         "should build empty update request when no configuration provided" {
@@ -100,7 +100,7 @@ class UpdatePageRequestBuilderTest :
             request.properties shouldBe null
             request.icon shouldBe null
             request.cover shouldBe null
-            request.archived shouldBe null
+            request.inTrash shouldBe null
         }
 
         "should build update request with icon and cover removal" {
@@ -113,7 +113,7 @@ class UpdatePageRequestBuilderTest :
             request.icon shouldBe null
             request.cover shouldBe null
             request.properties shouldBe null
-            request.archived shouldBe null
+            request.inTrash shouldBe null
         }
 
         "should build update request with select options without colors" {
@@ -235,13 +235,13 @@ class UpdatePageRequestBuilderTest :
                     lock()
                     eraseContent()
                     template.default()
-                    archive()
+                    trash()
                 }
 
             request.properties shouldNotBe null
             request.isLocked shouldBe true
             request.eraseContent shouldBe true
             request.template shouldBe PageTemplate.Default
-            request.archived shouldBe true
+            request.inTrash shouldBe true
         }
     })

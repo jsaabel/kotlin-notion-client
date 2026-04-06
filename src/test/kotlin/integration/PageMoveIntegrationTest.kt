@@ -85,8 +85,8 @@ class PageMoveIntegrationTest :
                     // Cleanup
                     if (shouldCleanupAfterTest()) {
                         println("🧹 Cleaning up test pages...")
-                        client.pages.archive(sourcePage.id)
-                        client.pages.archive(destinationParent.id)
+                        client.pages.trash(sourcePage.id)
+                        client.pages.trash(destinationParent.id)
                         println("✅ Test pages archived")
                     } else {
                         println("🔧 Cleanup skipped (NOTION_CLEANUP_AFTER_TEST=false)")
@@ -159,8 +159,8 @@ class PageMoveIntegrationTest :
                     // Cleanup
                     if (shouldCleanupAfterTest()) {
                         println("🧹 Cleaning up...")
-                        client.pages.archive(standalonePage.id)
-                        client.databases.archive(destinationDb.id)
+                        client.pages.trash(standalonePage.id)
+                        client.databases.trash(destinationDb.id)
                         println("✅ Test database and page archived")
                     } else {
                         println("🔧 Cleanup skipped (NOTION_CLEANUP_AFTER_TEST=false)")

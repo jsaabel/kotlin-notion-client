@@ -127,7 +127,7 @@ class CommentPaginationIntegrationTest :
                     // Cleanup - just archive the page, comments are automatically cleaned up
                     if (shouldCleanupAfterTest()) {
                         println("\n🧹 Cleaning up test page...")
-                        client.pages.archive(page.id)
+                        client.pages.trash(page.id)
                         println("✅ Test page archived (comments are automatically cleaned up)")
                     } else {
                         println("\n🔧 Test page preserved: ${page.id}")

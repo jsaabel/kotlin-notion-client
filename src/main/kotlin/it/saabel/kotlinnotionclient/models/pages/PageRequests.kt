@@ -43,9 +43,9 @@ data class CreatePageRequest(
  * Notion doesn't support true deletion - objects are archived instead.
  */
 @Serializable
-data class ArchivePageRequest(
-    @SerialName("archived")
-    val archived: Boolean = true,
+data class TrashPageRequest(
+    @SerialName("in_trash")
+    val inTrash: Boolean = true,
 )
 
 /**
@@ -62,8 +62,8 @@ data class UpdatePageRequest(
     val icon: PageIcon? = null,
     @SerialName("cover")
     val cover: PageCover? = null,
-    @SerialName("archived")
-    val archived: Boolean? = null,
+    @SerialName("in_trash")
+    val inTrash: Boolean? = null,
     @SerialName("is_locked")
     val isLocked: Boolean? = null,
     @SerialName("template")

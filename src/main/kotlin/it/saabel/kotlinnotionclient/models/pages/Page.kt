@@ -27,8 +27,6 @@ data class Page(
     override val createdBy: User? = null,
     @SerialName("last_edited_by")
     override val lastEditedBy: User? = null,
-    @SerialName("archived")
-    override val archived: Boolean,
     @SerialName("parent")
     val parent: Parent,
     @SerialName("properties")
@@ -42,7 +40,7 @@ data class Page(
     @SerialName("cover")
     val cover: PageCover? = null,
     @SerialName("in_trash")
-    val inTrash: Boolean = false,
+    override val inTrash: Boolean = false,
     @SerialName("is_locked")
     val isLocked: Boolean = false,
 ) : NotionObject {

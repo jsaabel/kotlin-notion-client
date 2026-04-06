@@ -35,20 +35,20 @@ import it.saabel.kotlinnotionclient.models.base.NotionFile
  *     }
  *     icon.external("https://example.com/new-icon.png")
  *     cover.external("https://example.com/new-cover.jpg")
- *     archive()
+ *     trash()
  * }
  * ```
  *
  * **Important Notes**:
  * - Only properties specified in the DSL will be updated; other properties remain unchanged
- * - Archive status can be set with `archive()` or `archive(true/false)`
+ * - Trash status can be set with `trash()` or `trash(true/false)`
  */
 @UpdatePageRequestDslMarker
 class UpdatePageRequestBuilder {
     private var properties = mutableMapOf<String, PagePropertyValue>()
     private var iconValue: PageIcon? = null
     private var coverValue: PageCover? = null
-    private var archivedValue: Boolean? = null
+    private var inTrashValue: Boolean? = null
     private var isLockedValue: Boolean? = null
     private var templateValue: PageTemplate? = null
     private var eraseContentValue: Boolean? = null
@@ -83,12 +83,12 @@ class UpdatePageRequestBuilder {
     }
 
     /**
-     * Archives the page.
+     * Moves the page to trash (or restores it).
      *
-     * @param archived Whether to archive (true) or unarchive (false) the page. Defaults to true.
+     * @param inTrash Whether to move to trash (true) or restore from trash (false). Defaults to true.
      */
-    fun archive(archived: Boolean = true) {
-        archivedValue = archived
+    fun trash(inTrash: Boolean = true) {
+        inTrashValue = inTrash
     }
 
     /**
@@ -129,7 +129,7 @@ class UpdatePageRequestBuilder {
             properties = properties.takeIf { it.isNotEmpty() },
             icon = iconValue,
             cover = coverValue,
-            archived = archivedValue,
+            inTrash = inTrashValue,
             isLocked = isLockedValue,
             template = templateValue,
             eraseContent = eraseContentValue,

@@ -35,8 +35,6 @@ data class Database(
     override val createdBy: User? = null,
     @SerialName("last_edited_by")
     override val lastEditedBy: User? = null,
-    @SerialName("archived")
-    override val archived: Boolean = false,
     @SerialName("title")
     val title: List<RichText>,
     @SerialName("description")
@@ -58,7 +56,7 @@ data class Database(
     @SerialName("is_inline")
     val isInline: Boolean = false,
     @SerialName("in_trash")
-    val inTrash: Boolean = false,
+    override val inTrash: Boolean = false,
 ) : NotionObject {
     @SerialName("object")
     override val objectType: String = "database"

@@ -168,16 +168,16 @@ class UpdateDataSourceRequestBuilder {
     }
 
     /**
-     * Archives the data source.
+     * Moves the data source to trash.
      */
-    fun archive() {
+    fun trash() {
         inTrashValue = true
     }
 
     /**
-     * Unarchives the data source.
+     * Restores the data source from trash.
      */
-    fun unarchive() {
+    fun restore() {
         inTrashValue = false
     }
 

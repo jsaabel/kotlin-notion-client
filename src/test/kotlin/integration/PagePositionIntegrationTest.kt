@@ -94,9 +94,9 @@ class PagePositionIntegrationTest :
                     // Cleanup
                     if (shouldCleanupAfterTest()) {
                         println("🧹 Cleaning up test pages...")
-                        client.pages.archive(startPage.id)
-                        client.pages.archive(endPage.id)
-                        client.pages.archive(containerPage.id)
+                        client.pages.trash(startPage.id)
+                        client.pages.trash(endPage.id)
+                        client.pages.trash(containerPage.id)
                         println("✅ Test pages archived")
                     } else {
                         println("🔧 Cleanup skipped (NOTION_CLEANUP_AFTER_TEST=false)")

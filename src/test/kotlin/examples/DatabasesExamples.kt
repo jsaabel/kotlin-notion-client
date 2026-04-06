@@ -55,7 +55,7 @@ class DatabasesExamples :
                     println("🧹 Cleaning up test databases...")
                     try {
                         createdDatabases.forEach { dbId ->
-                            notion.databases.archive(dbId)
+                            notion.databases.trash(dbId)
                         }
                         println("✅ Cleanup complete")
                     } catch (e: Exception) {
@@ -89,7 +89,7 @@ class DatabasesExamples :
                 val title = database.title.firstOrNull()?.plainText ?: "Untitled"
                 println("Database: $title")
                 println("Created: ${database.createdTime}")
-                println("Archived: ${database.archived}")
+                println("Archived: ${database.inTrash}")
 
                 // Get data sources within this database
                 database.dataSources.forEach { dataSourceRef ->
@@ -102,7 +102,7 @@ class DatabasesExamples :
                 // Validation
                 database.shouldNotBeNull()
                 title shouldBe "Test Database for Retrieval"
-                database.archived shouldBe false
+                database.inTrash shouldBe false
                 dataSourceId.shouldNotBeNull()
 
                 println("✅ Example 1 passed")
@@ -284,16 +284,16 @@ class DatabasesExamples :
             }
 
             // ========================================
-            // Example 5: Archive a Database
+            // Example 5: Trash a Database
             // ========================================
-            "Example 5: Archive a database" {
-                println("\n📖 Running Example 5: Archive a database")
+            "Example 5: Trash a database" {
+                println("\n📖 Running Example 5: Trash a database")
 
-                // Create a database to archive
+                // Create a database to trash
                 val db =
                     notion.databases.create {
                         parent.page(parentPageId)
-                        title("Database to Archive")
+                        title("Database to Trash")
                         properties {
                             title("Name")
                         }
@@ -302,7 +302,7 @@ class DatabasesExamples :
 
                 delay(1000)
 
-                val archived = notion.databases.archive(db.id)
+                val archived = notion.databases.trash(db.id)
 
                 println("Database in trash: ${archived.inTrash}")
 
@@ -397,8 +397,8 @@ class DatabasesExamples :
             // ========================================
             // Example 8: Check If Database is Archived
             // ========================================
-            "Example 8: Check if database is archived" {
-                println("\n📖 Running Example 8: Check archived status")
+            "Example 8: Check if database is in trash" {
+                println("\n📖 Running Example 8: Check trash status")
 
                 // Create a database
                 val db =

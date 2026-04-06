@@ -145,7 +145,7 @@ class TemplatesIntegrationTest :
                         if (shouldCleanupAfterTest()) {
                             delay(1000)
                             println("\n🧹 Archiving test page...")
-                            client.pages.archive(page.id)
+                            client.pages.trash(page.id)
                             println("✅ Cleanup complete")
                         } else {
                             println("\n⚠️ Skipping cleanup (NOTION_CLEANUP_AFTER_TEST=false)")
@@ -194,7 +194,7 @@ class TemplatesIntegrationTest :
                     if (shouldCleanupAfterTest()) {
                         delay(1000)
                         println("\n🧹 Archiving test page...")
-                        client.pages.archive(page.id)
+                        client.pages.trash(page.id)
                         println("✅ Cleanup complete")
                     } else {
                         println("\n⚠️ Skipping cleanup (NOTION_CLEANUP_AFTER_TEST=false)")
@@ -247,7 +247,7 @@ class TemplatesIntegrationTest :
                     if (shouldCleanupAfterTest()) {
                         delay(1000)
                         println("\n🧹 Archiving test page...")
-                        client.pages.archive(page.id)
+                        client.pages.trash(page.id)
                         println("✅ Cleanup complete")
                     } else {
                         println("\n⚠️ Skipping cleanup (NOTION_CLEANUP_AFTER_TEST=false)")
@@ -340,8 +340,8 @@ class TemplatesIntegrationTest :
                     if (shouldCleanupAfterTest()) {
                         delay(1000)
                         println("\n🧹 Archiving test pages...")
-                        client.pages.archive(page1.id)
-                        client.pages.archive(page2.id)
+                        client.pages.trash(page1.id)
+                        client.pages.trash(page2.id)
                         println("✅ Cleanup complete")
                     } else {
                         println("\n⚠️ Skipping cleanup (NOTION_CLEANUP_AFTER_TEST=false)")
@@ -394,7 +394,7 @@ class TemplatesIntegrationTest :
                         delay(1000)
                         println("\n🧹 Archiving test pages...")
                         createdPages.forEach { pageId ->
-                            client.pages.archive(pageId)
+                            client.pages.trash(pageId)
                         }
                         println("✅ Cleanup complete")
                     } else {

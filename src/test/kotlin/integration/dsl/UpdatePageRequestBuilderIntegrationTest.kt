@@ -229,18 +229,18 @@ class UpdatePageRequestBuilderIntegrationTest :
 
                     println("✅ API overload method verified with property updates!")
 
-                    // Step 6: Test archive functionality
-                    println("📦 Testing archive functionality...")
+                    // Step 6: Test trash functionality
+                    println("📦 Testing trash functionality...")
 
                     val archivedPage =
                         client.pages.update(initialPage.id) {
-                            archive()
+                            trash()
                         }
 
                     delay(1000)
-                    archivedPage.archived shouldBe true
+                    archivedPage.inTrash shouldBe true
 
-                    println("✅ Archive functionality verified!")
+                    println("✅ Trash functionality verified!")
 
                     println()
                     println("🎉 UpdatePageRequestBuilder DSL Integration Test - COMPLETE SUCCESS!")
@@ -249,7 +249,7 @@ class UpdatePageRequestBuilderIntegrationTest :
                     println("   ✅ Updated ALL property types using UpdatePageRequestBuilder DSL")
                     println("   ✅ Verified every property update was applied correctly")
                     println("   ✅ Tested API overload method client.pages.update(id) { ... }")
-                    println("   ✅ Verified icon, cover, and archive functionality")
+                    println("   ✅ Verified icon, cover, and trash functionality")
                     println("   ✅ Confirmed feature parity with CreatePageRequestBuilder")
                     println()
                     println("   Property Types Tested:")
@@ -261,8 +261,8 @@ class UpdatePageRequestBuilderIntegrationTest :
                     // Cleanup
                     if (shouldCleanupAfterTest()) {
                         println("🧹 Cleaning up test database...")
-                        client.databases.archive(testDatabase.id)
-                        println("✅ Test database and pages archived")
+                        client.databases.trash(testDatabase.id)
+                        println("✅ Test database and pages trashed")
                     } else {
                         println("🔧 Cleanup skipped (NOTION_CLEANUP_AFTER_TEST=false)")
                         println("   Database: ${testDatabase.id} (\"UpdatePageDSL Test Database\")")
@@ -317,8 +317,8 @@ class UpdatePageRequestBuilderIntegrationTest :
 
                     // Cleanup
                     if (shouldCleanupAfterTest()) {
-                        client.pages.archive(childPage.id)
-                        println("✅ Basic test page archived")
+                        client.pages.trash(childPage.id)
+                        println("✅ Basic test page trashed")
                     }
                 } finally {
                     client.close()
