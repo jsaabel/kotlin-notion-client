@@ -5,6 +5,7 @@ import io.kotest.core.annotation.Tags
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
+import io.kotest.matchers.string.shouldContain
 import io.kotest.matchers.types.shouldBeInstanceOf
 import io.ktor.http.HttpMethod
 import io.ktor.http.HttpStatusCode
@@ -261,14 +262,14 @@ class CommentsApiTest :
                 exception.message shouldBe "Comments can have a maximum of 3 attachments, but 4 were provided"
             }
 
-            test("should validate empty rich text") {
-                val client = mockClient { /* No responses needed for validation error */ }
+            test("should validate empty content — no rich_text or markdown") {
+                val client = mockClient { }
                 api = CommentsApi(client, config)
 
                 val request =
                     CreateCommentRequest(
                         parent = Parent.PageParent(pageId = "test-page-id"),
-                        richText = emptyList(), // Empty rich text
+                        richText = emptyList(),
                     )
 
                 val exception =
@@ -276,7 +277,41 @@ class CommentsApiTest :
                         api.create(request)
                     }
 
-                exception.message shouldBe "Comment rich text cannot be empty"
+                exception.message shouldContain "Comment content cannot be empty"
+            }
+
+            test("should reject both rich_text and markdown being set") {
+                val client = mockClient { }
+                api = CommentsApi(client, config)
+
+                val request =
+                    CreateCommentRequest(
+                        parent = Parent.PageParent(pageId = "test-page-id"),
+                        richText = listOf(RequestBuilders.createSimpleRichText("hello")),
+                        markdown = "**hello**",
+                    )
+
+                val exception =
+                    shouldThrow<IllegalArgumentException> {
+                        api.create(request)
+                    }
+
+                exception.message shouldContain "either rich_text or markdown, not both"
+            }
+
+            test("should serialize markdown comment request correctly") {
+                val request =
+                    CreateCommentRequest(
+                        parent = Parent.PageParent(pageId = "test-page-id"),
+                        markdown = "**bold** and _italic_ text",
+                    )
+
+                val json = TestFixtures.json.encodeToString(CreateCommentRequest.serializer(), request)
+
+                json shouldNotBe null
+                json.contains("markdown") shouldBe true
+                json.contains("bold") shouldBe true
+                json.contains("rich_text") shouldBe false
             }
 
             test("should handle API error when creating comment") {

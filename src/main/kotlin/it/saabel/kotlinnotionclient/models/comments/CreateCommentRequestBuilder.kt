@@ -61,6 +61,7 @@ annotation class CommentDslMarker
 class CreateCommentRequestBuilder {
     private var parentValue: Parent? = null
     private var richTextValue: List<RichText> = emptyList()
+    private var markdownValue: String? = null
     private var discussionIdValue: String? = null
     private var attachmentsValue: List<CommentAttachmentRequest>? = null
     private var displayNameValue: CommentDisplayNameRequest? = null
@@ -136,6 +137,20 @@ class CreateCommentRequestBuilder {
     }
 
     /**
+     * Sets the comment content as a Markdown string.
+     *
+     * Supports inline formatting (bold, italic, strikethrough, inline code, links),
+     * inline equations, and mentions.
+     *
+     * Mutually exclusive with [content] / [richText].
+     *
+     * @param content The Markdown string
+     */
+    fun markdown(content: String) {
+        markdownValue = content
+    }
+
+    /**
      * Sets the discussion ID to reply to an existing comment thread.
      *
      * @param discussionId The ID of the discussion to reply to
@@ -194,13 +209,19 @@ class CreateCommentRequestBuilder {
     internal fun build(): CreateCommentRequest {
         val parent = parentValue ?: throw IllegalStateException("Parent must be specified")
 
-        if (richTextValue.isEmpty()) {
-            throw IllegalStateException("Comment content cannot be empty")
+        val hasRichText = richTextValue.isNotEmpty()
+        val hasMarkdown = markdownValue != null
+        if (hasRichText && hasMarkdown) {
+            throw IllegalStateException("Comment content must use either rich_text or markdown, not both")
+        }
+        if (!hasRichText && !hasMarkdown) {
+            throw IllegalStateException("Comment content cannot be empty — provide either content { ... } or markdown(\"...\")")
         }
 
         return CreateCommentRequest(
             parent = parent,
-            richText = richTextValue,
+            richText = if (hasRichText) richTextValue else null,
+            markdown = markdownValue,
             discussionId = discussionIdValue,
             attachments = attachmentsValue,
             displayName = displayNameValue,

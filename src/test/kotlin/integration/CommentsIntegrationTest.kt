@@ -245,12 +245,12 @@ class CommentsIntegrationTest :
                             val testPage = client.pages.create(pageRequest)
 
                             try {
-                                // Test empty rich text validation
-                                println("   Testing empty rich text validation...")
+                                // Test empty content validation
+                                println("   Testing empty content validation...")
                                 val invalidRequest =
                                     CreateCommentRequest(
                                         parent = Parent.PageParent(pageId = testPage.id),
-                                        richText = emptyList(), // This should trigger validation error
+                                        richText = emptyList(),
                                     )
 
                                 var caughtValidationError = false
@@ -259,7 +259,6 @@ class CommentsIntegrationTest :
                                 } catch (e: IllegalArgumentException) {
                                     caughtValidationError = true
                                     println("   ✅ Correctly caught validation error: ${e.message}")
-                                    e.message shouldBe "Comment rich text cannot be empty"
                                 }
 
                                 caughtValidationError shouldBe true
@@ -664,6 +663,63 @@ class CommentsIntegrationTest :
 
                             client.close()
                             println("🔒 Client closed")
+                        }
+                    }
+                }
+
+                When("testing markdown comments") {
+                    val client = NotionClient(NotionConfig(apiToken = token!!))
+
+                    Then("should successfully create a comment with markdown content") {
+                        var createdPageId: String? = null
+
+                        try {
+                            println("📝 Testing markdown comment creation...")
+
+                            val testPage =
+                                client.pages.create {
+                                    parent.page(parentPageId!!)
+                                    title("Markdown Comments Test Page")
+                                }
+                            createdPageId = testPage.id
+                            delay(500)
+
+                            // Create comment via typed request with markdown
+                            val markdownComment =
+                                client.comments.create(
+                                    CreateCommentRequest(
+                                        parent = Parent.PageParent(pageId = testPage.id),
+                                        markdown = "**Bold** and _italic_ text with `inline code`.",
+                                    ),
+                                )
+
+                            println("✅ Created markdown comment: ${markdownComment.id}")
+                            markdownComment.id.shouldNotBeBlank()
+                            markdownComment.objectType shouldBe "comment"
+
+                            delay(500)
+
+                            // Create comment via DSL with markdown
+                            val dslMarkdownComment =
+                                client.comments.create {
+                                    parent.page(testPage.id)
+                                    markdown("Reply via DSL: **done** reviewing!")
+                                    discussionId(markdownComment.discussionId)
+                                }
+
+                            println("✅ Created DSL markdown comment: ${dslMarkdownComment.id}")
+                            dslMarkdownComment.id.shouldNotBeBlank()
+                            dslMarkdownComment.discussionId shouldBe markdownComment.discussionId
+
+                            println("🎉 Markdown comment test completed successfully!")
+                        } catch (e: NotionException) {
+                            println("❌ Error during markdown comment test: ${e.message}")
+                            throw e
+                        } finally {
+                            if (createdPageId != null && shouldCleanupAfterTest()) {
+                                runCatching { client.pages.trash(createdPageId) }
+                            }
+                            client.close()
                         }
                     }
                 }

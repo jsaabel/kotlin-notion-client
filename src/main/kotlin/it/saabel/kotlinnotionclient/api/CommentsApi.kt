@@ -186,9 +186,14 @@ class CommentsApi(
                 }
             }
 
-            // Validate rich text is not empty
-            if (request.richText.isEmpty()) {
-                throw IllegalArgumentException("Comment rich text cannot be empty")
+            // Validate exactly one of rich_text or markdown is provided
+            val hasRichText = !request.richText.isNullOrEmpty()
+            val hasMarkdown = request.markdown != null
+            if (hasRichText && hasMarkdown) {
+                throw IllegalArgumentException("Comment content must use either rich_text or markdown, not both")
+            }
+            if (!hasRichText && !hasMarkdown) {
+                throw IllegalArgumentException("Comment content cannot be empty — provide either rich_text or markdown")
             }
 
             val url = "${config.baseUrl}/comments"

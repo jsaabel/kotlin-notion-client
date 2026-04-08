@@ -131,13 +131,17 @@ enum class CommentDisplayNameType {
 
 /**
  * Request model for creating a comment.
+ *
+ * Exactly one of [richText] or [markdown] must be provided.
  */
 @Serializable
 data class CreateCommentRequest(
     @SerialName("parent")
     val parent: Parent,
     @SerialName("rich_text")
-    val richText: List<RichText>,
+    val richText: List<RichText>? = null,
+    @SerialName("markdown")
+    val markdown: String? = null,
     @SerialName("discussion_id")
     val discussionId: String? = null,
     @SerialName("attachments")

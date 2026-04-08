@@ -121,6 +121,18 @@ class CommentsExamples :
                 println("Full text: ${comment.richText.joinToString("") { it.plainText }}")
             }
 
+            "Example 3b: Create a comment using markdown" {
+                // Create a comment using a markdown string instead of rich text
+                val comment =
+                    notion.comments.create {
+                        parent.page(testPageId!!)
+                        markdown("**Bold** and _italic_ text with `inline code` via markdown.")
+                    }
+
+                println("Created markdown comment: ${comment.id}")
+                println("Comment richText elements: ${comment.richText.size}")
+            }
+
             "Example 4: Comment on a specific block" {
                 // Create a page with blocks for this example
                 val blockPage =
