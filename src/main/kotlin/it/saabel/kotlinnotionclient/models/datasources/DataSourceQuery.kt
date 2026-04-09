@@ -209,6 +209,26 @@ data class MultiSelectCondition(
 )
 
 /**
+ * Relative date values accepted by date filter conditions.
+ *
+ * These values are resolved at query time relative to the current date.
+ * They can be used wherever an ISO 8601 date string is accepted in date conditions:
+ * [DateCondition.equals], [DateCondition.before], [DateCondition.after],
+ * [DateCondition.onOrBefore], and [DateCondition.onOrAfter].
+ */
+enum class RelativeDateValue(
+    val apiValue: String,
+) {
+    TODAY("today"),
+    TOMORROW("tomorrow"),
+    YESTERDAY("yesterday"),
+    ONE_WEEK_AGO("one_week_ago"),
+    ONE_WEEK_FROM_NOW("one_week_from_now"),
+    ONE_MONTH_AGO("one_month_ago"),
+    ONE_MONTH_FROM_NOW("one_month_from_now"),
+}
+
+/**
  * Date property condition with various date-based filters.
  */
 @Serializable

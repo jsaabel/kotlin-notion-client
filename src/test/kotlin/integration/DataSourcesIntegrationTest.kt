@@ -8,6 +8,7 @@ import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import it.saabel.kotlinnotionclient.NotionClient
 import it.saabel.kotlinnotionclient.config.NotionConfig
+import it.saabel.kotlinnotionclient.models.datasources.RelativeDateValue
 import kotlinx.coroutines.delay
 
 /**
@@ -307,6 +308,7 @@ class DataSourcesIntegrationTest :
                                     option("High")
                                 }
                                 checkbox("Active")
+                                date("Due Date")
                             }
                         }
 
@@ -315,7 +317,18 @@ class DataSourcesIntegrationTest :
                     val retrievedDb = client.databases.retrieve(database.id)
                     val dataSourceId = retrievedDb.dataSources.first().id
 
-                    println("📝 Creating test pages...")
+                    // Compute fixed dates for all 7 relative values
+                    val now = java.time.LocalDate.now()
+                    val dateToday = now.toString()
+                    val dateYesterday = now.minusDays(1).toString()
+                    val dateTomorrow = now.plusDays(1).toString()
+                    val dateOneWeekAgo = now.minusDays(7).toString()
+                    val dateOneWeekFromNow = now.plusDays(7).toString()
+                    val dateOneMonthAgo = now.minusMonths(1).toString()
+                    val dateOneMonthFromNow = now.plusMonths(1).toString()
+
+                    println("📝 Creating test pages (property filter + 7 dated pages)...")
+                    // Pages for property filter test
                     client.pages.create {
                         parent.dataSource(dataSourceId)
                         properties {
@@ -324,7 +337,6 @@ class DataSourcesIntegrationTest :
                             checkbox("Active", true)
                         }
                     }
-
                     client.pages.create {
                         parent.dataSource(dataSourceId)
                         properties {
@@ -334,9 +346,61 @@ class DataSourcesIntegrationTest :
                         }
                     }
 
+                    // One page per relative date value
+                    client.pages.create {
+                        parent.dataSource(dataSourceId)
+                        properties {
+                            title("Name", "Due Today")
+                            date("Due Date", dateToday)
+                        }
+                    }
+                    client.pages.create {
+                        parent.dataSource(dataSourceId)
+                        properties {
+                            title("Name", "Due Yesterday")
+                            date("Due Date", dateYesterday)
+                        }
+                    }
+                    client.pages.create {
+                        parent.dataSource(dataSourceId)
+                        properties {
+                            title("Name", "Due Tomorrow")
+                            date("Due Date", dateTomorrow)
+                        }
+                    }
+                    client.pages.create {
+                        parent.dataSource(dataSourceId)
+                        properties {
+                            title("Name", "Due One Week Ago")
+                            date("Due Date", dateOneWeekAgo)
+                        }
+                    }
+                    client.pages.create {
+                        parent.dataSource(dataSourceId)
+                        properties {
+                            title("Name", "Due One Week From Now")
+                            date("Due Date", dateOneWeekFromNow)
+                        }
+                    }
+                    client.pages.create {
+                        parent.dataSource(dataSourceId)
+                        properties {
+                            title("Name", "Due One Month Ago")
+                            date("Due Date", dateOneMonthAgo)
+                        }
+                    }
+                    client.pages.create {
+                        parent.dataSource(dataSourceId)
+                        properties {
+                            title("Name", "Due One Month From Now")
+                            date("Due Date", dateOneMonthFromNow)
+                        }
+                    }
+
                     delay(1000)
 
-                    println("🔍 Querying with filters...")
+                    // --- Property filter sanity check ---
+                    println("🔍 Querying with property filters (select + checkbox)...")
                     val activeHighPriority =
                         client.dataSources.query(dataSourceId) {
                             filter {
@@ -346,9 +410,74 @@ class DataSourcesIntegrationTest :
                                 )
                             }
                         }
-
                     activeHighPriority shouldHaveSize 1
-                    println("✅ Filtered query returned ${activeHighPriority.size} page(s)")
+                    println("✅ Property filter: ${activeHighPriority.size} page(s)")
+
+                    // --- equals: each relative value matches exactly the one page with that date ---
+                    println("🔍 Testing equals() for all 7 relative date values...")
+                    client.dataSources.query(dataSourceId) {
+                        filter { date("Due Date").equals(RelativeDateValue.TODAY) }
+                    } shouldHaveSize 1
+
+                    client.dataSources.query(dataSourceId) {
+                        filter { date("Due Date").equals(RelativeDateValue.YESTERDAY) }
+                    } shouldHaveSize 1
+
+                    client.dataSources.query(dataSourceId) {
+                        filter { date("Due Date").equals(RelativeDateValue.TOMORROW) }
+                    } shouldHaveSize 1
+
+                    client.dataSources.query(dataSourceId) {
+                        filter { date("Due Date").equals(RelativeDateValue.ONE_WEEK_AGO) }
+                    } shouldHaveSize 1
+
+                    client.dataSources.query(dataSourceId) {
+                        filter { date("Due Date").equals(RelativeDateValue.ONE_WEEK_FROM_NOW) }
+                    } shouldHaveSize 1
+
+                    client.dataSources.query(dataSourceId) {
+                        filter { date("Due Date").equals(RelativeDateValue.ONE_MONTH_AGO) }
+                    } shouldHaveSize 1
+
+                    client.dataSources.query(dataSourceId) {
+                        filter { date("Due Date").equals(RelativeDateValue.ONE_MONTH_FROM_NOW) }
+                    } shouldHaveSize 1
+                    println("✅ equals() checks passed for all 7 relative values")
+
+                    // --- after: strictly after yesterday = today, tomorrow, +1w, +1m (4 pages) ---
+                    println("🔍 Testing after(YESTERDAY)...")
+                    client.dataSources.query(dataSourceId) {
+                        filter { date("Due Date").after(RelativeDateValue.YESTERDAY) }
+                    } shouldHaveSize 4
+                    println("✅ after(YESTERDAY): 4 page(s)")
+
+                    // --- before: strictly before today = yesterday, -1w, -1m (3 pages) ---
+                    println("🔍 Testing before(TODAY)...")
+                    client.dataSources.query(dataSourceId) {
+                        filter { date("Due Date").before(RelativeDateValue.TODAY) }
+                    } shouldHaveSize 3
+                    println("✅ before(TODAY): 3 page(s)")
+
+                    // --- onOrAfter: today or later = today, tomorrow, +1w, +1m (4 pages) ---
+                    println("🔍 Testing onOrAfter(TODAY)...")
+                    client.dataSources.query(dataSourceId) {
+                        filter { date("Due Date").onOrAfter(RelativeDateValue.TODAY) }
+                    } shouldHaveSize 4
+                    println("✅ onOrAfter(TODAY): 4 page(s)")
+
+                    // --- onOrBefore: today or earlier = today, yesterday, -1w, -1m (4 pages) ---
+                    println("🔍 Testing onOrBefore(TODAY)...")
+                    client.dataSources.query(dataSourceId) {
+                        filter { date("Due Date").onOrBefore(RelativeDateValue.TODAY) }
+                    } shouldHaveSize 4
+                    println("✅ onOrBefore(TODAY): 4 page(s)")
+
+                    // --- onOrAfter with future relative value: +1w and +1m (2 pages) ---
+                    println("🔍 Testing onOrAfter(ONE_WEEK_FROM_NOW)...")
+                    client.dataSources.query(dataSourceId) {
+                        filter { date("Due Date").onOrAfter(RelativeDateValue.ONE_WEEK_FROM_NOW) }
+                    } shouldHaveSize 2
+                    println("✅ onOrAfter(ONE_WEEK_FROM_NOW): 2 page(s)")
 
                     if (shouldCleanupAfterTest()) {
                         client.databases.trash(database.id)
