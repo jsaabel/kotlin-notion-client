@@ -102,10 +102,10 @@ Three new endpoints for reading and writing page content using enhanced markdown
 
 ### Tasks
 
-- [ ] **Add relative date filter values** to `DataSourceQueryBuilder`
+- [x] **Add relative date filter values** to `DataSourceQueryBuilder`
   - Accepted values: `"today"`, `"tomorrow"`, `"yesterday"`, `"one_week_ago"`, `"one_week_from_now"`, `"one_month_ago"`, `"one_month_from_now"`
   - These are used in date property filter conditions
-- [ ] **Add `"me"` filter for people properties**
+- [x] **Add `"me"` filter for people properties**
   - People properties now accept `"me"` as value in `contains`/`does_not_contain` filter conditions
   - Resolves to the integration's own user at query time
 
@@ -118,7 +118,7 @@ Three new endpoints for reading and writing page content using enhanced markdown
 - [ ] **Status property creation in `DatabaseRequestBuilder`**
   - Can already *read* `Status` page properties — need to be able to *create* the property on a database
   - Ref: [Database properties](https://developers.notion.com/reference/property-schema-object) — local copy: `reference/notion-api/documentation/objects/03_Database_DatabaseProperties.md`
-- [ ] **Writable verification property**
+- [x] **Writable verification property**
   - Wiki database verification property can now be set via Create/Update page endpoints
   - Ref: [Update page](https://developers.notion.com/reference/patch-page) — local copy: `reference/notion-api/documentation/endpoints/Update_Page_2025.md`
 - [ ] **Custom emoji listing endpoint**

@@ -141,6 +141,10 @@ object PagePropertySerializer : KSerializer<PageProperty> {
                 decoder.json.decodeFromJsonElement(PageProperty.LastEditedBy.serializer(), element)
             }
 
+            "verification" -> {
+                decoder.json.decodeFromJsonElement(PageProperty.Verification.serializer(), element)
+            }
+
             else -> {
                 // Fallback to Unknown for unsupported property types
                 // Manually construct Unknown with the raw JSON element
@@ -254,6 +258,10 @@ object PagePropertySerializer : KSerializer<PageProperty> {
                     PageProperty.LastEditedBy.serializer(),
                     value,
                 )
+            }
+
+            is PageProperty.Verification -> {
+                encoder.encodeSerializableValue(PageProperty.Verification.serializer(), value)
             }
 
             is PageProperty.Unknown -> {

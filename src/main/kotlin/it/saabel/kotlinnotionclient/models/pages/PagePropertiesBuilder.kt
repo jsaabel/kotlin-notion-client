@@ -678,6 +678,34 @@ class PagePropertiesBuilder {
     }
 
     /**
+     * Marks a page as verified in a wiki database.
+     *
+     * Optionally provide an ISO 8601 [start] date/datetime for when the verification begins,
+     * and an [end] date/datetime after which it expires.
+     *
+     * @param name The property name (typically "Verification")
+     * @param start Optional ISO 8601 start date/datetime string for the verification period
+     * @param end Optional ISO 8601 end date/datetime string after which the verification expires
+     */
+    fun verify(
+        name: String,
+        start: String? = null,
+        end: String? = null,
+    ) {
+        val date = if (start != null) DateData(start = start, end = end) else null
+        properties[name] = PagePropertyValue.VerificationValue(VerificationRequest(state = "verified", date = date))
+    }
+
+    /**
+     * Marks a page as unverified in a wiki database.
+     *
+     * @param name The property name (typically "Verification")
+     */
+    fun unverify(name: String) {
+        properties[name] = PagePropertyValue.VerificationValue(VerificationRequest(state = "unverified"))
+    }
+
+    /**
      * Builds and returns the property map.
      *
      * @return The constructed property map

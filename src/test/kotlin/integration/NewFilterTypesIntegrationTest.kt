@@ -4,6 +4,7 @@ import io.kotest.core.annotation.Tags
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.collections.shouldNotBeEmpty
 import io.kotest.matchers.nulls.shouldNotBeNull
+import io.kotest.matchers.shouldBe
 import it.saabel.kotlinnotionclient.NotionClient
 import it.saabel.kotlinnotionclient.config.NotionConfig
 import it.saabel.kotlinnotionclient.models.pages.getTitleAsPlainText
@@ -367,6 +368,48 @@ class NewFilterTypesIntegrationTest :
                     }
 
                 println("   Found ${pages.size} page(s) assigned to user $testUserId")
+                pages.shouldNotBeEmpty()
+                pages.forEach { page ->
+                    val title = page.getTitleAsPlainText("Task Name") ?: "Untitled"
+                    println("   - $title")
+                }
+                println("   ✅ Test passed!\n")
+            }
+
+            "Verify people filter - containsMe (internal integration returns 0 results)" {
+                val token = System.getenv("NOTION_API_TOKEN")
+                val client = NotionClient(NotionConfig(apiToken = token))
+
+                println("\n🔍 Testing: people().containsMe()")
+
+                val pages =
+                    client.dataSources.query(testDataSourceId) {
+                        filter {
+                            people("Assignee").containsMe()
+                        }
+                    }
+
+                // For internal integrations "me" does not resolve to a user, so contains:"me" always returns 0 results.
+                println("   Found ${pages.size} page(s) — expected 0 for internal integration")
+                pages.size shouldBe 0
+                println("   ✅ Test passed!\n")
+            }
+
+            "Verify people filter - doesNotContainMe (internal integration returns all entries)" {
+                val token = System.getenv("NOTION_API_TOKEN")
+                val client = NotionClient(NotionConfig(apiToken = token))
+
+                println("\n🔍 Testing: people().doesNotContainMe()")
+
+                val pages =
+                    client.dataSources.query(testDataSourceId) {
+                        filter {
+                            people("Assignee").doesNotContainMe()
+                        }
+                    }
+
+                // For internal integrations "me" does not resolve to a user, so does_not_contain:"me" matches all entries.
+                println("   Found ${pages.size} page(s) — expected all entries for internal integration")
                 pages.shouldNotBeEmpty()
                 pages.forEach { page ->
                     val title = page.getTitleAsPlainText("Task Name") ?: "Untitled"

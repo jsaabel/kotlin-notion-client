@@ -355,7 +355,34 @@ sealed class PagePropertyValue {
         @SerialName("relation")
         val relation: List<PageReference>,
     ) : PagePropertyValue()
+
+    /**
+     * Verification property value — only writable on pages in wiki databases.
+     *
+     * Use [VerificationRequest.state] = "verified" or "unverified".
+     * The [VerificationData.verifiedBy] field is read-only and is ignored when writing.
+     */
+    @Serializable
+    @SerialName("verification")
+    data class VerificationValue(
+        @SerialName("verification")
+        val verification: VerificationRequest,
+    ) : PagePropertyValue()
 }
+
+/**
+ * Write model for the verification property.
+ *
+ * Only [state] and [date] are writable — [VerificationData.verifiedBy] is set automatically by the API.
+ *
+ * @property state "verified" or "unverified".
+ * @property date Optional date range for the verification period. Only relevant when [state] is "verified".
+ */
+@Serializable
+data class VerificationRequest(
+    @SerialName("state") val state: String,
+    @SerialName("date") val date: DateData? = null,
+)
 
 /**
  * Supporting data classes for page properties.

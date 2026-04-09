@@ -262,6 +262,20 @@ sealed class PageProperty {
     ) : PageProperty()
 
     /**
+     * Verification property — only available on pages in wiki databases.
+     *
+     * State is one of "verified", "unverified", or "expired" (when the end date is in the past).
+     * [VerificationData.verifiedBy] is read-only and is automatically set by the API.
+     */
+    @Serializable
+    @SerialName("verification")
+    data class Verification(
+        @SerialName("id") override val id: String,
+        @SerialName("type") override val type: String,
+        @SerialName("verification") val verification: VerificationData?,
+    ) : PageProperty()
+
+    /**
      * Represents an unsupported or unknown property type.
      *
      * This type is used as a fallback when the Notion API returns a property type
@@ -366,6 +380,20 @@ sealed class FileData {
         @SerialName("file") val file: UploadedFileUrl,
     ) : FileData()
 }
+
+/**
+ * The verification state of a page in a wiki database.
+ *
+ * @property state One of "verified", "unverified", or "expired" (when [date]'s end is in the past).
+ * @property verifiedBy The user who verified the page, or null. Read-only — set automatically by the API.
+ * @property date Start (and optional end) of the verification period.
+ */
+@Serializable
+data class VerificationData(
+    @SerialName("state") val state: String,
+    @SerialName("verified_by") val verifiedBy: User? = null,
+    @SerialName("date") val date: DateData? = null,
+)
 
 // ========================================
 // Convenience accessors for kotlinx-datetime

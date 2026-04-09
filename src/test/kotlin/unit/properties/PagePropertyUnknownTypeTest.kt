@@ -138,7 +138,8 @@ class PagePropertyUnknownTypeTest :
 
             // Verify unknown types
             page.properties["Button"]!!.shouldBeInstanceOf<PageProperty.Unknown>()
-            page.properties["Verification"]!!.shouldBeInstanceOf<PageProperty.Unknown>()
+            // Verification is now a known type (no longer Unknown)
+            page.properties["Verification"]!!.shouldBeInstanceOf<PageProperty.Verification>()
 
             // Verify known type still works
             val priceProperty = page.properties["Price"]

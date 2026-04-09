@@ -528,7 +528,13 @@ class PeopleFilterBuilder(
 ) {
     fun contains(userId: String): DataSourceFilter = createFilter(PeopleCondition(contains = userId))
 
+    /** Filter for entries where the people property contains the current integration's user ("me"). */
+    fun containsMe(): DataSourceFilter = createFilter(PeopleCondition(contains = "me"))
+
     fun doesNotContain(userId: String): DataSourceFilter = createFilter(PeopleCondition(doesNotContain = userId))
+
+    /** Filter for entries where the people property does not contain the current integration's user ("me"). */
+    fun doesNotContainMe(): DataSourceFilter = createFilter(PeopleCondition(doesNotContain = "me"))
 
     fun isEmpty(): DataSourceFilter = createFilter(PeopleCondition(isEmpty = true))
 
