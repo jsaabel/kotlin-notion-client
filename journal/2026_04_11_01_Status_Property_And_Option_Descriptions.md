@@ -69,19 +69,46 @@ option objects — the field appears in the live online documentation and in act
 
 ---
 
-### Open: Property-Level `description`
+### Session 3 — Property-Level `description` Field
 
-The Notion API also has a `description: string` field at the **property level**
-(`properties.{key}.description`). This is documented in the local reference
-(`03_Database_DatabaseProperties.md`, line 20).
+#### Background
 
-**Status: NOT YET IMPLEMENTED.**
+The Notion API has a `description: string` field at the **property level**
+(`properties.{key}.description`), documented in `03_Database_DatabaseProperties.md` (line 20).
+The field was previously noted as not yet implemented. This session completed that work.
 
-`DatabaseProperty` (sealed class, response model) has no `description` field on any of its
-subtypes. `CreateDatabaseProperty` likewise has no support for setting a description at creation.
+Max length is 280 characters (validated at construction time).
 
-This requires adding `description: String? = null` to every subtype of `DatabaseProperty` and
-`CreateDatabaseProperty` — significant but mechanical work. Deferred to a future session.
+#### Changes Made
+
+**`DatabaseProperty` (Database.kt)** — response model, 20 subtypes:
+- Added `@SerialName("description") val description: String? = null` to every subtype (Title,
+  RichText, Number, Select, MultiSelect, Date, Checkbox, Url, Email, PhoneNumber, CreatedTime,
+  CreatedBy, LastEditedTime, LastEditedBy, People, Relation, Rollup, Formula, Files, Status).
+
+**`CreateDatabaseProperty` (DatabaseRequests.kt)** — request model, 13 subtypes:
+- Added `@SerialName("description") val description: String? = null` to every subtype.
+- Added a file-private `requirePropertyDescriptionLength(description: String?)` helper that
+  throws `IllegalArgumentException` if the description exceeds 280 characters.
+- Each subtype's `init` block calls the helper.
+
+**`DatabasePropertiesBuilder` (DatabaseRequestBuilder.kt)**:
+- Added `description: String? = null` parameter to all builder methods: `title()`, `richText()`,
+  `number()`, `select()`, `multiSelect()`, `status()`, `date()`, `checkbox()`, `url()`,
+  `email()`, `phoneNumber()`, `people()`, `relation()`.
+- Each method threads the parameter to the `CreateDatabaseProperty` constructor.
+
+**`CreateDatabasePropertyTest.kt`** — 5 new unit tests:
+- `Should store property description on CreateDatabaseProperty subtypes`
+- `Should serialize property description to JSON`
+- `Should omit description from JSON when null`
+- `Should reject property description longer than 280 characters`
+- `Should accept property description of exactly 280 characters`
+
+#### Note on Option-Level Descriptions
+
+Verified that `SelectOption` (response) and `CreateSelectOption` (request) already had
+`description: String? = null` from Session 2, covering select, multi-select, and status options.
 
 ---
 

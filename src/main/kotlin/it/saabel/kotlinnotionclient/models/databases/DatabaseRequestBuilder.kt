@@ -234,18 +234,26 @@ class DatabasePropertiesBuilder {
      * Adds a title property to the database.
      *
      * @param name The property name
+     * @param description Optional description (max 280 characters)
      */
-    fun title(name: String) {
-        properties[name] = CreateDatabaseProperty.Title()
+    fun title(
+        name: String,
+        description: String? = null,
+    ) {
+        properties[name] = CreateDatabaseProperty.Title(description = description)
     }
 
     /**
      * Adds a rich text property to the database.
      *
      * @param name The property name
+     * @param description Optional description (max 280 characters)
      */
-    fun richText(name: String) {
-        properties[name] = CreateDatabaseProperty.RichText()
+    fun richText(
+        name: String,
+        description: String? = null,
+    ) {
+        properties[name] = CreateDatabaseProperty.RichText(description = description)
     }
 
     /**
@@ -253,14 +261,17 @@ class DatabasePropertiesBuilder {
      *
      * @param name The property name
      * @param format The number format ("number", "number_with_commas", "percent", "dollar", "canadian_dollar", "euro", "pound", "yen", "ruble", "rupee", "won", "yuan", "real", "lira", "rupiah", "franc", "hong_kong_dollar", "new_zealand_dollar", "krona", "norwegian_krone", "mexican_peso", "rand", "new_taiwan_dollar", "danish_krone", "zloty", "baht", "forint", "koruna", "shekel", "chilean_peso", "philippine_peso", "dirham", "colombian_peso", "riyal", "ringgit", "leu", "argentine_peso", "uruguayan_peso")
+     * @param description Optional description (max 280 characters)
      */
     fun number(
         name: String,
         format: String = "number",
+        description: String? = null,
     ) {
         properties[name] =
             CreateDatabaseProperty.Number(
                 number = NumberConfiguration(format = format),
+                description = description,
             )
     }
 
@@ -268,10 +279,12 @@ class DatabasePropertiesBuilder {
      * Adds a select property to the database.
      *
      * @param name The property name
+     * @param description Optional description (max 280 characters)
      * @param block Configuration block for select options
      */
     fun select(
         name: String,
+        description: String? = null,
         block: SelectBuilder.() -> Unit = {},
     ) {
         val builder = SelectBuilder()
@@ -279,6 +292,7 @@ class DatabasePropertiesBuilder {
         properties[name] =
             CreateDatabaseProperty.Select(
                 select = SelectConfiguration(options = builder.build()),
+                description = description,
             )
     }
 
@@ -286,10 +300,12 @@ class DatabasePropertiesBuilder {
      * Adds a multi-select property to the database.
      *
      * @param name The property name
+     * @param description Optional description (max 280 characters)
      * @param block Configuration block for multi-select options
      */
     fun multiSelect(
         name: String,
+        description: String? = null,
         block: SelectBuilder.() -> Unit = {},
     ) {
         val builder = SelectBuilder()
@@ -297,6 +313,7 @@ class DatabasePropertiesBuilder {
         properties[name] =
             CreateDatabaseProperty.MultiSelect(
                 multiSelect = SelectConfiguration(options = builder.build()),
+                description = description,
             )
     }
 
@@ -313,69 +330,95 @@ class DatabasePropertiesBuilder {
      * **Note**: Status properties cannot be updated via the API (unlike select/multi-select).
      *
      * @param name The property name
+     * @param description Optional description (max 280 characters)
      * @param block Configuration block for status options (optional)
      */
     fun status(
         name: String,
+        description: String? = null,
         block: StatusBuilder.() -> Unit = {},
     ) {
         val builder = StatusBuilder()
         builder.block()
-        properties[name] = CreateDatabaseProperty.Status(status = builder.build())
+        properties[name] = CreateDatabaseProperty.Status(status = builder.build(), description = description)
     }
 
     /**
      * Adds a date property to the database.
      *
      * @param name The property name
+     * @param description Optional description (max 280 characters)
      */
-    fun date(name: String) {
-        properties[name] = CreateDatabaseProperty.Date()
+    fun date(
+        name: String,
+        description: String? = null,
+    ) {
+        properties[name] = CreateDatabaseProperty.Date(description = description)
     }
 
     /**
      * Adds a checkbox property to the database.
      *
      * @param name The property name
+     * @param description Optional description (max 280 characters)
      */
-    fun checkbox(name: String) {
-        properties[name] = CreateDatabaseProperty.Checkbox()
+    fun checkbox(
+        name: String,
+        description: String? = null,
+    ) {
+        properties[name] = CreateDatabaseProperty.Checkbox(description = description)
     }
 
     /**
      * Adds a URL property to the database.
      *
      * @param name The property name
+     * @param description Optional description (max 280 characters)
      */
-    fun url(name: String) {
-        properties[name] = CreateDatabaseProperty.Url()
+    fun url(
+        name: String,
+        description: String? = null,
+    ) {
+        properties[name] = CreateDatabaseProperty.Url(description = description)
     }
 
     /**
      * Adds an email property to the database.
      *
      * @param name The property name
+     * @param description Optional description (max 280 characters)
      */
-    fun email(name: String) {
-        properties[name] = CreateDatabaseProperty.Email()
+    fun email(
+        name: String,
+        description: String? = null,
+    ) {
+        properties[name] = CreateDatabaseProperty.Email(description = description)
     }
 
     /**
      * Adds a phone number property to the database.
      *
      * @param name The property name
+     * @param description Optional description (max 280 characters)
      */
-    fun phoneNumber(name: String) {
-        properties[name] = CreateDatabaseProperty.PhoneNumber()
+    fun phoneNumber(
+        name: String,
+        description: String? = null,
+    ) {
+        properties[name] = CreateDatabaseProperty.PhoneNumber(description = description)
     }
 
     /**
      * Adds a people property to the database.
      *
      * @param name The property name
+     * @param description Optional description (max 280 characters)
      */
-    fun people(name: String) {
-        properties[name] = CreateDatabaseProperty.People()
+    fun people(
+        name: String,
+        description: String? = null,
+    ) {
+        properties[name] = CreateDatabaseProperty.People(description = description)
     }
 
     /**
@@ -384,12 +427,14 @@ class DatabasePropertiesBuilder {
      * @param name The property name
      * @param targetDatabaseId The ID of the target database
      * @param targetDataSourceId The ID of the target data source
+     * @param description Optional description (max 280 characters)
      * @param block Configuration block for relation options
      */
     fun relation(
         name: String,
         targetDatabaseId: String,
         targetDataSourceId: String,
+        description: String? = null,
         block: RelationBuilder.() -> Unit = {},
     ) {
         val builder = RelationBuilder(targetDatabaseId, targetDataSourceId)
@@ -397,6 +442,7 @@ class DatabasePropertiesBuilder {
         properties[name] =
             CreateDatabaseProperty.Relation(
                 relation = builder.build(),
+                description = description,
             )
     }
 

@@ -1,5 +1,6 @@
 package unit.databases
 
+import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.annotation.Tags
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.collections.shouldHaveSize
@@ -10,6 +11,10 @@ import it.saabel.kotlinnotionclient.models.databases.CreateDatabaseProperty
 import it.saabel.kotlinnotionclient.models.databases.CreateSelectOption
 import it.saabel.kotlinnotionclient.models.databases.RelationConfiguration
 import it.saabel.kotlinnotionclient.models.databases.StatusConfiguration
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 
 /**
  * Unit tests for CreateDatabaseProperty functionality.
@@ -132,5 +137,45 @@ class CreateDatabasePropertyTest :
             config.dualProperty shouldBe null
             config.syncedPropertyName shouldBe "Related Items"
             config.syncedPropertyId shouldBe null
+        }
+
+        "Should store property description on CreateDatabaseProperty subtypes" {
+            val titleProp = CreateDatabaseProperty.Title(description = "The page title")
+            titleProp.description shouldBe "The page title"
+
+            val numberProp = CreateDatabaseProperty.Number(description = "A numeric score")
+            numberProp.description shouldBe "A numeric score"
+
+            val checkboxProp = CreateDatabaseProperty.Checkbox(description = null)
+            checkboxProp.description shouldBe null
+        }
+
+        "Should serialize property description to JSON" {
+            val json = Json { encodeDefaults = false }
+            val prop = CreateDatabaseProperty.RichText(description = "Some notes")
+            val encoded = json.encodeToString<CreateDatabaseProperty>(prop)
+            val parsed = Json.parseToJsonElement(encoded).jsonObject
+            parsed["description"]?.jsonPrimitive?.content shouldBe "Some notes"
+        }
+
+        "Should omit description from JSON when null" {
+            val json = Json { encodeDefaults = false }
+            val prop = CreateDatabaseProperty.Checkbox()
+            val encoded = json.encodeToString<CreateDatabaseProperty>(prop)
+            val parsed = Json.parseToJsonElement(encoded).jsonObject
+            parsed.containsKey("description") shouldBe false
+        }
+
+        "Should reject property description longer than 280 characters" {
+            val tooLong = "x".repeat(281)
+            shouldThrow<IllegalArgumentException> {
+                CreateDatabaseProperty.Select(description = tooLong)
+            }
+        }
+
+        "Should accept property description of exactly 280 characters" {
+            val exactly280 = "x".repeat(280)
+            val prop = CreateDatabaseProperty.Select(description = exactly280)
+            prop.description?.length shouldBe 280
         }
     })

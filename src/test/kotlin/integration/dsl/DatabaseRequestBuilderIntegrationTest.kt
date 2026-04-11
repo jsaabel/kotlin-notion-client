@@ -184,5 +184,66 @@ class DatabaseRequestBuilderIntegrationTest :
                     client.close()
                 }
             }
+
+            "Should create database properties with descriptions and read them back" {
+                val token = System.getenv("NOTION_API_TOKEN")
+                val parentPageId = System.getenv("NOTION_TEST_PAGE_ID")
+                val client = NotionClient(NotionConfig(apiToken = token))
+
+                try {
+                    println("🗄️ Creating database with property-level descriptions...")
+
+                    val database =
+                        client.databases.create {
+                            parent.page(parentPageId)
+                            title("Property Description Test")
+                            icon.emoji("📝")
+                            properties {
+                                title("Name")
+                                richText("Notes", description = "Free-form notes about the item")
+                                number("Score", description = "A numeric score from 1 to 10")
+                                select("Priority", description = "Task urgency level") {
+                                    option("High", SelectOptionColor.RED)
+                                    option("Low", SelectOptionColor.GRAY)
+                                }
+                                checkbox("Done", description = "Whether the task is complete")
+                            }
+                        }
+                    println("✅ Database created: https://notion.so/${database.id.replace("-", "")}")
+
+                    delay(500)
+
+                    val dataSource = client.dataSources.retrieve(database.dataSources.first().id)
+                    val props = dataSource.properties
+
+                    val notesProp = props["Notes"] as DatabaseProperty.RichText
+                    notesProp.description shouldBe "Free-form notes about the item"
+                    println("✅ RichText description: ${notesProp.description}")
+
+                    val scoreProp = props["Score"] as DatabaseProperty.Number
+                    scoreProp.description shouldBe "A numeric score from 1 to 10"
+                    println("✅ Number description: ${scoreProp.description}")
+
+                    val priorityProp = props["Priority"] as DatabaseProperty.Select
+                    priorityProp.description shouldBe "Task urgency level"
+                    println("✅ Select description: ${priorityProp.description}")
+
+                    val doneProp = props["Done"] as DatabaseProperty.Checkbox
+                    doneProp.description shouldBe "Whether the task is complete"
+                    println("✅ Checkbox description: ${doneProp.description}")
+
+                    // Property without a description should come back as null
+                    val nameProp = props["Name"] as DatabaseProperty.Title
+                    nameProp.description shouldBe null
+                    println("✅ Title description is null as expected")
+
+                    if (shouldCleanupAfterTest()) {
+                        client.databases.trash(database.id)
+                        println("🧹 Cleaned up")
+                    }
+                } finally {
+                    client.close()
+                }
+            }
         }
     })

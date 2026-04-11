@@ -58,6 +58,12 @@ data class ArchiveDatabaseRequest(
     val inTrash: Boolean = true,
 )
 
+private fun requirePropertyDescriptionLength(description: String?) {
+    require(description == null || description.length <= 280) {
+        "Property description must be 280 characters or fewer (was ${description!!.length})"
+    }
+}
+
 /**
  * Property definitions for database creation requests.
  *
@@ -74,7 +80,13 @@ sealed class CreateDatabaseProperty {
     data class Title(
         @SerialName("title")
         val title: EmptyObject = EmptyObject(),
-    ) : CreateDatabaseProperty()
+        @SerialName("description")
+        val description: String? = null,
+    ) : CreateDatabaseProperty() {
+        init {
+            requirePropertyDescriptionLength(description)
+        }
+    }
 
     /**
      * Rich text property for formatted text content.
@@ -84,7 +96,13 @@ sealed class CreateDatabaseProperty {
     data class RichText(
         @SerialName("rich_text")
         val richText: EmptyObject = EmptyObject(),
-    ) : CreateDatabaseProperty()
+        @SerialName("description")
+        val description: String? = null,
+    ) : CreateDatabaseProperty() {
+        init {
+            requirePropertyDescriptionLength(description)
+        }
+    }
 
     /**
      * Number property with optional formatting.
@@ -94,7 +112,13 @@ sealed class CreateDatabaseProperty {
     data class Number(
         @SerialName("number")
         val number: NumberConfiguration = NumberConfiguration(),
-    ) : CreateDatabaseProperty()
+        @SerialName("description")
+        val description: String? = null,
+    ) : CreateDatabaseProperty() {
+        init {
+            requirePropertyDescriptionLength(description)
+        }
+    }
 
     /**
      * Select property for single-choice dropdown.
@@ -104,7 +128,13 @@ sealed class CreateDatabaseProperty {
     data class Select(
         @SerialName("select")
         val select: SelectConfiguration = SelectConfiguration(),
-    ) : CreateDatabaseProperty()
+        @SerialName("description")
+        val description: String? = null,
+    ) : CreateDatabaseProperty() {
+        init {
+            requirePropertyDescriptionLength(description)
+        }
+    }
 
     /**
      * Multi-select property for multiple-choice dropdown.
@@ -114,7 +144,13 @@ sealed class CreateDatabaseProperty {
     data class MultiSelect(
         @SerialName("multi_select")
         val multiSelect: SelectConfiguration = SelectConfiguration(),
-    ) : CreateDatabaseProperty()
+        @SerialName("description")
+        val description: String? = null,
+    ) : CreateDatabaseProperty() {
+        init {
+            requirePropertyDescriptionLength(description)
+        }
+    }
 
     /**
      * Date property for date/datetime values.
@@ -124,7 +160,13 @@ sealed class CreateDatabaseProperty {
     data class Date(
         @SerialName("date")
         val date: EmptyObject = EmptyObject(),
-    ) : CreateDatabaseProperty()
+        @SerialName("description")
+        val description: String? = null,
+    ) : CreateDatabaseProperty() {
+        init {
+            requirePropertyDescriptionLength(description)
+        }
+    }
 
     /**
      * Checkbox property for boolean values.
@@ -134,7 +176,13 @@ sealed class CreateDatabaseProperty {
     data class Checkbox(
         @SerialName("checkbox")
         val checkbox: EmptyObject = EmptyObject(),
-    ) : CreateDatabaseProperty()
+        @SerialName("description")
+        val description: String? = null,
+    ) : CreateDatabaseProperty() {
+        init {
+            requirePropertyDescriptionLength(description)
+        }
+    }
 
     /**
      * URL property for web links.
@@ -144,7 +192,13 @@ sealed class CreateDatabaseProperty {
     data class Url(
         @SerialName("url")
         val url: EmptyObject = EmptyObject(),
-    ) : CreateDatabaseProperty()
+        @SerialName("description")
+        val description: String? = null,
+    ) : CreateDatabaseProperty() {
+        init {
+            requirePropertyDescriptionLength(description)
+        }
+    }
 
     /**
      * Email property for email addresses.
@@ -154,7 +208,13 @@ sealed class CreateDatabaseProperty {
     data class Email(
         @SerialName("email")
         val email: EmptyObject = EmptyObject(),
-    ) : CreateDatabaseProperty()
+        @SerialName("description")
+        val description: String? = null,
+    ) : CreateDatabaseProperty() {
+        init {
+            requirePropertyDescriptionLength(description)
+        }
+    }
 
     /**
      * Phone number property.
@@ -164,7 +224,13 @@ sealed class CreateDatabaseProperty {
     data class PhoneNumber(
         @SerialName("phone_number")
         val phoneNumber: EmptyObject = EmptyObject(),
-    ) : CreateDatabaseProperty()
+        @SerialName("description")
+        val description: String? = null,
+    ) : CreateDatabaseProperty() {
+        init {
+            requirePropertyDescriptionLength(description)
+        }
+    }
 
     /**
      * People property for user mentions.
@@ -174,7 +240,13 @@ sealed class CreateDatabaseProperty {
     data class People(
         @SerialName("people")
         val people: EmptyObject = EmptyObject(),
-    ) : CreateDatabaseProperty()
+        @SerialName("description")
+        val description: String? = null,
+    ) : CreateDatabaseProperty() {
+        init {
+            requirePropertyDescriptionLength(description)
+        }
+    }
 
     /**
      * Status property for workflow-style statuses with options and groups.
@@ -194,7 +266,13 @@ sealed class CreateDatabaseProperty {
     data class Status(
         @SerialName("status")
         val status: StatusConfiguration = StatusConfiguration(),
-    ) : CreateDatabaseProperty()
+        @SerialName("description")
+        val description: String? = null,
+    ) : CreateDatabaseProperty() {
+        init {
+            requirePropertyDescriptionLength(description)
+        }
+    }
 
     /**
      * Relation property for linking to pages in another database.
@@ -204,7 +282,13 @@ sealed class CreateDatabaseProperty {
     data class Relation(
         @SerialName("relation")
         val relation: RelationConfiguration,
-    ) : CreateDatabaseProperty()
+        @SerialName("description")
+        val description: String? = null,
+    ) : CreateDatabaseProperty() {
+        init {
+            requirePropertyDescriptionLength(description)
+        }
+    }
 }
 
 /**
