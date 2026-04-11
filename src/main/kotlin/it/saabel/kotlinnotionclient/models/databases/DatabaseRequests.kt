@@ -177,6 +177,26 @@ sealed class CreateDatabaseProperty {
     ) : CreateDatabaseProperty()
 
     /**
+     * Status property for workflow-style statuses with options and groups.
+     *
+     * Pass an empty [StatusConfiguration] (the default) to let Notion create the standard options
+     * ("Not started", "In progress", "Done") and groups ("To-do", "In progress", "Complete").
+     * Custom initial options can be provided via [StatusConfiguration.options].
+     *
+     * Groups are auto-created by Notion and cannot be configured via the API. Only options
+     * (name + color) can be specified at creation time. Use the Notion UI to reorganise options
+     * into groups after creation.
+     *
+     * **Note**: Status properties cannot be updated via the API (unlike select/multi-select).
+     */
+    @Serializable
+    @SerialName("status")
+    data class Status(
+        @SerialName("status")
+        val status: StatusConfiguration = StatusConfiguration(),
+    ) : CreateDatabaseProperty()
+
+    /**
      * Relation property for linking to pages in another database.
      */
     @Serializable
@@ -206,7 +226,7 @@ data class SelectConfiguration(
 )
 
 /**
- * Option for select/multi-select properties in creation requests.
+ * Option for select/multi-select/status properties in creation requests.
  */
 @Serializable
 data class CreateSelectOption(
@@ -214,6 +234,20 @@ data class CreateSelectOption(
     val name: String,
     @SerialName("color")
     val color: SelectOptionColor = SelectOptionColor.DEFAULT,
+    @SerialName("description")
+    val description: String? = null,
+)
+
+/**
+ * Configuration for status properties in creation requests.
+ *
+ * Only options (name + color) can be specified. Groups are auto-created by Notion
+ * and cannot be configured via the API.
+ */
+@Serializable
+data class StatusConfiguration(
+    @SerialName("options")
+    val options: List<CreateSelectOption> = emptyList(),
 )
 
 /**

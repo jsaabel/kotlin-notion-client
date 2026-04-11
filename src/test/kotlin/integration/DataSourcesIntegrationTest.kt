@@ -56,11 +56,7 @@ class DataSourcesIntegrationTest :
 
                             properties {
                                 title("Task Name")
-                                select("Status") {
-                                    option("To Do")
-                                    option("In Progress")
-                                    option("Done")
-                                }
+                                status("Status")
                                 number("Priority")
                                 date("Due Date")
                                 checkbox("Completed")
@@ -97,7 +93,7 @@ class DataSourcesIntegrationTest :
                             parent.dataSource(firstDataSource.id)
                             properties {
                                 title("Task Name", "First Task")
-                                select("Status", "To Do")
+                                status("Status", "Not started")
                                 number("Priority", 1.0)
                                 checkbox("Completed", false)
                             }
@@ -110,7 +106,7 @@ class DataSourcesIntegrationTest :
                             parent.dataSource(firstDataSource.id)
                             properties {
                                 title("Task Name", "Second Task")
-                                select("Status", "In Progress")
+                                status("Status", "In progress")
                                 number("Priority", 2.0)
                                 checkbox("Completed", false)
                             }
@@ -132,10 +128,7 @@ class DataSourcesIntegrationTest :
                             properties {
                                 // Re-define existing properties
                                 title("Task Name")
-                                select("Status") {
-                                    option("To Do")
-                                    option("In Progress")
-                                    option("Done")
+                                status("Status") {
                                     option("Blocked")
                                 }
                                 number("Priority")

@@ -301,6 +301,30 @@ class DatabasePropertiesBuilder {
     }
 
     /**
+     * Adds a status property to the database.
+     *
+     * When no options are specified, Notion creates the default options ("Not started",
+     * "In progress", "Done") and groups ("To-do", "In progress", "Complete"). Custom initial
+     * options can be provided via [StatusBuilder.option].
+     *
+     * Groups are auto-created by Notion and cannot be configured via the API. Only options
+     * (name + color) can be specified at creation time.
+     *
+     * **Note**: Status properties cannot be updated via the API (unlike select/multi-select).
+     *
+     * @param name The property name
+     * @param block Configuration block for status options (optional)
+     */
+    fun status(
+        name: String,
+        block: StatusBuilder.() -> Unit = {},
+    ) {
+        val builder = StatusBuilder()
+        builder.block()
+        properties[name] = CreateDatabaseProperty.Status(status = builder.build())
+    }
+
+    /**
      * Adds a date property to the database.
      *
      * @param name The property name
@@ -396,12 +420,14 @@ class SelectBuilder {
      *
      * @param name The option name
      * @param color The option color ("default", "gray", "brown", "red", "orange", "yellow", "green", "blue", "purple", "pink")
+     * @param description Optional description for the option
      */
     fun option(
         name: String,
         color: SelectOptionColor = SelectOptionColor.DEFAULT,
+        description: String? = null,
     ) {
-        options.add(CreateSelectOption(name = name, color = color))
+        options.add(CreateSelectOption(name = name, color = color, description = description))
     }
 
     /**
@@ -410,6 +436,34 @@ class SelectBuilder {
      * @return The configured options list
      */
     fun build(): List<CreateSelectOption> = options.toList()
+}
+
+/**
+ * Builder class for status property configuration.
+ *
+ * Only options can be specified. Groups are auto-created by Notion and cannot be configured
+ * via the API.
+ */
+@DatabaseRequestDslMarker
+class StatusBuilder {
+    private val options = mutableListOf<CreateSelectOption>()
+
+    /**
+     * Adds an option to the status property.
+     *
+     * @param name The option name
+     * @param color The option color
+     * @param description Optional description for the option
+     */
+    fun option(
+        name: String,
+        color: SelectOptionColor = SelectOptionColor.DEFAULT,
+        description: String? = null,
+    ) {
+        options.add(CreateSelectOption(name = name, color = color, description = description))
+    }
+
+    internal fun build(): StatusConfiguration = StatusConfiguration(options = options.toList())
 }
 
 /**

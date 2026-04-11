@@ -2,10 +2,14 @@ package unit.databases
 
 import io.kotest.core.annotation.Tags
 import io.kotest.core.spec.style.StringSpec
+import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
+import it.saabel.kotlinnotionclient.models.base.SelectOptionColor
 import it.saabel.kotlinnotionclient.models.databases.CreateDatabaseProperty
+import it.saabel.kotlinnotionclient.models.databases.CreateSelectOption
 import it.saabel.kotlinnotionclient.models.databases.RelationConfiguration
+import it.saabel.kotlinnotionclient.models.databases.StatusConfiguration
 
 /**
  * Unit tests for CreateDatabaseProperty functionality.
@@ -33,6 +37,30 @@ class CreateDatabasePropertyTest :
             val property = CreateDatabaseProperty.Select()
             property shouldNotBe null
             property.select.options shouldBe emptyList()
+        }
+
+        "Should create Status property with default options (empty configuration)" {
+            val property = CreateDatabaseProperty.Status()
+            property shouldNotBe null
+            property.status.options shouldBe emptyList()
+        }
+
+        "Should create Status property with custom initial options" {
+            val property =
+                CreateDatabaseProperty.Status(
+                    status =
+                        StatusConfiguration(
+                            options =
+                                listOf(
+                                    CreateSelectOption("Backlog", SelectOptionColor.GRAY),
+                                    CreateSelectOption("In Progress", SelectOptionColor.BLUE),
+                                    CreateSelectOption("Done", SelectOptionColor.GREEN),
+                                ),
+                        ),
+                )
+            property shouldNotBe null
+            property.status.options shouldHaveSize 3
+            property.status.options.map { it.name } shouldBe listOf("Backlog", "In Progress", "Done")
         }
 
         "Should create Relation property with single property correctly" {

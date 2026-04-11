@@ -345,6 +345,20 @@ sealed class DatabaseProperty {
         @SerialName("type")
         override val type: String = "files"
     }
+
+    @Serializable
+    @SerialName("status")
+    data class Status(
+        @SerialName("id")
+        override val id: String,
+        @SerialName("name")
+        override val name: String,
+        @SerialName("status")
+        val status: StatusPropertyOptions,
+    ) : DatabaseProperty() {
+        @SerialName("type")
+        override val type: String = "status"
+    }
 }
 
 /**
@@ -376,4 +390,32 @@ data class SelectOption(
     val name: String,
     @SerialName("color")
     val color: SelectOptionColor,
+    @SerialName("description")
+    val description: String? = null,
+)
+
+/**
+ * Represents the options and groups for a status database property.
+ */
+@Serializable
+data class StatusPropertyOptions(
+    @SerialName("options")
+    val options: List<SelectOption>,
+    @SerialName("groups")
+    val groups: List<StatusGroup>,
+)
+
+/**
+ * Represents a group in a status property, collecting related options.
+ */
+@Serializable
+data class StatusGroup(
+    @SerialName("id")
+    val id: String,
+    @SerialName("name")
+    val name: String,
+    @SerialName("color")
+    val color: SelectOptionColor,
+    @SerialName("option_ids")
+    val optionIds: List<String>,
 )

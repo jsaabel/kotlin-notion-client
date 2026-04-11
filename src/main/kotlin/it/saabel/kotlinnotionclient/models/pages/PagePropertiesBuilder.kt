@@ -318,6 +318,24 @@ class PagePropertiesBuilder {
     }
 
     /**
+     * Adds a status property value by option name.
+     *
+     * @param name The property name
+     * @param optionName The name of the status option to set (null to clear)
+     */
+    fun status(
+        name: String,
+        optionName: String?,
+    ) {
+        properties[name] =
+            if (optionName != null) {
+                PagePropertyValue.StatusValue(status = StatusOption(name = optionName))
+            } else {
+                PagePropertyValue.StatusValue(status = null)
+            }
+    }
+
+    /**
      * Adds a date property value from a date string.
      *
      * @param name The property name
