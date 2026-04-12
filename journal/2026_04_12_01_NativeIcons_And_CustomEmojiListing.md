@@ -287,3 +287,40 @@ val customEmojis = CustomEmojisApi(httpClient, config)
 - `FileReference` (currently only used by `CalloutIcon` in `Block.kt`) — check if it can be removed after the rename, or if `Icon.File` already uses it/something equivalent.
 - Native icon `color` when reading: if Notion returns `"gray"` explicitly vs. omitting it entirely, the nullable `color: String?` handles both.
 - The `object` and `type` fields in the `CustomEmojiList` response (`"object": "list"`, `"type": "custom_emoji"`) — add to the model or ignore? `PaginatedResponse` interface doesn't require them; ignoring is fine since `ignoreUnknownKeys = true`.
+
+---
+
+## Implementation completed (April 12, 2026)
+
+### What was built
+
+**Feature 1 — Native Notion icons (`type: "icon"`)**
+
+- `models/base/Enums.kt` — added `NativeIconColor` enum (10 values: `GRAY`, `LIGHT_GRAY`, `BROWN`, `YELLOW`, `ORANGE`, `GREEN`, `BLUE`, `PURPLE`, `PINK`, `RED`). Kept separate from the existing `Color` enum because the set differs: `"lightgray"` is present; `"default"` and all `_background` variants are absent.
+- `models/base/FileTypes.kt` — added `NativeIconObject(name: String, color: NativeIconColor?)` and `CustomEmojiList` (implements `PaginatedResponse<CustomEmojiObject>`).
+- `models/base/Icon.kt` — added `Icon.NativeIcon` subtype with secondary constructor.
+- `models/base/IconSerializer.kt` — added `"icon" -> Icon.NativeIcon.serializer()` branch.
+- `models/blocks/PageContentBuilder.kt` — added `nativeIcon(name, color?)` top-level helper.
+- `CreatePageRequestBuilder`, `UpdatePageRequestBuilder`, `DatabaseRequestBuilder` — added `icon.native(name, color?)` to each `IconBuilder` inner class.
+
+**Feature 2 — Custom emoji listing (`GET /v1/custom_emojis`)**
+
+- `api/CustomEmojisApi.kt` — new class with `list()`, `listAsFlow()`, `listPagedFlow()`.
+- `NotionClient.kt` — registered `val customEmojis = CustomEmojisApi(httpClient, config)`.
+
+**Key design decisions made during implementation**
+
+- `NativeIconColor` is its own enum rather than reusing `Color` — the value sets genuinely differ.
+- `CustomEmojiList` lives in `FileTypes.kt` alongside `CustomEmojiObject` for locality.
+- The `object` / `type` discriminator fields in the custom emoji list response are ignored (`ignoreUnknownKeys = true` covers them).
+
+**Tests**
+
+- `src/test/resources/api/custom_emojis/list_custom_emojis.json` — sample fixture (two emojis, `has_more: false`).
+- `unit/util/TestFixtures.kt` — added `CustomEmojis` helper object.
+- `unit/api/NativeIconTest.kt` — 15 unit tests: serialization, deserialization (incl. `"lightgray"` ↔ `LIGHT_GRAY`), round-trip, DSL helpers across all three builders.
+- `unit/api/CustomEmojisApiTest.kt` — 10 unit tests: model deserialization, query param inclusion, pagination, error handling.
+- `integration/NativeIconIntegrationTest.kt` — 6 integration tests under a single container page: page icon (create + update), all 10 colors via `NativeIconColor.entries`, no-color, callout blocks, tab panes.
+- `integration/CustomEmojisIntegrationTest.kt` — 1 integration test: lists workspace emojis, then (if any exist) uses the first as page icon, callout icon, and tab pane icon — all on one page under a container.
+
+**Build status:** All unit tests passing ✅

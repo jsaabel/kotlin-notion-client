@@ -17,6 +17,7 @@ import kotlinx.serialization.json.jsonPrimitive
  * - "external" -> [Icon.External]
  * - "file" -> [Icon.File]
  * - "file_upload" -> [Icon.FileUpload]
+ * - "icon" -> [Icon.NativeIcon]
  */
 object IconSerializer : JsonContentPolymorphicSerializer<Icon>(Icon::class) {
     override fun selectDeserializer(element: JsonElement): DeserializationStrategy<Icon> {
@@ -30,6 +31,7 @@ object IconSerializer : JsonContentPolymorphicSerializer<Icon>(Icon::class) {
             "external" -> Icon.External.serializer()
             "file" -> Icon.File.serializer()
             "file_upload" -> Icon.FileUpload.serializer()
+            "icon" -> Icon.NativeIcon.serializer()
             else -> throw SerializationException("Unknown Icon type: $type")
         }
     }

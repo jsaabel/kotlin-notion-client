@@ -106,6 +106,45 @@ enum class SelectOptionColor {
 }
 
 /**
+ * Color values for native Notion icons.
+ *
+ * This set differs from [Color]: it includes "lightgray" and excludes
+ * "default" and all background variants.
+ */
+@Serializable
+enum class NativeIconColor {
+    @SerialName("gray")
+    GRAY,
+
+    @SerialName("lightgray")
+    LIGHT_GRAY,
+
+    @SerialName("brown")
+    BROWN,
+
+    @SerialName("yellow")
+    YELLOW,
+
+    @SerialName("orange")
+    ORANGE,
+
+    @SerialName("green")
+    GREEN,
+
+    @SerialName("blue")
+    BLUE,
+
+    @SerialName("purple")
+    PURPLE,
+
+    @SerialName("pink")
+    PINK,
+
+    @SerialName("red")
+    RED,
+}
+
+/**
  * File source type for media blocks and file references.
  */
 @Serializable

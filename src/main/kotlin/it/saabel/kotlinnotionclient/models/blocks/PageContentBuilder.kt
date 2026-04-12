@@ -5,6 +5,8 @@ package it.saabel.kotlinnotionclient.models.blocks
 import it.saabel.kotlinnotionclient.models.base.Color
 import it.saabel.kotlinnotionclient.models.base.ExternalFile
 import it.saabel.kotlinnotionclient.models.base.Icon
+import it.saabel.kotlinnotionclient.models.base.NativeIconColor
+import it.saabel.kotlinnotionclient.models.base.NativeIconObject
 import it.saabel.kotlinnotionclient.models.base.NotionFile
 import it.saabel.kotlinnotionclient.models.base.RichText
 import it.saabel.kotlinnotionclient.models.files.FileUploadReference
@@ -1705,6 +1707,18 @@ class TabBuilder {
  * @return An [Icon.Emoji]
  */
 fun emoji(emojiChar: String): Icon = Icon.Emoji(emoji = emojiChar)
+
+/**
+ * Convenience helper for creating a native Notion icon.
+ *
+ * @param name The icon name (e.g. "pizza")
+ * @param color Optional color. Defaults to [NativeIconColor.GRAY] when omitted.
+ * @return An [Icon.NativeIcon]
+ */
+fun nativeIcon(
+    name: String,
+    color: NativeIconColor? = null,
+): Icon = Icon.NativeIcon(NativeIconObject(name = name, color = color))
 
 /**
  * DSL function for creating page content.

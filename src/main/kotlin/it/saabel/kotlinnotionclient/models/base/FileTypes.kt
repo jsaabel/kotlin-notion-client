@@ -1,5 +1,6 @@
 package it.saabel.kotlinnotionclient.models.base
 
+import it.saabel.kotlinnotionclient.utils.PaginatedResponse
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
@@ -46,3 +47,29 @@ data class CustomEmojiObject(
     @SerialName("url")
     val url: String? = null,
 )
+
+/**
+ * Represents a native Notion icon with a name and optional color.
+ *
+ * When color is omitted, Notion defaults to [NativeIconColor.GRAY].
+ */
+@Serializable
+data class NativeIconObject(
+    @SerialName("name")
+    val name: String,
+    @SerialName("color")
+    val color: NativeIconColor? = null,
+)
+
+/**
+ * Response model for the GET /v1/custom_emojis endpoint.
+ */
+@Serializable
+data class CustomEmojiList(
+    @SerialName("results")
+    override val results: List<CustomEmojiObject>,
+    @SerialName("next_cursor")
+    override val nextCursor: String? = null,
+    @SerialName("has_more")
+    override val hasMore: Boolean = false,
+) : PaginatedResponse<CustomEmojiObject>

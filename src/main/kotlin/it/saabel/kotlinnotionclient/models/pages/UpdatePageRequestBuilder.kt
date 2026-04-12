@@ -4,6 +4,8 @@ package it.saabel.kotlinnotionclient.models.pages
 
 import it.saabel.kotlinnotionclient.models.base.ExternalFile
 import it.saabel.kotlinnotionclient.models.base.Icon
+import it.saabel.kotlinnotionclient.models.base.NativeIconColor
+import it.saabel.kotlinnotionclient.models.base.NativeIconObject
 import it.saabel.kotlinnotionclient.models.base.NotionFile
 
 /**
@@ -171,6 +173,19 @@ class UpdatePageRequestBuilder {
         ) {
             this@UpdatePageRequestBuilder.iconValue =
                 Icon.File(file = NotionFile(url = url, expiryTime = expiryTime))
+        }
+
+        /**
+         * Sets a native Notion icon.
+         *
+         * @param name The icon name (e.g. "pizza")
+         * @param color Optional color. Defaults to [NativeIconColor.GRAY] when omitted.
+         */
+        fun native(
+            name: String,
+            color: NativeIconColor? = null,
+        ) {
+            this@UpdatePageRequestBuilder.iconValue = Icon.NativeIcon(NativeIconObject(name = name, color = color))
         }
 
         /**

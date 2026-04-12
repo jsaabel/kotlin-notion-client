@@ -17,6 +17,7 @@ import kotlinx.serialization.Serializable
  *     is Icon.External -> println("External URL: ${page.icon.external.url}")
  *     is Icon.File -> println("File URL: ${page.icon.file.url}")
  *     is Icon.FileUpload -> println("Upload ID: ${page.icon.fileUpload.id}")
+ *     is Icon.NativeIcon -> println("Native icon: ${page.icon.icon.name}")
  *     null -> println("No icon")
  * }
  * ```
@@ -88,5 +89,21 @@ sealed class Icon {
         val fileUpload: FileUploadReference,
     ) : Icon() {
         constructor(fileUpload: FileUploadReference) : this(type = "file_upload", fileUpload = fileUpload)
+    }
+
+    /**
+     * A native Notion icon (built-in icon library with optional color).
+     *
+     * Valid colors: "gray" (default), "lightgray", "brown", "yellow", "orange",
+     * "green", "blue", "purple", "pink", "red".
+     */
+    @Serializable
+    data class NativeIcon(
+        @SerialName("type")
+        override val type: String,
+        @SerialName("icon")
+        val icon: NativeIconObject,
+    ) : Icon() {
+        constructor(icon: NativeIconObject) : this(type = "icon", icon = icon)
     }
 }

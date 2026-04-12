@@ -225,6 +225,13 @@ object TestFixtures {
 
         fun searchByTitleAsString() = loadSampleResponseAsString("search", "post_search_by_title")
     }
+
+    // Custom emoji helpers
+    object CustomEmojis {
+        fun listCustomEmojis() = loadSampleResponse("custom_emojis", "list_custom_emojis")
+
+        fun listCustomEmojisAsString() = loadSampleResponseAsString("custom_emojis", "list_custom_emojis")
+    }
 }
 
 /**

@@ -1,0 +1,18 @@
+{
+  "object": "list",
+  "type": "custom_emoji",
+  "results": [
+    {
+      "id": "45ce454c-d427-4f53-9489-e5d0f3d1db6b",
+      "name": "bufo",
+      "url": "https://files.notion.com/custom_emoji/bufo.png"
+    },
+    {
+      "id": "7a1b2c3d-e4f5-6789-abcd-ef0123456789",
+      "name": "bufo-cool",
+      "url": "https://files.notion.com/custom_emoji/bufo-cool.png"
+    }
+  ],
+  "has_more": false,
+  "next_cursor": null
+}
