@@ -5,7 +5,7 @@ import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 import it.saabel.kotlinnotionclient.NotionClient
 import it.saabel.kotlinnotionclient.config.NotionConfig
-import it.saabel.kotlinnotionclient.models.pages.PageIcon
+import it.saabel.kotlinnotionclient.models.base.Icon
 import kotlinx.coroutines.delay
 
 /**
@@ -66,7 +66,7 @@ class PageLockIntegrationTest :
                     delay(1000)
 
                     lockedPage.isLocked shouldBe true
-                    (lockedPage.icon as? PageIcon.Emoji)?.emoji shouldBe "🔒"
+                    (lockedPage.icon as? Icon.Emoji)?.emoji shouldBe "🔒"
                     println("✅ Page locked successfully!")
                     println("   URL: ${lockedPage.url}")
 
@@ -85,7 +85,7 @@ class PageLockIntegrationTest :
                     delay(1000)
 
                     unlockedPage.isLocked shouldBe false
-                    (unlockedPage.icon as? PageIcon.Emoji)?.emoji shouldBe "🔓"
+                    (unlockedPage.icon as? Icon.Emoji)?.emoji shouldBe "🔓"
                     println("✅ Page unlocked successfully!")
 
                     // Step 5: Test lock(true) and lock(false) syntax

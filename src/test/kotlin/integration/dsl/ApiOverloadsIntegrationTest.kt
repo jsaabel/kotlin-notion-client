@@ -13,6 +13,7 @@ import io.kotest.matchers.types.shouldBeInstanceOf
 import it.saabel.kotlinnotionclient.NotionClient
 import it.saabel.kotlinnotionclient.config.NotionConfig
 import it.saabel.kotlinnotionclient.models.base.Color
+import it.saabel.kotlinnotionclient.models.base.Icon
 import it.saabel.kotlinnotionclient.models.base.SelectOptionColor
 import it.saabel.kotlinnotionclient.models.blocks.Block
 import it.saabel.kotlinnotionclient.models.blocks.BlockList
@@ -21,7 +22,6 @@ import it.saabel.kotlinnotionclient.models.blocks.ParagraphRequestContent
 import it.saabel.kotlinnotionclient.models.databases.Database
 import it.saabel.kotlinnotionclient.models.pages.Page
 import it.saabel.kotlinnotionclient.models.pages.PageCover
-import it.saabel.kotlinnotionclient.models.pages.PageIcon
 import it.saabel.kotlinnotionclient.models.pages.PageProperty
 import it.saabel.kotlinnotionclient.models.requests.RequestBuilders
 import kotlinx.coroutines.delay
@@ -76,7 +76,7 @@ class ApiOverloadsIntegrationTest :
                     createdPage.objectType shouldBe "page"
                     createdPage.inTrash shouldBe false
                     createdPage.parent.id?.replace("-", "") shouldBe parentPageId.replace("-", "")
-                    (createdPage.icon as? PageIcon.Emoji)?.emoji shouldBe "🧪"
+                    (createdPage.icon as? Icon.Emoji)?.emoji shouldBe "🧪"
                     (createdPage.cover as? PageCover.External)?.external?.url shouldContain "placehold"
 
                     // Verify title property
@@ -163,7 +163,7 @@ class ApiOverloadsIntegrationTest :
                     createdDatabase.parent.id?.replace("-", "") shouldBe parentPageId.replace("-", "")
 
                     // Icon and cover are returned in creation response (but may not persist - see known issue below)
-                    (createdDatabase.icon as? PageIcon.Emoji)?.emoji shouldBe "📊"
+                    (createdDatabase.icon as? Icon.Emoji)?.emoji shouldBe "📊"
                     (createdDatabase.cover as? PageCover.External)?.external?.url shouldContain "placehold"
 
                     // KNOWN ISSUE: Icon/cover may not persist in Notion UI (2025-09-03 API behavior)

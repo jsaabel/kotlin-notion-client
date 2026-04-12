@@ -3,12 +3,12 @@
 package it.saabel.kotlinnotionclient.models.databases
 
 import it.saabel.kotlinnotionclient.models.base.ExternalFile
+import it.saabel.kotlinnotionclient.models.base.Icon
 import it.saabel.kotlinnotionclient.models.base.NotionFile
 import it.saabel.kotlinnotionclient.models.base.Parent
 import it.saabel.kotlinnotionclient.models.base.RichText
 import it.saabel.kotlinnotionclient.models.base.SelectOptionColor
 import it.saabel.kotlinnotionclient.models.pages.PageCover
-import it.saabel.kotlinnotionclient.models.pages.PageIcon
 
 /**
  * Builder class for creating database requests with a fluent DSL.
@@ -50,7 +50,7 @@ class DatabaseRequestBuilder {
     private var titleValue: List<RichText>? = null
     private var descriptionValue: List<RichText>? = null
     private var properties = mutableMapOf<String, CreateDatabaseProperty>()
-    private var iconValue: PageIcon? = null
+    private var iconValue: Icon? = null
     private var coverValue: PageCover? = null
 
     /**
@@ -163,7 +163,7 @@ class DatabaseRequestBuilder {
          * @param emoji The emoji character(s)
          */
         fun emoji(emoji: String) {
-            this@DatabaseRequestBuilder.iconValue = PageIcon.Emoji(emoji = emoji)
+            this@DatabaseRequestBuilder.iconValue = Icon.Emoji(emoji = emoji)
         }
 
         /**
@@ -172,7 +172,7 @@ class DatabaseRequestBuilder {
          * @param url The external image URL
          */
         fun external(url: String) {
-            this@DatabaseRequestBuilder.iconValue = PageIcon.External(external = ExternalFile(url = url))
+            this@DatabaseRequestBuilder.iconValue = Icon.External(external = ExternalFile(url = url))
         }
 
         /**
@@ -186,7 +186,7 @@ class DatabaseRequestBuilder {
             expiryTime: String? = null,
         ) {
             this@DatabaseRequestBuilder.iconValue =
-                PageIcon.File(file = NotionFile(url = url, expiryTime = expiryTime))
+                Icon.File(file = NotionFile(url = url, expiryTime = expiryTime))
         }
     }
 

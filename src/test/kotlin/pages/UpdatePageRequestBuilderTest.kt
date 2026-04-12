@@ -4,6 +4,7 @@ import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import it.saabel.kotlinnotionclient.models.base.Icon
 
 class UpdatePageRequestBuilderTest :
     StringSpec({
@@ -34,7 +35,7 @@ class UpdatePageRequestBuilderTest :
 
             request.icon shouldNotBe null
             request.icon!!.type shouldBe "emoji"
-            (request.icon as? PageIcon.Emoji)?.emoji shouldBe "✅"
+            (request.icon as? Icon.Emoji)?.emoji shouldBe "✅"
 
             request.cover shouldNotBe null
             request.cover!!.type shouldBe "external"
@@ -86,7 +87,7 @@ class UpdatePageRequestBuilderTest :
 
             request.icon shouldNotBe null
             request.icon!!.type shouldBe "external"
-            (request.icon as? PageIcon.External)?.external?.url shouldBe "https://example.com/icon.png"
+            (request.icon as? Icon.External)?.external?.url shouldBe "https://example.com/icon.png"
 
             request.cover shouldNotBe null
             request.cover!!.type shouldBe "file"

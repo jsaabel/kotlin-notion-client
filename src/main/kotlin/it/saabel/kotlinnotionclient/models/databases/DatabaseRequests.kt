@@ -1,11 +1,11 @@
 package it.saabel.kotlinnotionclient.models.databases
 
 import it.saabel.kotlinnotionclient.models.base.EmptyObject
+import it.saabel.kotlinnotionclient.models.base.Icon
 import it.saabel.kotlinnotionclient.models.base.Parent
 import it.saabel.kotlinnotionclient.models.base.RichText
 import it.saabel.kotlinnotionclient.models.base.SelectOptionColor
 import it.saabel.kotlinnotionclient.models.pages.PageCover
-import it.saabel.kotlinnotionclient.models.pages.PageIcon
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
@@ -28,7 +28,7 @@ data class CreateDatabaseRequest(
     @SerialName("initial_data_source")
     val initialDataSource: InitialDataSource,
     @SerialName("icon")
-    val icon: PageIcon? = null,
+    val icon: Icon? = null,
     @SerialName("cover")
     val cover: PageCover? = null,
     @SerialName("description")

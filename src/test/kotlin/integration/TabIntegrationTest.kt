@@ -6,6 +6,7 @@ import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import it.saabel.kotlinnotionclient.NotionClient
 import it.saabel.kotlinnotionclient.config.NotionConfig
+import it.saabel.kotlinnotionclient.models.base.Icon
 import it.saabel.kotlinnotionclient.models.blocks.Block
 import it.saabel.kotlinnotionclient.models.blocks.emoji
 import kotlinx.coroutines.delay
@@ -92,7 +93,7 @@ class TabIntegrationTest :
                     .plainText shouldBe "Details"
                 val pane2Icon = pane2.paragraph.icon.shouldNotBeNull()
                 pane2Icon.type shouldBe "emoji"
-                pane2Icon.emoji shouldBe "📋"
+                (pane2Icon as? Icon.Emoji)?.emoji shouldBe "📋"
 
                 // Pane 3 — plain string label + emoji icon
                 val pane3 = paneParagraphs[2]
@@ -100,7 +101,7 @@ class TabIntegrationTest :
                     .first()
                     .plainText shouldBe "Settings"
                 val pane3Icon = pane3.paragraph.icon.shouldNotBeNull()
-                pane3Icon.emoji shouldBe "⚙️"
+                (pane3Icon as? Icon.Emoji)?.emoji shouldBe "⚙️"
 
                 if (shouldCleanupAfterTest()) {
                     notion.pages.trash(page.id)

@@ -2,6 +2,7 @@
 
 package it.saabel.kotlinnotionclient.models.pages
 
+import it.saabel.kotlinnotionclient.models.base.Icon
 import it.saabel.kotlinnotionclient.models.base.Parent
 import it.saabel.kotlinnotionclient.models.base.RichText
 import it.saabel.kotlinnotionclient.models.base.SelectOptionColor
@@ -26,7 +27,7 @@ data class CreatePageRequest(
     @SerialName("properties")
     val properties: Map<String, PagePropertyValue>,
     @SerialName("icon")
-    val icon: PageIcon? = null,
+    val icon: Icon? = null,
     @SerialName("cover")
     val cover: PageCover? = null,
     @SerialName("children")
@@ -61,7 +62,7 @@ data class UpdatePageRequest(
     @SerialName("properties")
     val properties: Map<String, PagePropertyValue>? = null,
     @SerialName("icon")
-    val icon: PageIcon? = null,
+    val icon: Icon? = null,
     @SerialName("cover")
     val cover: PageCover? = null,
     @SerialName("in_trash")

@@ -6,6 +6,7 @@ import io.kotest.matchers.collections.shouldContainAnyOf
 import io.kotest.matchers.shouldBe
 import it.saabel.kotlinnotionclient.NotionClient
 import it.saabel.kotlinnotionclient.config.NotionConfig
+import it.saabel.kotlinnotionclient.models.base.Icon
 import it.saabel.kotlinnotionclient.models.base.Parent
 import it.saabel.kotlinnotionclient.models.databases.CreateDatabaseProperty
 import it.saabel.kotlinnotionclient.models.databases.CreateDatabaseRequest
@@ -63,7 +64,7 @@ class SelfContainedIntegrationTest :
                             parent =
                                 Parent.PageParent(pageId = testPageId),
                             title = listOf(RequestBuilders.createSimpleRichText("Test Database - Kotlin Client")),
-                            icon = RequestBuilders.createEmojiIcon("🗄️"),
+                            icon = Icon.Emoji(emoji = "🗄️"),
                             initialDataSource =
                                 InitialDataSource(
                                     properties =
@@ -104,7 +105,7 @@ class SelfContainedIntegrationTest :
                         CreatePageRequest(
                             parent =
                                 Parent.DataSourceParent(dataSourceId = dataSourceId),
-                            icon = RequestBuilders.createEmojiIcon("📋"),
+                            icon = Icon.Emoji(emoji = "📋"),
                             properties =
                                 pageProperties {
                                     title("Name", "Test Task - Integration Test")
@@ -252,7 +253,7 @@ class SelfContainedIntegrationTest :
                         CreatePageRequest(
                             parent =
                                 Parent.PageParent(pageId = parentPageId),
-                            icon = RequestBuilders.createEmojiIcon("📄"),
+                            icon = Icon.Emoji(emoji = "📄"),
                             properties =
                                 mapOf(
                                     "title" to
@@ -312,7 +313,7 @@ class SelfContainedIntegrationTest :
                         CreateDatabaseRequest(
                             parent = Parent.PageParent(pageId = parentPageId),
                             title = listOf(RequestBuilders.createSimpleRichText("Comprehensive Properties Test")),
-                            icon = RequestBuilders.createEmojiIcon("🧪"),
+                            icon = Icon.Emoji(emoji = "🧪"),
                             initialDataSource =
                                 InitialDataSource(
                                     properties =
@@ -352,7 +353,7 @@ class SelfContainedIntegrationTest :
                     val pageRequest =
                         CreatePageRequest(
                             parent = Parent.DataSourceParent(dataSourceId = dataSourceId),
-                            icon = RequestBuilders.createEmojiIcon("⭐"),
+                            icon = Icon.Emoji(emoji = "⭐"),
                             properties =
                                 pageProperties {
                                     title("Title", "Comprehensive Test Page")

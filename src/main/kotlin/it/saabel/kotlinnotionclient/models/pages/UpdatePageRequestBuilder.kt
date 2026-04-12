@@ -3,6 +3,7 @@
 package it.saabel.kotlinnotionclient.models.pages
 
 import it.saabel.kotlinnotionclient.models.base.ExternalFile
+import it.saabel.kotlinnotionclient.models.base.Icon
 import it.saabel.kotlinnotionclient.models.base.NotionFile
 
 /**
@@ -46,7 +47,7 @@ import it.saabel.kotlinnotionclient.models.base.NotionFile
 @UpdatePageRequestDslMarker
 class UpdatePageRequestBuilder {
     private var properties = mutableMapOf<String, PagePropertyValue>()
-    private var iconValue: PageIcon? = null
+    private var iconValue: Icon? = null
     private var coverValue: PageCover? = null
     private var inTrashValue: Boolean? = null
     private var isLockedValue: Boolean? = null
@@ -146,7 +147,7 @@ class UpdatePageRequestBuilder {
          * @param emoji The emoji character(s)
          */
         fun emoji(emoji: String) {
-            this@UpdatePageRequestBuilder.iconValue = PageIcon.Emoji(emoji = emoji)
+            this@UpdatePageRequestBuilder.iconValue = Icon.Emoji(emoji = emoji)
         }
 
         /**
@@ -155,7 +156,7 @@ class UpdatePageRequestBuilder {
          * @param url The external image URL
          */
         fun external(url: String) {
-            this@UpdatePageRequestBuilder.iconValue = PageIcon.External(external = ExternalFile(url = url))
+            this@UpdatePageRequestBuilder.iconValue = Icon.External(external = ExternalFile(url = url))
         }
 
         /**
@@ -169,7 +170,7 @@ class UpdatePageRequestBuilder {
             expiryTime: String? = null,
         ) {
             this@UpdatePageRequestBuilder.iconValue =
-                PageIcon.File(file = NotionFile(url = url, expiryTime = expiryTime))
+                Icon.File(file = NotionFile(url = url, expiryTime = expiryTime))
         }
 
         /**

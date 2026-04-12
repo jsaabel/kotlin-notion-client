@@ -7,6 +7,7 @@ import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.types.shouldBeInstanceOf
 import it.saabel.kotlinnotionclient.NotionClient
 import it.saabel.kotlinnotionclient.config.NotionConfig
+import it.saabel.kotlinnotionclient.models.base.Icon
 import it.saabel.kotlinnotionclient.models.base.Parent
 import it.saabel.kotlinnotionclient.models.blocks.pageContent
 import it.saabel.kotlinnotionclient.models.files.FileUploadOptions
@@ -103,7 +104,7 @@ class EnhancedFileUploadIntegrationTest :
                     val pageRequest =
                         CreatePageRequest(
                             parent = Parent.PageParent(pageId = parentPageId),
-                            icon = RequestBuilders.createEmojiIcon("📤"),
+                            icon = Icon.Emoji(emoji = "📤"),
                             properties =
                                 mapOf(
                                     "title" to
@@ -244,7 +245,7 @@ class EnhancedFileUploadIntegrationTest :
                             val pageRequest =
                                 CreatePageRequest(
                                     parent = Parent.PageParent(pageId = parentPageId),
-                                    icon = RequestBuilders.createEmojiIcon("🗂️"),
+                                    icon = Icon.Emoji(emoji = "🗂️"),
                                     properties =
                                         mapOf(
                                             "title" to
@@ -364,7 +365,7 @@ class EnhancedFileUploadIntegrationTest :
                     val pageRequest =
                         CreatePageRequest(
                             parent = Parent.PageParent(pageId = parentPageId),
-                            icon = RequestBuilders.createEmojiIcon("🌐"),
+                            icon = Icon.Emoji(emoji = "🌐"),
                             properties =
                                 mapOf(
                                     "title" to

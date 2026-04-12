@@ -9,6 +9,7 @@ import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.types.shouldBeInstanceOf
 import it.saabel.kotlinnotionclient.models.base.ExternalFile
+import it.saabel.kotlinnotionclient.models.base.Icon
 import it.saabel.kotlinnotionclient.models.base.NotionFile
 import it.saabel.kotlinnotionclient.models.base.Parent
 import it.saabel.kotlinnotionclient.models.base.RichText
@@ -18,7 +19,6 @@ import it.saabel.kotlinnotionclient.models.databases.CreateSelectOption
 import it.saabel.kotlinnotionclient.models.databases.RelationConfiguration
 import it.saabel.kotlinnotionclient.models.databases.databaseRequest
 import it.saabel.kotlinnotionclient.models.pages.PageCover
-import it.saabel.kotlinnotionclient.models.pages.PageIcon
 import io.kotest.matchers.collections.shouldHaveSize as shouldHaveSizeList
 
 @Tags("Unit")
@@ -113,7 +113,7 @@ class DatabaseRequestBuilderTest :
                             }
                         }
 
-                    request.icon shouldBe PageIcon.Emoji(emoji = "📊")
+                    request.icon shouldBe Icon.Emoji(emoji = "📊")
                 }
 
                 "external icon" {
@@ -127,7 +127,7 @@ class DatabaseRequestBuilderTest :
                             }
                         }
 
-                    request.icon shouldBe PageIcon.External(external = ExternalFile(url = "https://example.com/icon.png"))
+                    request.icon shouldBe Icon.External(external = ExternalFile(url = "https://example.com/icon.png"))
                 }
 
                 "file icon" {
@@ -142,7 +142,7 @@ class DatabaseRequestBuilderTest :
                         }
 
                     request.icon shouldBe
-                        PageIcon.File(
+                        Icon.File(
                             file = NotionFile(url = "https://files.notion.so/icon.png", expiryTime = "2023-01-01T00:00:00.000Z"),
                         )
                 }
@@ -159,7 +159,7 @@ class DatabaseRequestBuilderTest :
                         }
 
                     request.icon shouldBe
-                        PageIcon.File(
+                        Icon.File(
                             file = NotionFile(url = "https://files.notion.so/icon.png", expiryTime = null),
                         )
                 }
@@ -433,7 +433,7 @@ class DatabaseRequestBuilderTest :
                 request.parent shouldBe Parent.PageParent(pageId = "parent-page-id")
                 request.title shouldBe listOf(RichText.fromPlainText("Comprehensive Database"))
                 request.description shouldBe listOf(RichText.fromPlainText("A database with all possible features"))
-                request.icon shouldBe PageIcon.Emoji(emoji = "🚀")
+                request.icon shouldBe Icon.Emoji(emoji = "🚀")
                 request.cover shouldBe PageCover.External(external = ExternalFile(url = "https://example.com/cover.jpg"))
                 request.initialDataSource.properties shouldHaveSize 12
             }

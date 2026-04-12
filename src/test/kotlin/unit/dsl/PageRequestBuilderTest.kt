@@ -9,9 +9,9 @@ import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
 import io.kotest.matchers.types.shouldBeInstanceOf
+import it.saabel.kotlinnotionclient.models.base.Icon
 import it.saabel.kotlinnotionclient.models.base.Parent
 import it.saabel.kotlinnotionclient.models.pages.PageCover
-import it.saabel.kotlinnotionclient.models.pages.PageIcon
 import it.saabel.kotlinnotionclient.models.pages.PagePosition
 import it.saabel.kotlinnotionclient.models.pages.PagePropertyValue
 import it.saabel.kotlinnotionclient.models.pages.PageTemplate
@@ -293,7 +293,7 @@ class PageRequestBuilderTest :
                             icon.emoji("\uD83D\uDCC4")
                         }
 
-                    val emoji = request.icon.shouldBeInstanceOf<PageIcon.Emoji>()
+                    val emoji = request.icon.shouldBeInstanceOf<Icon.Emoji>()
                     emoji.emoji shouldBe "\uD83D\uDCC4"
                 }
 
@@ -304,7 +304,7 @@ class PageRequestBuilderTest :
                             icon.external("https://example.com/icon.png")
                         }
 
-                    val external = request.icon.shouldBeInstanceOf<PageIcon.External>()
+                    val external = request.icon.shouldBeInstanceOf<Icon.External>()
                     external.external.url shouldBe "https://example.com/icon.png"
                 }
 
@@ -315,7 +315,7 @@ class PageRequestBuilderTest :
                             icon.file("https://files.notion.com/icon.png", "2024-12-31")
                         }
 
-                    val fileIcon = request.icon.shouldBeInstanceOf<PageIcon.File>()
+                    val fileIcon = request.icon.shouldBeInstanceOf<Icon.File>()
                     fileIcon.file.url shouldBe "https://files.notion.com/icon.png"
                     fileIcon.file.expiryTime shouldBe "2024-12-31"
                 }
@@ -327,7 +327,7 @@ class PageRequestBuilderTest :
                             icon.file("https://files.notion.com/icon.png")
                         }
 
-                    val fileIcon = request.icon.shouldBeInstanceOf<PageIcon.File>()
+                    val fileIcon = request.icon.shouldBeInstanceOf<Icon.File>()
                     fileIcon.file.url shouldBe "https://files.notion.com/icon.png"
                     fileIcon.file.expiryTime.shouldBeNull()
                 }
@@ -417,7 +417,7 @@ class PageRequestBuilderTest :
                     request.properties shouldContainKey "Score"
                     request.properties shouldContainKey "Featured"
 
-                    val emoji = request.icon.shouldBeInstanceOf<PageIcon.Emoji>()
+                    val emoji = request.icon.shouldBeInstanceOf<Icon.Emoji>()
                     emoji.emoji shouldBe "\uD83D\uDE80"
 
                     val cover = request.cover.shouldBeInstanceOf<PageCover.External>()
@@ -446,7 +446,7 @@ class PageRequestBuilderTest :
                     request.properties shouldContainKey "title"
                     request.properties.size shouldBe 1
 
-                    val emoji = request.icon.shouldBeInstanceOf<PageIcon.Emoji>()
+                    val emoji = request.icon.shouldBeInstanceOf<Icon.Emoji>()
                     emoji.emoji shouldBe "\uD83D\uDCC4"
 
                     val cover = request.cover.shouldBeInstanceOf<PageCover.File>()

@@ -4,6 +4,7 @@ package it.saabel.kotlinnotionclient.models.blocks
 
 import it.saabel.kotlinnotionclient.models.base.Color
 import it.saabel.kotlinnotionclient.models.base.ExternalFile
+import it.saabel.kotlinnotionclient.models.base.Icon
 import it.saabel.kotlinnotionclient.models.base.NotionFile
 import it.saabel.kotlinnotionclient.models.base.RichText
 import it.saabel.kotlinnotionclient.models.files.FileUploadReference
@@ -994,7 +995,7 @@ class PageContentBuilder {
         children: (PageContentBuilder.() -> Unit)? = null,
     ): PageContentBuilder =
         callout(
-            icon = CalloutIcon(type = "emoji", emoji = emoji),
+            icon = Icon.Emoji(emoji = emoji),
             richText = listOf(RequestBuilders.createSimpleRichText(text)),
             color = color,
             children = children,
@@ -1010,7 +1011,7 @@ class PageContentBuilder {
      * @return This builder for chaining
      */
     fun callout(
-        icon: CalloutIcon? = null,
+        icon: Icon? = null,
         richText: List<RichText>,
         color: Color = Color.DEFAULT,
         children: (PageContentBuilder.() -> Unit)? = null,
@@ -1045,7 +1046,7 @@ class PageContentBuilder {
         block: RichTextBuilder.() -> Unit,
     ): PageContentBuilder =
         callout(
-            icon = CalloutIcon(type = "emoji", emoji = emoji),
+            icon = Icon.Emoji(emoji = emoji),
             richText = richText(block),
             color = color,
             children = children,
@@ -1634,7 +1635,7 @@ class TabBuilder {
      */
     fun pane(
         text: String,
-        icon: CalloutIcon? = null,
+        icon: Icon? = null,
         content: PageContentBuilder.() -> Unit,
     ): TabBuilder =
         pane(
@@ -1652,7 +1653,7 @@ class TabBuilder {
      */
     fun pane(
         richText: List<RichText>,
-        icon: CalloutIcon? = null,
+        icon: Icon? = null,
         content: PageContentBuilder.() -> Unit,
     ): TabBuilder {
         val childBlocks = pageContent(content).takeIf { it.isNotEmpty() }
@@ -1677,7 +1678,7 @@ class TabBuilder {
      * @param content The pane content builder (trailing lambda)
      */
     fun pane(
-        icon: CalloutIcon? = null,
+        icon: Icon? = null,
         block: RichTextBuilder.() -> Unit,
         content: PageContentBuilder.() -> Unit,
     ): TabBuilder =
@@ -1691,7 +1692,7 @@ class TabBuilder {
 }
 
 /**
- * Creates a [CalloutIcon] for an emoji character.
+ * Creates an [Icon.Emoji] for an emoji character.
  *
  * Convenience helper for use with [TabBuilder.pane] and callout blocks:
  * ```kotlin
@@ -1701,9 +1702,9 @@ class TabBuilder {
  * ```
  *
  * @param emojiChar The emoji character
- * @return A [CalloutIcon] of type "emoji"
+ * @return An [Icon.Emoji]
  */
-fun emoji(emojiChar: String): CalloutIcon = CalloutIcon(type = "emoji", emoji = emojiChar)
+fun emoji(emojiChar: String): Icon = Icon.Emoji(emoji = emojiChar)
 
 /**
  * DSL function for creating page content.

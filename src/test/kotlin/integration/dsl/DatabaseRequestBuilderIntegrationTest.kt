@@ -11,10 +11,10 @@ import io.kotest.matchers.string.shouldContain
 import io.kotest.matchers.types.shouldBeInstanceOf
 import it.saabel.kotlinnotionclient.NotionClient
 import it.saabel.kotlinnotionclient.config.NotionConfig
+import it.saabel.kotlinnotionclient.models.base.Icon
 import it.saabel.kotlinnotionclient.models.base.SelectOptionColor
 import it.saabel.kotlinnotionclient.models.databases.DatabaseProperty
 import it.saabel.kotlinnotionclient.models.pages.PageCover
-import it.saabel.kotlinnotionclient.models.pages.PageIcon
 import kotlinx.coroutines.delay
 
 /**
@@ -92,11 +92,11 @@ class DatabaseRequestBuilderIntegrationTest :
                     // initial creation response. Investigation needed to determine if this is a Notion API
                     // bug or intended behavior in the new database/data-source model.
                     // TODO: Investigate icon/cover persistence on databases in 2025-09-03 API
-                    println("   Icon: ${createdDatabase.icon?.type} = ${(createdDatabase.icon as? PageIcon.Emoji)?.emoji}")
+                    println("   Icon: ${createdDatabase.icon?.type} = ${(createdDatabase.icon as? Icon.Emoji)?.emoji}")
                     println("   Cover: ${createdDatabase.cover?.type} = ${(createdDatabase.cover as? PageCover.External)?.external?.url}")
 
                     // Icon and cover are returned in the creation response
-                    (createdDatabase.icon as? PageIcon.Emoji)?.emoji shouldBe "🚀"
+                    (createdDatabase.icon as? Icon.Emoji)?.emoji shouldBe "🚀"
                     (createdDatabase.cover as? PageCover.External)?.external?.url shouldContain "placehold"
 
                     println("   ⚠️  Note: Icon/cover may not persist in Notion UI due to 2025-09-03 API behavior")

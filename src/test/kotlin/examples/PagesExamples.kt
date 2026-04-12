@@ -9,8 +9,8 @@ import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import it.saabel.kotlinnotionclient.NotionClient
 import it.saabel.kotlinnotionclient.config.NotionConfig
+import it.saabel.kotlinnotionclient.models.base.Icon
 import it.saabel.kotlinnotionclient.models.pages.PageCover
-import it.saabel.kotlinnotionclient.models.pages.PageIcon
 import it.saabel.kotlinnotionclient.models.pages.PageProperty
 import kotlinx.coroutines.delay
 
@@ -165,7 +165,7 @@ class PagesExamples :
                 val priorityProp = page.properties["Priority"] as? PageProperty.Number
                 priorityProp?.number shouldBe 8.0
 
-                (page.icon as? PageIcon.Emoji)?.emoji shouldBe "📝"
+                (page.icon as? Icon.Emoji)?.emoji shouldBe "📝"
                 (page.cover as? PageCover.External)?.external?.url shouldBe "https://images.unsplash.com/photo-1557683316-973673baf926"
 
                 // Cleanup
@@ -313,7 +313,7 @@ class PagesExamples :
 
                 // Validation
                 updated.shouldNotBeNull()
-                (updated.icon as? PageIcon.Emoji)?.emoji shouldBe "✅"
+                (updated.icon as? Icon.Emoji)?.emoji shouldBe "✅"
                 (updated.cover as? PageCover.External)?.external?.url shouldBe "https://images.unsplash.com/photo-1557683316-973673baf926"
 
                 println("✅ Example 6 passed")
@@ -402,7 +402,7 @@ class PagesExamples :
 
                 // Validation
                 task.shouldNotBeNull()
-                (task.icon as? PageIcon.Emoji)?.emoji shouldBe "🚀"
+                (task.icon as? Icon.Emoji)?.emoji shouldBe "🚀"
                 val titleProp = task.properties["Task Name"] as? PageProperty.Title
                 titleProp?.plainText shouldBe "Implement feature X"
 
@@ -477,7 +477,7 @@ class PagesExamples :
                 val priorityProp = updated.properties["Priority"] as? PageProperty.Number
                 priorityProp?.number shouldBe 95.0
 
-                (updated.icon as? PageIcon.Emoji)?.emoji shouldBe "✅"
+                (updated.icon as? Icon.Emoji)?.emoji shouldBe "✅"
 
                 println("✅ Example 11 passed")
             }

@@ -7,9 +7,9 @@ import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
 import it.saabel.kotlinnotionclient.models.base.Color
+import it.saabel.kotlinnotionclient.models.base.Icon
 import it.saabel.kotlinnotionclient.models.blocks.Block
 import it.saabel.kotlinnotionclient.models.blocks.BlockRequest
-import it.saabel.kotlinnotionclient.models.blocks.CalloutIcon
 import it.saabel.kotlinnotionclient.models.blocks.ParagraphContent
 import it.saabel.kotlinnotionclient.models.blocks.ParagraphRequestContent
 import it.saabel.kotlinnotionclient.models.blocks.TabContent
@@ -58,7 +58,7 @@ class TabTest :
                 val content = json.decodeFromString<ParagraphContent>(raw)
 
                 content.richText.first().plainText shouldBe "Tab label"
-                val icon = content.icon.shouldNotBeNull()
+                val icon = content.icon.shouldBeInstanceOf<Icon.Emoji>()
                 icon.type shouldBe "emoji"
                 icon.emoji shouldBe "📋"
             }
@@ -82,7 +82,7 @@ class TabTest :
                 val request =
                     ParagraphRequestContent(
                         richText = emptyList(),
-                        icon = CalloutIcon(type = "emoji", emoji = "📋"),
+                        icon = Icon.Emoji(emoji = "📋"),
                     )
 
                 val encoded = json.encodeToString(ParagraphRequestContent.serializer(), request)
@@ -159,7 +159,7 @@ class TabTest :
                         paragraph =
                             ParagraphRequestContent(
                                 richText = emptyList(),
-                                icon = CalloutIcon(type = "emoji", emoji = "📋"),
+                                icon = Icon.Emoji(emoji = "📋"),
                             ),
                     )
                 val request =
@@ -217,7 +217,7 @@ class TabTest :
                     tab.tab.children!!
                         .first()
                         .shouldBeInstanceOf<BlockRequest.Paragraph>()
-                val icon = pane.paragraph.icon.shouldNotBeNull()
+                val icon = pane.paragraph.icon.shouldBeInstanceOf<Icon.Emoji>()
                 icon.emoji shouldBe "📋"
                 icon.type shouldBe "emoji"
             }
@@ -261,7 +261,7 @@ class TabTest :
                 pane.paragraph.richText
                     .first()
                     .plainText shouldBe "Rich pane"
-                pane.paragraph.icon?.emoji shouldBe "🔖"
+                (pane.paragraph.icon as? Icon.Emoji)?.emoji shouldBe "🔖"
             }
 
             test("pane with rich text DSL overload") {
@@ -282,7 +282,7 @@ class TabTest :
                 pane.paragraph.richText
                     .first()
                     .plainText shouldBe "DSL pane"
-                pane.paragraph.icon?.emoji shouldBe "⚙️"
+                (pane.paragraph.icon as? Icon.Emoji)?.emoji shouldBe "⚙️"
             }
 
             test("pane nested content is placed as children of the paragraph") {
@@ -321,8 +321,8 @@ class TabTest :
                 errors.any { it.contains("Tab blocks must have at least one pane") } shouldBe true
             }
 
-            test("emoji() helper creates correct CalloutIcon") {
-                val icon = emoji("🎯")
+            test("emoji() helper creates correct Icon.Emoji") {
+                val icon = emoji("🎯").shouldBeInstanceOf<Icon.Emoji>()
                 icon.type shouldBe "emoji"
                 icon.emoji shouldBe "🎯"
             }

@@ -7,6 +7,7 @@ import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
 import it.saabel.kotlinnotionclient.NotionClient
 import it.saabel.kotlinnotionclient.config.NotionConfig
+import it.saabel.kotlinnotionclient.models.base.Icon
 import it.saabel.kotlinnotionclient.models.base.Parent
 import it.saabel.kotlinnotionclient.models.blocks.Block
 import it.saabel.kotlinnotionclient.models.blocks.BlockRequest
@@ -50,7 +51,7 @@ class ContentDslIntegrationTest :
                         CreatePageRequest(
                             parent =
                                 Parent.PageParent(pageId = parentPageId),
-                            icon = RequestBuilders.createEmojiIcon("🎨"),
+                            icon = Icon.Emoji(emoji = "🎨"),
                             properties =
                                 mapOf(
                                     "title" to

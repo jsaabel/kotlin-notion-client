@@ -7,6 +7,7 @@ import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.ints.shouldBeGreaterThan
 import it.saabel.kotlinnotionclient.NotionClient
 import it.saabel.kotlinnotionclient.config.NotionConfig
+import it.saabel.kotlinnotionclient.models.base.Icon
 import it.saabel.kotlinnotionclient.models.base.Parent
 import it.saabel.kotlinnotionclient.models.blocks.pageContent
 import it.saabel.kotlinnotionclient.models.pages.CreatePageRequest
@@ -48,7 +49,7 @@ class BlockPaginationIntegrationTest :
                     val pageRequest =
                         CreatePageRequest(
                             parent = Parent.PageParent(pageId = parentPageId),
-                            icon = RequestBuilders.createEmojiIcon("📝"),
+                            icon = Icon.Emoji(emoji = "📝"),
                             properties =
                                 mapOf(
                                     "title" to

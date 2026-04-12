@@ -4,6 +4,7 @@ package it.saabel.kotlinnotionclient.models.blocks
 
 import it.saabel.kotlinnotionclient.models.base.Color
 import it.saabel.kotlinnotionclient.models.base.ExternalFile
+import it.saabel.kotlinnotionclient.models.base.Icon
 import it.saabel.kotlinnotionclient.models.base.NotionObject
 import it.saabel.kotlinnotionclient.models.base.Parent
 import it.saabel.kotlinnotionclient.models.base.RichText
@@ -1170,7 +1171,7 @@ data class ParagraphContent(
     @SerialName("color")
     val color: Color = Color.DEFAULT,
     @SerialName("icon")
-    val icon: CalloutIcon? = null,
+    val icon: Icon? = null,
 )
 
 /**
@@ -1229,7 +1230,7 @@ data class CalloutContent(
     @SerialName("color")
     val color: Color = Color.DEFAULT,
     @SerialName("icon")
-    val icon: CalloutIcon? = null,
+    val icon: Icon? = null,
 )
 
 /**
@@ -1476,21 +1477,6 @@ data class TemplateContent(
 )
 
 // SUPPORT CLASSES (alphabetically ordered)
-
-/**
- * Represents an icon in a callout block.
- */
-@Serializable
-data class CalloutIcon(
-    @SerialName("type")
-    val type: String, // "emoji" or "external" or "file"
-    @SerialName("emoji")
-    val emoji: String? = null,
-    @SerialName("external")
-    val external: ExternalFile? = null,
-    @SerialName("file")
-    val file: FileReference? = null,
-)
 
 /**
  * Represents a file reference in Notion.

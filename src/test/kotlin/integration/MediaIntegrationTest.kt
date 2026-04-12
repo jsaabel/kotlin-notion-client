@@ -9,6 +9,7 @@ import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import it.saabel.kotlinnotionclient.NotionClient
 import it.saabel.kotlinnotionclient.config.NotionConfig
+import it.saabel.kotlinnotionclient.models.base.Icon
 import it.saabel.kotlinnotionclient.models.base.Parent
 import it.saabel.kotlinnotionclient.models.blocks.Block
 import it.saabel.kotlinnotionclient.models.blocks.pageContent
@@ -63,7 +64,7 @@ class MediaIntegrationTest :
                         CreatePageRequest(
                             parent =
                                 Parent.PageParent(pageId = parentPageId),
-                            icon = RequestBuilders.createEmojiIcon("🖼️"),
+                            icon = Icon.Emoji(emoji = "🖼️"),
                             properties =
                                 mapOf(
                                     "title" to
@@ -185,7 +186,7 @@ class MediaIntegrationTest :
                         CreatePageRequest(
                             parent =
                                 Parent.PageParent(pageId = parentPageId),
-                            icon = RequestBuilders.createEmojiIcon("📁"),
+                            icon = Icon.Emoji(emoji = "📁"),
                             properties =
                                 mapOf(
                                     "title" to
@@ -312,7 +313,7 @@ class MediaIntegrationTest :
                         CreatePageRequest(
                             parent =
                                 Parent.PageParent(pageId = parentPageId),
-                            icon = RequestBuilders.createEmojiIcon("🎬"),
+                            icon = Icon.Emoji(emoji = "🎬"),
                             properties =
                                 mapOf(
                                     "title" to

@@ -9,6 +9,7 @@ import io.kotest.matchers.string.shouldNotBeBlank
 import it.saabel.kotlinnotionclient.NotionClient
 import it.saabel.kotlinnotionclient.config.NotionConfig
 import it.saabel.kotlinnotionclient.exceptions.NotionException
+import it.saabel.kotlinnotionclient.models.base.Icon
 import it.saabel.kotlinnotionclient.models.base.Parent
 import it.saabel.kotlinnotionclient.models.blocks.pageContent
 import it.saabel.kotlinnotionclient.models.comments.CommentAttachmentRequest
@@ -76,7 +77,7 @@ class CommentsIntegrationTest :
                             val pageRequest =
                                 CreatePageRequest(
                                     parent = Parent.PageParent(parentPageId!!),
-                                    icon = RequestBuilders.createEmojiIcon("💬"),
+                                    icon = Icon.Emoji(emoji = "💬"),
                                     properties =
                                         mapOf(
                                             "title" to
@@ -297,7 +298,7 @@ class CommentsIntegrationTest :
                             val pageRequest =
                                 CreatePageRequest(
                                     parent = Parent.PageParent(pageId = parentPageId!!),
-                                    icon = RequestBuilders.createEmojiIcon("🧱"),
+                                    icon = Icon.Emoji(emoji = "🧱"),
                                     properties =
                                         mapOf(
                                             "title" to
@@ -432,7 +433,7 @@ class CommentsIntegrationTest :
                             val pageRequest =
                                 CreatePageRequest(
                                     parent = Parent.PageParent(pageId = parentPageId!!),
-                                    icon = RequestBuilders.createEmojiIcon("📎"),
+                                    icon = Icon.Emoji(emoji = "📎"),
                                     properties =
                                         mapOf(
                                             "title" to
@@ -567,7 +568,7 @@ class CommentsIntegrationTest :
                             val pageRequest =
                                 CreatePageRequest(
                                     parent = Parent.PageParent(pageId = parentPageId!!),
-                                    icon = RequestBuilders.createEmojiIcon("👤"),
+                                    icon = Icon.Emoji(emoji = "👤"),
                                     properties =
                                         mapOf(
                                             "title" to

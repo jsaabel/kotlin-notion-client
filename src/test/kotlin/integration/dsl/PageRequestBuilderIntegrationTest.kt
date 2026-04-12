@@ -11,9 +11,9 @@ import io.kotest.matchers.string.shouldContain
 import io.kotest.matchers.types.shouldBeInstanceOf
 import it.saabel.kotlinnotionclient.NotionClient
 import it.saabel.kotlinnotionclient.config.NotionConfig
+import it.saabel.kotlinnotionclient.models.base.Icon
 import it.saabel.kotlinnotionclient.models.blocks.Block
 import it.saabel.kotlinnotionclient.models.pages.PageCover
-import it.saabel.kotlinnotionclient.models.pages.PageIcon
 import it.saabel.kotlinnotionclient.models.pages.PageProperty
 import it.saabel.kotlinnotionclient.models.pages.createPageRequest
 import kotlinx.coroutines.delay
@@ -90,7 +90,7 @@ class PageRequestBuilderIntegrationTest :
 
                     // Verify page properties (normalize UUID format)
                     createdPage.parent.id?.replace("-", "") shouldBe parentPageId.replace("-", "")
-                    (createdPage.icon as? PageIcon.Emoji)?.emoji shouldBe "🚀"
+                    (createdPage.icon as? Icon.Emoji)?.emoji shouldBe "🚀"
                     (createdPage.cover as? PageCover.External)?.external?.url shouldContain "placehold"
 
                     // Verify the title was set correctly

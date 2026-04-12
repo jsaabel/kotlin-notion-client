@@ -2,6 +2,7 @@ package it.saabel.kotlinnotionclient.models.blocks
 
 import it.saabel.kotlinnotionclient.models.base.Color
 import it.saabel.kotlinnotionclient.models.base.ExternalFile
+import it.saabel.kotlinnotionclient.models.base.Icon
 import it.saabel.kotlinnotionclient.models.base.RichText
 import it.saabel.kotlinnotionclient.models.files.FileUploadReference
 import kotlinx.serialization.SerialName
@@ -382,7 +383,7 @@ data class ParagraphRequestContent(
     @SerialName("children")
     val children: List<BlockRequest>? = null,
     @SerialName("icon")
-    val icon: CalloutIcon? = null,
+    val icon: Icon? = null,
 )
 
 /**
@@ -533,7 +534,7 @@ data class CalloutRequestContent(
     @SerialName("rich_text")
     val richText: List<RichText>,
     @SerialName("icon")
-    val icon: CalloutIcon? = null,
+    val icon: Icon? = null,
     @SerialName("color")
     val color: Color = Color.DEFAULT,
     @SerialName("children")
@@ -771,7 +772,7 @@ data class TabRequestContent(
     val children: List<BlockRequest>? = null,
 )
 
-// Note: CalloutIcon and SyncedBlockReference are defined in Block.kt to avoid duplication
+// Note: SyncedBlockReference is defined in Block.kt to avoid duplication
 
 /**
  * Position specification for appending block children (API version 2026-03-11+).
