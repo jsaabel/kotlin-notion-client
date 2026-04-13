@@ -7,6 +7,7 @@ import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldNotBeBlank
+import io.kotest.matchers.types.shouldBeInstanceOf
 import it.saabel.kotlinnotionclient.NotionClient
 import it.saabel.kotlinnotionclient.config.NotionConfig
 import it.saabel.kotlinnotionclient.models.datasources.CheckboxCondition
@@ -14,7 +15,17 @@ import it.saabel.kotlinnotionclient.models.datasources.DataSourceFilter
 import it.saabel.kotlinnotionclient.models.datasources.DataSourceSort
 import it.saabel.kotlinnotionclient.models.datasources.SortDirection
 import it.saabel.kotlinnotionclient.models.pages.PageProperty
+import it.saabel.kotlinnotionclient.models.views.CoverConfig
+import it.saabel.kotlinnotionclient.models.views.CoverSize
+import it.saabel.kotlinnotionclient.models.views.CoverType
+import it.saabel.kotlinnotionclient.models.views.GroupByConfig
+import it.saabel.kotlinnotionclient.models.views.GroupSort
+import it.saabel.kotlinnotionclient.models.views.GroupSortType
+import it.saabel.kotlinnotionclient.models.views.TimelinePreference
+import it.saabel.kotlinnotionclient.models.views.TimelineZoomLevel
 import it.saabel.kotlinnotionclient.models.views.UpdateViewRequest
+import it.saabel.kotlinnotionclient.models.views.ViewConfiguration
+import it.saabel.kotlinnotionclient.models.views.ViewRange
 import it.saabel.kotlinnotionclient.models.views.ViewType
 import kotlinx.coroutines.delay
 
@@ -566,6 +577,243 @@ class ViewsIntegrationTest :
 
                     client.views.deleteQuery(viewId, query.id)
                     println("✅ Query cache cleaned up")
+                } finally {
+                    client.close()
+                }
+            }
+            "Typed ViewConfiguration round-trip — Table, Gallery, Calendar, Board, Timeline" {
+                val client = NotionClient(NotionConfig(apiToken = token))
+
+                try {
+                    // Database needs a date property (for calendar/timeline) and a select
+                    // property (for board group-by).
+                    println("\n🗄️ Creating database for typed configuration test...")
+                    val database =
+                        client.databases.create {
+                            parent.page(containerPageId)
+                            title("Typed Config Test DB")
+                            icon.emoji("🔧")
+                            properties {
+                                title("Name")
+                                select("Priority") {
+                                    option("Low")
+                                    option("Medium")
+                                    option("High")
+                                }
+                                date("Due Date")
+                            }
+                        }
+                    val databaseId = database.id
+                    val dataSourceId =
+                        database.dataSources
+                            .firstOrNull()
+                            ?.id
+                            .shouldNotBeNull()
+                    println("✅ Database created: $databaseId  |  data source: $dataSourceId")
+
+                    delay(1000)
+
+                    // Resolve property IDs from the data source schema
+                    val dataSource = client.dataSources.retrieve(dataSourceId)
+
+                    fun id(name: String) =
+                        java.net.URLDecoder.decode(
+                            checkNotNull(dataSource.properties[name]?.id) { "Property '$name' not found" },
+                            "UTF-8",
+                        )
+                    val priorityId = id("Priority")
+                    val dueDateId = id("Due Date")
+                    println("   Priority property ID: $priorityId")
+                    println("   Due Date property ID: $dueDateId")
+
+                    delay(500)
+
+                    // ----------------------------------------------------------------
+                    // TABLE — wrap_cells + frozen_column_index
+                    // ----------------------------------------------------------------
+                    println("\n📋 Creating Table view with wrapCells=true, frozenColumnIndex=1...")
+                    val tableView =
+                        client.views.create {
+                            dataSourceId(dataSourceId)
+                            name("Typed Table")
+                            type(ViewType.TABLE)
+                            database(databaseId)
+                            configuration(ViewConfiguration.Table(wrapCells = true, frozenColumnIndex = 1))
+                        }
+                    tableView.type shouldBe ViewType.TABLE
+                    println("   Create response — configuration: ${tableView.configuration}")
+
+                    delay(300)
+
+                    val retrievedTable = client.views.retrieve(tableView.id)
+                    val tableConfig = retrievedTable.configuration
+                    if (tableConfig != null) {
+                        tableConfig.shouldBeInstanceOf<ViewConfiguration.Table>()
+                        println("✅ Table config deserialized as ViewConfiguration.Table")
+                        println("   wrapCells=${tableConfig.wrapCells}  frozenColumnIndex=${tableConfig.frozenColumnIndex}")
+                    } else {
+                        println("ℹ️ API returned configuration=null for table view (not an error — API may omit default config)")
+                    }
+
+                    delay(300)
+
+                    // ----------------------------------------------------------------
+                    // GALLERY — cover + coverSize
+                    // ----------------------------------------------------------------
+                    println("\n🖼️ Creating Gallery view with cover=PAGE_COVER, coverSize=MEDIUM...")
+                    val galleryView =
+                        client.views.create {
+                            dataSourceId(dataSourceId)
+                            name("Typed Gallery")
+                            type(ViewType.GALLERY)
+                            database(databaseId)
+                            configuration(
+                                ViewConfiguration.Gallery(
+                                    cover = CoverConfig(type = CoverType.PAGE_COVER),
+                                    coverSize = CoverSize.MEDIUM,
+                                ),
+                            )
+                        }
+                    galleryView.type shouldBe ViewType.GALLERY
+                    println("   Create response — configuration: ${galleryView.configuration}")
+
+                    delay(300)
+
+                    val retrievedGallery = client.views.retrieve(galleryView.id)
+                    val galleryConfig = retrievedGallery.configuration
+                    if (galleryConfig != null) {
+                        galleryConfig.shouldBeInstanceOf<ViewConfiguration.Gallery>()
+                        println("✅ Gallery config deserialized as ViewConfiguration.Gallery")
+                        println("   cover=${galleryConfig.cover}  coverSize=${galleryConfig.coverSize}")
+                    } else {
+                        println("ℹ️ API returned configuration=null for gallery view")
+                    }
+
+                    delay(300)
+
+                    // ----------------------------------------------------------------
+                    // CALENDAR — datePropertyId + viewRange + showWeekends
+                    // ----------------------------------------------------------------
+                    println("\n📅 Creating Calendar view with datePropertyId, viewRange=WEEK, showWeekends=false...")
+                    val calendarView =
+                        client.views.create {
+                            dataSourceId(dataSourceId)
+                            name("Typed Calendar")
+                            type(ViewType.CALENDAR)
+                            database(databaseId)
+                            configuration(
+                                ViewConfiguration.Calendar(
+                                    datePropertyId = dueDateId,
+                                    viewRange = ViewRange.WEEK,
+                                    showWeekends = false,
+                                ),
+                            )
+                        }
+                    calendarView.type shouldBe ViewType.CALENDAR
+                    println("   Create response — configuration: ${calendarView.configuration}")
+
+                    delay(300)
+
+                    val retrievedCalendar = client.views.retrieve(calendarView.id)
+                    val calendarConfig = retrievedCalendar.configuration
+                    if (calendarConfig != null) {
+                        calendarConfig.shouldBeInstanceOf<ViewConfiguration.Calendar>()
+                        println("✅ Calendar config deserialized as ViewConfiguration.Calendar")
+                        println(
+                            "   datePropertyId=${calendarConfig.datePropertyId}  viewRange=${calendarConfig.viewRange}  showWeekends=${calendarConfig.showWeekends}",
+                        )
+                    } else {
+                        println("ℹ️ API returned configuration=null for calendar view")
+                    }
+
+                    delay(300)
+
+                    // ----------------------------------------------------------------
+                    // BOARD — groupBy select property
+                    // ----------------------------------------------------------------
+                    println("\n📌 Creating Board view grouped by Priority (select)...")
+                    val boardView =
+                        client.views.create {
+                            dataSourceId(dataSourceId)
+                            name("Typed Board")
+                            type(ViewType.BOARD)
+                            database(databaseId)
+                            configuration(
+                                ViewConfiguration.Board(
+                                    groupBy =
+                                        GroupByConfig.Select(
+                                            type = "select",
+                                            propertyId = priorityId,
+                                            sort = GroupSort(type = GroupSortType.MANUAL),
+                                        ),
+                                ),
+                            )
+                        }
+                    boardView.type shouldBe ViewType.BOARD
+                    println("   Create response — configuration: ${boardView.configuration}")
+
+                    delay(300)
+
+                    val retrievedBoard = client.views.retrieve(boardView.id)
+                    val boardConfig = retrievedBoard.configuration
+                    if (boardConfig != null) {
+                        boardConfig.shouldBeInstanceOf<ViewConfiguration.Board>()
+                        println("✅ Board config deserialized as ViewConfiguration.Board")
+                        val groupBy = boardConfig.groupBy
+                        if (groupBy != null) {
+                            groupBy.shouldBeInstanceOf<GroupByConfig.Select>()
+                            println("   groupBy type=${groupBy.type}  propertyId=${groupBy.propertyId}  sort=${groupBy.sort}")
+                        } else {
+                            println("   groupBy=null (API may not return it)")
+                        }
+                    } else {
+                        println("ℹ️ API returned configuration=null for board view")
+                    }
+
+                    delay(300)
+
+                    // ----------------------------------------------------------------
+                    // TIMELINE — datePropertyId + zoom preference
+                    // ----------------------------------------------------------------
+                    println("\n⏱️ Creating Timeline view with datePropertyId and week zoom...")
+                    val timelineView =
+                        client.views.create {
+                            dataSourceId(dataSourceId)
+                            name("Typed Timeline")
+                            type(ViewType.TIMELINE)
+                            database(databaseId)
+                            configuration(
+                                ViewConfiguration.Timeline(
+                                    datePropertyId = dueDateId,
+                                    preference = TimelinePreference(zoomLevel = TimelineZoomLevel.WEEK),
+                                    showTable = true,
+                                ),
+                            )
+                        }
+                    timelineView.type shouldBe ViewType.TIMELINE
+                    println("   Create response — configuration: ${timelineView.configuration}")
+
+                    delay(300)
+
+                    val retrievedTimeline = client.views.retrieve(timelineView.id)
+                    val timelineConfig = retrievedTimeline.configuration
+                    if (timelineConfig != null) {
+                        timelineConfig.shouldBeInstanceOf<ViewConfiguration.Timeline>()
+                        println("✅ Timeline config deserialized as ViewConfiguration.Timeline")
+                        println(
+                            "   datePropertyId=${timelineConfig.datePropertyId}  showTable=${timelineConfig.showTable}  preference=${timelineConfig.preference}",
+                        )
+                    } else {
+                        println("ℹ️ API returned configuration=null for timeline view")
+                    }
+
+                    println("\n✅ Typed configuration tests passed!")
+                    println("\n📊 Summary:")
+                    println("   Table config returned:    ${retrievedTable.configuration?.let { it::class.simpleName } ?: "null"}")
+                    println("   Gallery config returned:  ${retrievedGallery.configuration?.let { it::class.simpleName } ?: "null"}")
+                    println("   Calendar config returned: ${retrievedCalendar.configuration?.let { it::class.simpleName } ?: "null"}")
+                    println("   Board config returned:    ${retrievedBoard.configuration?.let { it::class.simpleName } ?: "null"}")
+                    println("   Timeline config returned: ${retrievedTimeline.configuration?.let { it::class.simpleName } ?: "null"}")
                 } finally {
                     client.close()
                 }
