@@ -226,6 +226,33 @@ object TestFixtures {
         fun searchByTitleAsString() = loadSampleResponseAsString("search", "post_search_by_title")
     }
 
+    // Views-specific helpers
+    object Views {
+        fun retrieveView() = loadSampleResponse("views", "retrieve_view")
+
+        fun listViews() = loadSampleResponse("views", "list_views")
+
+        fun partialView() = loadSampleResponse("views", "partial_view")
+
+        fun createViewQuery() = loadSampleResponse("views", "create_view_query")
+
+        fun viewQueryResults() = loadSampleResponse("views", "view_query_results")
+
+        fun deletedViewQuery() = loadSampleResponse("views", "deleted_view_query")
+
+        fun retrieveViewAsString() = loadSampleResponseAsString("views", "retrieve_view")
+
+        fun listViewsAsString() = loadSampleResponseAsString("views", "list_views")
+
+        fun partialViewAsString() = loadSampleResponseAsString("views", "partial_view")
+
+        fun createViewQueryAsString() = loadSampleResponseAsString("views", "create_view_query")
+
+        fun viewQueryResultsAsString() = loadSampleResponseAsString("views", "view_query_results")
+
+        fun deletedViewQueryAsString() = loadSampleResponseAsString("views", "deleted_view_query")
+    }
+
     // Custom emoji helpers
     object CustomEmojis {
         fun listCustomEmojis() = loadSampleResponse("custom_emojis", "list_custom_emojis")

@@ -1,0 +1,15 @@
+{
+  "object": "list",
+  "results": [
+    {
+      "object": "view",
+      "id": "a3f1b2c4-5678-4def-abcd-1234567890ab"
+    },
+    {
+      "object": "view",
+      "id": "b4e2c3d5-6789-4efa-bcde-234567890abc"
+    }
+  ],
+  "next_cursor": null,
+  "has_more": false
+}

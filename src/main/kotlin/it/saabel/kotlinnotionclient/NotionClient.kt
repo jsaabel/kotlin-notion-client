@@ -25,6 +25,7 @@ import it.saabel.kotlinnotionclient.api.MarkdownApi
 import it.saabel.kotlinnotionclient.api.PagesApi
 import it.saabel.kotlinnotionclient.api.SearchApi
 import it.saabel.kotlinnotionclient.api.UsersApi
+import it.saabel.kotlinnotionclient.api.ViewsApi
 import it.saabel.kotlinnotionclient.config.NotionConfig
 import it.saabel.kotlinnotionclient.ratelimit.NotionRateLimit
 import kotlinx.serialization.json.Json
@@ -88,6 +89,7 @@ class NotionClient
         val markdown = MarkdownApi(httpClient, config)
         val fileUploads = FileUploadApi(httpClient, config)
         val customEmojis = CustomEmojisApi(httpClient, config)
+        val views = ViewsApi(httpClient, config)
 
         /**
          * Enhanced file upload API with advanced features like progress tracking,
