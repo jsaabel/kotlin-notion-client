@@ -28,12 +28,66 @@ Each step:
 
 ---
 
-## Results
+## Results (confirmed against live API)
 
-All 5 views were created and retrieved successfully. The test passed.
+All 5 views created and retrieved successfully. **The API returns typed `configuration` on
+the create response itself** — not just on subsequent GETs. Summary:
 
-The diagnostic summary printed at the end will reveal whether the API returns typed
-configuration objects in GET responses — update this entry after reviewing the test output.
+```
+Table config returned:    Table
+Gallery config returned:  Gallery
+Calendar config returned: Calendar
+Board config returned:    Board
+Timeline config returned: Timeline
+```
+
+### Actual values returned
+
+**Table:**
+```
+Table(type=table, properties=null, groupBy=null, subtasks=null,
+      wrapCells=true, frozenColumnIndex=1, showVerticalLines=null)
+```
+Fields round-tripped exactly as sent.
+
+**Gallery:**
+```
+Gallery(type=gallery, properties=null,
+        cover=CoverConfig(type=PAGE_COVER, propertyId=null),
+        coverSize=MEDIUM, coverAspect=null, cardLayout=null)
+```
+Cover and coverSize round-tripped correctly.
+
+**Calendar:**
+```
+Calendar(type=calendar, datePropertyId=UsE{, datePropertyName=Due Date,
+         properties=null, viewRange=WEEK, showWeekends=false)
+```
+`datePropertyName` is populated by the API as a convenience field (response-only, as documented).
+All sent values round-tripped correctly.
+
+**Board:**
+```
+Board(type=board,
+      groupBy=Select(type=select, propertyId=Nl]Z, sort=GroupSort(type=MANUAL),
+                     hideEmptyGroups=null, propertyName=Priority),
+      subGroupBy=null, ...)
+```
+`GroupByConfig.Select` deserialized correctly. `propertyName` is populated by the API
+in the response (response-only convenience field).
+
+**Timeline:**
+```
+Timeline(type=timeline, datePropertyId=UsE{, datePropertyName=Due Date,
+         showTable=true, preference=TimelinePreference(zoomLevel=WEEK, centerTimestamp=0),
+         ...)
+```
+
+### Notable: `centerTimestamp=0` instead of null
+The API returns `centerTimestamp=0` (not null) when no center timestamp was sent.
+Our model has `centerTimestamp: Long? = null` — the API is filling in a default of 0.
+This is technically correct (0 is a valid Unix timestamp) but semantically means
+"no preference". Worth documenting but not a bug — callers should treat 0 as "unset".
 
 ---
 
