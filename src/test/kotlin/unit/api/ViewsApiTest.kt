@@ -13,17 +13,28 @@ import io.ktor.http.HttpStatusCode
 import it.saabel.kotlinnotionclient.api.ViewsApi
 import it.saabel.kotlinnotionclient.config.NotionConfig
 import it.saabel.kotlinnotionclient.exceptions.NotionException
+import it.saabel.kotlinnotionclient.models.views.CardLayout
+import it.saabel.kotlinnotionclient.models.views.ChartType
+import it.saabel.kotlinnotionclient.models.views.CoverAspect
+import it.saabel.kotlinnotionclient.models.views.CoverConfig
+import it.saabel.kotlinnotionclient.models.views.CoverSize
+import it.saabel.kotlinnotionclient.models.views.CoverType
 import it.saabel.kotlinnotionclient.models.views.CreateViewRequest
 import it.saabel.kotlinnotionclient.models.views.DeletedViewQuery
 import it.saabel.kotlinnotionclient.models.views.PartialView
+import it.saabel.kotlinnotionclient.models.views.SubmissionPermissions
 import it.saabel.kotlinnotionclient.models.views.UpdateViewRequest
 import it.saabel.kotlinnotionclient.models.views.View
+import it.saabel.kotlinnotionclient.models.views.ViewConfiguration
 import it.saabel.kotlinnotionclient.models.views.ViewList
+import it.saabel.kotlinnotionclient.models.views.ViewPropertyConfig
 import it.saabel.kotlinnotionclient.models.views.ViewQuery
 import it.saabel.kotlinnotionclient.models.views.ViewQueryResults
+import it.saabel.kotlinnotionclient.models.views.ViewRange
 import it.saabel.kotlinnotionclient.models.views.ViewType
 import it.saabel.kotlinnotionclient.models.views.createViewRequest
 import it.saabel.kotlinnotionclient.models.views.updateViewRequest
+import kotlinx.serialization.json.Json
 import unit.util.TestFixtures
 import unit.util.decode
 import unit.util.mockClient
@@ -500,6 +511,162 @@ class ViewsApiTest :
                     }
 
                 view.shouldBeInstanceOf<View>()
+            }
+        }
+
+        // ========== ViewConfiguration typed model tests ==========
+
+        context("ViewConfiguration serialization") {
+            val json = Json { ignoreUnknownKeys = true }
+
+            test("Table config round-trips with all simple fields") {
+                val config =
+                    ViewConfiguration.Table(
+                        properties = listOf(ViewPropertyConfig(propertyId = "prop-1", visible = true)),
+                        wrapCells = true,
+                        frozenColumnIndex = 2,
+                        showVerticalLines = false,
+                    )
+                val encoded = json.encodeToString(ViewConfiguration.serializer(), config)
+                val decoded = json.decodeFromString(ViewConfiguration.serializer(), encoded)
+                val table = decoded.shouldBeInstanceOf<ViewConfiguration.Table>()
+                table.wrapCells shouldBe true
+                table.frozenColumnIndex shouldBe 2
+                table.showVerticalLines shouldBe false
+                table.properties?.first()?.propertyId shouldBe "prop-1"
+            }
+
+            test("Gallery config round-trips with cover and card layout") {
+                val config =
+                    ViewConfiguration.Gallery(
+                        cover = CoverConfig(type = CoverType.PAGE_COVER),
+                        coverSize = CoverSize.LARGE,
+                        coverAspect = CoverAspect.COVER,
+                        cardLayout = CardLayout.COMPACT,
+                    )
+                val encoded = json.encodeToString(ViewConfiguration.serializer(), config)
+                val decoded = json.decodeFromString(ViewConfiguration.serializer(), encoded) as ViewConfiguration.Gallery
+                decoded.cover?.type shouldBe CoverType.PAGE_COVER
+                decoded.coverSize shouldBe CoverSize.LARGE
+                decoded.coverAspect shouldBe CoverAspect.COVER
+                decoded.cardLayout shouldBe CardLayout.COMPACT
+            }
+
+            test("Calendar config round-trips with datePropertyId and viewRange") {
+                val config =
+                    ViewConfiguration.Calendar(
+                        datePropertyId = "date-prop-id",
+                        viewRange = ViewRange.WEEK,
+                        showWeekends = false,
+                    )
+                val encoded = json.encodeToString(ViewConfiguration.serializer(), config)
+                val decoded = json.decodeFromString(ViewConfiguration.serializer(), encoded) as ViewConfiguration.Calendar
+                decoded.datePropertyId shouldBe "date-prop-id"
+                decoded.viewRange shouldBe ViewRange.WEEK
+                decoded.showWeekends shouldBe false
+            }
+
+            test("Form config round-trips with all fields") {
+                val config =
+                    ViewConfiguration.Form(
+                        isFormClosed = true,
+                        anonymousSubmissions = false,
+                        submissionPermissions = SubmissionPermissions.READER,
+                    )
+                val encoded = json.encodeToString(ViewConfiguration.serializer(), config)
+                val decoded = json.decodeFromString(ViewConfiguration.serializer(), encoded) as ViewConfiguration.Form
+                decoded.isFormClosed shouldBe true
+                decoded.anonymousSubmissions shouldBe false
+                decoded.submissionPermissions shouldBe SubmissionPermissions.READER
+            }
+
+            test("Chart config round-trips with chartType and display options") {
+                val config =
+                    ViewConfiguration.Chart(
+                        chartType = ChartType.COLUMN,
+                        hideEmptyGroups = true,
+                        showDataLabels = false,
+                    )
+                val encoded = json.encodeToString(ViewConfiguration.serializer(), config)
+                val decoded = json.decodeFromString(ViewConfiguration.serializer(), encoded) as ViewConfiguration.Chart
+                decoded.chartType shouldBe ChartType.COLUMN
+                decoded.hideEmptyGroups shouldBe true
+                decoded.showDataLabels shouldBe false
+            }
+
+            test("Unknown type preserved as raw JSON") {
+                val rawJson = """{"type":"custom_future_type","some_field":true}"""
+                val decoded = json.decodeFromString(ViewConfiguration.serializer(), rawJson)
+                decoded.shouldBeInstanceOf<ViewConfiguration.Unknown>()
+            }
+        }
+
+        context("ViewConfiguration DSL builder") {
+            test("configuration() on create builder sets typed config") {
+                val request =
+                    createViewRequest {
+                        dataSourceId("ds-1")
+                        name("My Table")
+                        type(ViewType.TABLE)
+                        database("db-1")
+                        configuration(ViewConfiguration.Table(wrapCells = true, frozenColumnIndex = 1))
+                    }
+
+                val config = request.configuration.shouldNotBeNull() as ViewConfiguration.Table
+                config.wrapCells shouldBe true
+                config.frozenColumnIndex shouldBe 1
+            }
+
+            test("showProperties() on TABLE view produces typed Table config") {
+                val request =
+                    createViewRequest {
+                        dataSourceId("ds-1")
+                        name("My Table")
+                        type(ViewType.TABLE)
+                        database("db-1")
+                        showProperties("p1", "p2")
+                        hideProperties("p3")
+                    }
+
+                val config = request.configuration.shouldNotBeNull() as ViewConfiguration.Table
+                config.properties?.size shouldBe 3
+                config.properties?.get(0)?.visible shouldBe true
+                config.properties?.get(2)?.visible shouldBe false
+            }
+
+            test("showProperties() on GALLERY view produces typed Gallery config") {
+                val request =
+                    createViewRequest {
+                        dataSourceId("ds-1")
+                        name("My Gallery")
+                        type(ViewType.GALLERY)
+                        database("db-1")
+                        showProperties("p1")
+                    }
+
+                request.configuration.shouldBeInstanceOf<ViewConfiguration.Gallery>()
+            }
+
+            test("showProperties() on FORM view throws IllegalArgumentException") {
+                shouldThrow<IllegalArgumentException> {
+                    createViewRequest {
+                        dataSourceId("ds-1")
+                        name("My Form")
+                        type(ViewType.FORM)
+                        database("db-1")
+                        showProperties("p1")
+                    }
+                }
+            }
+
+            test("updateViewRequest configuration() sets typed config") {
+                val request =
+                    updateViewRequest {
+                        configuration(ViewConfiguration.Gallery(coverSize = CoverSize.LARGE))
+                    }
+
+                val config = request.configuration.shouldNotBeNull() as ViewConfiguration.Gallery
+                config.coverSize shouldBe CoverSize.LARGE
             }
         }
 

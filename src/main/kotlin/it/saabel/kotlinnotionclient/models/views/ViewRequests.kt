@@ -37,7 +37,7 @@ data class CreateViewRequest(
     @SerialName("quick_filters")
     val quickFilters: Map<String, JsonObject>? = null,
     @SerialName("configuration")
-    val configuration: JsonObject? = null,
+    val configuration: ViewConfiguration? = null,
     @SerialName("position")
     val position: ViewPosition? = null,
     @SerialName("placement")
@@ -61,7 +61,7 @@ data class UpdateViewRequest(
     @SerialName("quick_filters")
     val quickFilters: Map<String, JsonObject?>? = null,
     @SerialName("configuration")
-    val configuration: JsonObject? = null,
+    val configuration: ViewConfiguration? = null,
 )
 
 /**

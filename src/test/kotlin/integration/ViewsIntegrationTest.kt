@@ -9,6 +9,12 @@ import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldNotBeBlank
 import it.saabel.kotlinnotionclient.NotionClient
 import it.saabel.kotlinnotionclient.config.NotionConfig
+import it.saabel.kotlinnotionclient.models.datasources.CheckboxCondition
+import it.saabel.kotlinnotionclient.models.datasources.DataSourceFilter
+import it.saabel.kotlinnotionclient.models.datasources.DataSourceSort
+import it.saabel.kotlinnotionclient.models.datasources.SortDirection
+import it.saabel.kotlinnotionclient.models.pages.PageProperty
+import it.saabel.kotlinnotionclient.models.views.UpdateViewRequest
 import it.saabel.kotlinnotionclient.models.views.ViewType
 import kotlinx.coroutines.delay
 
@@ -16,10 +22,13 @@ import kotlinx.coroutines.delay
  * Integration tests for the Views API.
  *
  * Test scenarios:
- * 1. Full workflow — list, retrieve, create (DSL), update (DSL), query, delete
+ * 1. Full workflow — list, retrieve, create (DSL), update (DSL), filter+sort, query, delete
  * 2. Property visibility — rich database schema, selective show/hide per view type
  * 3. List by data_source_id
  * 4. View query pagination
+ *
+ * Each test creates a container page under NOTION_TEST_PAGE_ID to keep all created
+ * objects grouped and make cleanup straightforward.
  *
  * Prerequisites:
  * - export NOTION_API_TOKEN="secret_..."
@@ -35,22 +44,52 @@ import kotlinx.coroutines.delay
 class ViewsIntegrationTest :
     StringSpec({
 
+        val token = System.getenv("NOTION_API_TOKEN") ?: ""
+        val parentPageId = System.getenv("NOTION_TEST_PAGE_ID") ?: ""
+        var containerPageId = ""
+
+        beforeSpec {
+            if (integrationTestEnvVarsAreSet()) {
+                val client = NotionClient(NotionConfig(apiToken = token))
+                val containerPage =
+                    client.pages.create {
+                        parent.page(parentPageId)
+                        title("Views API Integration Tests")
+                        icon.emoji("🧪")
+                    }
+                containerPageId = containerPage.id
+                client.close()
+                println("📦 Container page created: $containerPageId")
+            }
+        }
+
+        afterSpec {
+            if (integrationTestEnvVarsAreSet()) {
+                if (shouldCleanupAfterTest()) {
+                    val client = NotionClient(NotionConfig(apiToken = token))
+                    client.pages.trash(containerPageId)
+                    client.close()
+                    println("🧹 Container page trashed: $containerPageId")
+                } else {
+                    println("⚠️ Skipping cleanup (NOTION_CLEANUP_AFTER_TEST=false)")
+                    println("📌 Container page: $containerPageId")
+                }
+            }
+        }
+
         if (!integrationTestEnvVarsAreSet()) {
             "!(Skipped)" { println("Skipping ViewsIntegrationTest due to missing environment variables") }
         } else {
             "Full views workflow - list, retrieve, create, update, query, and delete" {
-                val token = System.getenv("NOTION_API_TOKEN")
-                val parentPageId = System.getenv("NOTION_TEST_PAGE_ID")
-
                 val client = NotionClient(NotionConfig(apiToken = token))
 
                 try {
-                    println("🗄️ Step 1: Creating a test database...")
+                    println("\n🗄️ Step 1: Creating a test database...")
                     val database =
                         client.databases.create {
-                            parent.page(parentPageId)
-                            title("Views API Test Database")
-                            icon.emoji("👁")
+                            parent.page(containerPageId)
+                            title("Task Database")
+                            icon.emoji("✅")
                             properties {
                                 title("Task Name")
                                 checkbox("Done")
@@ -66,6 +105,28 @@ class ViewsIntegrationTest :
                             .shouldNotBeNull()
                     println("✅ Database created: $databaseId")
                     println("   Data source: $dataSourceId")
+
+                    delay(1000)
+
+                    println("\n📝 Step 1b: Seeding test entries...")
+                    val tasks =
+                        listOf(
+                            Pair("Buy groceries", false),
+                            Pair("Write report", true),
+                            Pair("Review PR", false),
+                            Pair("Deploy to production", true),
+                            Pair("Update docs", false),
+                        )
+                    tasks.forEach { (name, done) ->
+                        client.pages.create {
+                            parent.dataSource(dataSourceId)
+                            properties {
+                                title("Task Name", name)
+                                checkbox("Done", done)
+                            }
+                        }
+                    }
+                    println("✅ Created ${tasks.size} entries (3 incomplete, 2 complete)")
 
                     delay(1000)
 
@@ -115,19 +176,69 @@ class ViewsIntegrationTest :
 
                     delay(500)
 
-                    println("\n🔎 Step 6: Creating a view query...")
+                    // Resolve stable property IDs — the API normalizes property references to IDs
+                    // on the way out, so we need the IDs to make meaningful round-trip assertions.
+                    // URL-decode the IDs: the data source schema returns them percent-encoded (e.g. "ue%5Cl")
+                    // but view filter responses return the decoded form (e.g. "ue\l").
+                    val dataSource = client.dataSources.retrieve(dataSourceId)
+                    val donePropertyId =
+                        java.net.URLDecoder.decode(dataSource.properties["Done"]?.id.shouldNotBeNull(), "UTF-8")
+                    val taskNamePropertyId =
+                        java.net.URLDecoder.decode(dataSource.properties["Task Name"]?.id.shouldNotBeNull(), "UTF-8")
+                    println("   Property IDs: Done=$donePropertyId, Task Name=$taskNamePropertyId")
+
+                    println("\n🔽 Step 5b: Updating view with a filter (Done = false) and sort (Task Name ascending)...")
+                    val viewWithFilterAndSort =
+                        client.views.update(
+                            createdViewId,
+                            UpdateViewRequest(
+                                filter =
+                                    DataSourceFilter(
+                                        property = donePropertyId,
+                                        checkbox = CheckboxCondition(equals = false),
+                                    ),
+                                sorts =
+                                    listOf(
+                                        DataSourceSort(property = taskNamePropertyId, direction = SortDirection.ASCENDING),
+                                    ),
+                            ),
+                        )
+                    viewWithFilterAndSort.shouldNotBeNull()
+                    val returnedFilter = viewWithFilterAndSort.filter.shouldNotBeNull()
+                    returnedFilter.property shouldBe donePropertyId
+                    returnedFilter.checkbox.shouldNotBeNull()
+                    val returnedSorts = viewWithFilterAndSort.sorts.shouldNotBeNull()
+                    returnedSorts.size shouldBe 1
+                    returnedSorts[0].property shouldBe taskNamePropertyId
+                    returnedSorts[0].direction shouldBe SortDirection.ASCENDING
+                    println("✅ Filter (Done=false) and sort (Task Name asc) set and round-tripped correctly")
+
+                    delay(500)
+
+                    println("\n🔎 Step 6: Creating a view query (filter: Done=false, sort: Task Name asc)...")
                     val query = client.views.createQuery(createdViewId, pageSize = 10)
                     query.shouldNotBeNull()
                     query.id.shouldNotBeBlank()
                     query.viewId shouldBe createdViewId
                     query.expiresAt.shouldNotBeBlank()
-                    println("✅ Query created: ${query.id} (expires: ${query.expiresAt})")
-                    println("   Total count: ${query.totalCount}, first page: ${query.results.size} result(s)")
+                    // Filter should reduce 5 seeded tasks to the 3 where Done=false
+                    query.totalCount shouldBe 3
+                    println("✅ Filter working: ${query.totalCount} of 5 tasks have Done=false (expected 3)")
 
-                    println("\n📄 Step 7: Retrieving cached query results...")
+                    println("\n📄 Step 7: Retrieving results and verifying sort order...")
                     val queryResults = client.views.getQueryResults(createdViewId, query.id, pageSize = 10)
                     queryResults.shouldNotBeNull()
-                    println("✅ Query results: ${queryResults.results.size} result(s), has_more=${queryResults.hasMore}")
+                    queryResults.hasMore shouldBe false
+                    // Fetch each page's Task Name to verify alphabetical sort
+                    val titlesInOrder =
+                        queryResults.results.map { ref ->
+                            val page = client.pages.retrieve(ref.id)
+                            (page.properties["Task Name"] as? PageProperty.Title)?.plainText ?: "(untitled)"
+                        }
+                    println("   Returned order (should be A→Z):")
+                    titlesInOrder.forEachIndexed { i, title -> println("   ${i + 1}. $title") }
+                    titlesInOrder shouldBe titlesInOrder.sorted()
+                    println("✅ Sort working: titles are in ascending alphabetical order")
 
                     println("\n🗑️ Step 8: Deleting cached query...")
                     val deletedQuery = client.views.deleteQuery(createdViewId, query.id)
@@ -150,34 +261,22 @@ class ViewsIntegrationTest :
                     println("✅ View deleted: ${deletedView.id}")
 
                     println("\n✅ All views workflow tests passed!")
-
-                    if (shouldCleanupAfterTest()) {
-                        println("\n🧹 Cleaning up test database...")
-                        client.databases.trash(databaseId)
-                        println("✅ Cleanup complete")
-                    } else {
-                        println("\n⚠️ Skipping cleanup (NOTION_CLEANUP_AFTER_TEST=false)")
-                        println("📌 Database ID: $databaseId")
-                    }
                 } finally {
                     client.close()
                 }
             }
 
             "Create views with selective property visibility across multiple view types" {
-                val token = System.getenv("NOTION_API_TOKEN")
-                val parentPageId = System.getenv("NOTION_TEST_PAGE_ID")
-
                 val client = NotionClient(NotionConfig(apiToken = token))
 
                 try {
                     // Rich schema so there are enough properties to selectively show/hide
-                    println("🗄️ Creating database with rich property schema...")
+                    println("\n🗄️ Creating database with rich property schema...")
                     val database =
                         client.databases.create {
-                            parent.page(parentPageId)
+                            parent.page(containerPageId)
                             title("Views Property Visibility Test")
-                            icon.emoji("🗂")
+                            icon.emoji("📋")
                             properties {
                                 title("Name")
                                 status("Status")
@@ -202,6 +301,41 @@ class ViewsIntegrationTest :
                             ?.id
                             .shouldNotBeNull()
                     println("✅ Database created: $databaseId")
+
+                    delay(1000)
+
+                    println("\n📝 Seeding test entries...")
+
+                    data class TaskEntry(
+                        val name: String,
+                        val status: String,
+                        val priority: String,
+                        val effort: Int,
+                        val completed: Boolean,
+                        val notes: String,
+                    )
+                    val entries =
+                        listOf(
+                            TaskEntry("Design mockups", "In progress", "High", 3, false, "Wireframes due Friday"),
+                            TaskEntry("Build backend API", "Not started", "High", 8, false, "Auth endpoints first"),
+                            TaskEntry("Write unit tests", "Done", "Medium", 5, true, "Coverage at 87%"),
+                            TaskEntry("Update documentation", "In progress", "Low", 2, false, "README and API docs"),
+                            TaskEntry("Deploy to staging", "Not started", "Medium", 1, false, "Needs sign-off"),
+                        )
+                    entries.forEach { entry ->
+                        client.pages.create {
+                            parent.dataSource(dataSourceId)
+                            properties {
+                                title("Name", entry.name)
+                                status("Status", entry.status)
+                                select("Priority", entry.priority)
+                                number("Effort", entry.effort)
+                                checkbox("Completed", entry.completed)
+                                richText("Notes", entry.notes)
+                            }
+                        }
+                    }
+                    println("✅ Created ${entries.size} entries")
 
                     delay(1000)
 
@@ -345,31 +479,19 @@ class ViewsIntegrationTest :
                     println("✅ All 3 created views confirmed (${allViewIds.size} total views on database)")
 
                     println("\n✅ Property visibility tests passed!")
-
-                    if (shouldCleanupAfterTest()) {
-                        println("\n🧹 Cleaning up...")
-                        client.databases.trash(databaseId)
-                        println("✅ Cleanup complete")
-                    } else {
-                        println("\n⚠️ Skipping cleanup (NOTION_CLEANUP_AFTER_TEST=false)")
-                        println("📌 Database ID: $databaseId  |  Data Source: $dataSourceId")
-                    }
                 } finally {
                     client.close()
                 }
             }
 
             "List views by data_source_id" {
-                val token = System.getenv("NOTION_API_TOKEN")
-                val parentPageId = System.getenv("NOTION_TEST_PAGE_ID")
-
                 val client = NotionClient(NotionConfig(apiToken = token))
 
                 try {
-                    println("🗄️ Creating database for data_source_id filter test...")
+                    println("\n🗄️ Creating database for data_source_id filter test...")
                     val database =
                         client.databases.create {
-                            parent.page(parentPageId)
+                            parent.page(containerPageId)
                             title("Views List by DataSource Test")
                             properties {
                                 title("Name")
@@ -385,26 +507,19 @@ class ViewsIntegrationTest :
                     val list = client.views.list(dataSourceId = dataSourceId)
                     list.shouldNotBeNull()
                     println("✅ List by data_source_id returned ${list.results.size} view(s)")
-
-                    if (shouldCleanupAfterTest()) {
-                        client.databases.trash(database.id)
-                    }
                 } finally {
                     client.close()
                 }
             }
 
             "Create view query and paginate through results" {
-                val token = System.getenv("NOTION_API_TOKEN")
-                val parentPageId = System.getenv("NOTION_TEST_PAGE_ID")
-
                 val client = NotionClient(NotionConfig(apiToken = token))
 
                 try {
-                    println("🗄️ Creating database with pages for query pagination test...")
+                    println("\n🗄️ Creating database with pages for query pagination test...")
                     val database =
                         client.databases.create {
-                            parent.page(parentPageId)
+                            parent.page(containerPageId)
                             title("Views Query Pagination Test")
                             properties {
                                 title("Item")
@@ -451,10 +566,6 @@ class ViewsIntegrationTest :
 
                     client.views.deleteQuery(viewId, query.id)
                     println("✅ Query cache cleaned up")
-
-                    if (shouldCleanupAfterTest()) {
-                        client.databases.trash(database.id)
-                    }
                 } finally {
                     client.close()
                 }
