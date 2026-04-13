@@ -363,6 +363,273 @@ enum class DonutLabels {
 }
 
 // ---------------------------------------------------------------------------
+// SubtaskConfig
+// ---------------------------------------------------------------------------
+
+/** How sub-items are rendered in the table view. */
+@Serializable
+enum class SubtaskDisplayMode {
+    /** Sub-items shown hierarchically with toggle arrows. */
+    @SerialName("show")
+    SHOW,
+
+    /** Parent items shown with a count badge; sub-items collapsed. */
+    @SerialName("hidden")
+    HIDDEN,
+
+    /** Sub-items shown as flat rows with a parent indicator column. */
+    @SerialName("flattened")
+    FLATTENED,
+
+    /** Sub-item rendering disabled entirely. */
+    @SerialName("disabled")
+    DISABLED,
+}
+
+/** Which rows are included when sub-item filtering is active. */
+@Serializable
+enum class SubtaskFilterScope {
+    @SerialName("parents")
+    PARENTS,
+
+    @SerialName("parents_and_subitems")
+    PARENTS_AND_SUBITEMS,
+
+    @SerialName("subitems")
+    SUBITEMS,
+}
+
+/**
+ * Configuration for parent–child (sub-item) nesting in a table view.
+ *
+ * @param propertyId The relation property ID used for parent–child links.
+ * @param displayMode How sub-items are rendered.
+ * @param filterScope Which rows are shown when filtering is active.
+ * @param toggleColumnId Property ID of the column showing the expand/collapse toggle.
+ */
+@Serializable
+data class SubtaskConfig(
+    @SerialName("property_id")
+    val propertyId: String? = null,
+    @SerialName("display_mode")
+    val displayMode: SubtaskDisplayMode? = null,
+    @SerialName("filter_scope")
+    val filterScope: SubtaskFilterScope? = null,
+    @SerialName("toggle_column_id")
+    val toggleColumnId: String? = null,
+)
+
+// ---------------------------------------------------------------------------
+// Timeline sub-types (Phase 4)
+// ---------------------------------------------------------------------------
+
+/** Zoom level for the timeline view. */
+@Serializable
+enum class TimelineZoomLevel {
+    @SerialName("hours")
+    HOURS,
+
+    @SerialName("day")
+    DAY,
+
+    @SerialName("week")
+    WEEK,
+
+    @SerialName("bi_week")
+    BI_WEEK,
+
+    @SerialName("month")
+    MONTH,
+
+    @SerialName("quarter")
+    QUARTER,
+
+    @SerialName("year")
+    YEAR,
+
+    @SerialName("5_years")
+    FIVE_YEARS,
+}
+
+/**
+ * Zoom and scroll position preferences for a timeline view.
+ *
+ * @param zoomLevel The time scale shown in the timeline.
+ * @param centerTimestamp Unix timestamp in milliseconds to center the view on (optional).
+ */
+@Serializable
+data class TimelinePreference(
+    @SerialName("zoom_level")
+    val zoomLevel: TimelineZoomLevel,
+    @SerialName("center_timestamp")
+    val centerTimestamp: Long? = null,
+)
+
+/**
+ * Dependency-arrow configuration for a timeline view.
+ *
+ * @param propertyId The relation property ID used to draw dependency arrows.
+ *   Pass `null` to disable arrows.
+ */
+@Serializable
+data class TimelineArrowsBy(
+    @SerialName("property_id")
+    val propertyId: String? = null,
+)
+
+// ---------------------------------------------------------------------------
+// Chart sub-types (Phase 5)
+// ---------------------------------------------------------------------------
+
+/** Aggregation operator for a chart y-axis or number chart. */
+@Serializable
+enum class ChartAggregator {
+    @SerialName("count")
+    COUNT,
+
+    @SerialName("count_values")
+    COUNT_VALUES,
+
+    @SerialName("sum")
+    SUM,
+
+    @SerialName("average")
+    AVERAGE,
+
+    @SerialName("median")
+    MEDIAN,
+
+    @SerialName("min")
+    MIN,
+
+    @SerialName("max")
+    MAX,
+
+    @SerialName("range")
+    RANGE,
+
+    @SerialName("unique")
+    UNIQUE,
+
+    @SerialName("empty")
+    EMPTY,
+
+    @SerialName("not_empty")
+    NOT_EMPTY,
+
+    @SerialName("percent_empty")
+    PERCENT_EMPTY,
+
+    @SerialName("percent_not_empty")
+    PERCENT_NOT_EMPTY,
+
+    @SerialName("checked")
+    CHECKED,
+
+    @SerialName("unchecked")
+    UNCHECKED,
+
+    @SerialName("percent_checked")
+    PERCENT_CHECKED,
+
+    @SerialName("percent_unchecked")
+    PERCENT_UNCHECKED,
+
+    @SerialName("earliest_date")
+    EARLIEST_DATE,
+
+    @SerialName("latest_date")
+    LATEST_DATE,
+
+    @SerialName("date_range")
+    DATE_RANGE,
+}
+
+/**
+ * Aggregation applied to a chart y-axis or a number chart's value.
+ *
+ * [ChartAggregator.COUNT] counts all rows and does not require a [propertyId].
+ * All other aggregators require [propertyId] to be set.
+ *
+ * @param aggregator The aggregation operator.
+ * @param propertyId The property to aggregate (required for all operators except [ChartAggregator.COUNT]).
+ */
+@Serializable
+data class ChartAggregation(
+    @SerialName("aggregator")
+    val aggregator: ChartAggregator,
+    @SerialName("property_id")
+    val propertyId: String? = null,
+)
+
+/** Color of a reference line in a chart. */
+@Serializable
+enum class ReferenceLineColor {
+    @SerialName("gray")
+    GRAY,
+
+    @SerialName("lightgray")
+    LIGHTGRAY,
+
+    @SerialName("brown")
+    BROWN,
+
+    @SerialName("yellow")
+    YELLOW,
+
+    @SerialName("orange")
+    ORANGE,
+
+    @SerialName("green")
+    GREEN,
+
+    @SerialName("blue")
+    BLUE,
+
+    @SerialName("purple")
+    PURPLE,
+
+    @SerialName("pink")
+    PINK,
+
+    @SerialName("red")
+    RED,
+}
+
+/** Line style for a chart reference line. */
+@Serializable
+enum class DashStyle {
+    @SerialName("solid")
+    SOLID,
+
+    @SerialName("dash")
+    DASH,
+}
+
+/**
+ * A horizontal reference line drawn across a chart at a specific y-axis value.
+ *
+ * @param value Y-axis value where the line is drawn.
+ * @param label Label displayed alongside the line.
+ * @param color Line color.
+ * @param dashStyle Whether the line is solid or dashed.
+ * @param id Auto-generated identifier. Optional on create; present in responses.
+ */
+@Serializable
+data class ChartReferenceLine(
+    @SerialName("value")
+    val value: Double,
+    @SerialName("label")
+    val label: String,
+    @SerialName("color")
+    val color: ReferenceLineColor,
+    @SerialName("dash_style")
+    val dashStyle: DashStyle,
+    @SerialName("id")
+    val id: String? = null,
+)
+
+// ---------------------------------------------------------------------------
 // Shared configuration sub-types
 // ---------------------------------------------------------------------------
 
@@ -425,10 +692,10 @@ data class ViewPropertyConfig(
  * Each view type carries its own set of configuration fields. All subtypes include
  * a `type` field that matches the [ViewType] serialisation name.
  *
- * ## Partially-typed subtypes
- * [Table], [Board], [Timeline], and [Chart] include complex nested sub-objects
- * (`group_by`, `preference`, chart aggregations, etc.) as raw [JsonObject] fields.
- * These will be upgraded to fully-typed models in a future release.
+ * ## Dashboard
+ * [Dashboard] is a response-only type — dashboard configurations cannot be created or updated
+ * via the API. The `rows` field (widget layout) remains as raw [JsonObject] since the widget
+ * schema is complex and write support is not available.
  *
  * ## Unknown types
  * Any configuration type not yet modelled by this library is deserialized into
@@ -501,8 +768,8 @@ sealed class ViewConfiguration {
      * Table view configuration.
      *
      * @param properties Property visibility and column-width settings.
-     * @param groupBy Row grouping configuration (raw JSON — typed model planned for Phase 3).
-     * @param subtasks Sub-item display configuration (raw JSON — typed model planned for Phase 3).
+     * @param groupBy Row grouping configuration. See [GroupByConfig].
+     * @param subtasks Sub-item display configuration. See [SubtaskConfig].
      * @param wrapCells Whether to wrap cell content onto multiple lines.
      * @param frozenColumnIndex Number of columns frozen from the left edge.
      * @param showVerticalLines Whether to render vertical grid lines.
@@ -511,8 +778,8 @@ sealed class ViewConfiguration {
     data class Table(
         @EncodeDefault(EncodeDefault.Mode.ALWAYS) @SerialName("type") val type: String = "table",
         @SerialName("properties") val properties: kotlin.collections.List<ViewPropertyConfig>? = null,
-        @SerialName("group_by") val groupBy: JsonObject? = null,
-        @SerialName("subtasks") val subtasks: JsonObject? = null,
+        @SerialName("group_by") val groupBy: GroupByConfig? = null,
+        @SerialName("subtasks") val subtasks: SubtaskConfig? = null,
         @SerialName("wrap_cells") val wrapCells: Boolean? = null,
         @SerialName("frozen_column_index") val frozenColumnIndex: Int? = null,
         @SerialName("show_vertical_lines") val showVerticalLines: Boolean? = null,
@@ -521,8 +788,8 @@ sealed class ViewConfiguration {
     /**
      * Board view configuration.
      *
-     * @param groupBy Column grouping configuration (raw JSON — typed model planned for Phase 3).
-     * @param subGroupBy Secondary grouping within columns (raw JSON — typed model planned for Phase 3).
+     * @param groupBy Column grouping configuration. See [GroupByConfig].
+     * @param subGroupBy Secondary grouping within columns. See [GroupByConfig].
      * @param properties Property visibility settings for board cards.
      * @param cover Cover image configuration.
      * @param coverSize Size of the cover image.
@@ -532,8 +799,8 @@ sealed class ViewConfiguration {
     @Serializable
     data class Board(
         @EncodeDefault(EncodeDefault.Mode.ALWAYS) @SerialName("type") val type: String = "board",
-        @SerialName("group_by") val groupBy: JsonObject? = null,
-        @SerialName("sub_group_by") val subGroupBy: JsonObject? = null,
+        @SerialName("group_by") val groupBy: GroupByConfig? = null,
+        @SerialName("sub_group_by") val subGroupBy: GroupByConfig? = null,
         @SerialName("properties") val properties: kotlin.collections.List<ViewPropertyConfig>? = null,
         @SerialName("cover") val cover: CoverConfig? = null,
         @SerialName("cover_size") val coverSize: CoverSize? = null,
@@ -570,8 +837,8 @@ sealed class ViewConfiguration {
      * @param properties Property visibility settings on timeline item cards.
      * @param showTable Whether to show the table panel alongside the timeline.
      * @param tableProperties Properties shown in the table panel.
-     * @param preference Zoom level and scroll position (raw JSON — typed model planned for Phase 4).
-     * @param arrowsBy Dependency-arrow configuration (raw JSON — typed model planned for Phase 4).
+     * @param preference Zoom level and scroll position. See [TimelinePreference].
+     * @param arrowsBy Dependency-arrow configuration. See [TimelineArrowsBy].
      * @param colorBy Whether to color items by a property value.
      */
     @Serializable
@@ -584,18 +851,13 @@ sealed class ViewConfiguration {
         @SerialName("properties") val properties: kotlin.collections.List<ViewPropertyConfig>? = null,
         @SerialName("show_table") val showTable: Boolean? = null,
         @SerialName("table_properties") val tableProperties: kotlin.collections.List<ViewPropertyConfig>? = null,
-        @SerialName("preference") val preference: JsonObject? = null,
-        @SerialName("arrows_by") val arrowsBy: JsonObject? = null,
+        @SerialName("preference") val preference: TimelinePreference? = null,
+        @SerialName("arrows_by") val arrowsBy: TimelineArrowsBy? = null,
         @SerialName("color_by") val colorBy: Boolean? = null,
     ) : ViewConfiguration()
 
     /**
      * Chart view configuration.
-     *
-     * ## Partially-typed fields
-     * `xAxis`, `yAxis`, `value`, `stackBy`, and `referenceLines` are raw [JsonObject] /
-     * [List]`<JsonObject>` fields until `GroupByConfig` and `ChartAggregation` are
-     * fully implemented in Phase 5.
      *
      * @param chartType The chart layout (column, bar, line, donut, number).
      * @param xAxisPropertyId Property ID for the x-axis in results mode.
@@ -608,11 +870,11 @@ sealed class ViewConfiguration {
     data class Chart(
         @EncodeDefault(EncodeDefault.Mode.ALWAYS) @SerialName("type") val type: String = "chart",
         @SerialName("chart_type") val chartType: ChartType? = null,
-        @SerialName("x_axis") val xAxis: JsonObject? = null,
-        @SerialName("y_axis") val yAxis: JsonObject? = null,
+        @SerialName("x_axis") val xAxis: GroupByConfig? = null,
+        @SerialName("y_axis") val yAxis: ChartAggregation? = null,
         @SerialName("x_axis_property_id") val xAxisPropertyId: String? = null,
         @SerialName("y_axis_property_id") val yAxisPropertyId: String? = null,
-        @SerialName("value") val value: JsonObject? = null,
+        @SerialName("value") val value: ChartAggregation? = null,
         @SerialName("sort") val sort: ChartSort? = null,
         @SerialName("color_theme") val colorTheme: ChartColorTheme? = null,
         @SerialName("height") val height: ViewHeight? = null,
@@ -629,8 +891,8 @@ sealed class ViewConfiguration {
         @SerialName("y_axis_max") val yAxisMax: Double? = null,
         @SerialName("donut_labels") val donutLabels: DonutLabels? = null,
         @SerialName("hide_title") val hideTitle: Boolean? = null,
-        @SerialName("stack_by") val stackBy: JsonObject? = null,
-        @SerialName("reference_lines") val referenceLines: kotlin.collections.List<JsonObject>? = null,
+        @SerialName("stack_by") val stackBy: GroupByConfig? = null,
+        @SerialName("reference_lines") val referenceLines: kotlin.collections.List<ChartReferenceLine>? = null,
         @SerialName("caption") val caption: String? = null,
         @SerialName("color_by_value") val colorByValue: Boolean? = null,
     ) : ViewConfiguration()
