@@ -2,11 +2,12 @@
 
 package it.saabel.kotlinnotionclient.models.views
 
+import it.saabel.kotlinnotionclient.models.datasources.DataSourceFilter
+import it.saabel.kotlinnotionclient.models.datasources.DataSourceSort
 import it.saabel.kotlinnotionclient.models.users.User
 import it.saabel.kotlinnotionclient.utils.PaginatedResponse
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
 
 /**
@@ -84,9 +85,9 @@ data class View(
     @SerialName("last_edited_by")
     val lastEditedBy: User? = null,
     @SerialName("filter")
-    val filter: JsonObject? = null,
+    val filter: DataSourceFilter? = null,
     @SerialName("sorts")
-    val sorts: JsonArray? = null,
+    val sorts: List<DataSourceSort>? = null,
     @SerialName("quick_filters")
     val quickFilters: Map<String, JsonObject>? = null,
     @SerialName("configuration")

@@ -2,9 +2,10 @@
 
 package it.saabel.kotlinnotionclient.models.views
 
+import it.saabel.kotlinnotionclient.models.datasources.DataSourceFilter
+import it.saabel.kotlinnotionclient.models.datasources.DataSourceSort
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
 
 /**
@@ -30,9 +31,9 @@ data class CreateViewRequest(
     @SerialName("create_database")
     val createDatabase: CreateDatabaseForView? = null,
     @SerialName("filter")
-    val filter: JsonObject? = null,
+    val filter: DataSourceFilter? = null,
     @SerialName("sorts")
-    val sorts: JsonArray? = null,
+    val sorts: List<DataSourceSort>? = null,
     @SerialName("quick_filters")
     val quickFilters: Map<String, JsonObject>? = null,
     @SerialName("configuration")
@@ -54,9 +55,9 @@ data class UpdateViewRequest(
     @SerialName("name")
     val name: String? = null,
     @SerialName("filter")
-    val filter: JsonObject? = null,
+    val filter: DataSourceFilter? = null,
     @SerialName("sorts")
-    val sorts: JsonArray? = null,
+    val sorts: List<DataSourceSort>? = null,
     @SerialName("quick_filters")
     val quickFilters: Map<String, JsonObject?>? = null,
     @SerialName("configuration")
