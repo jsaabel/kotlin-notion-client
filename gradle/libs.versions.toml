@@ -1,14 +1,14 @@
 [versions]
-kotest = "6.1.2"
+kotest = "6.1.11"
 ben-manes-versions = "0.53.0"
-dokka = "2.1.0"
-kotlin = "2.3.0"
-kotlinter = "5.4.0"
+dokka = "2.2.0"
+kotlin = "2.3.20"
+kotlinter = "5.4.2"
 maven-publish = "0.36.0"
 kotlinx-datetime = "0.7.1"
-kotlinx-serialization-json = "1.10.0"
-ktor = "3.4.0"
-logback = "1.5.27"
+kotlinx-serialization-json = "1.11.0"
+ktor = "3.4.2"
+logback = "1.5.32"
 slf4j = "2.0.17"
 
 [plugins]
