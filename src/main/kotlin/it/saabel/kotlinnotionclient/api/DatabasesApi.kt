@@ -147,7 +147,9 @@ class DatabasesApi(
                                 throw NotionException.ApiError(
                                     code = iconPatchResponse.status.value.toString(),
                                     status = iconPatchResponse.status.value,
-                                    details = "HTTP ${iconPatchResponse.status.value}: ${iconPatchResponse.status.description}. Response: $errorBody",
+                                    details =
+                                        "HTTP ${iconPatchResponse.status.value}: " +
+                                            "${iconPatchResponse.status.description}. Response: $errorBody",
                                 )
                             }
                         }
