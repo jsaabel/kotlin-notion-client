@@ -1,5 +1,6 @@
 package it.saabel.kotlinnotionclient.models.datasources
 
+import it.saabel.kotlinnotionclient.models.base.Icon
 import it.saabel.kotlinnotionclient.models.base.Parent
 import it.saabel.kotlinnotionclient.models.base.RichText
 import it.saabel.kotlinnotionclient.models.databases.CreateDatabaseProperty
@@ -42,6 +43,8 @@ data class UpdateDataSourceRequest(
     val title: List<RichText>? = null,
     @SerialName("description")
     val description: List<RichText>? = null,
+    @SerialName("icon")
+    val icon: Icon? = null,
     @SerialName("in_trash")
     val inTrash: Boolean? = null,
 )

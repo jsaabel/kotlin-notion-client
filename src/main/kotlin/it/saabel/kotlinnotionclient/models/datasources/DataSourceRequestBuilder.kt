@@ -2,6 +2,11 @@
 
 package it.saabel.kotlinnotionclient.models.datasources
 
+import it.saabel.kotlinnotionclient.models.base.ExternalFile
+import it.saabel.kotlinnotionclient.models.base.Icon
+import it.saabel.kotlinnotionclient.models.base.NativeIconColor
+import it.saabel.kotlinnotionclient.models.base.NativeIconObject
+import it.saabel.kotlinnotionclient.models.base.NotionFile
 import it.saabel.kotlinnotionclient.models.base.Parent
 import it.saabel.kotlinnotionclient.models.base.RichText
 import it.saabel.kotlinnotionclient.models.databases.CreateDatabaseProperty
@@ -114,8 +119,38 @@ class CreateDataSourceRequestBuilder {
 class UpdateDataSourceRequestBuilder {
     private var titleValue: List<RichText>? = null
     private var descriptionValue: List<RichText>? = null
+    private var iconValue: Icon? = null
     private var inTrashValue: Boolean? = null
     private val properties = mutableMapOf<String, CreateDatabaseProperty>()
+
+    val icon = IconBuilder()
+
+    @DataSourceRequestDslMarker
+    inner class IconBuilder {
+        fun emoji(emoji: String) {
+            this@UpdateDataSourceRequestBuilder.iconValue = Icon.Emoji(emoji = emoji)
+        }
+
+        fun external(url: String) {
+            this@UpdateDataSourceRequestBuilder.iconValue = Icon.External(external = ExternalFile(url = url))
+        }
+
+        fun file(
+            url: String,
+            expiryTime: String? = null,
+        ) {
+            this@UpdateDataSourceRequestBuilder.iconValue =
+                Icon.File(file = NotionFile(url = url, expiryTime = expiryTime))
+        }
+
+        fun native(
+            name: String,
+            color: NativeIconColor? = null,
+        ) {
+            this@UpdateDataSourceRequestBuilder.iconValue =
+                Icon.NativeIcon(NativeIconObject(name = name, color = color))
+        }
+    }
 
     /**
      * Sets the title for the data source.
@@ -191,6 +226,7 @@ class UpdateDataSourceRequestBuilder {
             properties = if (properties.isNotEmpty()) properties else null,
             title = titleValue,
             description = descriptionValue,
+            icon = iconValue,
             inTrash = inTrashValue,
         )
 }
