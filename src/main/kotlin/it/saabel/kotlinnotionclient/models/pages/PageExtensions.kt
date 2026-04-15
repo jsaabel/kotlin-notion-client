@@ -83,6 +83,16 @@ fun Page.getSelectProperty(name: String): SelectOption? = getProperty<PageProper
 fun Page.getSelectPropertyName(name: String): String? = getSelectProperty(name)?.name
 
 /**
+ * Get a status property option (returns the full StatusOption object).
+ */
+fun Page.getStatusProperty(name: String): StatusOption? = getProperty<PageProperty.Status>(name)?.status
+
+/**
+ * Get a status property option name (convenience for just the name).
+ */
+fun Page.getStatusPropertyName(name: String): String? = getStatusProperty(name)?.name
+
+/**
  * Get multi-select property options (returns full SelectOption objects).
  */
 fun Page.getMultiSelectProperty(name: String): List<SelectOption> = getProperty<PageProperty.MultiSelect>(name)?.multiSelect ?: emptyList()

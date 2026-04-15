@@ -1055,6 +1055,30 @@ class PageContentBuilder {
         )
 
     /**
+     * Adds a callout block with a typed icon and rich text DSL.
+     *
+     * Useful when the icon is not an emoji string — e.g. a native icon or external URL icon.
+     *
+     * @param icon The callout icon (any [Icon] subtype)
+     * @param color The text color (default: "default")
+     * @param children Optional nested content
+     * @param block The rich text DSL block
+     * @return This builder for chaining
+     */
+    fun callout(
+        icon: Icon,
+        color: Color = Color.DEFAULT,
+        children: (PageContentBuilder.() -> Unit)? = null,
+        block: RichTextBuilder.() -> Unit,
+    ): PageContentBuilder =
+        callout(
+            icon = icon,
+            richText = richText(block),
+            color = color,
+            children = children,
+        )
+
+    /**
      * Adds an image block from an external URL.
      *
      * @param url The external image URL
