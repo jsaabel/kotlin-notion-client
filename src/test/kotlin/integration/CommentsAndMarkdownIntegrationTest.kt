@@ -626,5 +626,77 @@ class CommentsAndMarkdownIntegrationTest :
 
                 println("  ✅ Enhanced markdown round-trip verified (${retrieved.markdown.length} chars)")
             }
+
+            // ------------------------------------------------------------------
+            // 13. Markdown API — line-break behaviour investigation
+            //     Single \n vs \n\n, across create/replaceContent/updateContent
+            // ------------------------------------------------------------------
+            "line breaks: single \\n vs \\n\\n behaviour across all three write paths" {
+                // Three inputs to probe: single LF, double LF, and a mix
+                val singleNewline = "First line\nSecond line"
+                val doubleNewline = "First paragraph\n\nSecond paragraph"
+                val mixedNewlines = "Line A\nLine B\n\nLine C\nLine D"
+
+                // --- create path ---
+                val createPage =
+                    notion.pages.create(
+                        createPageRequest {
+                            parent.page(containerPageId)
+                            title("Line Break Test — create")
+                            icon.emoji("↩️")
+                            markdown("$singleNewline\n\n---\n\n$doubleNewline\n\n---\n\n$mixedNewlines")
+                        },
+                    )
+                println("  Line break (create): ${createPage.url}")
+                delay(1000)
+
+                val createRetrieved = notion.markdown.retrieve(createPage.id)
+                println("  [create] retrieved markdown:\n${createRetrieved.markdown}")
+
+                // --- replaceContent path ---
+                val replacePage =
+                    notion.pages.create(
+                        createPageRequest {
+                            parent.page(containerPageId)
+                            title("Line Break Test — replaceContent")
+                            icon.emoji("♻️")
+                            content { paragraph("placeholder") }
+                        },
+                    )
+                delay(1000)
+
+                val replaceResponse =
+                    notion.markdown.replaceContent(
+                        replacePage.id,
+                        "$singleNewline\n\n---\n\n$doubleNewline\n\n---\n\n$mixedNewlines",
+                    )
+                println("  [replaceContent] returned markdown:\n${replaceResponse.markdown}")
+
+                // --- updateContent path ---
+                val updatePage =
+                    notion.pages.create(
+                        createPageRequest {
+                            parent.page(containerPageId)
+                            title("Line Break Test — updateContent")
+                            icon.emoji("🔧")
+                            content { paragraph("PLACEHOLDER_TEXT") }
+                        },
+                    )
+                delay(1000)
+
+                val updateResponse =
+                    notion.markdown.updateContent(updatePage.id) {
+                        replace("PLACEHOLDER_TEXT", "$singleNewline\n\n---\n\n$doubleNewline\n\n---\n\n$mixedNewlines")
+                    }
+                println("  [updateContent] returned markdown:\n${updateResponse.markdown}")
+
+                // Minimal assertion — the real finding is in the printed output above.
+                // Inspect the pages in Notion and the printed markdown to determine actual behaviour.
+                createRetrieved.markdown.shouldNotBeBlank()
+                replaceResponse.markdown.shouldNotBeBlank()
+                updateResponse.markdown.shouldNotBeBlank()
+
+                println("  ✅ Line-break behaviour logged — inspect output and Notion pages for findings")
+            }
         }
     })
