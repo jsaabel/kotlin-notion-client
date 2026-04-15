@@ -874,5 +874,58 @@ class DatabaseFeaturesIntegrationTest :
 
                 println("  ✅ Per-segment limit confirmed: total $totalLength chars across 3 segments (each ≤ 2000)")
             }
+
+            // ------------------------------------------------------------------
+            // 14. queryFirstPage — single API call, no auto-pagination
+            // ------------------------------------------------------------------
+            "queryFirstPage should return exactly pageSize results and expose hasMore" {
+                val database =
+                    notion.databases.create {
+                        parent.page(containerPageId)
+                        title("queryFirstPage Test Database")
+                        icon.emoji("🔢")
+                        properties { title("Name") }
+                    }
+                delay(1000)
+
+                val ds =
+                    notion.databases
+                        .retrieve(database.id)
+                        .dataSources
+                        .first()
+
+                // Create 4 pages so we can paginate with pageSize=2
+                repeat(4) { i ->
+                    notion.pages.create {
+                        parent.dataSource(ds.id)
+                        properties { title("Name", "Item ${i + 1}") }
+                    }
+                }
+                delay(1000)
+
+                // query() should return all 4 (auto-pagination)
+                val all = notion.dataSources.query(ds.id)
+                all shouldHaveSize 4
+
+                // queryFirstPage with pageSize=2 — exactly one API call
+                val firstPage = notion.dataSources.queryFirstPage(ds.id) { pageSize(2) }
+                firstPage.results shouldHaveSize 2
+                firstPage.hasMore shouldBe true
+                firstPage.nextCursor.shouldNotBeNull()
+
+                // Using the cursor to fetch the second (last) page manually
+                val secondPage =
+                    notion.dataSources.queryFirstPage(ds.id) {
+                        pageSize(2)
+                        startCursor(firstPage.nextCursor)
+                    }
+                secondPage.results shouldHaveSize 2
+                secondPage.hasMore shouldBe false
+
+                println(
+                    "  ✅ queryFirstPage: page 1 returned ${firstPage.results.size} items (hasMore=${firstPage.hasMore}), " +
+                        "page 2 returned ${secondPage.results.size} items (hasMore=${secondPage.hasMore})",
+                )
+            }
         }
     })

@@ -431,6 +431,35 @@ class BlocksApi(
                 pageSize = NotionApiLimits.Response.MAX_PAGE_SIZE,
             )
         }
+
+    /**
+     * Retrieves a single page of child blocks without auto-paginating.
+     *
+     * Unlike [retrieveChildren], which transparently fetches all child blocks, this method
+     * makes exactly one API call and returns the raw [BlockList] — including the cursor and
+     * [hasMore] flag so the caller can decide whether and how to continue.
+     *
+     * Use this when you only need the first N blocks (e.g. a preview of page content)
+     * and do not want to load the entire block tree.
+     *
+     * Example:
+     * ```kotlin
+     * val response = notion.blocks.retrieveChildrenFirstPage(pageId, pageSize = 5)
+     * val preview = response.results     // at most 5 blocks
+     * val hasMore = response.hasMore     // true if more blocks exist
+     * val cursor = response.nextCursor   // use for manual follow-up calls if needed
+     * ```
+     *
+     * @param blockId The ID of the parent block or page
+     * @param pageSize Number of blocks to return (1–100; defaults to 100)
+     * @param startCursor Cursor from a previous response to continue from a specific position
+     * @return [BlockList] for the requested page of child blocks
+     */
+    suspend fun retrieveChildrenFirstPage(
+        blockId: String,
+        pageSize: Int = NotionApiLimits.Response.MAX_PAGE_SIZE,
+        startCursor: String? = null,
+    ): BlockList = retrieveChildrenPage(blockId, startCursor, pageSize)
 }
 
 /**

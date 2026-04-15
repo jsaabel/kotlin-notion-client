@@ -516,5 +516,67 @@ class BlockTypesIntegrationTest :
 
                 println("  ✅ End position verified — appended block is last")
             }
+
+            // ------------------------------------------------------------------
+            // 5. retrieveChildrenFirstPage — single API call, no auto-pagination
+            // ------------------------------------------------------------------
+            "retrieveChildrenFirstPage should return exactly pageSize blocks and expose hasMore" {
+                val page =
+                    notion.pages.create {
+                        parent.page(containerPageId)
+                        title("retrieveChildrenFirstPage — Pagination Test")
+                        icon.emoji("📄")
+                        content {
+                            callout("📖", "Verifies that retrieveChildrenFirstPage makes exactly one API call and exposes hasMore.")
+                        }
+                    }
+                println("  First-page test page: ${page.url}")
+                delay(1000)
+
+                // Append 4 more paragraphs (page already has the callout = 1 block; total = 5)
+                notion.blocks.appendChildren(page.id) {
+                    paragraph("Block 1")
+                    paragraph("Block 2")
+                    paragraph("Block 3")
+                    paragraph("Block 4")
+                }
+                delay(1000)
+
+                // retrieveChildren() auto-paginates — should return all 5
+                val all = notion.blocks.retrieveChildren(page.id)
+                all.size shouldBe 5
+
+                // retrieveChildrenFirstPage with pageSize=2 — exactly one API call
+                val firstPage = notion.blocks.retrieveChildrenFirstPage(page.id, pageSize = 2)
+                firstPage.results shouldHaveSize 2
+                firstPage.hasMore shouldBe true
+                firstPage.nextCursor.shouldNotBeNull()
+
+                // Use the cursor manually to fetch the next page
+                val secondPage =
+                    notion.blocks.retrieveChildrenFirstPage(
+                        page.id,
+                        pageSize = 2,
+                        startCursor = firstPage.nextCursor,
+                    )
+                secondPage.results shouldHaveSize 2
+                secondPage.hasMore shouldBe true
+
+                // Third page — last block
+                val thirdPage =
+                    notion.blocks.retrieveChildrenFirstPage(
+                        page.id,
+                        pageSize = 2,
+                        startCursor = secondPage.nextCursor,
+                    )
+                thirdPage.results shouldHaveSize 1
+                thirdPage.hasMore shouldBe false
+
+                println(
+                    "  ✅ retrieveChildrenFirstPage: page 1=${firstPage.results.size}, " +
+                        "page 2=${secondPage.results.size}, page 3=${thirdPage.results.size} blocks " +
+                        "(hasMore: ${firstPage.hasMore}, ${secondPage.hasMore}, ${thirdPage.hasMore})",
+                )
+            }
         }
     })
