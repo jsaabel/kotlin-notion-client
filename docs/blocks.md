@@ -2,7 +2,7 @@
 
 ## Overview
 
-Blocks are the content elements that make up Notion pages. The Blocks API supports 30+ block types including paragraphs, headings, lists, code blocks, tables, and more.
+Blocks are the content elements that make up Notion pages. The Blocks API supports 33+ block types including paragraphs, headings, lists, code blocks, tables, and more.
 
 **Official Documentation**: [Notion Blocks API](https://developers.notion.com/reference/block)
 
@@ -22,7 +22,7 @@ suspend fun appendChildren(blockId: String, position: BlockAppendPosition? = nul
 // Update a block
 suspend fun update(blockId: String, builder: PageContentBuilder.() -> Unit): Block
 
-// Delete a block (archives it)
+// Delete a block (moves it to trash)
 suspend fun delete(blockId: String): Block
 ```
 
@@ -30,7 +30,7 @@ suspend fun delete(blockId: String): Block
 
 ### Text Blocks
 - **Paragraph** - Basic text content
-- **Headings** - H1, H2, H3 for structure
+- **Headings** - H1, H2, H3, H4 for structure
 - **Quote** - Quoted text
 - **Callout** - Highlighted content with an icon
 
@@ -64,6 +64,10 @@ suspend fun delete(blockId: String): Block
 - **Breadcrumb** - Navigation breadcrumbs
 - **Child Page** - Nested pages
 - **Child Database** - Nested databases
+- **Tab** - Container for tab-pane layouts (v0.4.0+)
+
+### Read-Only
+- **Meeting Notes** - Transcript/meeting notes block (`meeting_notes`); returned by the API but cannot be created programmatically (v0.4.0+)
 
 ## Examples
 
@@ -188,6 +192,10 @@ Create highlighted callout blocks:
 notion.blocks.appendChildren(pageId) {
     callout("⚠️") {
         text("Important: Make sure to read the documentation before proceeding.")
+    }
+    // Or use a native Notion icon (v0.4.0+):
+    callout(nativeIcon("gear", NativeIconColor.GRAY)) {
+        text("Settings note")
     }
 }
 ```
@@ -318,6 +326,36 @@ val page = notion.pages.create {
         divider()
 
         quote("Well-documented code is as important as the code itself.")
+    }
+}
+```
+
+### Example 14: Heading 4 (v0.4.0+)
+
+```kotlin
+notion.blocks.appendChildren(pageId) {
+    heading1("Architecture")
+    heading2("Frontend")
+    heading3("Components")
+    heading4("Atoms")  // New in v0.4.0
+    paragraph("The smallest reusable elements.")
+}
+```
+
+### Example 15: Tab Block (v0.4.0+)
+
+```kotlin
+notion.blocks.appendChildren(pageId) {
+    tab {
+        // Each pane() call creates a paragraph child tab
+        pane("Overview") {
+            paragraph("Project summary goes here.")
+        }
+        pane("Details", icon = emoji("📋")) {
+            bullet("Key detail one")
+            bullet("Key detail two")
+        }
+        pane("Settings", icon = nativeIcon("gear", NativeIconColor.GRAY))
     }
 }
 ```

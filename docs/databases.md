@@ -4,7 +4,7 @@
 
 ## Overview
 
-In the 2025-09-03 Notion API, **databases** are **containers** that hold one or more data sources (tables).
+In the 2026-03-11 Notion API, **databases** are **containers** that hold one or more data sources (tables).
 
 **Think of it like this**:
 - **Database** = Folder/Container
@@ -36,7 +36,7 @@ suspend fun create(block: DatabaseRequestBuilder.() -> Unit): Database
 suspend fun trash(databaseId: String): Database
 ```
 
-**Note**: There is NO `databases.update()` or `databases.query()` in the 2025-09-03 API.
+**Note**: There is NO `databases.update()` or `databases.query()` in the 2026-03-11 API.
 - To update schema → use `dataSources.update()`
 - To query data → use `dataSources.query()`
 
@@ -142,6 +142,9 @@ val database = notion.databases.create {
 
     // Optional: Add icon and cover
     icon.emoji("🗺️")
+    // Or use a native Notion icon (v0.4.0+):
+    // icon.native("database")
+    // icon.native("chart", NativeIconColor.BLUE)
     cover.external("https://images.unsplash.com/photo-1557683316-973673baf926")
 }
 ```
@@ -272,6 +275,7 @@ When defining the initial schema in `properties { }`, you can use:
 | Number | `number(name, format)` | `number("Score")` or `number("Price", "dollar")` |
 | Select | `select(name) { }` | See examples above |
 | Multi-select | `multiSelect(name) { }` | See examples above |
+| Status | `status(name) { option(...) }` | `status("State") { option("Not started") }` |
 | Date | `date(name)` | `date("Due Date")` |
 | People | `people(name)` | `people("Assignee")` |
 | Checkbox | `checkbox(name)` | `checkbox("Is Complete")` |
@@ -281,6 +285,50 @@ When defining the initial schema in `properties { }`, you can use:
 | Relation | `relation(name, targetDbId) { }` | See relation example above |
 
 **Note**: Formula and Rollup properties cannot be created via the API - they must be added through the Notion UI.
+
+### Property and Option Descriptions (v0.4.0+)
+
+All property builder methods accept an optional `description` parameter (max 280 chars):
+
+```kotlin
+properties {
+    title("Task Name", description = "The name of the task")
+    select("Status", description = "Current workflow state") {
+        option("To Do")
+        option("In Progress")
+        option("Done")
+    }
+    date("Due Date", description = "When the task must be completed")
+}
+```
+
+Option-level descriptions are also supported on `select`, `multiSelect`, and `status`:
+
+```kotlin
+select("Priority") {
+    option("Critical", SelectOptionColor.RED, description = "Must ship this sprint")
+    option("High", SelectOptionColor.ORANGE)
+    option("Low", SelectOptionColor.GREEN)
+}
+```
+
+### Create a Database with Status Property (v0.4.0+)
+
+```kotlin
+val database = notion.databases.create {
+    parent.page("parent-page-id")
+    title("Sprint Board")
+    properties {
+        title("Task")
+        status("State") {
+            option("Backlog", SelectOptionColor.GRAY, description = "Work not yet started")
+            option("In Progress", SelectOptionColor.YELLOW)
+            option("Done", SelectOptionColor.GREEN)
+        }
+        // Note: groups cannot be configured via the API — Notion auto-creates them
+    }
+}
+```
 
 ## Number Formats
 
@@ -318,7 +366,7 @@ Supported formats: `"number"`, `"number_with_commas"`, `"percent"`, `"dollar"`, 
 ### ❌ Common Mistake: Trying to Query a Database
 
 ```kotlin
-// ❌ Wrong - this method doesn't exist in 2025-09-03
+// ❌ Wrong - this method doesn't exist in 2026-03-11
 notion.databases.query("database-id")
 
 // ✅ Correct - query the data source instead

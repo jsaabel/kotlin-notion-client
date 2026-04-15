@@ -7,7 +7,7 @@ This guide explains how the Kotlin Notion Client organizes its tests and how to 
 ## Test Organization
 
 ### Unit Tests (`src/test/kotlin/unit/`)
-- **Fast**: ~481 tests run in ~200ms
+- **Fast**: 600+ tests run in ~200ms
 - **No API calls**: Use mock responses from official Notion API samples
 - **Tagged**: `@Tags("Unit")`
 
@@ -45,7 +45,7 @@ fun integrationTestEnvVarsAreSet(...): Boolean {
 # Run only unit tests - fast, no API calls
 ./gradlew test
 
-# All ~481 unit tests pass in ~200ms
+# 600+ unit tests pass in ~200ms
 ```
 
 ### Running specific integration tests
@@ -56,8 +56,12 @@ export NOTION_RUN_INTEGRATION_TESTS=true
 export NOTION_API_TOKEN="secret_your_token"
 export NOTION_TEST_PAGE_ID="your-page-id"
 
-# Run one integration test
-./gradlew test --tests "*PagesIntegrationTest"
+# Run one integration test spec
+./gradlew test --tests "*CorePagesIntegrationTest"
+# Other consolidated specs:
+# *BlockTypesIntegrationTest, *DatabaseFeaturesIntegrationTest, *FiltersIntegrationTest,
+# *ViewsIntegrationTest, *MediaIntegrationTest, *CommentsIntegrationTest,
+# *AppearanceIntegrationTest, *SearchAndTemplatesIntegrationTest, *UsersIntegrationTest
 ```
 
 ### ⚠️ Running ALL integration tests (not recommended)
@@ -75,7 +79,8 @@ export NOTION_RUN_INTEGRATION_TESTS=true
 | `NOTION_RUN_INTEGRATION_TESTS` | Must be `"true"` to enable integration tests | Integration tests |
 | `NOTION_API_TOKEN` | Your integration secret token | Integration tests |
 | `NOTION_TEST_PAGE_ID` | A page where integration has permissions | Most integration tests |
-| `NOTION_CLEANUP_AFTER_TEST` | Set to `"false"` to keep test data | Optional (default: true) |
+| `NOTION_CLEANUP_AFTER_TEST` | Set to `"true"` to delete test data after each run | Optional (default: false — pages are preserved) |
+| `NOTION_TEST_WIKI_PAGE_ID` | A page inside a wiki database | `WikiVerificationIntegrationTest` (optional) |
 
 ## Test Infrastructure
 

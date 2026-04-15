@@ -4,12 +4,12 @@
 
 ## Overview
 
-**Data sources** are the core concept for working with structured data in the 2025-09-03 Notion API. A data source is essentially a **table** with:
+**Data sources** are the core concept for working with structured data in the 2026-03-11 Notion API. A data source is essentially a **table** with:
 - A schema (properties/columns)
 - Rows (pages)
 - Query capabilities
 
-**Key Concept**: In the 2025-09-03 API, what you might think of as a "database" is actually a **data source**. Databases are now containers that can hold multiple data sources.
+**Key Concept**: In the 2026-03-11 API, what you might think of as a "database" is actually a **data source**. Databases are now containers that can hold multiple data sources.
 
 **Official Documentation**: [Notion Data Sources](https://developers.notion.com/reference/retrieve-a-data-source)
 
@@ -234,9 +234,60 @@ val results = notion.dataSources.query("data-source-id") {
 }
 ```
 
+### Relative Date Filter Values (v0.4.0+)
+
+Date property filters can use relative values via the `RelativeDateValue` enum, resolved server-side at query time:
+
+```kotlin
+val results = notion.dataSources.query("data-source-id") {
+    filter {
+        date("Due Date").equals(RelativeDateValue.TODAY)
+        // Other relative values:
+        // RelativeDateValue.TOMORROW
+        // RelativeDateValue.YESTERDAY
+        // RelativeDateValue.ONE_WEEK_AGO
+        // RelativeDateValue.ONE_WEEK_FROM_NOW
+        // RelativeDateValue.ONE_MONTH_AGO
+        // RelativeDateValue.ONE_MONTH_FROM_NOW
+    }
+}
+
+// Relative values work with all date condition operators:
+date("Due Date").after(RelativeDateValue.YESTERDAY)
+date("Due Date").before(RelativeDateValue.ONE_MONTH_FROM_NOW)
+date("Due Date").onOrAfter(RelativeDateValue.TODAY)
+date("Due Date").onOrBefore(RelativeDateValue.ONE_WEEK_FROM_NOW)
+```
+
+Relative values can also be used with `createdTime()` and `lastEditedTime()` timestamp filters.
+
+### Filtering by the Current User (v0.4.0+)
+
+Filter to find pages assigned to or not assigned to the integration's authorized user:
+
+```kotlin
+// Filter to find pages assigned to "me"
+val myTasks = notion.dataSources.query("data-source-id") {
+    filter {
+        people("Assignee").containsMe()
+    }
+}
+
+// Or find tasks NOT assigned to me
+val othersWork = notion.dataSources.query("data-source-id") {
+    filter {
+        people("Assignee").doesNotContainMe()
+    }
+}
+```
+
+Works with `people`, `created_by`, and `last_edited_by` property filters.
+
+> **Note**: For internal integrations, `"me"` does not resolve to a specific user — `containsMe()` returns no results and `doesNotContainMe()` matches all entries. This is expected Notion behaviour.
+
 ## Understanding Data Sources vs. Databases
 
-**Important terminology in the 2025-09-03 API**:
+**Important terminology in the 2026-03-11 API**:
 - **Databases** are containers (like folders) that hold data sources
 - **Data sources** are the actual tables with properties and rows
 - You query **data sources** to get pages (not databases)
@@ -354,7 +405,7 @@ val results = notion.dataSources.query("data-source-id") {
 }
 ```
 
-**Additional Filter Types** (v0.2.0+): The query DSL also supports filters for `relation` (related pages), `people` (users/assignees), `status` (workflow status), `unique_id` (auto-incrementing IDs), and `files` (attachment presence). **v0.3.0** added `createdTime()` and `lastEditedTime()` timestamp filters for filtering by page metadata. All follow the same DSL pattern as shown above.
+**Additional Filter Types** (v0.2.0+): The query DSL also supports filters for `relation` (related pages), `people` (users/assignees), `status` (workflow status), `unique_id` (auto-incrementing IDs), and `files` (attachment presence). **v0.3.0** added `createdTime()` and `lastEditedTime()` timestamp filters for filtering by page metadata. All follow the same DSL pattern as shown above. **v0.4.0** added `RelativeDateValue` enum for relative date conditions (`TODAY`, `TOMORROW`, `YESTERDAY`, `ONE_WEEK_AGO`, `ONE_WEEK_FROM_NOW`, `ONE_MONTH_AGO`, `ONE_MONTH_FROM_NOW`) usable with `equals`, `before`, `after`, `onOrBefore`, `onOrAfter` on date and timestamp filters. Also added `containsMe()` / `doesNotContainMe()` on people property filters.
 
 ### Working with Properties
 
