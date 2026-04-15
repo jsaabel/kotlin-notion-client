@@ -110,7 +110,7 @@ Refer to Notion's enhanced markdown guide for the full syntax reference.
 - The first `# h1` heading in a `markdown`-created page becomes the page title (it is not part of the body)
 - Table rows must have `<td>` tags on separate lines (the library handles this correctly)
 - `includeTranscript: true` also includes meeting notes transcript blocks in the output
-- Explicit line breaks (`\n`) within a markdown string are interpreted as paragraph separators — behaviour around exact newline handling in complex cases may need additional validation
+- Both single `\n` and double `\n\n` are treated as paragraph separators by the Notion API — there is no "soft line break" (line break within a paragraph); every newline starts a new paragraph block
 
 ## Related APIs
 
