@@ -11,10 +11,10 @@ import io.kotest.matchers.string.shouldContain
 import io.kotest.matchers.types.shouldBeInstanceOf
 import it.saabel.kotlinnotionclient.NotionClient
 import it.saabel.kotlinnotionclient.config.NotionConfig
+import it.saabel.kotlinnotionclient.models.base.Icon
 import it.saabel.kotlinnotionclient.models.base.SelectOptionColor
 import it.saabel.kotlinnotionclient.models.databases.DatabaseProperty
 import it.saabel.kotlinnotionclient.models.pages.PageCover
-import it.saabel.kotlinnotionclient.models.pages.PageIcon
 import kotlinx.coroutines.delay
 
 /**
@@ -74,7 +74,7 @@ class DatabaseRequestBuilderIntegrationTest :
                             }
                         }
                     createdDatabase.objectType shouldBe "database"
-                    createdDatabase.archived shouldBe false
+                    createdDatabase.inTrash shouldBe false
 
                     println("✅ Database created: ${createdDatabase.id}")
 
@@ -92,11 +92,11 @@ class DatabaseRequestBuilderIntegrationTest :
                     // initial creation response. Investigation needed to determine if this is a Notion API
                     // bug or intended behavior in the new database/data-source model.
                     // TODO: Investigate icon/cover persistence on databases in 2025-09-03 API
-                    println("   Icon: ${createdDatabase.icon?.type} = ${(createdDatabase.icon as? PageIcon.Emoji)?.emoji}")
+                    println("   Icon: ${createdDatabase.icon?.type} = ${(createdDatabase.icon as? Icon.Emoji)?.emoji}")
                     println("   Cover: ${createdDatabase.cover?.type} = ${(createdDatabase.cover as? PageCover.External)?.external?.url}")
 
                     // Icon and cover are returned in the creation response
-                    (createdDatabase.icon as? PageIcon.Emoji)?.emoji shouldBe "🚀"
+                    (createdDatabase.icon as? Icon.Emoji)?.emoji shouldBe "🚀"
                     (createdDatabase.cover as? PageCover.External)?.external?.url shouldContain "placehold"
 
                     println("   ⚠️  Note: Icon/cover may not persist in Notion UI due to 2025-09-03 API behavior")
@@ -171,14 +171,75 @@ class DatabaseRequestBuilderIntegrationTest :
                     // Conditionally clean up
                     delay(500)
                     if (shouldCleanupAfterTest()) {
-                        println("🧹 Cleaning up - archiving test database...")
-                        val archivedDatabase = client.databases.archive(createdDatabase.id)
-                        archivedDatabase.archived shouldBe true
-                        println("✅ Test database archived successfully")
+                        println("🧹 Cleaning up - trashing test database...")
+                        val archivedDatabase = client.databases.trash(createdDatabase.id)
+                        archivedDatabase.inTrash shouldBe true
+                        println("✅ Test database trashed successfully")
                     } else {
                         println("🔧 Cleanup skipped (NOTION_CLEANUP_AFTER_TEST=false)")
                         println("   Created database: ${createdDatabase.id} (\"DSL Integration Test Database\")")
                         println("   Contains 11 properties configured via DSL")
+                    }
+                } finally {
+                    client.close()
+                }
+            }
+
+            "Should create database properties with descriptions and read them back" {
+                val token = System.getenv("NOTION_API_TOKEN")
+                val parentPageId = System.getenv("NOTION_TEST_PAGE_ID")
+                val client = NotionClient(NotionConfig(apiToken = token))
+
+                try {
+                    println("🗄️ Creating database with property-level descriptions...")
+
+                    val database =
+                        client.databases.create {
+                            parent.page(parentPageId)
+                            title("Property Description Test")
+                            icon.emoji("📝")
+                            properties {
+                                title("Name")
+                                richText("Notes", description = "Free-form notes about the item")
+                                number("Score", description = "A numeric score from 1 to 10")
+                                select("Priority", description = "Task urgency level") {
+                                    option("High", SelectOptionColor.RED)
+                                    option("Low", SelectOptionColor.GRAY)
+                                }
+                                checkbox("Done", description = "Whether the task is complete")
+                            }
+                        }
+                    println("✅ Database created: https://notion.so/${database.id.replace("-", "")}")
+
+                    delay(500)
+
+                    val dataSource = client.dataSources.retrieve(database.dataSources.first().id)
+                    val props = dataSource.properties
+
+                    val notesProp = props["Notes"] as DatabaseProperty.RichText
+                    notesProp.description shouldBe "Free-form notes about the item"
+                    println("✅ RichText description: ${notesProp.description}")
+
+                    val scoreProp = props["Score"] as DatabaseProperty.Number
+                    scoreProp.description shouldBe "A numeric score from 1 to 10"
+                    println("✅ Number description: ${scoreProp.description}")
+
+                    val priorityProp = props["Priority"] as DatabaseProperty.Select
+                    priorityProp.description shouldBe "Task urgency level"
+                    println("✅ Select description: ${priorityProp.description}")
+
+                    val doneProp = props["Done"] as DatabaseProperty.Checkbox
+                    doneProp.description shouldBe "Whether the task is complete"
+                    println("✅ Checkbox description: ${doneProp.description}")
+
+                    // Property without a description should come back as null
+                    val nameProp = props["Name"] as DatabaseProperty.Title
+                    nameProp.description shouldBe null
+                    println("✅ Title description is null as expected")
+
+                    if (shouldCleanupAfterTest()) {
+                        client.databases.trash(database.id)
+                        println("🧹 Cleaned up")
                     }
                 } finally {
                     client.close()

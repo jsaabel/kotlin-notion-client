@@ -2,10 +2,12 @@
 
 package it.saabel.kotlinnotionclient.models.datasources
 
+import it.saabel.kotlinnotionclient.models.base.Icon
 import it.saabel.kotlinnotionclient.models.base.NotionObject
 import it.saabel.kotlinnotionclient.models.base.Parent
 import it.saabel.kotlinnotionclient.models.base.RichText
 import it.saabel.kotlinnotionclient.models.databases.DatabaseProperty
+import it.saabel.kotlinnotionclient.models.pages.PageCover
 import it.saabel.kotlinnotionclient.models.users.User
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -29,12 +31,14 @@ data class DataSource(
     override val createdBy: User? = null,
     @SerialName("last_edited_by")
     override val lastEditedBy: User? = null,
-    @SerialName("archived")
-    override val archived: Boolean = false,
     @SerialName("title")
     val title: List<RichText>,
     @SerialName("description")
     val description: List<RichText>,
+    @SerialName("icon")
+    val icon: Icon? = null,
+    @SerialName("cover")
+    val cover: PageCover? = null,
     @SerialName("properties")
     val properties: Map<String, DatabaseProperty>,
     @SerialName("parent")
@@ -46,7 +50,7 @@ data class DataSource(
     @SerialName("public_url")
     val publicUrl: String? = null,
     @SerialName("in_trash")
-    val inTrash: Boolean = false,
+    override val inTrash: Boolean = false,
 ) : NotionObject {
     @SerialName("object")
     override val objectType: String = "data_source"

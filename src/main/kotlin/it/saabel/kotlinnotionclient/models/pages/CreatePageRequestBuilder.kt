@@ -3,6 +3,9 @@
 package it.saabel.kotlinnotionclient.models.pages
 
 import it.saabel.kotlinnotionclient.models.base.ExternalFile
+import it.saabel.kotlinnotionclient.models.base.Icon
+import it.saabel.kotlinnotionclient.models.base.NativeIconColor
+import it.saabel.kotlinnotionclient.models.base.NativeIconObject
 import it.saabel.kotlinnotionclient.models.base.NotionFile
 import it.saabel.kotlinnotionclient.models.base.Parent
 import it.saabel.kotlinnotionclient.models.blocks.BlockRequest
@@ -54,9 +57,10 @@ import it.saabel.kotlinnotionclient.models.blocks.pageContent
 class CreatePageRequestBuilder {
     private var parentValue: Parent? = null
     private var properties = mutableMapOf<String, PagePropertyValue>()
-    private var iconValue: PageIcon? = null
+    private var iconValue: Icon? = null
     private var coverValue: PageCover? = null
     private var children: List<BlockRequest>? = null
+    private var markdownValue: String? = null
     private var templateValue: PageTemplate? = null
     private var positionValue: PagePosition? = null
 
@@ -118,10 +122,27 @@ class CreatePageRequestBuilder {
     /**
      * Configures page content using the PageContentBuilder DSL.
      *
+     * Mutually exclusive with [markdown] — the last call wins, but [build] enforces the constraint.
+     *
      * @param block Configuration block for content
      */
     fun content(block: PageContentBuilder.() -> Unit) {
         children = pageContent(block)
+    }
+
+    /**
+     * Sets page content as enhanced Markdown.
+     *
+     * Mutually exclusive with [content] and [template]. When provided, the API converts the markdown
+     * string into Notion blocks server-side. The first `# h1` heading in the markdown becomes the
+     * page title if no `properties.title` is set.
+     *
+     * Requires the integration to have `insert_content` capability on the target parent.
+     *
+     * @param content The enhanced Markdown string (use `\n` for line breaks)
+     */
+    fun markdown(content: String) {
+        markdownValue = content
     }
 
     /**
@@ -152,12 +173,27 @@ class CreatePageRequestBuilder {
             )
         }
 
+        // Validate that markdown is mutually exclusive with children and template
+        if (markdownValue != null && children != null) {
+            throw IllegalStateException(
+                "markdown and children are mutually exclusive. " +
+                    "Use either markdown() or content(), not both.",
+            )
+        }
+        if (markdownValue != null && templateValue != null) {
+            throw IllegalStateException(
+                "markdown and template are mutually exclusive. " +
+                    "Use either markdown() or template(), not both.",
+            )
+        }
+
         return CreatePageRequest(
             parent = parentValue!!,
             properties = properties,
             icon = iconValue,
             cover = coverValue,
             children = children,
+            markdown = markdownValue,
             template = templateValue,
             position = positionValue,
         )
@@ -221,7 +257,7 @@ class CreatePageRequestBuilder {
          * @param emoji The emoji character(s)
          */
         fun emoji(emoji: String) {
-            this@CreatePageRequestBuilder.iconValue = PageIcon.Emoji(emoji = emoji)
+            this@CreatePageRequestBuilder.iconValue = Icon.Emoji(emoji = emoji)
         }
 
         /**
@@ -230,7 +266,7 @@ class CreatePageRequestBuilder {
          * @param url The external image URL
          */
         fun external(url: String) {
-            this@CreatePageRequestBuilder.iconValue = PageIcon.External(external = ExternalFile(url = url))
+            this@CreatePageRequestBuilder.iconValue = Icon.External(external = ExternalFile(url = url))
         }
 
         /**
@@ -244,7 +280,20 @@ class CreatePageRequestBuilder {
             expiryTime: String? = null,
         ) {
             this@CreatePageRequestBuilder.iconValue =
-                PageIcon.File(file = NotionFile(url = url, expiryTime = expiryTime))
+                Icon.File(file = NotionFile(url = url, expiryTime = expiryTime))
+        }
+
+        /**
+         * Sets a native Notion icon.
+         *
+         * @param name The icon name (e.g. "pizza")
+         * @param color Optional color. Defaults to [NativeIconColor.GRAY] when omitted.
+         */
+        fun native(
+            name: String,
+            color: NativeIconColor? = null,
+        ) {
+            this@CreatePageRequestBuilder.iconValue = Icon.NativeIcon(NativeIconObject(name = name, color = color))
         }
     }
 

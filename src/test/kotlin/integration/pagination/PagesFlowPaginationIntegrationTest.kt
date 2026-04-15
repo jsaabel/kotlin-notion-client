@@ -180,7 +180,7 @@ class PagesFlowPaginationIntegrationTest :
                         println("\n🧹 Cleaning up test database...")
                         createdDatabases.forEach { databaseId ->
                             try {
-                                client.databases.archive(databaseId)
+                                client.databases.trash(databaseId)
                             } catch (e: Exception) {
                                 println("   Warning: Failed to clean up database $databaseId")
                             }
@@ -281,7 +281,7 @@ class PagesFlowPaginationIntegrationTest :
 
                     // Cleanup
                     if (shouldCleanupAfterTest()) {
-                        createdDatabases.forEach { client.databases.archive(it) }
+                        createdDatabases.forEach { client.databases.trash(it) }
                         println("🧹 Cleaned up test database")
                     }
 

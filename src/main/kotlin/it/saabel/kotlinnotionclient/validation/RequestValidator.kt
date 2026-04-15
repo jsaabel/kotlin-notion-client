@@ -421,6 +421,10 @@ class RequestValidator(
                 richTextArrays["heading3.richText"] = block.heading3.richText
             }
 
+            is BlockRequest.Heading4 -> {
+                richTextArrays["heading4.richText"] = block.heading4.richText
+            }
+
             is BlockRequest.BulletedListItem -> {
                 richTextArrays["bulletedListItem.richText"] = block.bulletedListItem.richText
             }
@@ -527,6 +531,10 @@ class RequestValidator(
 
             is BlockRequest.Template -> {
                 richTextArrays["template.richText"] = block.template.richText
+            }
+
+            is BlockRequest.Tab -> {
+                // Tab blocks don't have rich text content directly — content lives in paragraph children
             }
         }
 

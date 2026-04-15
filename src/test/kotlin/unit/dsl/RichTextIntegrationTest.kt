@@ -5,6 +5,7 @@ import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
 import it.saabel.kotlinnotionclient.models.base.Annotations
 import it.saabel.kotlinnotionclient.models.base.Color
+import it.saabel.kotlinnotionclient.models.base.Icon
 import it.saabel.kotlinnotionclient.models.blocks.BlockRequest
 import it.saabel.kotlinnotionclient.models.blocks.pageContent
 
@@ -216,7 +217,7 @@ class RichTextIntegrationTest :
             content shouldHaveSize 1
             val callout = content[0] as BlockRequest.Callout
             callout.callout.richText shouldHaveSize 2
-            callout.callout.icon?.emoji shouldBe "🚨"
+            (callout.callout.icon as? Icon.Emoji)?.emoji shouldBe "🚨"
 
             callout.callout.richText[0].plainText shouldBe "Callout with "
             callout.callout.richText[0].annotations shouldBe Annotations()

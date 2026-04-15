@@ -10,8 +10,8 @@ import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
 import it.saabel.kotlinnotionclient.NotionClient
 import it.saabel.kotlinnotionclient.config.NotionConfig
+import it.saabel.kotlinnotionclient.models.base.Icon
 import it.saabel.kotlinnotionclient.models.pages.PageCover
-import it.saabel.kotlinnotionclient.models.pages.PageIcon
 import it.saabel.kotlinnotionclient.models.pages.PageProperty
 import it.saabel.kotlinnotionclient.models.pages.updatePageRequest
 import kotlinx.coroutines.delay
@@ -194,7 +194,7 @@ class UpdatePageRequestBuilderIntegrationTest :
                     updatedPhone.phoneNumber shouldBe "+1-555-0999"
 
                     // Verify icon and cover updates
-                    (updatedPage.icon as? PageIcon.Emoji)?.emoji shouldBe "✅"
+                    (updatedPage.icon as? Icon.Emoji)?.emoji shouldBe "✅"
                     (updatedPage.cover as? PageCover.External)?.external?.url shouldContain "UPDATED"
 
                     println("✅ All property types successfully updated via DSL!")
@@ -229,18 +229,18 @@ class UpdatePageRequestBuilderIntegrationTest :
 
                     println("✅ API overload method verified with property updates!")
 
-                    // Step 6: Test archive functionality
-                    println("📦 Testing archive functionality...")
+                    // Step 6: Test trash functionality
+                    println("📦 Testing trash functionality...")
 
                     val archivedPage =
                         client.pages.update(initialPage.id) {
-                            archive()
+                            trash()
                         }
 
                     delay(1000)
-                    archivedPage.archived shouldBe true
+                    archivedPage.inTrash shouldBe true
 
-                    println("✅ Archive functionality verified!")
+                    println("✅ Trash functionality verified!")
 
                     println()
                     println("🎉 UpdatePageRequestBuilder DSL Integration Test - COMPLETE SUCCESS!")
@@ -249,7 +249,7 @@ class UpdatePageRequestBuilderIntegrationTest :
                     println("   ✅ Updated ALL property types using UpdatePageRequestBuilder DSL")
                     println("   ✅ Verified every property update was applied correctly")
                     println("   ✅ Tested API overload method client.pages.update(id) { ... }")
-                    println("   ✅ Verified icon, cover, and archive functionality")
+                    println("   ✅ Verified icon, cover, and trash functionality")
                     println("   ✅ Confirmed feature parity with CreatePageRequestBuilder")
                     println()
                     println("   Property Types Tested:")
@@ -261,8 +261,8 @@ class UpdatePageRequestBuilderIntegrationTest :
                     // Cleanup
                     if (shouldCleanupAfterTest()) {
                         println("🧹 Cleaning up test database...")
-                        client.databases.archive(testDatabase.id)
-                        println("✅ Test database and pages archived")
+                        client.databases.trash(testDatabase.id)
+                        println("✅ Test database and pages trashed")
                     } else {
                         println("🔧 Cleanup skipped (NOTION_CLEANUP_AFTER_TEST=false)")
                         println("   Database: ${testDatabase.id} (\"UpdatePageDSL Test Database\")")
@@ -310,15 +310,15 @@ class UpdatePageRequestBuilderIntegrationTest :
                     // Verify basic updates
                     val updatedTitle = updatedPage.properties["title"] as PageProperty.Title
                     updatedTitle.plainText shouldBe "Basic Update Test Page - UPDATED!"
-                    (updatedPage.icon as? PageIcon.Emoji)?.emoji shouldBe "✅"
+                    (updatedPage.icon as? Icon.Emoji)?.emoji shouldBe "✅"
                     (updatedPage.cover as? PageCover.External)?.external?.url shouldContain "Basic+Update"
 
                     println("✅ Basic page updates verified!")
 
                     // Cleanup
                     if (shouldCleanupAfterTest()) {
-                        client.pages.archive(childPage.id)
-                        println("✅ Basic test page archived")
+                        client.pages.trash(childPage.id)
+                        println("✅ Basic test page trashed")
                     }
                 } finally {
                     client.close()

@@ -3,7 +3,6 @@
 package it.saabel.kotlinnotionclient.models.requests
 
 import it.saabel.kotlinnotionclient.models.base.Annotations
-import it.saabel.kotlinnotionclient.models.base.ExternalFile
 import it.saabel.kotlinnotionclient.models.base.Mention
 import it.saabel.kotlinnotionclient.models.base.Parent
 import it.saabel.kotlinnotionclient.models.base.RichText
@@ -12,7 +11,6 @@ import it.saabel.kotlinnotionclient.models.databases.CreateDatabaseProperty
 import it.saabel.kotlinnotionclient.models.databases.CreateDatabaseRequest
 import it.saabel.kotlinnotionclient.models.databases.InitialDataSource
 import it.saabel.kotlinnotionclient.models.pages.CreatePageRequest
-import it.saabel.kotlinnotionclient.models.pages.PageIcon
 import it.saabel.kotlinnotionclient.models.pages.PagePropertyValue
 import it.saabel.kotlinnotionclient.models.users.User
 
@@ -136,20 +134,4 @@ object RequestBuilders {
             plainText = "@$userName",
             href = null,
         )
-
-    /**
-     * Creates an emoji icon for pages and databases.
-     *
-     * @param emoji The emoji character (e.g., "🗄️", "📄", "✅")
-     * @return Configured PageIcon for emoji
-     */
-    fun createEmojiIcon(emoji: String): PageIcon = PageIcon.Emoji(emoji = emoji)
-
-    /**
-     * Creates an external file icon for pages and databases.
-     *
-     * @param url The URL of the external icon file
-     * @return Configured PageIcon for external file
-     */
-    fun createExternalIcon(url: String): PageIcon = PageIcon.External(external = ExternalFile(url = url))
 }

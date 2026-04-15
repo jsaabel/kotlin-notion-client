@@ -9,8 +9,8 @@ import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import it.saabel.kotlinnotionclient.NotionClient
 import it.saabel.kotlinnotionclient.config.NotionConfig
+import it.saabel.kotlinnotionclient.models.base.Icon
 import it.saabel.kotlinnotionclient.models.pages.PageCover
-import it.saabel.kotlinnotionclient.models.pages.PageIcon
 import it.saabel.kotlinnotionclient.models.pages.PageProperty
 import kotlinx.coroutines.delay
 
@@ -94,7 +94,7 @@ class PagesExamples :
                 if (shouldCleanupAfterTest() && testDatabaseId != null) {
                     println("🧹 Cleaning up test database...")
                     try {
-                        notion.databases.archive(testDatabaseId)
+                        notion.databases.trash(testDatabaseId)
                         println("✅ Cleanup complete")
                     } catch (e: Exception) {
                         println("⚠️ Cleanup failed: ${e.message}")
@@ -113,7 +113,7 @@ class PagesExamples :
                 // Access page metadata
                 println("Created: ${page.createdTime}")
                 println("Last edited: ${page.lastEditedTime}")
-                println("Archived: ${page.archived}")
+                println("Archived: ${page.inTrash}")
 
                 // Access properties
                 val title = page.properties["Task Name"] as? PageProperty.Title
@@ -121,7 +121,7 @@ class PagesExamples :
 
                 // Validation
                 page.shouldNotBeNull()
-                page.archived shouldBe false
+                page.inTrash shouldBe false
                 title?.plainText shouldBe "Test Task"
 
                 println("✅ Example 1 passed")
@@ -165,12 +165,12 @@ class PagesExamples :
                 val priorityProp = page.properties["Priority"] as? PageProperty.Number
                 priorityProp?.number shouldBe 8.0
 
-                (page.icon as? PageIcon.Emoji)?.emoji shouldBe "📝"
+                (page.icon as? Icon.Emoji)?.emoji shouldBe "📝"
                 (page.cover as? PageCover.External)?.external?.url shouldBe "https://images.unsplash.com/photo-1557683316-973673baf926"
 
                 // Cleanup
                 if (shouldCleanupAfterTest()) {
-                    notion.pages.archive(page.id)
+                    notion.pages.trash(page.id)
                 }
 
                 println("✅ Example 2 passed")
@@ -208,7 +208,7 @@ class PagesExamples :
 
                 // Cleanup
                 if (shouldCleanupAfterTest()) {
-                    notion.pages.archive(childPage.id)
+                    notion.pages.trash(childPage.id)
                 }
 
                 println("✅ Example 3 passed")
@@ -260,7 +260,7 @@ class PagesExamples :
 
                 // Cleanup
                 if (shouldCleanupAfterTest()) {
-                    notion.pages.archive(page.id)
+                    notion.pages.trash(page.id)
                 }
 
                 println("✅ Example 4 passed")
@@ -313,7 +313,7 @@ class PagesExamples :
 
                 // Validation
                 updated.shouldNotBeNull()
-                (updated.icon as? PageIcon.Emoji)?.emoji shouldBe "✅"
+                (updated.icon as? Icon.Emoji)?.emoji shouldBe "✅"
                 (updated.cover as? PageCover.External)?.external?.url shouldBe "https://images.unsplash.com/photo-1557683316-973673baf926"
 
                 println("✅ Example 6 passed")
@@ -322,26 +322,26 @@ class PagesExamples :
             // ========================================
             // Example 7: Archive a Page
             // ========================================
-            "Example 7: Archive a page" {
-                println("\n📖 Running Example 8: Archive a page")
+            "Example 7: Trash a page" {
+                println("\n📖 Running Example 7: Trash a page")
 
-                // Create a page to archive
-                val pageToArchive =
+                // Create a page to trash
+                val pageToTrash =
                     notion.pages.create {
                         parent.dataSource(testDataSourceId!!)
                         properties {
-                            title("Task Name", "Page to archive")
+                            title("Task Name", "Page to trash")
                         }
                     }
 
-                // Archive using the dedicated method
-                val archived = notion.pages.archive(pageToArchive.id)
+                // Trash using the dedicated method
+                val archived = notion.pages.trash(pageToTrash.id)
 
-                println("Page archived: ${archived.archived}")
+                println("Page in trash: ${archived.inTrash}")
 
                 // Validation
                 archived.shouldNotBeNull()
-                archived.archived shouldBe true
+                archived.inTrash shouldBe true
 
                 println("✅ Example 7 passed")
             }
@@ -349,10 +349,10 @@ class PagesExamples :
             // ========================================
             // Example 8: Restore an Archived Page
             // ========================================
-            "Example 8: Restore an archived page" {
-                println("\n📖 Running Example 9: Restore archived page")
+            "Example 8: Restore a page from trash" {
+                println("\n📖 Running Example 8: Restore page from trash")
 
-                // Create and archive a page
+                // Create and trash a page
                 val pageToRestore =
                     notion.pages.create {
                         parent.dataSource(testDataSourceId!!)
@@ -360,21 +360,21 @@ class PagesExamples :
                             title("Task Name", "Page to restore")
                         }
                     }
-                notion.pages.archive(pageToRestore.id)
+                notion.pages.trash(pageToRestore.id)
 
                 // Restore it
                 val restored =
                     notion.pages.update(pageToRestore.id) {
-                        archive(false) // Set archived to false
+                        trash(false) // Restore from trash
                     }
 
                 // Validation
                 restored.shouldNotBeNull()
-                restored.archived shouldBe false
+                restored.inTrash shouldBe false
 
                 // Cleanup
                 if (shouldCleanupAfterTest()) {
-                    notion.pages.archive(pageToRestore.id)
+                    notion.pages.trash(pageToRestore.id)
                 }
 
                 println("✅ Example 8 passed")
@@ -384,7 +384,7 @@ class PagesExamples :
             // Example 9: Create Task in Project Management DB
             // ========================================
             "Example 9: Create a task in a project management database" {
-                println("\n📖 Running Example 10: Create task")
+                println("\n📖 Running Example 9: Create task")
 
                 val task =
                     notion.pages.create {
@@ -402,13 +402,13 @@ class PagesExamples :
 
                 // Validation
                 task.shouldNotBeNull()
-                (task.icon as? PageIcon.Emoji)?.emoji shouldBe "🚀"
+                (task.icon as? Icon.Emoji)?.emoji shouldBe "🚀"
                 val titleProp = task.properties["Task Name"] as? PageProperty.Title
                 titleProp?.plainText shouldBe "Implement feature X"
 
                 // Cleanup
                 if (shouldCleanupAfterTest()) {
-                    notion.pages.archive(task.id)
+                    notion.pages.trash(task.id)
                 }
 
                 println("✅ Example 9 passed")
@@ -418,7 +418,7 @@ class PagesExamples :
             // Example 10: Batch Create Pages
             // ========================================
             "Example 10: Batch create pages" {
-                println("\n📖 Running Example 11: Batch create pages")
+                println("\n📖 Running Example 10: Batch create pages")
 
                 val taskNames = listOf("Task 1", "Task 2", "Task 3")
 
@@ -441,7 +441,7 @@ class PagesExamples :
 
                 // Cleanup
                 if (shouldCleanupAfterTest()) {
-                    createdPages.forEach { notion.pages.archive(it.id) }
+                    createdPages.forEach { notion.pages.trash(it.id) }
                 }
 
                 println("✅ Example 10 passed")
@@ -451,7 +451,7 @@ class PagesExamples :
             // Example 11: Update Multiple Properties at Once
             // ========================================
             "Example 11: Update multiple properties at once" {
-                println("\n📖 Running Example 12: Update multiple properties")
+                println("\n📖 Running Example 11: Update multiple properties")
 
                 notion.pages.update(testPageId!!) {
                     properties {
@@ -477,7 +477,7 @@ class PagesExamples :
                 val priorityProp = updated.properties["Priority"] as? PageProperty.Number
                 priorityProp?.number shouldBe 95.0
 
-                (updated.icon as? PageIcon.Emoji)?.emoji shouldBe "✅"
+                (updated.icon as? Icon.Emoji)?.emoji shouldBe "✅"
 
                 println("✅ Example 11 passed")
             }
@@ -486,7 +486,7 @@ class PagesExamples :
             // Example 12: Working with Page Properties
             // ========================================
             "Example 12: Accessing properties from retrieved pages" {
-                println("\n📖 Running Example 13: Property access patterns")
+                println("\n📖 Running Example 12: Property access patterns")
 
                 val page = notion.pages.retrieve(testPageId!!)
 
@@ -516,7 +516,7 @@ class PagesExamples :
             // Example 13: Getting Data Source ID from Database
             // ========================================
             "Example 13: Getting data source ID from database" {
-                println("\n📖 Running Example 14: Get data source ID")
+                println("\n📖 Running Example 13: Get data source ID")
 
                 // Retrieve the database
                 val database = notion.databases.retrieve(testDatabaseId!!)
@@ -540,7 +540,7 @@ class PagesExamples :
 
                 // Cleanup
                 if (shouldCleanupAfterTest()) {
-                    notion.pages.archive(page.id)
+                    notion.pages.trash(page.id)
                 }
 
                 println("✅ Example 13 passed")

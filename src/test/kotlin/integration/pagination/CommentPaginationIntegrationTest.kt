@@ -7,6 +7,7 @@ import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 import it.saabel.kotlinnotionclient.NotionClient
 import it.saabel.kotlinnotionclient.config.NotionConfig
+import it.saabel.kotlinnotionclient.models.base.Icon
 import it.saabel.kotlinnotionclient.models.base.Parent
 import it.saabel.kotlinnotionclient.models.comments.CreateCommentRequest
 import it.saabel.kotlinnotionclient.models.pages.CreatePageRequest
@@ -48,7 +49,7 @@ class CommentPaginationIntegrationTest :
                     val pageRequest =
                         CreatePageRequest(
                             parent = Parent.PageParent(pageId = parentPageId),
-                            icon = RequestBuilders.createEmojiIcon("💬"),
+                            icon = Icon.Emoji(emoji = "💬"),
                             properties =
                                 mapOf(
                                     "title" to
@@ -127,7 +128,7 @@ class CommentPaginationIntegrationTest :
                     // Cleanup - just archive the page, comments are automatically cleaned up
                     if (shouldCleanupAfterTest()) {
                         println("\n🧹 Cleaning up test page...")
-                        client.pages.archive(page.id)
+                        client.pages.trash(page.id)
                         println("✅ Test page archived (comments are automatically cleaned up)")
                     } else {
                         println("\n🔧 Test page preserved: ${page.id}")

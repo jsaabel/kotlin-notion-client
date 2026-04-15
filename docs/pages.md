@@ -26,8 +26,8 @@ suspend fun create(block: CreatePageRequestBuilder.() -> Unit): Page
 // Update a page (DSL)
 suspend fun update(pageId: String, block: UpdatePageRequestBuilder.() -> Unit): Page
 
-// Archive a page
-suspend fun archive(pageId: String): Page
+// Move a page to trash
+suspend fun trash(pageId: String): Page
 
 // Move a page to a different parent (v0.3.0+)
 suspend fun move(pageId: String, parent: MovePageParent): Page
@@ -48,7 +48,7 @@ val page = notion.pages.retrieve("page-id")
 // Access page metadata
 println("Created: ${page.createdTime}")
 println("Last edited: ${page.lastEditedTime}")
-println("Archived: ${page.archived}")
+println("In trash: ${page.inTrash}")
 
 // Access properties
 val title = page.properties["Name"] as? PageProperty.Title
@@ -57,7 +57,7 @@ println("Title: ${title?.plainText}")
 
 ### Create a Page in a Data Source (Database Row)
 
-**Important**: In the 2025-09-03 API, pages in tables are created with a `dataSourceId` parent (not `databaseId`):
+**Important**: In the 2026-03-11 API, pages in tables are created with a `dataSourceId` parent (not `databaseId`):
 
 ```kotlin
 val page = notion.pages.create {
@@ -171,27 +171,27 @@ val updated = notion.pages.update("page-id") {
 }
 ```
 
-### Archive a Page
+### Trash a Page
 
 ```kotlin
-// Archive using the dedicated method
-val archived = notion.pages.archive("page-id")
+// Move a page to trash using the dedicated method
+val trashed = notion.pages.trash("page-id")
+println("Page in trash: ${trashed.inTrash}")  // true
 
-// Or use update
-val archived = notion.pages.update("page-id") {
-    archive()
+// Or use update with the trash() DSL
+val trashed = notion.pages.update("page-id") {
+    trash()
 }
-
-println("Page archived: ${archived.archived}")
 ```
 
-**Note**: Notion doesn't support true deletion. Archived pages are hidden from the UI but remain accessible via the API.
+> **Note**: Notion doesn't support permanent deletion. Pages moved to trash are hidden from the UI
+> but remain accessible via the API. Use `restore()` (or `trash(false)`) to bring them back.
 
-### Restore an Archived Page
+### Restore a Page from Trash
 
 ```kotlin
 val restored = notion.pages.update("page-id") {
-    archive(false)  // Set archived to false
+    trash(false)  // Restore from trash
 }
 ```
 
@@ -233,7 +233,7 @@ notion.pages.create {
 }
 ```
 
-**Key point**: Use `dataSourceId` in 2025-09-03 API (not `databaseId` from older versions).
+**Key point**: Use `dataSourceId` in 2026-03-11 API (not `databaseId` from older versions).
 
 ### Page Parent (Child Page)
 
@@ -359,6 +359,7 @@ Common property types you can set when creating/updating pages:
 | Relation | `relation(name, pageIds)` | `relation("Related", "page-1", "page-2")` |
 | Place (v0.2.0+) | Read location data | Access with `getPlaceProperty()` |
 | Unique ID | Read auto-incrementing ID | Access with `getUniqueIdProperty()` |
+| Verification (v0.4.0+) | `verify(name)` / `unverify(name)` | `verify("Verification")` |
 
 **Read-only properties** (cannot be set via create/update):
 - Formula
@@ -387,6 +388,40 @@ import it.saabel.kotlinnotionclient.models.pages.MovePageParent
 notion.pages.move("page-id", MovePageParent.PageParent("new-parent-page-id"))
 notion.pages.move("page-id", MovePageParent.DataSourceParent("data-source-id"))
 ```
+
+### Verification Property (v0.4.0+)
+
+For pages inside wiki databases, you can verify or unverify the page content:
+
+```kotlin
+// Verify a page (for pages in wiki databases)
+notion.pages.update("wiki-page-id") {
+    properties {
+        verify("Verification")
+        // Or with a 90-day expiry window:
+        verify("Verification",
+            start = "2026-04-14",
+            end = "2026-07-13"
+        )
+    }
+}
+
+// Remove verification
+notion.pages.update("wiki-page-id") {
+    properties {
+        unverify("Verification")
+    }
+}
+
+// Read verification state
+val page = notion.pages.retrieve("wiki-page-id")
+val verification = page.properties["Verification"] as? PageProperty.Verification
+println("State: ${verification?.verification?.state}")         // "verified"
+println("Verified by: ${verification?.verification?.verifiedBy?.name}")
+println("Expires: ${verification?.verification?.date?.end}")
+```
+
+> **Note**: Only available on pages inside wiki databases, which cannot be created programmatically.
 
 ### Lock and Unlock Pages (v0.3.0+)
 
@@ -463,6 +498,34 @@ notion.pages.update("page-id") {
     eraseContent()
 }
 ```
+
+### Create a Page with Markdown Content (v0.4.0+)
+
+Create a page using markdown text instead of individual blocks:
+
+```kotlin
+val page = notion.pages.create {
+    parent.page("parent-page-id")
+    title("My Markdown Page")
+
+    markdown("""
+        # Introduction
+
+        This page was created using **Markdown** via the Notion API.
+
+        > Callout text can use blockquotes.
+
+        - Item one
+        - Item two
+
+        ```kotlin
+        val client = NotionClient("token")
+        ```
+    """.trimIndent())
+}
+```
+
+> **Note**: `markdown` and `content {}` (children) are mutually exclusive. Also mutually exclusive with `template`.
 
 ### Create a Page with Position (v0.3.0+)
 
@@ -565,8 +628,8 @@ val cloned = notion.pages.create {
 2. **Use type-safe properties** - Cast to specific `PageProperty` types when reading
 3. **Handle nulls** - Properties can be null/empty, always provide defaults
 4. **Batch carefully** - Rate limits apply, consider adding delays for large batches
-5. **Use data source parents** - In 2025-09-03, pages in tables use `dataSourceId` parent
-6. **Archive instead of delete** - Notion doesn't support deletion, use `archive()` instead
+5. **Use data source parents** - In 2026-03-11, pages in tables use `dataSourceId` parent
+6. **Trash instead of delete** - Notion doesn't support permanent deletion, use `trash()` to move pages to trash and `trash(false)` to restore
 7. **Validate before create** - The library has built-in validation, but pre-validate complex data
 8. **Property IDs for pagination** - Get property ID from page schema for `retrievePropertyItems()`
 
@@ -575,7 +638,7 @@ val cloned = notion.pages.create {
 ### ❌ Common Mistake: Using Database ID as Parent
 
 ```kotlin
-// ❌ Wrong (2025-09-03 API)
+// ❌ Wrong (2026-03-11 API)
 parent.database("database-id")  // This doesn't work for creating rows
 
 // ✅ Correct
@@ -615,10 +678,15 @@ properties {
 // Icon options
 icon.emoji("🎯")
 icon.external("https://example.com/icon.png")
+// Native Notion icon with optional color (v0.4.0+)
+icon.native("pizza")
+icon.native("code", NativeIconColor.BLUE)
 
 // Cover options
 cover.external("https://example.com/cover.jpg")
 ```
+
+Available `NativeIconColor` values: `GRAY` (default), `LIGHT_GRAY`, `BROWN`, `YELLOW`, `ORANGE`, `GREEN`, `BLUE`, `PURPLE`, `PINK`, `RED`.
 
 **Note**: Icon and cover removal is not currently supported (see journal entry `2025_10_06_icon_cover_removal_issue.md`).
 

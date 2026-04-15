@@ -123,7 +123,7 @@ class DatabaseQueryDslIntegrationTest :
             afterSpec {
                 if (shouldCleanupAfterTest()) {
                     try {
-                        client.databases.archive(testDatabaseId)
+                        client.databases.trash(testDatabaseId)
                         println("✅ Archived test database: $testDatabaseId")
                     } catch (e: Exception) {
                         println("Failed to cleanup test database: ${e.message}")

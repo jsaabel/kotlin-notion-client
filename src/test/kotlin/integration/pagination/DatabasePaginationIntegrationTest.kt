@@ -44,9 +44,9 @@ class DatabasePaginationIntegrationTest :
                     // Check parent page status first
                     println("🔍 Checking parent page status...")
                     val parentPage = client.pages.retrieve(parentPageId)
-                    println("   Parent page archived: ${parentPage.archived}")
+                    println("   Parent page archived: ${parentPage.inTrash}")
 
-                    if (parentPage.archived) {
+                    if (parentPage.inTrash) {
                         println("⚠️  Parent page is archived - tests may fail")
                         println("   You may need to unarchive the parent page in Notion")
                     }
@@ -160,7 +160,7 @@ class DatabasePaginationIntegrationTest :
                     // Cleanup - just delete the database, which will clean up all pages
                     if (shouldCleanupAfterTest()) {
                         println("\n🧹 Cleaning up test database...")
-                        client.databases.archive(database.id)
+                        client.databases.trash(database.id)
                         println("✅ Database archived (all pages cleaned up automatically)")
                     } else {
                         println("\n🔧 Test database preserved: ${database.id}")

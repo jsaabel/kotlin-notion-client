@@ -7,8 +7,8 @@ import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
 import it.saabel.kotlinnotionclient.NotionClient
-import it.saabel.kotlinnotionclient.config.NotionConfig
 import it.saabel.kotlinnotionclient.models.base.Color
+import it.saabel.kotlinnotionclient.models.base.Icon
 import it.saabel.kotlinnotionclient.models.base.Parent
 import it.saabel.kotlinnotionclient.models.blocks.Block
 import it.saabel.kotlinnotionclient.models.blocks.pageContent
@@ -48,7 +48,7 @@ class RichTextDslIntegrationTest :
                         CreatePageRequest(
                             parent =
                                 Parent.PageParent(pageId = parentPageId),
-                            icon = RequestBuilders.createEmojiIcon("✨"),
+                            icon = Icon.Emoji(emoji = "✨"),
                             properties =
                                 mapOf(
                                     "title" to
@@ -60,7 +60,7 @@ class RichTextDslIntegrationTest :
 
                     val createdPage = client.pages.create(initialPageRequest)
                     createdPage.objectType shouldBe "page"
-                    createdPage.archived shouldBe false
+                    createdPage.inTrash shouldBe false
 
                     println("✅ Initial page created: ${createdPage.id}")
 
@@ -479,8 +479,8 @@ class RichTextDslIntegrationTest :
                     delay(500)
                     if (shouldCleanupAfterTest()) {
                         println("🧹 Cleaning up - archiving test page...")
-                        val archivedPage = client.pages.archive(createdPage.id)
-                        archivedPage.archived shouldBe true
+                        val archivedPage = client.pages.trash(createdPage.id)
+                        archivedPage.inTrash shouldBe true
                         println("✅ Test page archived successfully")
                     } else {
                         println("🔧 Cleanup skipped (NOTION_CLEANUP_AFTER_TEST=false)")

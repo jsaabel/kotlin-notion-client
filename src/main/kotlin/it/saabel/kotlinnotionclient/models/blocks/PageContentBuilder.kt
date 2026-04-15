@@ -4,6 +4,9 @@ package it.saabel.kotlinnotionclient.models.blocks
 
 import it.saabel.kotlinnotionclient.models.base.Color
 import it.saabel.kotlinnotionclient.models.base.ExternalFile
+import it.saabel.kotlinnotionclient.models.base.Icon
+import it.saabel.kotlinnotionclient.models.base.NativeIconColor
+import it.saabel.kotlinnotionclient.models.base.NativeIconObject
 import it.saabel.kotlinnotionclient.models.base.NotionFile
 import it.saabel.kotlinnotionclient.models.base.RichText
 import it.saabel.kotlinnotionclient.models.files.FileUploadReference
@@ -80,6 +83,12 @@ class PageContentBuilder {
 
                 is BlockRequest.Heading3 -> {
                     if (block.heading3.richText.isEmpty()) {
+                        errors.add("Heading blocks must have content")
+                    }
+                }
+
+                is BlockRequest.Heading4 -> {
+                    if (block.heading4.richText.isEmpty()) {
                         errors.add("Heading blocks must have content")
                     }
                 }
@@ -247,6 +256,12 @@ class PageContentBuilder {
                     // Templates need rich text content
                     if (block.template.richText.isEmpty()) {
                         errors.add("Template blocks must have rich text content")
+                    }
+                }
+
+                is BlockRequest.Tab -> {
+                    if (block.tab.children.isNullOrEmpty()) {
+                        errors.add("Tab blocks must have at least one pane")
                     }
                 }
             }
@@ -470,6 +485,79 @@ class PageContentBuilder {
         block: RichTextBuilder.() -> Unit,
     ): PageContentBuilder =
         heading3(
+            richText = richText(block),
+            color = color,
+            isToggleable = isToggleable,
+            children = children,
+        )
+
+    /**
+     * Adds a heading 4 block.
+     *
+     * @param text The heading text
+     * @param color The text color (default: "default")
+     * @param isToggleable Whether the heading can be collapsed
+     * @param children Optional nested content
+     * @return This builder for chaining
+     */
+    fun heading4(
+        text: String,
+        color: Color = Color.DEFAULT,
+        isToggleable: Boolean = false,
+        children: (PageContentBuilder.() -> Unit)? = null,
+    ): PageContentBuilder =
+        heading4(
+            richText = listOf(RequestBuilders.createSimpleRichText(text)),
+            color = color,
+            isToggleable = isToggleable,
+            children = children,
+        )
+
+    /**
+     * Adds a heading 4 block with rich text.
+     *
+     * @param richText The heading rich text content
+     * @param color The text color (default: "default")
+     * @param isToggleable Whether the heading can be collapsed
+     * @param children Optional nested content
+     * @return This builder for chaining
+     */
+    fun heading4(
+        richText: List<RichText>,
+        color: Color = Color.DEFAULT,
+        isToggleable: Boolean = false,
+        children: (PageContentBuilder.() -> Unit)? = null,
+    ): PageContentBuilder {
+        val childBlocks = children?.let { pageContent(it) }?.takeIf { it.isNotEmpty() }
+        return addBlock(
+            BlockRequest.Heading4(
+                heading4 =
+                    Heading4RequestContent(
+                        richText = richText,
+                        color = color,
+                        isToggleable = isToggleable,
+                        children = childBlocks,
+                    ),
+            ),
+        )
+    }
+
+    /**
+     * Adds a heading 4 block with rich text DSL.
+     *
+     * @param color The text color (default: "default")
+     * @param isToggleable Whether the heading can be collapsed
+     * @param children Optional nested content
+     * @param block The rich text DSL block
+     * @return This builder for chaining
+     */
+    fun heading4(
+        color: Color = Color.DEFAULT,
+        isToggleable: Boolean = false,
+        children: (PageContentBuilder.() -> Unit)? = null,
+        block: RichTextBuilder.() -> Unit,
+    ): PageContentBuilder =
+        heading4(
             richText = richText(block),
             color = color,
             isToggleable = isToggleable,
@@ -909,7 +997,7 @@ class PageContentBuilder {
         children: (PageContentBuilder.() -> Unit)? = null,
     ): PageContentBuilder =
         callout(
-            icon = CalloutIcon(type = "emoji", emoji = emoji),
+            icon = Icon.Emoji(emoji = emoji),
             richText = listOf(RequestBuilders.createSimpleRichText(text)),
             color = color,
             children = children,
@@ -925,7 +1013,7 @@ class PageContentBuilder {
      * @return This builder for chaining
      */
     fun callout(
-        icon: CalloutIcon? = null,
+        icon: Icon? = null,
         richText: List<RichText>,
         color: Color = Color.DEFAULT,
         children: (PageContentBuilder.() -> Unit)? = null,
@@ -960,7 +1048,31 @@ class PageContentBuilder {
         block: RichTextBuilder.() -> Unit,
     ): PageContentBuilder =
         callout(
-            icon = CalloutIcon(type = "emoji", emoji = emoji),
+            icon = Icon.Emoji(emoji = emoji),
+            richText = richText(block),
+            color = color,
+            children = children,
+        )
+
+    /**
+     * Adds a callout block with a typed icon and rich text DSL.
+     *
+     * Useful when the icon is not an emoji string — e.g. a native icon or external URL icon.
+     *
+     * @param icon The callout icon (any [Icon] subtype)
+     * @param color The text color (default: "default")
+     * @param children Optional nested content
+     * @param block The rich text DSL block
+     * @return This builder for chaining
+     */
+    fun callout(
+        icon: Icon,
+        color: Color = Color.DEFAULT,
+        children: (PageContentBuilder.() -> Unit)? = null,
+        block: RichTextBuilder.() -> Unit,
+    ): PageContentBuilder =
+        callout(
+            icon = icon,
             richText = richText(block),
             color = color,
             children = children,
@@ -1441,6 +1553,23 @@ class PageContentBuilder {
             ),
         )
     }
+
+    /**
+     * Adds a tab block with multiple panes.
+     *
+     * Each pane is defined by a call to [TabBuilder.pane] inside the builder block.
+     *
+     * @param builder The tab content builder
+     * @return This builder for chaining
+     */
+    fun tab(builder: TabBuilder.() -> Unit): PageContentBuilder {
+        val panes = TabBuilder().apply(builder).build()
+        return addBlock(
+            BlockRequest.Tab(
+                tab = TabRequestContent(children = panes),
+            ),
+        )
+    }
 }
 
 /**
@@ -1512,6 +1641,108 @@ class TableRowBuilder {
      */
     internal fun build(): List<BlockRequest> = rows.toList()
 }
+
+/**
+ * DSL builder for tab block panes.
+ *
+ * Each call to [pane] adds one tab pane (a paragraph child) to the tab block.
+ * Only paragraph blocks are valid direct children of a tab block, so this builder
+ * only exposes [pane] rather than the full [PageContentBuilder] API.
+ */
+class TabBuilder {
+    private val panes = mutableListOf<BlockRequest.Paragraph>()
+
+    /**
+     * Adds a tab pane with a plain-text label.
+     *
+     * @param text The pane label
+     * @param icon Optional icon for the pane
+     * @param content The pane content builder
+     */
+    fun pane(
+        text: String,
+        icon: Icon? = null,
+        content: PageContentBuilder.() -> Unit,
+    ): TabBuilder =
+        pane(
+            richText = listOf(RequestBuilders.createSimpleRichText(text)),
+            icon = icon,
+            content = content,
+        )
+
+    /**
+     * Adds a tab pane with rich text label.
+     *
+     * @param richText The pane label as rich text
+     * @param icon Optional icon for the pane
+     * @param content The pane content builder
+     */
+    fun pane(
+        richText: List<RichText>,
+        icon: Icon? = null,
+        content: PageContentBuilder.() -> Unit,
+    ): TabBuilder {
+        val childBlocks = pageContent(content).takeIf { it.isNotEmpty() }
+        panes.add(
+            BlockRequest.Paragraph(
+                paragraph =
+                    ParagraphRequestContent(
+                        richText = richText,
+                        icon = icon,
+                        children = childBlocks,
+                    ),
+            ),
+        )
+        return this
+    }
+
+    /**
+     * Adds a tab pane with a rich text DSL label.
+     *
+     * @param icon Optional icon for the pane
+     * @param block The rich text DSL for the pane label
+     * @param content The pane content builder (trailing lambda)
+     */
+    fun pane(
+        icon: Icon? = null,
+        block: RichTextBuilder.() -> Unit,
+        content: PageContentBuilder.() -> Unit,
+    ): TabBuilder =
+        pane(
+            richText = richText(block),
+            icon = icon,
+            content = content,
+        )
+
+    internal fun build(): List<BlockRequest> = panes.toList()
+}
+
+/**
+ * Creates an [Icon.Emoji] for an emoji character.
+ *
+ * Convenience helper for use with [TabBuilder.pane] and callout blocks:
+ * ```kotlin
+ * tab {
+ *     pane("Overview", icon = emoji("📋")) { ... }
+ * }
+ * ```
+ *
+ * @param emojiChar The emoji character
+ * @return An [Icon.Emoji]
+ */
+fun emoji(emojiChar: String): Icon = Icon.Emoji(emoji = emojiChar)
+
+/**
+ * Convenience helper for creating a native Notion icon.
+ *
+ * @param name The icon name (e.g. "pizza")
+ * @param color Optional color. Defaults to [NativeIconColor.GRAY] when omitted.
+ * @return An [Icon.NativeIcon]
+ */
+fun nativeIcon(
+    name: String,
+    color: NativeIconColor? = null,
+): Icon = Icon.NativeIcon(NativeIconObject(name = name, color = color))
 
 /**
  * DSL function for creating page content.

@@ -517,9 +517,11 @@ class RichTextBuilderTest :
             result shouldHaveSize 1
             result[0].type shouldBe "mention"
             val dateMention = result[0].mention as? Mention.Date
-            dateMention?.date?.start shouldContain "2025-10-15T14:30:00"
+            // Builder passes the local datetime string directly (no instant conversion),
+            // so seconds are omitted when zero: "2025-10-15T14:30" not "2025-10-15T14:30:00Z"
+            dateMention?.date?.start shouldBe "2025-10-15T14:30"
             dateMention?.date?.end shouldBe null
-            dateMention?.date?.timeZone shouldBe "UTC" // TimeZone.UTC.id returns "UTC" in kotlinx-datetime 0.7+
+            dateMention?.date?.timeZone shouldBe "UTC"
         }
 
         test("dateMention should create datetime range using LocalDateTime with timezone") {

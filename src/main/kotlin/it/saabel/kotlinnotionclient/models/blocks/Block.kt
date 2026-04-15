@@ -4,6 +4,7 @@ package it.saabel.kotlinnotionclient.models.blocks
 
 import it.saabel.kotlinnotionclient.models.base.Color
 import it.saabel.kotlinnotionclient.models.base.ExternalFile
+import it.saabel.kotlinnotionclient.models.base.Icon
 import it.saabel.kotlinnotionclient.models.base.NotionObject
 import it.saabel.kotlinnotionclient.models.base.Parent
 import it.saabel.kotlinnotionclient.models.base.RichText
@@ -40,8 +41,8 @@ sealed class Block : NotionObject {
         override val createdBy: User? = null,
         @SerialName("last_edited_by")
         override val lastEditedBy: User? = null,
-        @SerialName("archived")
-        override val archived: Boolean,
+        @SerialName("in_trash")
+        override val inTrash: Boolean,
         @SerialName("parent")
         override val parent: Parent,
         @SerialName("has_children")
@@ -69,8 +70,8 @@ sealed class Block : NotionObject {
         override val createdBy: User? = null,
         @SerialName("last_edited_by")
         override val lastEditedBy: User? = null,
-        @SerialName("archived")
-        override val archived: Boolean,
+        @SerialName("in_trash")
+        override val inTrash: Boolean,
         @SerialName("parent")
         override val parent: Parent,
         @SerialName("has_children")
@@ -98,8 +99,8 @@ sealed class Block : NotionObject {
         override val createdBy: User? = null,
         @SerialName("last_edited_by")
         override val lastEditedBy: User? = null,
-        @SerialName("archived")
-        override val archived: Boolean,
+        @SerialName("in_trash")
+        override val inTrash: Boolean,
         @SerialName("parent")
         override val parent: Parent,
         @SerialName("has_children")
@@ -112,6 +113,97 @@ sealed class Block : NotionObject {
 
         @SerialName("type")
         override val type: String = "heading_3"
+    }
+
+    @Serializable
+    @SerialName("heading_4")
+    data class Heading4(
+        @SerialName("id")
+        override val id: String,
+        @SerialName("created_time")
+        override val createdTime: String,
+        @SerialName("last_edited_time")
+        override val lastEditedTime: String,
+        @SerialName("created_by")
+        override val createdBy: User? = null,
+        @SerialName("last_edited_by")
+        override val lastEditedBy: User? = null,
+        @SerialName("in_trash")
+        override val inTrash: Boolean,
+        @SerialName("parent")
+        override val parent: Parent,
+        @SerialName("has_children")
+        override val hasChildren: Boolean,
+        @SerialName("heading_4")
+        val heading4: Heading4Content,
+    ) : Block() {
+        @SerialName("object")
+        override val objectType: String = "block"
+
+        @SerialName("type")
+        override val type: String = "heading_4"
+    }
+
+    // MEETING NOTES BLOCKS
+
+    @Serializable
+    @SerialName("meeting_notes")
+    data class MeetingNotes(
+        @SerialName("id")
+        override val id: String,
+        @SerialName("created_time")
+        override val createdTime: String,
+        @SerialName("last_edited_time")
+        override val lastEditedTime: String,
+        @SerialName("created_by")
+        override val createdBy: User? = null,
+        @SerialName("last_edited_by")
+        override val lastEditedBy: User? = null,
+        @SerialName("in_trash")
+        override val inTrash: Boolean,
+        @SerialName("parent")
+        override val parent: Parent,
+        @SerialName("has_children")
+        override val hasChildren: Boolean,
+        @SerialName("meeting_notes")
+        val meetingNotes: MeetingNotesContent,
+    ) : Block() {
+        @SerialName("object")
+        override val objectType: String = "block"
+
+        @SerialName("type")
+        override val type: String = "meeting_notes"
+    }
+
+    // TAB BLOCKS
+
+    @Serializable
+    @SerialName("tab")
+    data class Tab(
+        @SerialName("id")
+        override val id: String,
+        @SerialName("created_time")
+        override val createdTime: String,
+        @SerialName("last_edited_time")
+        override val lastEditedTime: String,
+        @SerialName("created_by")
+        override val createdBy: User? = null,
+        @SerialName("last_edited_by")
+        override val lastEditedBy: User? = null,
+        @SerialName("in_trash")
+        override val inTrash: Boolean,
+        @SerialName("parent")
+        override val parent: Parent,
+        @SerialName("has_children")
+        override val hasChildren: Boolean,
+        @SerialName("tab")
+        val tab: TabContent,
+    ) : Block() {
+        @SerialName("object")
+        override val objectType: String = "block"
+
+        @SerialName("type")
+        override val type: String = "tab"
     }
 
     // BASIC TEXT BLOCKS
@@ -129,8 +221,8 @@ sealed class Block : NotionObject {
         override val createdBy: User? = null,
         @SerialName("last_edited_by")
         override val lastEditedBy: User? = null,
-        @SerialName("archived")
-        override val archived: Boolean,
+        @SerialName("in_trash")
+        override val inTrash: Boolean,
         @SerialName("parent")
         override val parent: Parent,
         @SerialName("has_children")
@@ -158,8 +250,8 @@ sealed class Block : NotionObject {
         override val createdBy: User? = null,
         @SerialName("last_edited_by")
         override val lastEditedBy: User? = null,
-        @SerialName("archived")
-        override val archived: Boolean,
+        @SerialName("in_trash")
+        override val inTrash: Boolean,
         @SerialName("parent")
         override val parent: Parent,
         @SerialName("has_children")
@@ -189,8 +281,8 @@ sealed class Block : NotionObject {
         override val createdBy: User? = null,
         @SerialName("last_edited_by")
         override val lastEditedBy: User? = null,
-        @SerialName("archived")
-        override val archived: Boolean,
+        @SerialName("in_trash")
+        override val inTrash: Boolean,
         @SerialName("parent")
         override val parent: Parent,
         @SerialName("has_children")
@@ -218,8 +310,8 @@ sealed class Block : NotionObject {
         override val createdBy: User? = null,
         @SerialName("last_edited_by")
         override val lastEditedBy: User? = null,
-        @SerialName("archived")
-        override val archived: Boolean,
+        @SerialName("in_trash")
+        override val inTrash: Boolean,
         @SerialName("parent")
         override val parent: Parent,
         @SerialName("has_children")
@@ -247,8 +339,8 @@ sealed class Block : NotionObject {
         override val createdBy: User? = null,
         @SerialName("last_edited_by")
         override val lastEditedBy: User? = null,
-        @SerialName("archived")
-        override val archived: Boolean,
+        @SerialName("in_trash")
+        override val inTrash: Boolean,
         @SerialName("parent")
         override val parent: Parent,
         @SerialName("has_children")
@@ -278,8 +370,8 @@ sealed class Block : NotionObject {
         override val createdBy: User? = null,
         @SerialName("last_edited_by")
         override val lastEditedBy: User? = null,
-        @SerialName("archived")
-        override val archived: Boolean,
+        @SerialName("in_trash")
+        override val inTrash: Boolean,
         @SerialName("parent")
         override val parent: Parent,
         @SerialName("has_children")
@@ -307,8 +399,8 @@ sealed class Block : NotionObject {
         override val createdBy: User? = null,
         @SerialName("last_edited_by")
         override val lastEditedBy: User? = null,
-        @SerialName("archived")
-        override val archived: Boolean,
+        @SerialName("in_trash")
+        override val inTrash: Boolean,
         @SerialName("parent")
         override val parent: Parent,
         @SerialName("has_children")
@@ -336,8 +428,8 @@ sealed class Block : NotionObject {
         override val createdBy: User? = null,
         @SerialName("last_edited_by")
         override val lastEditedBy: User? = null,
-        @SerialName("archived")
-        override val archived: Boolean,
+        @SerialName("in_trash")
+        override val inTrash: Boolean,
         @SerialName("parent")
         override val parent: Parent,
         @SerialName("has_children")
@@ -367,8 +459,8 @@ sealed class Block : NotionObject {
         override val createdBy: User? = null,
         @SerialName("last_edited_by")
         override val lastEditedBy: User? = null,
-        @SerialName("archived")
-        override val archived: Boolean,
+        @SerialName("in_trash")
+        override val inTrash: Boolean,
         @SerialName("parent")
         override val parent: Parent,
         @SerialName("has_children")
@@ -396,8 +488,8 @@ sealed class Block : NotionObject {
         override val createdBy: User? = null,
         @SerialName("last_edited_by")
         override val lastEditedBy: User? = null,
-        @SerialName("archived")
-        override val archived: Boolean,
+        @SerialName("in_trash")
+        override val inTrash: Boolean,
         @SerialName("parent")
         override val parent: Parent,
         @SerialName("has_children")
@@ -425,8 +517,8 @@ sealed class Block : NotionObject {
         override val createdBy: User? = null,
         @SerialName("last_edited_by")
         override val lastEditedBy: User? = null,
-        @SerialName("archived")
-        override val archived: Boolean,
+        @SerialName("in_trash")
+        override val inTrash: Boolean,
         @SerialName("parent")
         override val parent: Parent,
         @SerialName("has_children")
@@ -454,8 +546,8 @@ sealed class Block : NotionObject {
         override val createdBy: User? = null,
         @SerialName("last_edited_by")
         override val lastEditedBy: User? = null,
-        @SerialName("archived")
-        override val archived: Boolean,
+        @SerialName("in_trash")
+        override val inTrash: Boolean,
         @SerialName("parent")
         override val parent: Parent,
         @SerialName("has_children")
@@ -483,8 +575,8 @@ sealed class Block : NotionObject {
         override val createdBy: User? = null,
         @SerialName("last_edited_by")
         override val lastEditedBy: User? = null,
-        @SerialName("archived")
-        override val archived: Boolean,
+        @SerialName("in_trash")
+        override val inTrash: Boolean,
         @SerialName("parent")
         override val parent: Parent,
         @SerialName("has_children")
@@ -514,8 +606,8 @@ sealed class Block : NotionObject {
         override val createdBy: User? = null,
         @SerialName("last_edited_by")
         override val lastEditedBy: User? = null,
-        @SerialName("archived")
-        override val archived: Boolean,
+        @SerialName("in_trash")
+        override val inTrash: Boolean,
         @SerialName("parent")
         override val parent: Parent,
         @SerialName("has_children")
@@ -545,8 +637,8 @@ sealed class Block : NotionObject {
         override val createdBy: User? = null,
         @SerialName("last_edited_by")
         override val lastEditedBy: User? = null,
-        @SerialName("archived")
-        override val archived: Boolean,
+        @SerialName("in_trash")
+        override val inTrash: Boolean,
         @SerialName("parent")
         override val parent: Parent,
         @SerialName("has_children")
@@ -574,8 +666,8 @@ sealed class Block : NotionObject {
         override val createdBy: User? = null,
         @SerialName("last_edited_by")
         override val lastEditedBy: User? = null,
-        @SerialName("archived")
-        override val archived: Boolean,
+        @SerialName("in_trash")
+        override val inTrash: Boolean,
         @SerialName("parent")
         override val parent: Parent,
         @SerialName("has_children")
@@ -605,8 +697,8 @@ sealed class Block : NotionObject {
         override val createdBy: User? = null,
         @SerialName("last_edited_by")
         override val lastEditedBy: User? = null,
-        @SerialName("archived")
-        override val archived: Boolean,
+        @SerialName("in_trash")
+        override val inTrash: Boolean,
         @SerialName("parent")
         override val parent: Parent,
         @SerialName("has_children")
@@ -634,8 +726,8 @@ sealed class Block : NotionObject {
         override val createdBy: User? = null,
         @SerialName("last_edited_by")
         override val lastEditedBy: User? = null,
-        @SerialName("archived")
-        override val archived: Boolean,
+        @SerialName("in_trash")
+        override val inTrash: Boolean,
         @SerialName("parent")
         override val parent: Parent,
         @SerialName("has_children")
@@ -663,8 +755,8 @@ sealed class Block : NotionObject {
         override val createdBy: User? = null,
         @SerialName("last_edited_by")
         override val lastEditedBy: User? = null,
-        @SerialName("archived")
-        override val archived: Boolean,
+        @SerialName("in_trash")
+        override val inTrash: Boolean,
         @SerialName("parent")
         override val parent: Parent,
         @SerialName("has_children")
@@ -694,8 +786,8 @@ sealed class Block : NotionObject {
         override val createdBy: User? = null,
         @SerialName("last_edited_by")
         override val lastEditedBy: User? = null,
-        @SerialName("archived")
-        override val archived: Boolean,
+        @SerialName("in_trash")
+        override val inTrash: Boolean,
         @SerialName("parent")
         override val parent: Parent,
         @SerialName("has_children")
@@ -723,8 +815,8 @@ sealed class Block : NotionObject {
         override val createdBy: User? = null,
         @SerialName("last_edited_by")
         override val lastEditedBy: User? = null,
-        @SerialName("archived")
-        override val archived: Boolean,
+        @SerialName("in_trash")
+        override val inTrash: Boolean,
         @SerialName("parent")
         override val parent: Parent,
         @SerialName("has_children")
@@ -754,8 +846,8 @@ sealed class Block : NotionObject {
         override val createdBy: User? = null,
         @SerialName("last_edited_by")
         override val lastEditedBy: User? = null,
-        @SerialName("archived")
-        override val archived: Boolean,
+        @SerialName("in_trash")
+        override val inTrash: Boolean,
         @SerialName("parent")
         override val parent: Parent,
         @SerialName("has_children")
@@ -783,8 +875,8 @@ sealed class Block : NotionObject {
         override val createdBy: User? = null,
         @SerialName("last_edited_by")
         override val lastEditedBy: User? = null,
-        @SerialName("archived")
-        override val archived: Boolean,
+        @SerialName("in_trash")
+        override val inTrash: Boolean,
         @SerialName("parent")
         override val parent: Parent,
         @SerialName("has_children")
@@ -814,8 +906,8 @@ sealed class Block : NotionObject {
         override val createdBy: User? = null,
         @SerialName("last_edited_by")
         override val lastEditedBy: User? = null,
-        @SerialName("archived")
-        override val archived: Boolean,
+        @SerialName("in_trash")
+        override val inTrash: Boolean,
         @SerialName("parent")
         override val parent: Parent,
         @SerialName("has_children")
@@ -843,8 +935,8 @@ sealed class Block : NotionObject {
         override val createdBy: User? = null,
         @SerialName("last_edited_by")
         override val lastEditedBy: User? = null,
-        @SerialName("archived")
-        override val archived: Boolean,
+        @SerialName("in_trash")
+        override val inTrash: Boolean,
         @SerialName("parent")
         override val parent: Parent,
         @SerialName("has_children")
@@ -874,8 +966,8 @@ sealed class Block : NotionObject {
         override val createdBy: User? = null,
         @SerialName("last_edited_by")
         override val lastEditedBy: User? = null,
-        @SerialName("archived")
-        override val archived: Boolean,
+        @SerialName("in_trash")
+        override val inTrash: Boolean,
         @SerialName("parent")
         override val parent: Parent,
         @SerialName("has_children")
@@ -905,8 +997,8 @@ sealed class Block : NotionObject {
         override val createdBy: User? = null,
         @SerialName("last_edited_by")
         override val lastEditedBy: User? = null,
-        @SerialName("archived")
-        override val archived: Boolean,
+        @SerialName("in_trash")
+        override val inTrash: Boolean,
         @SerialName("parent")
         override val parent: Parent,
         @SerialName("has_children")
@@ -934,8 +1026,8 @@ sealed class Block : NotionObject {
         override val createdBy: User? = null,
         @SerialName("last_edited_by")
         override val lastEditedBy: User? = null,
-        @SerialName("archived")
-        override val archived: Boolean,
+        @SerialName("in_trash")
+        override val inTrash: Boolean,
         @SerialName("parent")
         override val parent: Parent,
         @SerialName("has_children")
@@ -993,6 +1085,83 @@ data class Heading3Content(
 )
 
 /**
+ * Represents the content of a heading_4 block.
+ */
+@Serializable
+data class Heading4Content(
+    @SerialName("rich_text")
+    val richText: List<RichText>,
+    @SerialName("color")
+    val color: Color = Color.DEFAULT,
+    @SerialName("is_toggleable")
+    val isToggleable: Boolean = false,
+)
+
+/**
+ * Represents the content of a tab block.
+ *
+ * The tab object itself is empty — tab metadata (label, icon, content)
+ * lives in the paragraph children of the tab block.
+ */
+@Serializable
+class TabContent
+
+/**
+ * Represents the child block IDs nested inside a meeting_notes block.
+ */
+@Serializable
+data class MeetingNotesChildren(
+    @SerialName("summary_block_id")
+    val summaryBlockId: String? = null,
+    @SerialName("notes_block_id")
+    val notesBlockId: String? = null,
+    @SerialName("transcript_block_id")
+    val transcriptBlockId: String? = null,
+)
+
+/**
+ * Represents calendar event metadata associated with a meeting_notes block.
+ */
+@Serializable
+data class MeetingNotesCalendarEvent(
+    @SerialName("start_time")
+    val startTime: String,
+    @SerialName("end_time")
+    val endTime: String,
+    @SerialName("attendees")
+    val attendees: List<String>? = null,
+)
+
+/**
+ * Represents recording metadata associated with a meeting_notes block.
+ */
+@Serializable
+data class MeetingNotesRecording(
+    @SerialName("start_time")
+    val startTime: String,
+    @SerialName("end_time")
+    val endTime: String,
+)
+
+/**
+ * Represents the content of a meeting_notes block.
+ * All fields are optional — only present when data is available.
+ */
+@Serializable
+data class MeetingNotesContent(
+    @SerialName("title")
+    val title: List<RichText>? = null,
+    @SerialName("status")
+    val status: String? = null,
+    @SerialName("children")
+    val children: MeetingNotesChildren? = null,
+    @SerialName("calendar_event")
+    val calendarEvent: MeetingNotesCalendarEvent? = null,
+    @SerialName("recording")
+    val recording: MeetingNotesRecording? = null,
+)
+
+/**
  * Represents the content of a paragraph block.
  */
 @Serializable
@@ -1001,6 +1170,8 @@ data class ParagraphContent(
     val richText: List<RichText>,
     @SerialName("color")
     val color: Color = Color.DEFAULT,
+    @SerialName("icon")
+    val icon: Icon? = null,
 )
 
 /**
@@ -1059,7 +1230,7 @@ data class CalloutContent(
     @SerialName("color")
     val color: Color = Color.DEFAULT,
     @SerialName("icon")
-    val icon: CalloutIcon? = null,
+    val icon: Icon? = null,
 )
 
 /**
@@ -1306,21 +1477,6 @@ data class TemplateContent(
 )
 
 // SUPPORT CLASSES (alphabetically ordered)
-
-/**
- * Represents an icon in a callout block.
- */
-@Serializable
-data class CalloutIcon(
-    @SerialName("type")
-    val type: String, // "emoji" or "external" or "file"
-    @SerialName("emoji")
-    val emoji: String? = null,
-    @SerialName("external")
-    val external: ExternalFile? = null,
-    @SerialName("file")
-    val file: FileReference? = null,
-)
 
 /**
  * Represents a file reference in Notion.

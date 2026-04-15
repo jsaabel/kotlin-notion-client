@@ -3,6 +3,7 @@
 package it.saabel.kotlinnotionclient.models.datasources
 
 import it.saabel.kotlinnotionclient.models.base.EmptyObject
+import it.saabel.kotlinnotionclient.models.datasources.RelativeDateValue
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.TimeZone
@@ -438,6 +439,23 @@ class DateFilterBuilder(
     /** Filter for instants on or after the given Instant. */
     fun onOrAfter(instant: Instant): DataSourceFilter = onOrAfter(instant.toString())
 
+    // Relative date overloads
+
+    /** Filter for dates equal to the given relative date value (e.g. [RelativeDateValue.TODAY]). */
+    fun equals(value: RelativeDateValue): DataSourceFilter = equals(value.apiValue)
+
+    /** Filter for dates before the given relative date value (e.g. [RelativeDateValue.YESTERDAY]). */
+    fun before(value: RelativeDateValue): DataSourceFilter = before(value.apiValue)
+
+    /** Filter for dates after the given relative date value (e.g. [RelativeDateValue.TOMORROW]). */
+    fun after(value: RelativeDateValue): DataSourceFilter = after(value.apiValue)
+
+    /** Filter for dates on or before the given relative date value. */
+    fun onOrBefore(value: RelativeDateValue): DataSourceFilter = onOrBefore(value.apiValue)
+
+    /** Filter for dates on or after the given relative date value. */
+    fun onOrAfter(value: RelativeDateValue): DataSourceFilter = onOrAfter(value.apiValue)
+
     // Condition-based filters (no date parameter needed)
 
     fun isEmpty(): DataSourceFilter = createFilter(DateCondition(isEmpty = true))
@@ -510,7 +528,13 @@ class PeopleFilterBuilder(
 ) {
     fun contains(userId: String): DataSourceFilter = createFilter(PeopleCondition(contains = userId))
 
+    /** Filter for entries where the people property contains the current integration's user ("me"). */
+    fun containsMe(): DataSourceFilter = createFilter(PeopleCondition(contains = "me"))
+
     fun doesNotContain(userId: String): DataSourceFilter = createFilter(PeopleCondition(doesNotContain = userId))
+
+    /** Filter for entries where the people property does not contain the current integration's user ("me"). */
+    fun doesNotContainMe(): DataSourceFilter = createFilter(PeopleCondition(doesNotContain = "me"))
 
     fun isEmpty(): DataSourceFilter = createFilter(PeopleCondition(isEmpty = true))
 
@@ -667,6 +691,23 @@ class TimestampFilterBuilder(
 
     /** Filter for timestamps on or after the given Instant. */
     fun onOrAfter(instant: Instant): DataSourceFilter = onOrAfter(instant.toString())
+
+    // Relative date overloads
+
+    /** Filter for timestamps equal to the given relative date value (e.g. [RelativeDateValue.TODAY]). */
+    fun equals(value: RelativeDateValue): DataSourceFilter = equals(value.apiValue)
+
+    /** Filter for timestamps before the given relative date value (e.g. [RelativeDateValue.YESTERDAY]). */
+    fun before(value: RelativeDateValue): DataSourceFilter = before(value.apiValue)
+
+    /** Filter for timestamps after the given relative date value (e.g. [RelativeDateValue.TOMORROW]). */
+    fun after(value: RelativeDateValue): DataSourceFilter = after(value.apiValue)
+
+    /** Filter for timestamps on or before the given relative date value. */
+    fun onOrBefore(value: RelativeDateValue): DataSourceFilter = onOrBefore(value.apiValue)
+
+    /** Filter for timestamps on or after the given relative date value. */
+    fun onOrAfter(value: RelativeDateValue): DataSourceFilter = onOrAfter(value.apiValue)
 
     // Condition-based filters (no date parameter needed)
 

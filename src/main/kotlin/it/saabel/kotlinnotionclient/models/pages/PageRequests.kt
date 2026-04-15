@@ -2,6 +2,7 @@
 
 package it.saabel.kotlinnotionclient.models.pages
 
+import it.saabel.kotlinnotionclient.models.base.Icon
 import it.saabel.kotlinnotionclient.models.base.Parent
 import it.saabel.kotlinnotionclient.models.base.RichText
 import it.saabel.kotlinnotionclient.models.base.SelectOptionColor
@@ -26,11 +27,13 @@ data class CreatePageRequest(
     @SerialName("properties")
     val properties: Map<String, PagePropertyValue>,
     @SerialName("icon")
-    val icon: PageIcon? = null,
+    val icon: Icon? = null,
     @SerialName("cover")
     val cover: PageCover? = null,
     @SerialName("children")
     val children: List<BlockRequest>? = null,
+    @SerialName("markdown")
+    val markdown: String? = null,
     @SerialName("template")
     val template: PageTemplate? = null,
     @SerialName("position")
@@ -43,9 +46,9 @@ data class CreatePageRequest(
  * Notion doesn't support true deletion - objects are archived instead.
  */
 @Serializable
-data class ArchivePageRequest(
-    @SerialName("archived")
-    val archived: Boolean = true,
+data class TrashPageRequest(
+    @SerialName("in_trash")
+    val inTrash: Boolean = true,
 )
 
 /**
@@ -59,11 +62,11 @@ data class UpdatePageRequest(
     @SerialName("properties")
     val properties: Map<String, PagePropertyValue>? = null,
     @SerialName("icon")
-    val icon: PageIcon? = null,
+    val icon: Icon? = null,
     @SerialName("cover")
     val cover: PageCover? = null,
-    @SerialName("archived")
-    val archived: Boolean? = null,
+    @SerialName("in_trash")
+    val inTrash: Boolean? = null,
     @SerialName("is_locked")
     val isLocked: Boolean? = null,
     @SerialName("template")
@@ -353,7 +356,34 @@ sealed class PagePropertyValue {
         @SerialName("relation")
         val relation: List<PageReference>,
     ) : PagePropertyValue()
+
+    /**
+     * Verification property value — only writable on pages in wiki databases.
+     *
+     * Use [VerificationRequest.state] = "verified" or "unverified".
+     * The [VerificationData.verifiedBy] field is read-only and is ignored when writing.
+     */
+    @Serializable
+    @SerialName("verification")
+    data class VerificationValue(
+        @SerialName("verification")
+        val verification: VerificationRequest,
+    ) : PagePropertyValue()
 }
+
+/**
+ * Write model for the verification property.
+ *
+ * Only [state] and [date] are writable — [VerificationData.verifiedBy] is set automatically by the API.
+ *
+ * @property state "verified" or "unverified".
+ * @property date Optional date range for the verification period. Only relevant when [state] is "verified".
+ */
+@Serializable
+data class VerificationRequest(
+    @SerialName("state") val state: String,
+    @SerialName("date") val date: DateData? = null,
+)
 
 /**
  * Supporting data classes for page properties.
@@ -375,7 +405,7 @@ data class StatusOption(
     @SerialName("name")
     val name: String,
     @SerialName("color")
-    val color: SelectOptionColor = SelectOptionColor.DEFAULT,
+    val color: SelectOptionColor? = null,
 )
 
 @Serializable

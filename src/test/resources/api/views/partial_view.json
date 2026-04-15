@@ -1,0 +1,9 @@
+{
+  "object": "view",
+  "id": "a3f1b2c4-5678-4def-abcd-1234567890ab",
+  "parent": {
+    "type": "database_id",
+    "database_id": "248104cd-477e-80fd-b757-e945d38000bd"
+  },
+  "type": "table"
+}

@@ -5,17 +5,31 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.ktor.client.HttpClient
+import io.ktor.client.engine.mock.MockEngine
+import io.ktor.client.engine.mock.respond
+import io.ktor.client.engine.mock.respondError
+import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
+import io.ktor.http.ContentType
+import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpMethod
 import io.ktor.http.HttpStatusCode
+import io.ktor.http.content.OutgoingContent
+import io.ktor.http.headersOf
+import io.ktor.serialization.kotlinx.json.json
 import it.saabel.kotlinnotionclient.api.BlocksApi
 import it.saabel.kotlinnotionclient.config.NotionConfig
 import it.saabel.kotlinnotionclient.exceptions.NotionException
 import it.saabel.kotlinnotionclient.models.base.Color
 import it.saabel.kotlinnotionclient.models.blocks.Block
+import it.saabel.kotlinnotionclient.models.blocks.BlockAppendPosition
+import it.saabel.kotlinnotionclient.models.blocks.BlockReference
 import it.saabel.kotlinnotionclient.models.blocks.BlockRequest
 import it.saabel.kotlinnotionclient.models.blocks.Heading2RequestContent
 import it.saabel.kotlinnotionclient.models.blocks.ParagraphRequestContent
 import it.saabel.kotlinnotionclient.models.requests.RequestBuilders
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import unit.util.TestFixtures
 import unit.util.mockClient
 
@@ -172,6 +186,123 @@ class BlocksApiTest :
 
                 result.results.size shouldBe 2
                 result.results.first().type shouldBe "heading_2"
+            }
+
+            context("with position parameter") {
+                fun makeCaptureClient(
+                    responseBody: String,
+                    capturedBody: StringBuilder,
+                ): Pair<HttpClient, BlocksApi> {
+                    val engine =
+                        MockEngine { request ->
+                            if (request.method == HttpMethod.Patch && request.url.toString().contains("/children")) {
+                                try {
+                                    val bytes = (request.body as? OutgoingContent.ByteArrayContent)?.bytes() ?: ByteArray(0)
+                                    capturedBody.append(bytes.decodeToString())
+                                } catch (_: Exception) {
+                                }
+                                respond(
+                                    content = responseBody,
+                                    status = HttpStatusCode.OK,
+                                    headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString()),
+                                )
+                            } else {
+                                respondError(HttpStatusCode.NotFound)
+                            }
+                        }
+                    val client =
+                        HttpClient(engine) {
+                            install(ContentNegotiation) { json(Json { ignoreUnknownKeys = true }) }
+                        }
+                    return client to BlocksApi(client, config)
+                }
+
+                val singleBlock =
+                    listOf(
+                        BlockRequest.Paragraph(
+                            paragraph = ParagraphRequestContent(richText = listOf(RequestBuilders.createSimpleRichText("test"))),
+                        ),
+                    )
+
+                test("should include position=start in request body") {
+                    val responseBody = TestFixtures.Blocks.appendChildrenResponse().toString()
+                    val capturedBody = StringBuilder()
+                    val (client, api) = makeCaptureClient(responseBody, capturedBody)
+
+                    try {
+                        api.appendChildren("parent-id", singleBlock, position = BlockAppendPosition.Start)
+                    } finally {
+                        client.close()
+                    }
+
+                    val body = Json.parseToJsonElement(capturedBody.toString()).jsonObject
+                    body["position"]
+                        ?.jsonObject
+                        ?.get("type")
+                        ?.jsonPrimitive
+                        ?.content shouldBe "start"
+                }
+
+                test("should include position=end in request body") {
+                    val responseBody = TestFixtures.Blocks.appendChildrenResponse().toString()
+                    val capturedBody = StringBuilder()
+                    val (client, api) = makeCaptureClient(responseBody, capturedBody)
+
+                    try {
+                        api.appendChildren("parent-id", singleBlock, position = BlockAppendPosition.End)
+                    } finally {
+                        client.close()
+                    }
+
+                    val body = Json.parseToJsonElement(capturedBody.toString()).jsonObject
+                    body["position"]
+                        ?.jsonObject
+                        ?.get("type")
+                        ?.jsonPrimitive
+                        ?.content shouldBe "end"
+                }
+
+                test("should include position=after_block with block id in request body") {
+                    val targetBlockId = "b5d8fd79-1234-1234-1234-123456789abc"
+                    val responseBody = TestFixtures.Blocks.appendChildrenResponse().toString()
+                    val capturedBody = StringBuilder()
+                    val (client, api) = makeCaptureClient(responseBody, capturedBody)
+
+                    try {
+                        api.appendChildren(
+                            "parent-id",
+                            singleBlock,
+                            position = BlockAppendPosition.AfterBlock(BlockReference(id = targetBlockId)),
+                        )
+                    } finally {
+                        client.close()
+                    }
+
+                    val body = Json.parseToJsonElement(capturedBody.toString()).jsonObject
+                    val positionObj = body["position"]?.jsonObject
+                    positionObj?.get("type")?.jsonPrimitive?.content shouldBe "after_block"
+                    positionObj
+                        ?.get("after_block")
+                        ?.jsonObject
+                        ?.get("id")
+                        ?.jsonPrimitive
+                        ?.content shouldBe targetBlockId
+                }
+
+                test("should omit position field when position=null") {
+                    val responseBody = TestFixtures.Blocks.appendChildrenResponse().toString()
+                    val capturedBody = StringBuilder()
+                    val (client, api) = makeCaptureClient(responseBody, capturedBody)
+
+                    try {
+                        api.appendChildren("parent-id", singleBlock, position = null)
+                    } finally {
+                        client.close()
+                    }
+
+                    val body = Json.parseToJsonElement(capturedBody.toString()).jsonObject
+                    body.containsKey("position") shouldBe false
+                }
             }
         }
 
@@ -333,7 +464,7 @@ class BlocksApiTest :
                 val deletedBlock = blocksApi.delete(blockId)
 
                 deletedBlock.id shouldBe blockId
-                deletedBlock.archived shouldBe true
+                deletedBlock.inTrash shouldBe true
                 deletedBlock.type shouldBe "paragraph"
             }
 

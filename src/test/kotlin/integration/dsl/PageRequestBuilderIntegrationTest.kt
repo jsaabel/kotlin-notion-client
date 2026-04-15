@@ -11,9 +11,9 @@ import io.kotest.matchers.string.shouldContain
 import io.kotest.matchers.types.shouldBeInstanceOf
 import it.saabel.kotlinnotionclient.NotionClient
 import it.saabel.kotlinnotionclient.config.NotionConfig
+import it.saabel.kotlinnotionclient.models.base.Icon
 import it.saabel.kotlinnotionclient.models.blocks.Block
 import it.saabel.kotlinnotionclient.models.pages.PageCover
-import it.saabel.kotlinnotionclient.models.pages.PageIcon
 import it.saabel.kotlinnotionclient.models.pages.PageProperty
 import it.saabel.kotlinnotionclient.models.pages.createPageRequest
 import kotlinx.coroutines.delay
@@ -81,7 +81,7 @@ class PageRequestBuilderIntegrationTest :
 
                     val createdPage = client.pages.create(pageRequest)
                     createdPage.objectType shouldBe "page"
-                    createdPage.archived shouldBe false
+                    createdPage.inTrash shouldBe false
 
                     println("✅ Page created: ${createdPage.id}")
 
@@ -90,7 +90,7 @@ class PageRequestBuilderIntegrationTest :
 
                     // Verify page properties (normalize UUID format)
                     createdPage.parent.id?.replace("-", "") shouldBe parentPageId.replace("-", "")
-                    (createdPage.icon as? PageIcon.Emoji)?.emoji shouldBe "🚀"
+                    (createdPage.icon as? Icon.Emoji)?.emoji shouldBe "🚀"
                     (createdPage.cover as? PageCover.External)?.external?.url shouldContain "placehold"
 
                     // Verify the title was set correctly
@@ -124,10 +124,10 @@ class PageRequestBuilderIntegrationTest :
                     // Conditionally clean up
                     delay(500)
                     if (shouldCleanupAfterTest()) {
-                        println("🧹 Cleaning up - archiving test page...")
-                        val archivedPage = client.pages.archive(createdPage.id)
-                        archivedPage.archived shouldBe true
-                        println("✅ Test page archived successfully")
+                        println("🧹 Cleaning up - trashing test page...")
+                        val archivedPage = client.pages.trash(createdPage.id)
+                        archivedPage.inTrash shouldBe true
+                        println("✅ Test page trashed successfully")
                     } else {
                         println("🔧 Cleanup skipped (NOTION_CLEANUP_AFTER_TEST=false)")
                         println("   Created page: ${createdPage.id} (\"DSL Integration Test Page\")")

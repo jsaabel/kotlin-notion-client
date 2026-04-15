@@ -16,13 +16,16 @@ import io.ktor.client.plugins.logging.Logging
 import io.ktor.serialization.kotlinx.json.json
 import it.saabel.kotlinnotionclient.api.BlocksApi
 import it.saabel.kotlinnotionclient.api.CommentsApi
+import it.saabel.kotlinnotionclient.api.CustomEmojisApi
 import it.saabel.kotlinnotionclient.api.DataSourcesApi
 import it.saabel.kotlinnotionclient.api.DatabasesApi
 import it.saabel.kotlinnotionclient.api.EnhancedFileUploadApi
 import it.saabel.kotlinnotionclient.api.FileUploadApi
+import it.saabel.kotlinnotionclient.api.MarkdownApi
 import it.saabel.kotlinnotionclient.api.PagesApi
 import it.saabel.kotlinnotionclient.api.SearchApi
 import it.saabel.kotlinnotionclient.api.UsersApi
+import it.saabel.kotlinnotionclient.api.ViewsApi
 import it.saabel.kotlinnotionclient.config.NotionConfig
 import it.saabel.kotlinnotionclient.ratelimit.NotionRateLimit
 import kotlinx.serialization.json.Json
@@ -83,7 +86,10 @@ class NotionClient
         val blocks = BlocksApi(httpClient, config)
         val comments = CommentsApi(httpClient, config)
         val search = SearchApi(httpClient, config)
+        val markdown = MarkdownApi(httpClient, config)
         val fileUploads = FileUploadApi(httpClient, config)
+        val customEmojis = CustomEmojisApi(httpClient, config)
+        val views = ViewsApi(httpClient, config)
 
         /**
          * Enhanced file upload API with advanced features like progress tracking,

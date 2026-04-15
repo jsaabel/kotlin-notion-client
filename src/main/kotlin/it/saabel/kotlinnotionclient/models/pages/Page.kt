@@ -2,6 +2,7 @@
 
 package it.saabel.kotlinnotionclient.models.pages
 
+import it.saabel.kotlinnotionclient.models.base.Icon
 import it.saabel.kotlinnotionclient.models.base.NotionObject
 import it.saabel.kotlinnotionclient.models.base.Parent
 import it.saabel.kotlinnotionclient.models.base.RichText
@@ -27,8 +28,6 @@ data class Page(
     override val createdBy: User? = null,
     @SerialName("last_edited_by")
     override val lastEditedBy: User? = null,
-    @SerialName("archived")
-    override val archived: Boolean,
     @SerialName("parent")
     val parent: Parent,
     @SerialName("properties")
@@ -38,11 +37,11 @@ data class Page(
     @SerialName("public_url")
     val publicUrl: String? = null,
     @SerialName("icon")
-    val icon: PageIcon? = null,
+    val icon: Icon? = null,
     @SerialName("cover")
     val cover: PageCover? = null,
     @SerialName("in_trash")
-    val inTrash: Boolean = false,
+    override val inTrash: Boolean = false,
     @SerialName("is_locked")
     val isLocked: Boolean = false,
 ) : NotionObject {

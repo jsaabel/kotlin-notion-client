@@ -13,6 +13,7 @@ import it.saabel.kotlinnotionclient.config.NotionApiLimits
 import it.saabel.kotlinnotionclient.config.NotionConfig
 import it.saabel.kotlinnotionclient.exceptions.NotionException
 import it.saabel.kotlinnotionclient.models.blocks.Block
+import it.saabel.kotlinnotionclient.models.blocks.BlockAppendPosition
 import it.saabel.kotlinnotionclient.models.blocks.BlockList
 import it.saabel.kotlinnotionclient.models.blocks.BlockRequest
 import it.saabel.kotlinnotionclient.models.blocks.PageContentBuilder
@@ -23,6 +24,7 @@ import it.saabel.kotlinnotionclient.validation.RequestValidator
 import it.saabel.kotlinnotionclient.validation.ValidationConfig
 import it.saabel.kotlinnotionclient.validation.ValidationException
 import kotlinx.coroutines.flow.Flow
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 /**
@@ -188,10 +190,11 @@ class BlocksApi(
      */
     suspend fun appendChildren(
         blockId: String,
+        position: BlockAppendPosition? = null,
         builder: PageContentBuilder.() -> Unit,
     ): BlockList {
         val children = pageContent(builder)
-        return appendChildren(blockId, children)
+        return appendChildren(blockId, children, position)
     }
 
     /**
@@ -212,12 +215,13 @@ class BlocksApi(
     suspend fun appendChildren(
         blockId: String,
         children: List<BlockRequest>,
+        position: BlockAppendPosition? = null,
     ): BlockList {
         validator.validateOrThrow("children", children)
 
         return httpClient.executeWithRateLimit {
             try {
-                val request = AppendBlockChildrenRequest(children = children)
+                val request = AppendBlockChildrenRequest(children = children, position = position)
                 val response: HttpResponse =
                     httpClient.patch("${config.baseUrl}/blocks/$blockId/children") {
                         contentType(ContentType.Application.Json)
@@ -344,7 +348,7 @@ class BlocksApi(
     suspend fun delete(blockId: String): Block =
         httpClient.executeWithRateLimit {
             try {
-                val request = ArchiveBlockRequest(archived = true)
+                val request = TrashBlockRequest(inTrash = true)
                 val response: HttpResponse =
                     httpClient.patch("${config.baseUrl}/blocks/$blockId") {
                         contentType(ContentType.Application.Json)
@@ -427,6 +431,35 @@ class BlocksApi(
                 pageSize = NotionApiLimits.Response.MAX_PAGE_SIZE,
             )
         }
+
+    /**
+     * Retrieves a single page of child blocks without auto-paginating.
+     *
+     * Unlike [retrieveChildren], which transparently fetches all child blocks, this method
+     * makes exactly one API call and returns the raw [BlockList] — including the cursor and
+     * [hasMore] flag so the caller can decide whether and how to continue.
+     *
+     * Use this when you only need the first N blocks (e.g. a preview of page content)
+     * and do not want to load the entire block tree.
+     *
+     * Example:
+     * ```kotlin
+     * val response = notion.blocks.retrieveChildrenFirstPage(pageId, pageSize = 5)
+     * val preview = response.results     // at most 5 blocks
+     * val hasMore = response.hasMore     // true if more blocks exist
+     * val cursor = response.nextCursor   // use for manual follow-up calls if needed
+     * ```
+     *
+     * @param blockId The ID of the parent block or page
+     * @param pageSize Number of blocks to return (1–100; defaults to 100)
+     * @param startCursor Cursor from a previous response to continue from a specific position
+     * @return [BlockList] for the requested page of child blocks
+     */
+    suspend fun retrieveChildrenFirstPage(
+        blockId: String,
+        pageSize: Int = NotionApiLimits.Response.MAX_PAGE_SIZE,
+        startCursor: String? = null,
+    ): BlockList = retrieveChildrenPage(blockId, startCursor, pageSize)
 }
 
 /**
@@ -435,12 +468,14 @@ class BlocksApi(
 @Serializable
 private data class AppendBlockChildrenRequest(
     val children: List<BlockRequest>,
+    val position: BlockAppendPosition? = null,
 )
 
 /**
- * Request body for archiving/deleting a block.
+ * Request body for trashing/deleting a block.
  */
 @Serializable
-private data class ArchiveBlockRequest(
-    val archived: Boolean,
+private data class TrashBlockRequest(
+    @SerialName("in_trash")
+    val inTrash: Boolean,
 )

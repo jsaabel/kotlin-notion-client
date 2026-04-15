@@ -7,7 +7,7 @@ The Comments API allows you to create and retrieve comments on pages and discuss
 ## Available Operations
 
 ```kotlin
-// Create a comment using DSL
+// Create a comment using DSL (richText or markdown)
 suspend fun create(block: CreateCommentRequestBuilder.() -> Unit): Comment
 
 // Create a comment from request object
@@ -87,6 +87,20 @@ val comment = notion.comments.create {
     }
 }
 ```
+
+### Create a Comment with Markdown (v0.4.0+)
+
+Use `markdown()` as an alternative to `richText {}` for creating comments:
+
+```kotlin
+val comment = notion.comments.create {
+    parent.page("page-id")
+    markdown("This comment was written in **Markdown** with _inline formatting_ and `code`.")
+}
+```
+
+> **Note**: `markdown()` and `richText {}` are mutually exclusive — exactly one must be provided.
+> Supported inline formats: bold, italic, strikethrough, inline code, links, inline equations, mentions.
 
 ### Comment with Custom Display Name
 
@@ -276,7 +290,7 @@ comments.forEach { comment ->
 ## Validation and Limits
 
 ### Comment Content
-- Comments must have non-empty rich text content
+- Comments must specify content via exactly one of: `richText {}` or `markdown()`. Providing both or neither raises an `IllegalArgumentException`.
 - Rich text supports all standard formatting (bold, italic, code, links, mentions)
 
 ### Attachments

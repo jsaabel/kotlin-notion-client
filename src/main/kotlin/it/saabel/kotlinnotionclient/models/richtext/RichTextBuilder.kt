@@ -420,11 +420,14 @@ class RichTextBuilder {
         end: LocalDateTime? = null,
         timeZone: TimeZone = TimeZone.UTC,
     ): RichTextBuilder {
-        val startInstant = start.toInstant(timeZone)
-        val endInstant = end?.toInstant(timeZone)
+        // Pass the local datetime string + timezone.id directly.
+        // Do NOT convert to an Instant first — Notion treats the datetime string as
+        // local time and applies the timezone offset to it. Converting to a UTC instant
+        // before sending causes Notion to misinterpret the time (it would treat the UTC
+        // time as local time in the given timezone instead of converting it).
         return dateMention(
-            start = startInstant.toString(),
-            end = endInstant?.toString(),
+            start = start.toString(),
+            end = end?.toString(),
             timeZone = timeZone.id,
         )
     }

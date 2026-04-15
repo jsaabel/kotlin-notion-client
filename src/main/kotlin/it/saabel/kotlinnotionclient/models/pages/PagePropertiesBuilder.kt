@@ -318,6 +318,24 @@ class PagePropertiesBuilder {
     }
 
     /**
+     * Adds a status property value by option name.
+     *
+     * @param name The property name
+     * @param optionName The name of the status option to set (null to clear)
+     */
+    fun status(
+        name: String,
+        optionName: String?,
+    ) {
+        properties[name] =
+            if (optionName != null) {
+                PagePropertyValue.StatusValue(status = StatusOption(name = optionName))
+            } else {
+                PagePropertyValue.StatusValue(status = null)
+            }
+    }
+
+    /**
      * Adds a date property value from a date string.
      *
      * @param name The property name
@@ -675,6 +693,34 @@ class PagePropertiesBuilder {
         pageReferences: List<PageReference>,
     ) {
         properties[name] = PagePropertyValue.RelationValue(relation = pageReferences)
+    }
+
+    /**
+     * Marks a page as verified in a wiki database.
+     *
+     * Optionally provide an ISO 8601 [start] date/datetime for when the verification begins,
+     * and an [end] date/datetime after which it expires.
+     *
+     * @param name The property name (typically "Verification")
+     * @param start Optional ISO 8601 start date/datetime string for the verification period
+     * @param end Optional ISO 8601 end date/datetime string after which the verification expires
+     */
+    fun verify(
+        name: String,
+        start: String? = null,
+        end: String? = null,
+    ) {
+        val date = if (start != null) DateData(start = start, end = end) else null
+        properties[name] = PagePropertyValue.VerificationValue(VerificationRequest(state = "verified", date = date))
+    }
+
+    /**
+     * Marks a page as unverified in a wiki database.
+     *
+     * @param name The property name (typically "Verification")
+     */
+    fun unverify(name: String) {
+        properties[name] = PagePropertyValue.VerificationValue(VerificationRequest(state = "unverified"))
     }
 
     /**

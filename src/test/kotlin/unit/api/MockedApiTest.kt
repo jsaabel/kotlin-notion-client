@@ -49,7 +49,7 @@ class MockedApiTest :
             page.id shouldBe "59833787-2cf9-4fdf-8782-e53db20768a5"
             page.objectType shouldBe "page"
             page.url shouldBe "https://www.notion.so/Tuscan-kale-598337872cf94fdf8782e53db20768a5"
-            page.archived shouldBe false
+            page.inTrash shouldBe false
             page.createdBy?.id shouldBe "ee5f0f84-409a-440f-983a-a5315961c6e4"
             page.lastEditedBy?.id shouldBe "0c3e9826-b8f7-4f73-927d-2caaf86f1103"
             page.icon shouldNotBe null
@@ -81,7 +81,7 @@ class MockedApiTest :
             // Test using official 2025-09-03 sample data
             database.id shouldBe "248104cd-477e-80fd-b757-e945d38000bd"
             database.objectType shouldBe "database"
-            database.archived shouldBe false
+            database.inTrash shouldBe false
             database.isInline shouldBe false
             database.title.first().plainText shouldBe "My Task Tracker"
 
@@ -217,7 +217,7 @@ class MockedApiTest :
             block.objectType shouldBe "block"
             block.type shouldBe "heading_2"
             block.hasChildren shouldBe false
-            block.archived shouldBe false
+            block.inTrash shouldBe false
 
             // Test specific heading_2 content
             if (block is Block.Heading2) {

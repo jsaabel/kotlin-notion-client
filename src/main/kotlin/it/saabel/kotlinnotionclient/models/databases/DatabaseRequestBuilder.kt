@@ -3,12 +3,14 @@
 package it.saabel.kotlinnotionclient.models.databases
 
 import it.saabel.kotlinnotionclient.models.base.ExternalFile
+import it.saabel.kotlinnotionclient.models.base.Icon
+import it.saabel.kotlinnotionclient.models.base.NativeIconColor
+import it.saabel.kotlinnotionclient.models.base.NativeIconObject
 import it.saabel.kotlinnotionclient.models.base.NotionFile
 import it.saabel.kotlinnotionclient.models.base.Parent
 import it.saabel.kotlinnotionclient.models.base.RichText
 import it.saabel.kotlinnotionclient.models.base.SelectOptionColor
 import it.saabel.kotlinnotionclient.models.pages.PageCover
-import it.saabel.kotlinnotionclient.models.pages.PageIcon
 
 /**
  * Builder class for creating database requests with a fluent DSL.
@@ -50,7 +52,7 @@ class DatabaseRequestBuilder {
     private var titleValue: List<RichText>? = null
     private var descriptionValue: List<RichText>? = null
     private var properties = mutableMapOf<String, CreateDatabaseProperty>()
-    private var iconValue: PageIcon? = null
+    private var iconValue: Icon? = null
     private var coverValue: PageCover? = null
 
     /**
@@ -163,7 +165,7 @@ class DatabaseRequestBuilder {
          * @param emoji The emoji character(s)
          */
         fun emoji(emoji: String) {
-            this@DatabaseRequestBuilder.iconValue = PageIcon.Emoji(emoji = emoji)
+            this@DatabaseRequestBuilder.iconValue = Icon.Emoji(emoji = emoji)
         }
 
         /**
@@ -172,7 +174,7 @@ class DatabaseRequestBuilder {
          * @param url The external image URL
          */
         fun external(url: String) {
-            this@DatabaseRequestBuilder.iconValue = PageIcon.External(external = ExternalFile(url = url))
+            this@DatabaseRequestBuilder.iconValue = Icon.External(external = ExternalFile(url = url))
         }
 
         /**
@@ -186,7 +188,20 @@ class DatabaseRequestBuilder {
             expiryTime: String? = null,
         ) {
             this@DatabaseRequestBuilder.iconValue =
-                PageIcon.File(file = NotionFile(url = url, expiryTime = expiryTime))
+                Icon.File(file = NotionFile(url = url, expiryTime = expiryTime))
+        }
+
+        /**
+         * Sets a native Notion icon.
+         *
+         * @param name The icon name (e.g. "pizza")
+         * @param color Optional color. Defaults to [NativeIconColor.GRAY] when omitted.
+         */
+        fun native(
+            name: String,
+            color: NativeIconColor? = null,
+        ) {
+            this@DatabaseRequestBuilder.iconValue = Icon.NativeIcon(NativeIconObject(name = name, color = color))
         }
     }
 
@@ -234,18 +249,26 @@ class DatabasePropertiesBuilder {
      * Adds a title property to the database.
      *
      * @param name The property name
+     * @param description Optional description (max 280 characters)
      */
-    fun title(name: String) {
-        properties[name] = CreateDatabaseProperty.Title()
+    fun title(
+        name: String,
+        description: String? = null,
+    ) {
+        properties[name] = CreateDatabaseProperty.Title(description = description)
     }
 
     /**
      * Adds a rich text property to the database.
      *
      * @param name The property name
+     * @param description Optional description (max 280 characters)
      */
-    fun richText(name: String) {
-        properties[name] = CreateDatabaseProperty.RichText()
+    fun richText(
+        name: String,
+        description: String? = null,
+    ) {
+        properties[name] = CreateDatabaseProperty.RichText(description = description)
     }
 
     /**
@@ -253,14 +276,17 @@ class DatabasePropertiesBuilder {
      *
      * @param name The property name
      * @param format The number format ("number", "number_with_commas", "percent", "dollar", "canadian_dollar", "euro", "pound", "yen", "ruble", "rupee", "won", "yuan", "real", "lira", "rupiah", "franc", "hong_kong_dollar", "new_zealand_dollar", "krona", "norwegian_krone", "mexican_peso", "rand", "new_taiwan_dollar", "danish_krone", "zloty", "baht", "forint", "koruna", "shekel", "chilean_peso", "philippine_peso", "dirham", "colombian_peso", "riyal", "ringgit", "leu", "argentine_peso", "uruguayan_peso")
+     * @param description Optional description (max 280 characters)
      */
     fun number(
         name: String,
         format: String = "number",
+        description: String? = null,
     ) {
         properties[name] =
             CreateDatabaseProperty.Number(
                 number = NumberConfiguration(format = format),
+                description = description,
             )
     }
 
@@ -268,10 +294,12 @@ class DatabasePropertiesBuilder {
      * Adds a select property to the database.
      *
      * @param name The property name
+     * @param description Optional description (max 280 characters)
      * @param block Configuration block for select options
      */
     fun select(
         name: String,
+        description: String? = null,
         block: SelectBuilder.() -> Unit = {},
     ) {
         val builder = SelectBuilder()
@@ -279,6 +307,7 @@ class DatabasePropertiesBuilder {
         properties[name] =
             CreateDatabaseProperty.Select(
                 select = SelectConfiguration(options = builder.build()),
+                description = description,
             )
     }
 
@@ -286,10 +315,12 @@ class DatabasePropertiesBuilder {
      * Adds a multi-select property to the database.
      *
      * @param name The property name
+     * @param description Optional description (max 280 characters)
      * @param block Configuration block for multi-select options
      */
     fun multiSelect(
         name: String,
+        description: String? = null,
         block: SelectBuilder.() -> Unit = {},
     ) {
         val builder = SelectBuilder()
@@ -297,61 +328,112 @@ class DatabasePropertiesBuilder {
         properties[name] =
             CreateDatabaseProperty.MultiSelect(
                 multiSelect = SelectConfiguration(options = builder.build()),
+                description = description,
             )
+    }
+
+    /**
+     * Adds a status property to the database.
+     *
+     * When no options are specified, Notion creates the default options ("Not started",
+     * "In progress", "Done") and groups ("To-do", "In progress", "Complete"). Custom initial
+     * options can be provided via [StatusBuilder.option].
+     *
+     * Groups are auto-created by Notion and cannot be configured via the API. Only options
+     * (name + color) can be specified at creation time.
+     *
+     * **Note**: Status properties cannot be updated via the API (unlike select/multi-select).
+     *
+     * @param name The property name
+     * @param description Optional description (max 280 characters)
+     * @param block Configuration block for status options (optional)
+     */
+    fun status(
+        name: String,
+        description: String? = null,
+        block: StatusBuilder.() -> Unit = {},
+    ) {
+        val builder = StatusBuilder()
+        builder.block()
+        properties[name] = CreateDatabaseProperty.Status(status = builder.build(), description = description)
     }
 
     /**
      * Adds a date property to the database.
      *
      * @param name The property name
+     * @param description Optional description (max 280 characters)
      */
-    fun date(name: String) {
-        properties[name] = CreateDatabaseProperty.Date()
+    fun date(
+        name: String,
+        description: String? = null,
+    ) {
+        properties[name] = CreateDatabaseProperty.Date(description = description)
     }
 
     /**
      * Adds a checkbox property to the database.
      *
      * @param name The property name
+     * @param description Optional description (max 280 characters)
      */
-    fun checkbox(name: String) {
-        properties[name] = CreateDatabaseProperty.Checkbox()
+    fun checkbox(
+        name: String,
+        description: String? = null,
+    ) {
+        properties[name] = CreateDatabaseProperty.Checkbox(description = description)
     }
 
     /**
      * Adds a URL property to the database.
      *
      * @param name The property name
+     * @param description Optional description (max 280 characters)
      */
-    fun url(name: String) {
-        properties[name] = CreateDatabaseProperty.Url()
+    fun url(
+        name: String,
+        description: String? = null,
+    ) {
+        properties[name] = CreateDatabaseProperty.Url(description = description)
     }
 
     /**
      * Adds an email property to the database.
      *
      * @param name The property name
+     * @param description Optional description (max 280 characters)
      */
-    fun email(name: String) {
-        properties[name] = CreateDatabaseProperty.Email()
+    fun email(
+        name: String,
+        description: String? = null,
+    ) {
+        properties[name] = CreateDatabaseProperty.Email(description = description)
     }
 
     /**
      * Adds a phone number property to the database.
      *
      * @param name The property name
+     * @param description Optional description (max 280 characters)
      */
-    fun phoneNumber(name: String) {
-        properties[name] = CreateDatabaseProperty.PhoneNumber()
+    fun phoneNumber(
+        name: String,
+        description: String? = null,
+    ) {
+        properties[name] = CreateDatabaseProperty.PhoneNumber(description = description)
     }
 
     /**
      * Adds a people property to the database.
      *
      * @param name The property name
+     * @param description Optional description (max 280 characters)
      */
-    fun people(name: String) {
-        properties[name] = CreateDatabaseProperty.People()
+    fun people(
+        name: String,
+        description: String? = null,
+    ) {
+        properties[name] = CreateDatabaseProperty.People(description = description)
     }
 
     /**
@@ -360,12 +442,14 @@ class DatabasePropertiesBuilder {
      * @param name The property name
      * @param targetDatabaseId The ID of the target database
      * @param targetDataSourceId The ID of the target data source
+     * @param description Optional description (max 280 characters)
      * @param block Configuration block for relation options
      */
     fun relation(
         name: String,
         targetDatabaseId: String,
         targetDataSourceId: String,
+        description: String? = null,
         block: RelationBuilder.() -> Unit = {},
     ) {
         val builder = RelationBuilder(targetDatabaseId, targetDataSourceId)
@@ -373,6 +457,7 @@ class DatabasePropertiesBuilder {
         properties[name] =
             CreateDatabaseProperty.Relation(
                 relation = builder.build(),
+                description = description,
             )
     }
 
@@ -396,12 +481,14 @@ class SelectBuilder {
      *
      * @param name The option name
      * @param color The option color ("default", "gray", "brown", "red", "orange", "yellow", "green", "blue", "purple", "pink")
+     * @param description Optional description for the option
      */
     fun option(
         name: String,
         color: SelectOptionColor = SelectOptionColor.DEFAULT,
+        description: String? = null,
     ) {
-        options.add(CreateSelectOption(name = name, color = color))
+        options.add(CreateSelectOption(name = name, color = color, description = description))
     }
 
     /**
@@ -410,6 +497,34 @@ class SelectBuilder {
      * @return The configured options list
      */
     fun build(): List<CreateSelectOption> = options.toList()
+}
+
+/**
+ * Builder class for status property configuration.
+ *
+ * Only options can be specified. Groups are auto-created by Notion and cannot be configured
+ * via the API.
+ */
+@DatabaseRequestDslMarker
+class StatusBuilder {
+    private val options = mutableListOf<CreateSelectOption>()
+
+    /**
+     * Adds an option to the status property.
+     *
+     * @param name The option name
+     * @param color The option color
+     * @param description Optional description for the option
+     */
+    fun option(
+        name: String,
+        color: SelectOptionColor = SelectOptionColor.DEFAULT,
+        description: String? = null,
+    ) {
+        options.add(CreateSelectOption(name = name, color = color, description = description))
+    }
+
+    internal fun build(): StatusConfiguration = StatusConfiguration(options = options.toList())
 }
 
 /**

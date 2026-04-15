@@ -1,0 +1,15 @@
+{
+  "object": "view_query",
+  "id": "q1a2b3c4-5678-4def-abcd-1234567890ab",
+  "view_id": "a3f1b2c4-5678-4def-abcd-1234567890ab",
+  "expires_at": "2026-04-13T10:15:00.000Z",
+  "total_count": 2,
+  "results": [
+    {
+      "object": "page",
+      "id": "p1a2b3c4-5678-4def-abcd-1234567890ab"
+    }
+  ],
+  "next_cursor": null,
+  "has_more": false
+}

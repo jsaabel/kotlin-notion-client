@@ -561,4 +561,38 @@ class DataSourcesApi(
                 ),
             )
         }
+
+    /**
+     * Queries a single page of results without auto-paginating.
+     *
+     * Unlike [query], which transparently fetches all matching pages, this method makes
+     * exactly one API call and returns the raw response — including the cursor and [hasMore]
+     * flag so the caller can decide whether and how to continue.
+     *
+     * Use this when you only want the first N results (e.g. a "top 5" dashboard query)
+     * and do not need all matching records. Specify the desired count via [pageSize] in the
+     * DSL builder; if omitted the Notion API default of 100 applies.
+     *
+     * Example:
+     * ```kotlin
+     * val response = notion.dataSources.queryFirstPage("data-source-id") {
+     *     sort { property("Created").descending() }
+     *     pageSize(5)
+     * }
+     * val top5 = response.results          // at most 5 pages
+     * val hasMore = response.hasMore       // true if more results exist
+     * val cursor = response.nextCursor     // use for manual follow-up calls if needed
+     * ```
+     *
+     * @param dataSourceId The ID of the data source to query
+     * @param builder DSL builder lambda for constructing the query (including optional [pageSize])
+     * @return [DataSourceQueryResponse] for the first page of matching results
+     */
+    suspend fun queryFirstPage(
+        dataSourceId: String,
+        builder: DataSourceQueryBuilder.() -> Unit = {},
+    ): DataSourceQueryResponse {
+        val request = dataSourceQuery(builder)
+        return querySinglePage(dataSourceId, request)
+    }
 }

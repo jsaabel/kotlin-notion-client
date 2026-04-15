@@ -1,0 +1,15 @@
+{
+  "object": "list",
+  "results": [
+    {
+      "object": "page",
+      "id": "p1a2b3c4-5678-4def-abcd-1234567890ab"
+    },
+    {
+      "object": "page",
+      "id": "p2b3c4d5-6789-4efa-bcde-234567890abc"
+    }
+  ],
+  "next_cursor": null,
+  "has_more": false
+}

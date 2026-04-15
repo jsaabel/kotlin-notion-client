@@ -2,13 +2,13 @@
 
 package it.saabel.kotlinnotionclient.models.databases
 
+import it.saabel.kotlinnotionclient.models.base.Icon
 import it.saabel.kotlinnotionclient.models.base.NotionObject
 import it.saabel.kotlinnotionclient.models.base.Parent
 import it.saabel.kotlinnotionclient.models.base.RichText
 import it.saabel.kotlinnotionclient.models.base.SelectOptionColor
 import it.saabel.kotlinnotionclient.models.datasources.DataSourceRef
 import it.saabel.kotlinnotionclient.models.pages.PageCover
-import it.saabel.kotlinnotionclient.models.pages.PageIcon
 import it.saabel.kotlinnotionclient.models.users.User
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -35,14 +35,12 @@ data class Database(
     override val createdBy: User? = null,
     @SerialName("last_edited_by")
     override val lastEditedBy: User? = null,
-    @SerialName("archived")
-    override val archived: Boolean = false,
     @SerialName("title")
     val title: List<RichText>,
     @SerialName("description")
     val description: List<RichText> = emptyList(),
     @SerialName("icon")
-    val icon: PageIcon? = null,
+    val icon: Icon? = null,
     @SerialName("cover")
     val cover: PageCover? = null,
     @SerialName("data_sources")
@@ -58,7 +56,7 @@ data class Database(
     @SerialName("is_inline")
     val isInline: Boolean = false,
     @SerialName("in_trash")
-    val inTrash: Boolean = false,
+    override val inTrash: Boolean = false,
 ) : NotionObject {
     @SerialName("object")
     override val objectType: String = "database"
@@ -89,6 +87,8 @@ sealed class DatabaseProperty {
         override val id: String,
         @SerialName("name")
         override val name: String,
+        @SerialName("description")
+        val description: String? = null,
         @SerialName("title")
         val title: JsonObject,
     ) : DatabaseProperty() {
@@ -103,6 +103,8 @@ sealed class DatabaseProperty {
         override val id: String,
         @SerialName("name")
         override val name: String,
+        @SerialName("description")
+        val description: String? = null,
         @SerialName("rich_text")
         val richText: JsonObject,
     ) : DatabaseProperty() {
@@ -117,6 +119,8 @@ sealed class DatabaseProperty {
         override val id: String,
         @SerialName("name")
         override val name: String,
+        @SerialName("description")
+        val description: String? = null,
         @SerialName("number")
         val number: NumberFormat,
     ) : DatabaseProperty() {
@@ -131,6 +135,8 @@ sealed class DatabaseProperty {
         override val id: String,
         @SerialName("name")
         override val name: String,
+        @SerialName("description")
+        val description: String? = null,
         @SerialName("select")
         val select: SelectOptions,
     ) : DatabaseProperty() {
@@ -145,6 +151,8 @@ sealed class DatabaseProperty {
         override val id: String,
         @SerialName("name")
         override val name: String,
+        @SerialName("description")
+        val description: String? = null,
         @SerialName("multi_select")
         val multiSelect: SelectOptions,
     ) : DatabaseProperty() {
@@ -159,6 +167,8 @@ sealed class DatabaseProperty {
         override val id: String,
         @SerialName("name")
         override val name: String,
+        @SerialName("description")
+        val description: String? = null,
         @SerialName("date")
         val date: JsonObject,
     ) : DatabaseProperty() {
@@ -173,6 +183,8 @@ sealed class DatabaseProperty {
         override val id: String,
         @SerialName("name")
         override val name: String,
+        @SerialName("description")
+        val description: String? = null,
         @SerialName("checkbox")
         val checkbox: JsonObject,
     ) : DatabaseProperty() {
@@ -187,6 +199,8 @@ sealed class DatabaseProperty {
         override val id: String,
         @SerialName("name")
         override val name: String,
+        @SerialName("description")
+        val description: String? = null,
         @SerialName("url")
         val url: JsonObject,
     ) : DatabaseProperty() {
@@ -201,6 +215,8 @@ sealed class DatabaseProperty {
         override val id: String,
         @SerialName("name")
         override val name: String,
+        @SerialName("description")
+        val description: String? = null,
         @SerialName("email")
         val email: JsonObject,
     ) : DatabaseProperty() {
@@ -215,6 +231,8 @@ sealed class DatabaseProperty {
         override val id: String,
         @SerialName("name")
         override val name: String,
+        @SerialName("description")
+        val description: String? = null,
         @SerialName("phone_number")
         val phoneNumber: JsonObject,
     ) : DatabaseProperty() {
@@ -229,6 +247,8 @@ sealed class DatabaseProperty {
         override val id: String,
         @SerialName("name")
         override val name: String,
+        @SerialName("description")
+        val description: String? = null,
         @SerialName("created_time")
         val createdTime: JsonObject,
     ) : DatabaseProperty() {
@@ -243,6 +263,8 @@ sealed class DatabaseProperty {
         override val id: String,
         @SerialName("name")
         override val name: String,
+        @SerialName("description")
+        val description: String? = null,
         @SerialName("created_by")
         val createdBy: JsonObject,
     ) : DatabaseProperty() {
@@ -257,6 +279,8 @@ sealed class DatabaseProperty {
         override val id: String,
         @SerialName("name")
         override val name: String,
+        @SerialName("description")
+        val description: String? = null,
         @SerialName("last_edited_time")
         val lastEditedTime: JsonObject,
     ) : DatabaseProperty() {
@@ -271,6 +295,8 @@ sealed class DatabaseProperty {
         override val id: String,
         @SerialName("name")
         override val name: String,
+        @SerialName("description")
+        val description: String? = null,
         @SerialName("last_edited_by")
         val lastEditedBy: JsonObject,
     ) : DatabaseProperty() {
@@ -285,6 +311,8 @@ sealed class DatabaseProperty {
         override val id: String,
         @SerialName("name")
         override val name: String,
+        @SerialName("description")
+        val description: String? = null,
         @SerialName("people")
         val people: JsonObject,
     ) : DatabaseProperty() {
@@ -299,6 +327,8 @@ sealed class DatabaseProperty {
         override val id: String,
         @SerialName("name")
         override val name: String,
+        @SerialName("description")
+        val description: String? = null,
         @SerialName("relation")
         val relation: JsonObject,
     ) : DatabaseProperty() {
@@ -313,6 +343,8 @@ sealed class DatabaseProperty {
         override val id: String,
         @SerialName("name")
         override val name: String,
+        @SerialName("description")
+        val description: String? = null,
         @SerialName("rollup")
         val rollup: JsonObject,
     ) : DatabaseProperty() {
@@ -327,6 +359,8 @@ sealed class DatabaseProperty {
         override val id: String,
         @SerialName("name")
         override val name: String,
+        @SerialName("description")
+        val description: String? = null,
         @SerialName("formula")
         val formula: JsonObject,
     ) : DatabaseProperty() {
@@ -341,11 +375,29 @@ sealed class DatabaseProperty {
         override val id: String,
         @SerialName("name")
         override val name: String,
+        @SerialName("description")
+        val description: String? = null,
         @SerialName("files")
         val files: JsonObject,
     ) : DatabaseProperty() {
         @SerialName("type")
         override val type: String = "files"
+    }
+
+    @Serializable
+    @SerialName("status")
+    data class Status(
+        @SerialName("id")
+        override val id: String,
+        @SerialName("name")
+        override val name: String,
+        @SerialName("description")
+        val description: String? = null,
+        @SerialName("status")
+        val status: StatusPropertyOptions,
+    ) : DatabaseProperty() {
+        @SerialName("type")
+        override val type: String = "status"
     }
 }
 
@@ -378,4 +430,32 @@ data class SelectOption(
     val name: String,
     @SerialName("color")
     val color: SelectOptionColor,
+    @SerialName("description")
+    val description: String? = null,
+)
+
+/**
+ * Represents the options and groups for a status database property.
+ */
+@Serializable
+data class StatusPropertyOptions(
+    @SerialName("options")
+    val options: List<SelectOption>,
+    @SerialName("groups")
+    val groups: List<StatusGroup>,
+)
+
+/**
+ * Represents a group in a status property, collecting related options.
+ */
+@Serializable
+data class StatusGroup(
+    @SerialName("id")
+    val id: String,
+    @SerialName("name")
+    val name: String,
+    @SerialName("color")
+    val color: SelectOptionColor,
+    @SerialName("option_ids")
+    val optionIds: List<String>,
 )

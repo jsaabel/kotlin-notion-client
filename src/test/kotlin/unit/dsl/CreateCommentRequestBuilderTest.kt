@@ -37,8 +37,8 @@ class CreateCommentRequestBuilderTest :
                         }
 
                     request.parent shouldBe Parent.PageParent(pageId = "test-page-id")
-                    request.richText shouldHaveSize 1
-                    request.richText[0].plainText shouldBe "Hello world"
+                    request.richText.shouldNotBeNull() shouldHaveSize 1
+                    checkNotNull(request.richText)[0].plainText shouldBe "Hello world"
                     request.discussionId.shouldBeNull()
                     request.attachments.shouldBeNull()
                     request.displayName.shouldBeNull()
@@ -54,8 +54,8 @@ class CreateCommentRequestBuilderTest :
                         }
 
                     request.parent shouldBe Parent.BlockParent(blockId = "test-block-id")
-                    request.richText shouldHaveSize 1
-                    request.richText[0].plainText shouldBe "Comment on block"
+                    request.richText.shouldNotBeNull() shouldHaveSize 1
+                    checkNotNull(request.richText)[0].plainText shouldBe "Comment on block"
                 }
             }
 
@@ -142,10 +142,10 @@ class CreateCommentRequestBuilderTest :
                             }
                         }
 
-                    request.richText shouldHaveSize 1
-                    request.richText[0].plainText shouldBe "Simple comment text"
-                    request.richText[0].annotations.bold shouldBe false
-                    request.richText[0].annotations.italic shouldBe false
+                    request.richText.shouldNotBeNull() shouldHaveSize 1
+                    checkNotNull(request.richText)[0].plainText shouldBe "Simple comment text"
+                    checkNotNull(request.richText)[0].annotations.bold shouldBe false
+                    checkNotNull(request.richText)[0].annotations.italic shouldBe false
                 }
 
                 it("should support richText() alias for content()") {
@@ -158,10 +158,10 @@ class CreateCommentRequestBuilderTest :
                             }
                         }
 
-                    request.richText shouldHaveSize 2
-                    request.richText[0].plainText shouldBe "Using richText alias"
-                    request.richText[1].plainText shouldBe "formatted text"
-                    request.richText[1].annotations.bold shouldBe true
+                    request.richText.shouldNotBeNull() shouldHaveSize 2
+                    checkNotNull(request.richText)[0].plainText shouldBe "Using richText alias"
+                    checkNotNull(request.richText)[1].plainText shouldBe "formatted text"
+                    checkNotNull(request.richText)[1].annotations.bold shouldBe true
                 }
 
                 it("should support formatted text content") {
@@ -177,14 +177,14 @@ class CreateCommentRequestBuilderTest :
                             }
                         }
 
-                    request.richText shouldHaveSize 5
-                    request.richText[0].plainText shouldBe "This comment has "
-                    request.richText[1].plainText shouldBe "bold text"
-                    request.richText[1].annotations.bold shouldBe true
-                    request.richText[2].plainText shouldBe " and "
-                    request.richText[3].plainText shouldBe "italic text"
-                    request.richText[3].annotations.italic shouldBe true
-                    request.richText[4].plainText shouldBe "!"
+                    request.richText.shouldNotBeNull() shouldHaveSize 5
+                    checkNotNull(request.richText)[0].plainText shouldBe "This comment has "
+                    checkNotNull(request.richText)[1].plainText shouldBe "bold text"
+                    checkNotNull(request.richText)[1].annotations.bold shouldBe true
+                    checkNotNull(request.richText)[2].plainText shouldBe " and "
+                    checkNotNull(request.richText)[3].plainText shouldBe "italic text"
+                    checkNotNull(request.richText)[3].annotations.italic shouldBe true
+                    checkNotNull(request.richText)[4].plainText shouldBe "!"
                 }
 
                 it("should support complex rich text with links and mentions") {
@@ -199,12 +199,12 @@ class CreateCommentRequestBuilderTest :
                             }
                         }
 
-                    request.richText shouldHaveSize 4
-                    request.richText[0].plainText shouldBe "Check out "
-                    request.richText[1].plainText shouldBe "Notion"
-                    request.richText[1].href shouldBe "https://notion.so"
-                    request.richText[2].plainText shouldBe " and contact "
-                    request.richText[3].type shouldBe "mention"
+                    request.richText.shouldNotBeNull() shouldHaveSize 4
+                    checkNotNull(request.richText)[0].plainText shouldBe "Check out "
+                    checkNotNull(request.richText)[1].plainText shouldBe "Notion"
+                    checkNotNull(request.richText)[1].href shouldBe "https://notion.so"
+                    checkNotNull(request.richText)[2].plainText shouldBe " and contact "
+                    checkNotNull(request.richText)[3].type shouldBe "mention"
                 }
 
                 it("should support all types of mentions") {
@@ -223,23 +223,23 @@ class CreateCommentRequestBuilderTest :
                             }
                         }
 
-                    request.richText shouldHaveSize 8
+                    request.richText.shouldNotBeNull() shouldHaveSize 8
 
                     // User mention
-                    request.richText[1].type shouldBe "mention"
-                    (request.richText[1].mention is Mention.User) shouldBe true
+                    checkNotNull(request.richText)[1].type shouldBe "mention"
+                    (checkNotNull(request.richText)[1].mention is Mention.User) shouldBe true
 
                     // Page mention
-                    request.richText[3].type shouldBe "mention"
-                    (request.richText[3].mention is Mention.Page) shouldBe true
+                    checkNotNull(request.richText)[3].type shouldBe "mention"
+                    (checkNotNull(request.richText)[3].mention is Mention.Page) shouldBe true
 
                     // Database mention
-                    request.richText[5].type shouldBe "mention"
-                    (request.richText[5].mention is Mention.Database) shouldBe true
+                    checkNotNull(request.richText)[5].type shouldBe "mention"
+                    (checkNotNull(request.richText)[5].mention is Mention.Database) shouldBe true
 
                     // Date mention
-                    request.richText[7].type shouldBe "mention"
-                    (request.richText[7].mention is Mention.Date) shouldBe true
+                    checkNotNull(request.richText)[7].type shouldBe "mention"
+                    (checkNotNull(request.richText)[7].mention is Mention.Date) shouldBe true
                 }
             }
 
@@ -353,6 +353,19 @@ class CreateCommentRequestBuilderTest :
                     exception.message shouldContain "Comment content cannot be empty"
                 }
 
+                it("should reject both rich_text and markdown being set") {
+                    val exception =
+                        shouldThrow<IllegalStateException> {
+                            createCommentRequest {
+                                parent.pageId("test-page-id")
+                                content { text("hello") }
+                                markdown("**hello**")
+                            }
+                        }
+
+                    exception.message shouldContain "either rich_text or markdown, not both"
+                }
+
                 it("should validate attachment limit for attachments() method") {
                     val tooManyAttachments =
                         listOf(
@@ -396,6 +409,35 @@ class CreateCommentRequestBuilderTest :
                 }
             }
 
+            describe("markdown content") {
+                it("should create a request with markdown content") {
+                    val request =
+                        createCommentRequest {
+                            parent.pageId("test-page-id")
+                            markdown("**bold** and _italic_ text")
+                        }
+
+                    request.markdown shouldBe "**bold** and _italic_ text"
+                    request.richText.shouldBeNull()
+                }
+
+                it("should create a markdown request with all optional fields") {
+                    val request =
+                        createCommentRequest {
+                            parent.pageId("test-page-id")
+                            markdown("Hello from markdown!")
+                            discussionId("discussion-123")
+                            displayName("Bot Name")
+                        }
+
+                    request.markdown shouldBe "Hello from markdown!"
+                    request.richText.shouldBeNull()
+                    request.discussionId shouldBe "discussion-123"
+                    request.displayName.shouldNotBeNull()
+                    request.displayName.custom!!.name shouldBe "Bot Name"
+                }
+            }
+
             describe("comprehensive scenarios") {
                 it("should create complex comment with all features") {
                     val request =
@@ -423,11 +465,11 @@ class CreateCommentRequestBuilderTest :
                     request.parent.blockId shouldBe "block-123"
 
                     // Verify rich text content
-                    request.richText shouldHaveSize 9
-                    request.richText[1].annotations.bold shouldBe true
-                    request.richText[3].annotations.italic shouldBe true
-                    request.richText[5].annotations.code shouldBe true
-                    request.richText[7].href shouldBe "https://notion.so"
+                    request.richText.shouldNotBeNull() shouldHaveSize 9
+                    checkNotNull(request.richText)[1].annotations.bold shouldBe true
+                    checkNotNull(request.richText)[3].annotations.italic shouldBe true
+                    checkNotNull(request.richText)[5].annotations.code shouldBe true
+                    checkNotNull(request.richText)[7].href shouldBe "https://notion.so"
 
                     // Verify optional properties
                     request.discussionId shouldBe "discussion-456"
@@ -462,7 +504,7 @@ class CreateCommentRequestBuilderTest :
                     require(request2.parent is Parent.BlockParent)
                     request2.parent.blockId shouldBe "block-2"
                     request2.discussionId shouldBe "discussion-2"
-                    request2.richText[0].annotations.bold shouldBe true
+                    request2.richText!![0].annotations.bold shouldBe true
                 }
             }
         }

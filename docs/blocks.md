@@ -2,7 +2,7 @@
 
 ## Overview
 
-Blocks are the content elements that make up Notion pages. The Blocks API supports 30+ block types including paragraphs, headings, lists, code blocks, tables, and more.
+Blocks are the content elements that make up Notion pages. The Blocks API supports 33+ block types including paragraphs, headings, lists, code blocks, tables, and more.
 
 **Official Documentation**: [Notion Blocks API](https://developers.notion.com/reference/block)
 
@@ -15,13 +15,14 @@ suspend fun retrieve(blockId: String): Block
 // Retrieve children of a block
 suspend fun retrieveChildren(blockId: String): List<Block>
 
-// Append children to a block
-suspend fun appendChildren(blockId: String, builder: PageContentBuilder.() -> Unit): BlockList
+// Append children to a block (position is optional)
+suspend fun appendChildren(blockId: String, children: List<BlockRequest>, position: BlockAppendPosition? = null): BlockList
+suspend fun appendChildren(blockId: String, position: BlockAppendPosition? = null, builder: PageContentBuilder.() -> Unit): BlockList
 
 // Update a block
 suspend fun update(blockId: String, builder: PageContentBuilder.() -> Unit): Block
 
-// Delete a block (archives it)
+// Delete a block (moves it to trash)
 suspend fun delete(blockId: String): Block
 ```
 
@@ -29,7 +30,7 @@ suspend fun delete(blockId: String): Block
 
 ### Text Blocks
 - **Paragraph** - Basic text content
-- **Headings** - H1, H2, H3 for structure
+- **Headings** - H1, H2, H3, H4 for structure
 - **Quote** - Quoted text
 - **Callout** - Highlighted content with an icon
 
@@ -63,6 +64,10 @@ suspend fun delete(blockId: String): Block
 - **Breadcrumb** - Navigation breadcrumbs
 - **Child Page** - Nested pages
 - **Child Database** - Nested databases
+- **Tab** - Container for tab-pane layouts (v0.4.0+)
+
+### Read-Only
+- **Meeting Notes** - Transcript/meeting notes block (`meeting_notes`); returned by the API but cannot be created programmatically (v0.4.0+)
 
 ## Examples
 
@@ -91,7 +96,34 @@ notion.blocks.appendChildren(pageId) {
 }
 ```
 
-### Example 3: Rich Text Formatting
+### Example 3: Append Blocks at a Specific Position (v0.4.0+)
+
+Control where appended blocks appear using the `position` parameter:
+
+```kotlin
+// Append at the start of the block (before all existing children)
+notion.blocks.appendChildren(pageId, position = BlockAppendPosition.Start) {
+    heading1("This appears first")
+}
+
+// Append at the end (default behaviour — same as omitting position)
+notion.blocks.appendChildren(pageId, position = BlockAppendPosition.End) {
+    paragraph("This appears last")
+}
+
+// Append immediately after a specific block
+val afterBlockId = existingBlocks.first().id
+notion.blocks.appendChildren(
+    pageId,
+    position = BlockAppendPosition.AfterBlock(BlockReference(afterBlockId))
+) {
+    paragraph("This appears right after the first block")
+}
+```
+
+**Note**: `BlockAppendPosition` is a sealed class with three variants: `Start`, `End`, and `AfterBlock(afterBlock: BlockReference)`. Omitting `position` defaults to appending at the end.
+
+### Example 4: Rich Text Formatting
 
 Create blocks with formatted text:
 
@@ -161,6 +193,10 @@ notion.blocks.appendChildren(pageId) {
     callout("⚠️") {
         text("Important: Make sure to read the documentation before proceeding.")
     }
+    // Or use a native Notion icon (v0.4.0+):
+    callout(nativeIcon("gear", NativeIconColor.GRAY)) {
+        text("Settings note")
+    }
 }
 ```
 
@@ -208,7 +244,7 @@ Archive a block (blocks are not permanently deleted, just archived):
 
 ```kotlin
 val deleted = notion.blocks.delete(blockId)
-println("Block archived: ${deleted.archived}") // true
+println("Block in trash: ${deleted.inTrash}") // true
 ```
 
 ### Example 11: Nested Blocks
@@ -290,6 +326,36 @@ val page = notion.pages.create {
         divider()
 
         quote("Well-documented code is as important as the code itself.")
+    }
+}
+```
+
+### Example 14: Heading 4 (v0.4.0+)
+
+```kotlin
+notion.blocks.appendChildren(pageId) {
+    heading1("Architecture")
+    heading2("Frontend")
+    heading3("Components")
+    heading4("Atoms")  // New in v0.4.0
+    paragraph("The smallest reusable elements.")
+}
+```
+
+### Example 15: Tab Block (v0.4.0+)
+
+```kotlin
+notion.blocks.appendChildren(pageId) {
+    tab {
+        // Each pane() call creates a paragraph child tab
+        pane("Overview") {
+            paragraph("Project summary goes here.")
+        }
+        pane("Details", icon = emoji("📋")) {
+            bullet("Key detail one")
+            bullet("Key detail two")
+        }
+        pane("Settings", icon = nativeIcon("gear", NativeIconColor.GRAY))
     }
 }
 ```
@@ -435,7 +501,7 @@ try {
 1. **Batch Operations** - Use `appendChildren()` to add multiple blocks at once instead of individual calls
 2. **Block Type Validation** - Always check block types before accessing type-specific properties
 3. **Nested Content** - Remember that blocks can have children; use `hasChildren` to check
-4. **Archive vs Delete** - Understand that "delete" actually archives blocks, not permanently removing them
+4. **Delete moves to trash** - Understand that `delete()` moves blocks to trash (`in_trash: true`), not permanently removing them
 5. **Rich Text** - Use the rich text DSL for formatted content instead of plain strings
 6. **Code Language** - Specify the language for code blocks to enable syntax highlighting in Notion
 

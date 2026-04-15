@@ -13,6 +13,7 @@ import io.kotest.matchers.types.shouldBeInstanceOf
 import it.saabel.kotlinnotionclient.NotionClient
 import it.saabel.kotlinnotionclient.config.NotionConfig
 import it.saabel.kotlinnotionclient.models.base.Color
+import it.saabel.kotlinnotionclient.models.base.Icon
 import it.saabel.kotlinnotionclient.models.base.SelectOptionColor
 import it.saabel.kotlinnotionclient.models.blocks.Block
 import it.saabel.kotlinnotionclient.models.blocks.BlockList
@@ -21,7 +22,6 @@ import it.saabel.kotlinnotionclient.models.blocks.ParagraphRequestContent
 import it.saabel.kotlinnotionclient.models.databases.Database
 import it.saabel.kotlinnotionclient.models.pages.Page
 import it.saabel.kotlinnotionclient.models.pages.PageCover
-import it.saabel.kotlinnotionclient.models.pages.PageIcon
 import it.saabel.kotlinnotionclient.models.pages.PageProperty
 import it.saabel.kotlinnotionclient.models.requests.RequestBuilders
 import kotlinx.coroutines.delay
@@ -74,9 +74,9 @@ class ApiOverloadsIntegrationTest :
                     // Verify the page was created correctly
                     createdPage.shouldBeInstanceOf<Page>()
                     createdPage.objectType shouldBe "page"
-                    createdPage.archived shouldBe false
+                    createdPage.inTrash shouldBe false
                     createdPage.parent.id?.replace("-", "") shouldBe parentPageId.replace("-", "")
-                    (createdPage.icon as? PageIcon.Emoji)?.emoji shouldBe "🧪"
+                    (createdPage.icon as? Icon.Emoji)?.emoji shouldBe "🧪"
                     (createdPage.cover as? PageCover.External)?.external?.url shouldContain "placehold"
 
                     // Verify title property
@@ -107,8 +107,8 @@ class ApiOverloadsIntegrationTest :
                     if (shouldCleanupAfterTest()) {
                         delay(500)
                         println("🧹 Cleaning up test page...")
-                        val archivedPage = client.pages.archive(createdPage.id)
-                        archivedPage.archived shouldBe true
+                        val archivedPage = client.pages.trash(createdPage.id)
+                        archivedPage.inTrash shouldBe true
                         println("✅ Test page archived successfully")
                     } else {
                         println("🔧 Cleanup skipped (NOTION_CLEANUP_AFTER_TEST=false)")
@@ -159,11 +159,11 @@ class ApiOverloadsIntegrationTest :
                     // Verify the database was created correctly
                     createdDatabase.shouldBeInstanceOf<Database>()
                     createdDatabase.objectType shouldBe "database"
-                    createdDatabase.archived shouldBe false
+                    createdDatabase.inTrash shouldBe false
                     createdDatabase.parent.id?.replace("-", "") shouldBe parentPageId.replace("-", "")
 
                     // Icon and cover are returned in creation response (but may not persist - see known issue below)
-                    (createdDatabase.icon as? PageIcon.Emoji)?.emoji shouldBe "📊"
+                    (createdDatabase.icon as? Icon.Emoji)?.emoji shouldBe "📊"
                     (createdDatabase.cover as? PageCover.External)?.external?.url shouldContain "placehold"
 
                     // KNOWN ISSUE: Icon/cover may not persist in Notion UI (2025-09-03 API behavior)
@@ -218,8 +218,8 @@ class ApiOverloadsIntegrationTest :
                     if (shouldCleanupAfterTest()) {
                         delay(500)
                         println("🧹 Cleaning up test database...")
-                        val archivedDatabase = client.databases.archive(createdDatabase.id)
-                        archivedDatabase.archived shouldBe true
+                        val archivedDatabase = client.databases.trash(createdDatabase.id)
+                        archivedDatabase.inTrash shouldBe true
                         println("✅ Test database archived successfully")
                     } else {
                         println("🔧 Cleanup skipped (NOTION_CLEANUP_AFTER_TEST=false)")
@@ -305,8 +305,8 @@ class ApiOverloadsIntegrationTest :
                     if (shouldCleanupAfterTest()) {
                         delay(500)
                         println("🧹 Cleaning up test page...")
-                        val archivedPage = client.pages.archive(testPage.id)
-                        archivedPage.archived shouldBe true
+                        val archivedPage = client.pages.trash(testPage.id)
+                        archivedPage.inTrash shouldBe true
                         println("✅ Test page archived successfully")
                     } else {
                         println("🔧 Cleanup skipped (NOTION_CLEANUP_AFTER_TEST=false)")
@@ -406,8 +406,8 @@ class ApiOverloadsIntegrationTest :
                     if (shouldCleanupAfterTest()) {
                         delay(500)
                         println("🧹 Cleaning up test page...")
-                        val archivedPage = client.pages.archive(testPage.id)
-                        archivedPage.archived shouldBe true
+                        val archivedPage = client.pages.trash(testPage.id)
+                        archivedPage.inTrash shouldBe true
                         println("✅ Test page archived successfully")
                     } else {
                         println("🔧 Cleanup skipped (NOTION_CLEANUP_AFTER_TEST=false)")
@@ -457,7 +457,7 @@ class ApiOverloadsIntegrationTest :
                     // Verify the heading was archived (not permanently deleted)
                     deletedHeading.shouldBeInstanceOf<Block.Heading2>()
                     deletedHeading.id shouldBe headingBlock.id
-                    deletedHeading.archived shouldBe true
+                    deletedHeading.inTrash shouldBe true
                     deletedHeading.type shouldBe "heading_2"
 
                     println("✅ Heading block deleted (archived) successfully")
@@ -468,7 +468,7 @@ class ApiOverloadsIntegrationTest :
                     // Verify the bullet was archived
                     deletedBullet.shouldBeInstanceOf<Block.BulletedListItem>()
                     deletedBullet.id shouldBe bulletBlock.id
-                    deletedBullet.archived shouldBe true
+                    deletedBullet.inTrash shouldBe true
                     deletedBullet.type shouldBe "bulleted_list_item"
 
                     println("✅ Bullet block deleted (archived) successfully")
@@ -495,8 +495,8 @@ class ApiOverloadsIntegrationTest :
                     if (shouldCleanupAfterTest()) {
                         delay(500)
                         println("🧹 Cleaning up test page...")
-                        val archivedPage = client.pages.archive(testPage.id)
-                        archivedPage.archived shouldBe true
+                        val archivedPage = client.pages.trash(testPage.id)
+                        archivedPage.inTrash shouldBe true
                         println("✅ Test page archived successfully")
                     } else {
                         println("🔧 Cleanup skipped (NOTION_CLEANUP_AFTER_TEST=false)")
@@ -581,9 +581,9 @@ class ApiOverloadsIntegrationTest :
                         println("🧹 Cleaning up workflow objects...")
 
                         // Archive page first, then database
-                        client.pages.archive(page.id)
+                        client.pages.trash(page.id)
                         delay(500)
-                        client.databases.archive(database.id)
+                        client.databases.trash(database.id)
 
                         println("✅ Workflow objects archived successfully")
                     } else {

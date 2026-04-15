@@ -49,6 +49,11 @@ and best practices in Kotlin.
 - Check `X-Notion-Request-Id` header for support
 - Validate JSON payloads against API examples
 
+### Capturing Ideas
+- Use `/capture-idea <text>` to quickly log improvement ideas that arise during development to `IDEAS.md`
+- Ideas have a status (`open` · `in progress` · `done` · `wont-do`) — update them as work progresses
+- Check `IDEAS.md` occasionally when planning new work
+
 ### Development Workflow Reminder
 - Always lint/format code using gradlew before trying to build
 - Remember to lint and format code before committing. Don't commit code before having checked that the project can be built without errors.

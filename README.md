@@ -3,7 +3,7 @@
 A modern, type-safe Kotlin client for the Notion API with comprehensive DSL support and coroutine-based operations.
 
 > **⚠️ AI-Assisted Development Notice**
-> This library was developed with significant assistance from Claude Code (AI). While it includes comprehensive testing (481+ unit tests) and validation against official Notion API samples, please be aware of potential issues:
+> This library was developed with significant assistance from Claude Code (AI). While it includes comprehensive testing (600+ unit tests) and validation against official Notion API samples, please be aware of potential issues:
 > - Documentation examples may not perfectly match implementation
 > - Edge cases may exist that weren't covered in testing
 > - Some API patterns may have inconsistencies
@@ -13,7 +13,7 @@ A modern, type-safe Kotlin client for the Notion API with comprehensive DSL supp
 
 ## Why This Client?
 
-- **🆕 Latest API Support** - Built for Notion API version **2025-09-03** with full support for data sources, search, and all current features (currently the only Kotlin client supporting this API version)
+- **🆕 Latest API Support** - Built for Notion API version **2026-03-11** with full support for data sources, search, and all current features (currently the only Kotlin client supporting this API version)
 - **🛡️ Type-Safe DSLs** - Intuitive builder patterns for pages, databases, blocks, and queries with compile-time safety
 - **⚡ Kotlin-First** - Leverages coroutines for non-blocking I/O, null-safety, and functional programming patterns
 - **✅ Extensively Tested** - Validated against official Notion API sample responses with comprehensive test coverage
@@ -25,7 +25,7 @@ A modern, type-safe Kotlin client for the Notion API with comprehensive DSL supp
 ```kotlin
 // Gradle (Kotlin DSL)
 dependencies {
-    implementation("it.saabel:kotlin-notion-client:0.3.0")
+    implementation("it.saabel:kotlin-notion-client:0.4.0")
 }
 ```
 
@@ -34,7 +34,7 @@ dependencies {
 <dependency>
     <groupId>it.saabel</groupId>
     <artifactId>kotlin-notion-client</artifactId>
-    <version>0.3.0</version>
+    <version>0.4.0</version>
 </dependency>
 ```
 
@@ -101,7 +101,7 @@ Both patterns are fully supported - use whichever feels more natural to you.
 
 ## Understanding Databases vs. Data Sources
 
-**Important**: The 2025-09-03 API introduced a fundamental change to how databases work:
+**Important**: The 2026-03-11 API introduced a fundamental change to how databases work:
 
 - **Database** = Container that holds one or more data sources
 - **Data Source** = The actual table with properties and rows (pages)
@@ -110,7 +110,7 @@ Most operations you'd expect to do on a "database" (like querying, adding pages)
 
 ```kotlin
 // ❌ In older APIs: notion.databases.query("database-id")
-// ✅ In 2025-09-03: notion.dataSources.query("data-source-id")
+// ✅ In 2026-03-11: notion.dataSources.query("data-source-id")
 ```
 
 The `DatabasesApi` is for container-level operations (create database, update title/icon/cover). The `DataSourcesApi` is for data operations (query, create data source, update schema).
@@ -129,6 +129,9 @@ See [docs/databases.md](docs/databases.md) and [docs/data-sources.md](docs/data-
 | **Users** | ✅ Complete | [docs/users.md](docs/users.md) |
 | **Comments** | ✅ Complete | [docs/comments.md](docs/comments.md) |
 | **File Uploads** | ✅ Complete | [docs/file-uploads.md](docs/file-uploads.md) |
+| **Markdown** | ✅ Complete | [docs/markdown-api.md](docs/markdown-api.md) |
+| **Custom Emojis** | ✅ Complete | [docs/custom-emojis.md](docs/custom-emojis.md) |
+| **Views** | ✅ Complete | [docs/views-api.md](docs/views-api.md) |
 
 ### Feature Highlights
 
@@ -137,7 +140,11 @@ See [docs/databases.md](docs/databases.md) and [docs/data-sources.md](docs/data-
 - **Templates API** - List data source templates and create pages from templates
 - **Advanced query DSL** with complex filters, sorting, pagination, and timestamp filters
 - **Rich text DSL** for formatted content with mentions, equations, and links
-- **30+ block types** including tables, callouts, code blocks, and embeds
+- **33+ block types** including tables, callouts, code blocks, embeds, `heading_4`, `tab`, and `meeting_notes`
+- **Markdown Content API** — retrieve, create, and update page content as Markdown
+- **Views API** — full CRUD for database views with typed `ViewConfiguration`
+- **Native icons** — Notion's built-in icon library with 10 color options
+- **Custom emoji listing** — enumerate workspace custom emojis
 - **Property types** - Full support for the most important data source property types, with more coming up
 - **Kotlin datetime types** - Native support for `kotlinx-datetime` types (`LocalDate`, `LocalDateTime`, `Instant`) with explicit timezone handling
 - **File operations** - Upload and manage files/images
@@ -162,12 +169,9 @@ The **[Kotlin Notebooks](notebooks/)** are the best way to learn the library:
 5. [Rich Text DSL](notebooks/05-rich-text-dsl.ipynb) - Formatting, colors, links, dates, equations
 6. [Advanced Queries](notebooks/06-advanced-queries.ipynb) - Complex filtering, AND/OR logic, pagination
 7. [File Uploads](notebooks/07-file-uploads.ipynb) - Uploading files, external imports, media blocks
+8. [What's New in v0.4.0](notebooks/08-whats-new-in-v0.4.ipynb) — Tour of all breaking changes and new features added in v0.4.0
 
-All notebooks use live Notion API and can be run in IntelliJ IDEA or Jupyter.
-
-> **Note:** Notebooks currently use v0.2.0 due to a binary incompatibility between the IntelliJ Kotlin
-> Notebook kernel's bundled kotlinx-serialization and Ktor 3.4.0. This is a kernel-level limitation;
-> the library works correctly in all other environments.
+All notebooks use v0.4.0 and can be run in IntelliJ IDEA (with the Kotlin Notebook plugin) or Jupyter (with kotlin-jupyter-kernel). Run each cell in order; set the required environment variables before starting.
 
 ## Building from Source
 
@@ -209,12 +213,12 @@ The development journals are intentionally kept in the repository for transparen
 
 ## Project Status
 
-This library covers virtually all aspects of the Notion API (2025-09-03 version). It has been validated against official API samples and includes both unit tests and integration tests. However, it has not yet been used extensively in production environments.
+This library covers virtually all aspects of the Notion API (2026-03-11 version). It has been validated against official API samples and includes both unit tests and integration tests. However, it has not yet been used extensively in production environments.
 
 **Before using in production:**
 - Review the test coverage for your specific use cases
 - Test thoroughly with your Notion workspace
-- Be aware that the API version support is fixed to 2025-09-03
+- Be aware that the API version support is fixed to 2026-03-11
 - **Date/time properties with timezones**: While the library provides comprehensive support for `kotlinx-datetime` types with explicit timezone handling (including timezone-aware conversions via `toLocalDateTime(timeZone)`), this area may benefit from additional real-world validation, particularly around timezone edge cases and complex datetime scenarios
 
 ## Contributing

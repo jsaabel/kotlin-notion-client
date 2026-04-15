@@ -243,6 +243,121 @@ class MockClientBuilder {
         }
     }
 
+    fun addViewRetrieveResponse() {
+        handlers.add { request ->
+            if (request.method == HttpMethod.Get &&
+                request.url.toString().contains("/v1/views/") &&
+                !request.url.toString().contains("/queries")
+            ) {
+                respond(
+                    content = TestFixtures.Views.retrieveViewAsString(),
+                    status = HttpStatusCode.OK,
+                    headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString()),
+                )
+            } else {
+                respondError(HttpStatusCode.NotFound, "View not found")
+            }
+        }
+    }
+
+    fun addViewListResponse() {
+        handlers.add { request ->
+            if (request.method == HttpMethod.Get && request.url.toString().contains("/v1/views")) {
+                respond(
+                    content = TestFixtures.Views.listViewsAsString(),
+                    status = HttpStatusCode.OK,
+                    headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString()),
+                )
+            } else {
+                respondError(HttpStatusCode.NotFound, "Views list not found")
+            }
+        }
+    }
+
+    fun addViewCreateResponse() {
+        handlers.add { request ->
+            if (request.method == HttpMethod.Post && request.url.toString().contains("/v1/views") &&
+                !request.url.toString().contains("/queries")
+            ) {
+                respond(
+                    content = TestFixtures.Views.retrieveViewAsString(),
+                    status = HttpStatusCode.OK,
+                    headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString()),
+                )
+            } else {
+                respondError(HttpStatusCode.NotFound, "Endpoint not found")
+            }
+        }
+    }
+
+    fun addViewDeleteResponse() {
+        handlers.add { request ->
+            if (request.method == HttpMethod.Delete &&
+                request.url.toString().contains("/v1/views/") &&
+                !request.url.toString().contains("/queries")
+            ) {
+                respond(
+                    content = TestFixtures.Views.partialViewAsString(),
+                    status = HttpStatusCode.OK,
+                    headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString()),
+                )
+            } else {
+                respondError(HttpStatusCode.NotFound, "View not found")
+            }
+        }
+    }
+
+    fun addViewCreateQueryResponse() {
+        handlers.add { request ->
+            if (request.method == HttpMethod.Post &&
+                request.url.toString().contains("/v1/views/") &&
+                request.url.toString().contains("/queries")
+            ) {
+                respond(
+                    content = TestFixtures.Views.createViewQueryAsString(),
+                    status = HttpStatusCode.OK,
+                    headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString()),
+                )
+            } else {
+                respondError(HttpStatusCode.NotFound, "Endpoint not found")
+            }
+        }
+    }
+
+    fun addViewQueryResultsResponse() {
+        handlers.add { request ->
+            if (request.method == HttpMethod.Get &&
+                request.url.toString().contains("/v1/views/") &&
+                request.url.toString().contains("/queries/")
+            ) {
+                respond(
+                    content = TestFixtures.Views.viewQueryResultsAsString(),
+                    status = HttpStatusCode.OK,
+                    headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString()),
+                )
+            } else {
+                respondError(HttpStatusCode.NotFound, "Query not found")
+            }
+        }
+    }
+
+    fun addViewDeleteQueryResponse() {
+        handlers.add { request ->
+            if (request.method == HttpMethod.Delete &&
+                request.url.toString().contains("/v1/views/") &&
+                request.url.toString().contains("/queries/")
+            ) {
+                respond(
+                    content = TestFixtures.Views.deletedViewQueryAsString(),
+                    status = HttpStatusCode.OK,
+                    headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString()),
+                )
+            } else {
+                respondError(HttpStatusCode.NotFound, "Query not found")
+            }
+        }
+    }
+
     fun addSearchResponse() {
         handlers.add { request ->
             if (request.method == HttpMethod.Post && request.url.toString().contains("/v1/search")) {

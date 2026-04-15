@@ -26,7 +26,7 @@
     "data_source_id": "d9824bdc-8445-4327-be8b-5b47500af6ce",
     "database_id": "9ce034a5-74ca-4259-8b01-8494453204fe"
   },
-  "archived": false,
+  "in_trash": false,
   "properties": {
     "Store availability": {
       "id": "%3AUPp",

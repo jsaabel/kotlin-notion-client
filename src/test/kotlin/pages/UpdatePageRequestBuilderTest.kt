@@ -4,6 +4,7 @@ import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import it.saabel.kotlinnotionclient.models.base.Icon
 
 class UpdatePageRequestBuilderTest :
     StringSpec({
@@ -22,7 +23,7 @@ class UpdatePageRequestBuilderTest :
             request.properties!!.size shouldBe 3
             request.icon shouldBe null
             request.cover shouldBe null
-            request.archived shouldBe null
+            request.inTrash shouldBe null
         }
 
         "should build update request with icon and cover" {
@@ -34,35 +35,35 @@ class UpdatePageRequestBuilderTest :
 
             request.icon shouldNotBe null
             request.icon!!.type shouldBe "emoji"
-            (request.icon as? PageIcon.Emoji)?.emoji shouldBe "✅"
+            (request.icon as? Icon.Emoji)?.emoji shouldBe "✅"
 
             request.cover shouldNotBe null
             request.cover!!.type shouldBe "external"
             (request.cover as? PageCover.External)?.external?.url shouldBe "https://example.com/cover.jpg"
 
             request.properties shouldBe null
-            request.archived shouldBe null
+            request.inTrash shouldBe null
         }
 
-        "should build update request with archive status" {
+        "should build update request with trash status" {
             val request =
                 updatePageRequest {
-                    archive()
+                    trash()
                 }
 
-            request.archived shouldBe true
+            request.inTrash shouldBe true
             request.properties shouldBe null
             request.icon shouldBe null
             request.cover shouldBe null
         }
 
-        "should build update request with archive false" {
+        "should build update request with trash false" {
             val request =
                 updatePageRequest {
-                    archive(false)
+                    trash(false)
                 }
 
-            request.archived shouldBe false
+            request.inTrash shouldBe false
         }
 
         "should build comprehensive update request" {
@@ -78,7 +79,7 @@ class UpdatePageRequestBuilderTest :
                     }
                     icon.external("https://example.com/icon.png")
                     cover.file("https://example.com/cover.jpg", "2024-12-31T23:59:59.000Z")
-                    archive()
+                    trash()
                 }
 
             request.properties shouldNotBe null
@@ -86,12 +87,12 @@ class UpdatePageRequestBuilderTest :
 
             request.icon shouldNotBe null
             request.icon!!.type shouldBe "external"
-            (request.icon as? PageIcon.External)?.external?.url shouldBe "https://example.com/icon.png"
+            (request.icon as? Icon.External)?.external?.url shouldBe "https://example.com/icon.png"
 
             request.cover shouldNotBe null
             request.cover!!.type shouldBe "file"
 
-            request.archived shouldBe true
+            request.inTrash shouldBe true
         }
 
         "should build empty update request when no configuration provided" {
@@ -100,7 +101,7 @@ class UpdatePageRequestBuilderTest :
             request.properties shouldBe null
             request.icon shouldBe null
             request.cover shouldBe null
-            request.archived shouldBe null
+            request.inTrash shouldBe null
         }
 
         "should build update request with icon and cover removal" {
@@ -113,7 +114,7 @@ class UpdatePageRequestBuilderTest :
             request.icon shouldBe null
             request.cover shouldBe null
             request.properties shouldBe null
-            request.archived shouldBe null
+            request.inTrash shouldBe null
         }
 
         "should build update request with select options without colors" {
@@ -235,13 +236,13 @@ class UpdatePageRequestBuilderTest :
                     lock()
                     eraseContent()
                     template.default()
-                    archive()
+                    trash()
                 }
 
             request.properties shouldNotBe null
             request.isLocked shouldBe true
             request.eraseContent shouldBe true
             request.template shouldBe PageTemplate.Default
-            request.archived shouldBe true
+            request.inTrash shouldBe true
         }
     })

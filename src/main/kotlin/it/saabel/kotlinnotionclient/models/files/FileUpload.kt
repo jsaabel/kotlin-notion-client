@@ -26,8 +26,8 @@ data class FileUpload(
     val expiryTime: String? = null,
     @SerialName("upload_url")
     val uploadUrl: String? = null,
-    @SerialName("archived")
-    val archived: Boolean = false,
+    @SerialName("in_trash")
+    val inTrash: Boolean = false,
     @SerialName("status")
     val status: FileUploadStatus,
     @SerialName("filename")

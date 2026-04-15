@@ -3,6 +3,9 @@
 package it.saabel.kotlinnotionclient.models.pages
 
 import it.saabel.kotlinnotionclient.models.base.ExternalFile
+import it.saabel.kotlinnotionclient.models.base.Icon
+import it.saabel.kotlinnotionclient.models.base.NativeIconColor
+import it.saabel.kotlinnotionclient.models.base.NativeIconObject
 import it.saabel.kotlinnotionclient.models.base.NotionFile
 
 /**
@@ -35,20 +38,20 @@ import it.saabel.kotlinnotionclient.models.base.NotionFile
  *     }
  *     icon.external("https://example.com/new-icon.png")
  *     cover.external("https://example.com/new-cover.jpg")
- *     archive()
+ *     trash()
  * }
  * ```
  *
  * **Important Notes**:
  * - Only properties specified in the DSL will be updated; other properties remain unchanged
- * - Archive status can be set with `archive()` or `archive(true/false)`
+ * - Trash status can be set with `trash()` or `trash(true/false)`
  */
 @UpdatePageRequestDslMarker
 class UpdatePageRequestBuilder {
     private var properties = mutableMapOf<String, PagePropertyValue>()
-    private var iconValue: PageIcon? = null
+    private var iconValue: Icon? = null
     private var coverValue: PageCover? = null
-    private var archivedValue: Boolean? = null
+    private var inTrashValue: Boolean? = null
     private var isLockedValue: Boolean? = null
     private var templateValue: PageTemplate? = null
     private var eraseContentValue: Boolean? = null
@@ -83,12 +86,12 @@ class UpdatePageRequestBuilder {
     }
 
     /**
-     * Archives the page.
+     * Moves the page to trash (or restores it).
      *
-     * @param archived Whether to archive (true) or unarchive (false) the page. Defaults to true.
+     * @param inTrash Whether to move to trash (true) or restore from trash (false). Defaults to true.
      */
-    fun archive(archived: Boolean = true) {
-        archivedValue = archived
+    fun trash(inTrash: Boolean = true) {
+        inTrashValue = inTrash
     }
 
     /**
@@ -129,7 +132,7 @@ class UpdatePageRequestBuilder {
             properties = properties.takeIf { it.isNotEmpty() },
             icon = iconValue,
             cover = coverValue,
-            archived = archivedValue,
+            inTrash = inTrashValue,
             isLocked = isLockedValue,
             template = templateValue,
             eraseContent = eraseContentValue,
@@ -146,7 +149,7 @@ class UpdatePageRequestBuilder {
          * @param emoji The emoji character(s)
          */
         fun emoji(emoji: String) {
-            this@UpdatePageRequestBuilder.iconValue = PageIcon.Emoji(emoji = emoji)
+            this@UpdatePageRequestBuilder.iconValue = Icon.Emoji(emoji = emoji)
         }
 
         /**
@@ -155,7 +158,7 @@ class UpdatePageRequestBuilder {
          * @param url The external image URL
          */
         fun external(url: String) {
-            this@UpdatePageRequestBuilder.iconValue = PageIcon.External(external = ExternalFile(url = url))
+            this@UpdatePageRequestBuilder.iconValue = Icon.External(external = ExternalFile(url = url))
         }
 
         /**
@@ -169,7 +172,20 @@ class UpdatePageRequestBuilder {
             expiryTime: String? = null,
         ) {
             this@UpdatePageRequestBuilder.iconValue =
-                PageIcon.File(file = NotionFile(url = url, expiryTime = expiryTime))
+                Icon.File(file = NotionFile(url = url, expiryTime = expiryTime))
+        }
+
+        /**
+         * Sets a native Notion icon.
+         *
+         * @param name The icon name (e.g. "pizza")
+         * @param color Optional color. Defaults to [NativeIconColor.GRAY] when omitted.
+         */
+        fun native(
+            name: String,
+            color: NativeIconColor? = null,
+        ) {
+            this@UpdatePageRequestBuilder.iconValue = Icon.NativeIcon(NativeIconObject(name = name, color = color))
         }
 
         /**

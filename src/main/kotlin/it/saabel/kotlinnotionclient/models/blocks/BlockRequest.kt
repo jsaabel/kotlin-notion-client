@@ -2,6 +2,7 @@ package it.saabel.kotlinnotionclient.models.blocks
 
 import it.saabel.kotlinnotionclient.models.base.Color
 import it.saabel.kotlinnotionclient.models.base.ExternalFile
+import it.saabel.kotlinnotionclient.models.base.Icon
 import it.saabel.kotlinnotionclient.models.base.RichText
 import it.saabel.kotlinnotionclient.models.files.FileUploadReference
 import kotlinx.serialization.SerialName
@@ -57,6 +58,17 @@ sealed class BlockRequest {
     data class Heading3(
         @SerialName("heading_3")
         val heading3: Heading3RequestContent,
+    ) : BlockRequest()
+
+    /**
+     * Heading 4 block request.
+     * Extra-small heading with optional toggle functionality.
+     */
+    @Serializable
+    @SerialName("heading_4")
+    data class Heading4(
+        @SerialName("heading_4")
+        val heading4: Heading4RequestContent,
     ) : BlockRequest()
 
     /**
@@ -344,6 +356,17 @@ sealed class BlockRequest {
         @SerialName("template")
         val template: TemplateRequestContent,
     ) : BlockRequest()
+
+    /**
+     * Tab block request.
+     * Container for tabbed content panes; each pane is a paragraph child.
+     */
+    @Serializable
+    @SerialName("tab")
+    data class Tab(
+        @SerialName("tab")
+        val tab: TabRequestContent,
+    ) : BlockRequest()
 }
 
 // REQUEST CONTENT CLASSES
@@ -359,6 +382,8 @@ data class ParagraphRequestContent(
     val color: Color = Color.DEFAULT,
     @SerialName("children")
     val children: List<BlockRequest>? = null,
+    @SerialName("icon")
+    val icon: Icon? = null,
 )
 
 /**
@@ -396,6 +421,21 @@ data class Heading2RequestContent(
  */
 @Serializable
 data class Heading3RequestContent(
+    @SerialName("rich_text")
+    val richText: List<RichText>,
+    @SerialName("color")
+    val color: Color = Color.DEFAULT,
+    @SerialName("is_toggleable")
+    val isToggleable: Boolean = false,
+    @SerialName("children")
+    val children: List<BlockRequest>? = null,
+)
+
+/**
+ * Content for heading_4 block requests.
+ */
+@Serializable
+data class Heading4RequestContent(
     @SerialName("rich_text")
     val richText: List<RichText>,
     @SerialName("color")
@@ -494,7 +534,7 @@ data class CalloutRequestContent(
     @SerialName("rich_text")
     val richText: List<RichText>,
     @SerialName("icon")
-    val icon: CalloutIcon? = null,
+    val icon: Icon? = null,
     @SerialName("color")
     val color: Color = Color.DEFAULT,
     @SerialName("children")
@@ -720,4 +760,58 @@ data class TemplateRequestContent(
     val children: List<BlockRequest>? = null,
 )
 
-// Note: CalloutIcon and SyncedBlockReference are defined in Block.kt to avoid duplication
+/**
+ * Content for tab block requests.
+ *
+ * The tab object itself carries only the pane children.
+ * Each child is a paragraph block whose rich_text is the pane label and optional icon.
+ */
+@Serializable
+data class TabRequestContent(
+    @SerialName("children")
+    val children: List<BlockRequest>? = null,
+)
+
+// Note: SyncedBlockReference is defined in Block.kt to avoid duplication
+
+/**
+ * Position specification for appending block children (API version 2026-03-11+).
+ *
+ * Controls where new blocks are inserted within a parent block or page.
+ * When omitted, blocks are appended at the end (equivalent to [End]).
+ */
+@Serializable
+sealed class BlockAppendPosition {
+    /**
+     * Insert after a specific block.
+     */
+    @Serializable
+    @SerialName("after_block")
+    data class AfterBlock(
+        @SerialName("after_block")
+        val afterBlock: BlockReference,
+    ) : BlockAppendPosition()
+
+    /**
+     * Insert at the start of the parent.
+     */
+    @Serializable
+    @SerialName("start")
+    data object Start : BlockAppendPosition()
+
+    /**
+     * Insert at the end of the parent (default when position is omitted).
+     */
+    @Serializable
+    @SerialName("end")
+    data object End : BlockAppendPosition()
+}
+
+/**
+ * Reference to a block by ID, used in [BlockAppendPosition.AfterBlock].
+ */
+@Serializable
+data class BlockReference(
+    @SerialName("id")
+    val id: String,
+)

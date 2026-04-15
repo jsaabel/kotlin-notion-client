@@ -17,6 +17,7 @@ import it.saabel.kotlinnotionclient.models.databases.CreateDatabaseRequest
 import it.saabel.kotlinnotionclient.models.databases.Database
 import it.saabel.kotlinnotionclient.models.databases.DatabaseRequestBuilder
 import it.saabel.kotlinnotionclient.models.databases.databaseRequest
+import it.saabel.kotlinnotionclient.models.datasources.UpdateDataSourceRequest
 import it.saabel.kotlinnotionclient.ratelimit.executeWithRateLimit
 import it.saabel.kotlinnotionclient.validation.RequestValidator
 import it.saabel.kotlinnotionclient.validation.ValidationConfig
@@ -123,7 +124,37 @@ class DatabasesApi(
                     }
 
                 if (response.status.isSuccess()) {
-                    response.body<Database>()
+                    val database = response.body<Database>()
+                    // Propagate the icon to the initial data source.
+                    // In the 2025-09-03 API, the UI renders the data source view, not the
+                    // database container, so an icon set on the container won't appear unless
+                    // it is also set on the data source.
+                    if (finalRequest.icon != null) {
+                        val dataSourceId = database.dataSources.firstOrNull()?.id
+                        if (dataSourceId != null) {
+                            val iconPatchResponse: HttpResponse =
+                                httpClient.patch("${config.baseUrl}/data_sources/$dataSourceId") {
+                                    contentType(ContentType.Application.Json)
+                                    setBody(UpdateDataSourceRequest(icon = finalRequest.icon))
+                                }
+                            if (!iconPatchResponse.status.isSuccess()) {
+                                val errorBody =
+                                    try {
+                                        iconPatchResponse.body<String>()
+                                    } catch (e: Exception) {
+                                        "Could not read error response body"
+                                    }
+                                throw NotionException.ApiError(
+                                    code = iconPatchResponse.status.value.toString(),
+                                    status = iconPatchResponse.status.value,
+                                    details =
+                                        "HTTP ${iconPatchResponse.status.value}: " +
+                                            "${iconPatchResponse.status.description}. Response: $errorBody",
+                                )
+                            }
+                        }
+                    }
+                    database
                 } else {
                     val errorBody =
                         try {
@@ -147,19 +178,19 @@ class DatabasesApi(
     }
 
     /**
-     * Archives a database by setting its archived property to true.
+     * Moves a database to trash by setting its in_trash property to true.
      *
-     * Notion doesn't support true deletion - objects are archived instead.
-     * Archived databases are no longer accessible through the UI but can still
+     * Notion doesn't support permanent deletion - databases are moved to trash instead.
+     * Databases in trash are no longer accessible through the UI but can still
      * be retrieved via the API.
      *
-     * @param databaseId The ID of the database to archive
-     * @return Database object representing the archived database
+     * @param databaseId The ID of the database to trash
+     * @return Database object representing the trashed database
      * @throws NotionException.NetworkError for network-related failures
      * @throws NotionException.ApiError for API-related errors (4xx, 5xx responses)
      * @throws NotionException.AuthenticationError for authentication failures
      */
-    suspend fun archive(databaseId: String): Database =
+    suspend fun trash(databaseId: String): Database =
         httpClient.executeWithRateLimit {
             try {
                 val request = ArchiveDatabaseRequest(inTrash = true)
