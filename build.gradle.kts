@@ -64,8 +64,10 @@ java {
 mavenPublishing {
     // Maven Central publishing is configured via gradle.properties (mavenCentralPublishing=true)
 
-    // Sign all publications with GPG
-    signAllPublications()
+    // Sign all publications with GPG — skipped for local publishing (./gradlew publishToMavenLocal -PskipSigning)
+    if (!project.hasProperty("skipSigning")) {
+        signAllPublications()
+    }
 
     // Configure POM metadata
     coordinates(group as String, "kotlin-notion-client", version as String)
