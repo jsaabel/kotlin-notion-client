@@ -1,5 +1,7 @@
 # Documentation Index
 
+> **Note**: These guides reflect the library's current implementation but may not always be up to date with the latest Notion API changes. The [official Notion developer documentation](https://developers.notion.com/) is always the authoritative source for API behaviour and field definitions.
+
 ## API Guides
 
 ### Core APIs
@@ -12,6 +14,9 @@
 - **[Search](search.md)** - Search across your Notion workspace
 - **[Users](users.md)** - Retrieve user information
 - **[Comments](comments.md)** - Add and retrieve comments
+- **[Markdown API](markdown-api.md)** - Create and update page content with markdown
+- **[Views API](views-api.md)** - Manage database views
+- **[Custom Emojis](custom-emojis.md)** - List custom emojis and native icons
 
 ### Features
 - **[Pagination](pagination.md)** - Handle paginated results efficiently
@@ -25,11 +30,11 @@
 - [Main README](../README.md)
 - [Quick Start Guide](../QUICKSTART.md)
 
-## Understanding the 2025-09-03 API
+## Understanding the 2026-03-11 API
 
-This library implements Notion API version 2025-09-03, which introduced important changes:
+This library implements Notion API version 2026-03-11. A key concept introduced in 2025-09-03 and carried forward:
 
-- **Databases** are now containers that hold one or more **data sources**
+- **Databases** are containers that hold one or more **data sources**
 - **Data sources** are the actual tables with properties and rows (pages)
 - Most operations work on data sources, not databases
 

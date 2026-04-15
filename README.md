@@ -101,7 +101,7 @@ Both patterns are fully supported - use whichever feels more natural to you.
 
 ## Understanding Databases vs. Data Sources
 
-**Important**: The 2026-03-11 API introduced a fundamental change to how databases work:
+**Important**: The 2025-09-03 API introduced a fundamental change to how databases work:
 
 - **Database** = Container that holds one or more data sources
 - **Data Source** = The actual table with properties and rows (pages)
@@ -110,7 +110,7 @@ Most operations you'd expect to do on a "database" (like querying, adding pages)
 
 ```kotlin
 // ❌ In older APIs: notion.databases.query("database-id")
-// ✅ In 2026-03-11: notion.dataSources.query("data-source-id")
+// ✅ In 2025-09-03+: notion.dataSources.query("data-source-id")
 ```
 
 The `DatabasesApi` is for container-level operations (create database, update title/icon/cover). The `DataSourcesApi` is for data operations (query, create data source, update schema).

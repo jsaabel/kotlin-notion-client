@@ -7,7 +7,7 @@ Get started with the Kotlin Notion Client in under 5 minutes.
 1. **Notion Integration**: Create an integration at [notion.so/my-integrations](https://www.notion.so/my-integrations)
 2. **API Token**: Copy your integration's API token (starts with `secret_`)
 3. **Share Content**: Share a page or database with your integration
-4. **Kotlin Project**: Kotlin 2.2+ with JVM target 17+
+4. **Kotlin Project**: Kotlin 2.3+ with JVM target 17+
 
 ## Installation
 
@@ -15,7 +15,7 @@ Add the dependency to your `build.gradle.kts`:
 
 ```kotlin
 dependencies {
-    implementation("it.saabel:kotlin-notion-client:0.2.0")
+    implementation("it.saabel:kotlin-notion-client:0.4.0")
 }
 ```
 
