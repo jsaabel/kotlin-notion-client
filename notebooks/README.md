@@ -63,11 +63,26 @@ Advanced querying: complex nested filters, multiple sorts, pagination.
 
 **Prerequisites**: `NOTION_API_TOKEN`, `NOTION_TEST_DATABASE_ID`
 
+---
+
+### [07-file-uploads.ipynb](./07-file-uploads.ipynb)
+Uploading files, external imports, media blocks.
+
+**Prerequisites**: `NOTION_API_TOKEN`, `NOTION_TEST_PAGE_ID`
+
+---
+
+### [08-whats-new-in-v0.4.ipynb](./08-whats-new-in-v0.4.ipynb)
+Tour of all breaking changes and new features in v0.4.0: trash API, Markdown Content API, Views API, new block types, native icons, relative date filters, and more.
+
+**Prerequisites**: `NOTION_API_TOKEN`, `NOTION_TEST_PAGE_ID`, `NOTION_TEST_DATABASE_ID`
+
 ## Notes
 
-- All notebooks use `runBlocking { }` to wrap suspend functions
+- All notebooks use v0.4.0 and `runBlocking { }` to wrap suspend functions
 - Notebooks are designed to be modified and experimented with
 - Use a test workspace, not your production Notion workspace
+- Run each cell in order; set the required environment variables before starting
 
 ## Resources
 
