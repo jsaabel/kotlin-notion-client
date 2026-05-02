@@ -7,6 +7,7 @@ import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.types.shouldBeInstanceOf
 import it.saabel.kotlinnotionclient.models.pages.Page
 import it.saabel.kotlinnotionclient.models.pages.PageProperty
+import it.saabel.kotlinnotionclient.models.pages.RollupResult
 import kotlinx.serialization.json.Json
 
 /**
@@ -181,6 +182,61 @@ class PagePropertyUnknownTypeTest :
             // Verify we can access basic information
             buttonProperty.id shouldBe "button-prop-id"
             buttonProperty.type shouldBe "button"
+        }
+
+        "Should deserialize rollup with show_original array containing id-less items" {
+            val pageJson =
+                """
+                {
+                  "object": "page",
+                  "id": "test-page-id",
+                  "created_time": "2025-01-01T00:00:00.000Z",
+                  "last_edited_time": "2025-01-01T00:00:00.000Z",
+                  "archived": false,
+                  "in_trash": false,
+                  "parent": {
+                    "type": "workspace",
+                    "workspace": true
+                  },
+                  "properties": {
+                    "Price/night": {
+                      "id": "hvGP",
+                      "type": "rollup",
+                      "rollup": {
+                        "type": "array",
+                        "array": [
+                          {"type": "number", "number": 933},
+                          {"type": "number", "number": 1200}
+                        ],
+                        "function": "show_original"
+                      }
+                    }
+                  },
+                  "url": "https://www.notion.so/test-page-id"
+                }
+                """.trimIndent()
+
+            val page = json.decodeFromString<Page>(pageJson)
+
+            page.id shouldBe "test-page-id"
+
+            val rollupProp = page.properties["Price/night"]
+            rollupProp shouldNotBe null
+            val rollup = rollupProp.shouldBeInstanceOf<PageProperty.Rollup>()
+            rollup.id shouldBe "hvGP"
+
+            val result = rollup.rollup.shouldBeInstanceOf<RollupResult.ArrayResult>()
+            result.function shouldBe "show_original"
+            result.array.size shouldBe 2
+
+            // Array items have no "id" field — they should deserialize with id = ""
+            val first = result.array[0].shouldBeInstanceOf<PageProperty.Number>()
+            first.id shouldBe ""
+            first.number shouldBe 933.0
+
+            val second = result.array[1].shouldBeInstanceOf<PageProperty.Number>()
+            second.id shouldBe ""
+            second.number shouldBe 1200.0
         }
 
         "Should handle all supported property types correctly" {

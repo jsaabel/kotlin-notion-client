@@ -48,9 +48,7 @@ object PagePropertySerializer : KSerializer<PageProperty> {
             jsonObject["type"]?.jsonPrimitive?.content
                 ?: throw SerializationException("Missing 'type' field in PageProperty JSON")
 
-        val id =
-            jsonObject["id"]?.jsonPrimitive?.content
-                ?: throw SerializationException("Missing 'id' field in PageProperty JSON")
+        val id = jsonObject["id"]?.jsonPrimitive?.content ?: ""
 
         return when (type) {
             "title" -> {

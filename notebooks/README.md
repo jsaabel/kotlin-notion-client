@@ -79,7 +79,7 @@ Tour of all breaking changes and new features in v0.4.0: trash API, Markdown Con
 
 ## Notes
 
-- All notebooks use v0.4.0 and `runBlocking { }` to wrap suspend functions
+- All notebooks use v0.4.1 and `runBlocking { }` to wrap suspend functions
 - Notebooks are designed to be modified and experimented with
 - Use a test workspace, not your production Notion workspace
 - Run each cell in order; set the required environment variables before starting

@@ -49,7 +49,7 @@ sealed class PageProperty {
     @Serializable
     @SerialName("title")
     data class Title(
-        @SerialName("id") override val id: String,
+        @SerialName("id") override val id: String = "",
         @SerialName("type") override val type: String,
         @SerialName("title") val title: List<RichText>,
     ) : PageProperty() {
@@ -60,7 +60,7 @@ sealed class PageProperty {
     @Serializable
     @SerialName("rich_text")
     data class RichTextProperty(
-        @SerialName("id") override val id: String,
+        @SerialName("id") override val id: String = "",
         @SerialName("type") override val type: String,
         @SerialName("rich_text") val richText: List<RichText>,
     ) : PageProperty() {
@@ -71,7 +71,7 @@ sealed class PageProperty {
     @Serializable
     @SerialName("number")
     data class Number(
-        @SerialName("id") override val id: String,
+        @SerialName("id") override val id: String = "",
         @SerialName("type") override val type: String,
         @SerialName("number") val number: Double?,
     ) : PageProperty()
@@ -79,7 +79,7 @@ sealed class PageProperty {
     @Serializable
     @SerialName("checkbox")
     data class Checkbox(
-        @SerialName("id") override val id: String,
+        @SerialName("id") override val id: String = "",
         @SerialName("type") override val type: String,
         @SerialName("checkbox") val checkbox: Boolean,
     ) : PageProperty()
@@ -87,7 +87,7 @@ sealed class PageProperty {
     @Serializable
     @SerialName("url")
     data class Url(
-        @SerialName("id") override val id: String,
+        @SerialName("id") override val id: String = "",
         @SerialName("type") override val type: String,
         @SerialName("url") val url: String?,
     ) : PageProperty()
@@ -95,7 +95,7 @@ sealed class PageProperty {
     @Serializable
     @SerialName("email")
     data class Email(
-        @SerialName("id") override val id: String,
+        @SerialName("id") override val id: String = "",
         @SerialName("type") override val type: String,
         @SerialName("email") val email: String?,
     ) : PageProperty()
@@ -103,7 +103,7 @@ sealed class PageProperty {
     @Serializable
     @SerialName("phone_number")
     data class PhoneNumber(
-        @SerialName("id") override val id: String,
+        @SerialName("id") override val id: String = "",
         @SerialName("type") override val type: String,
         @SerialName("phone_number") val phoneNumber: String?,
     ) : PageProperty()
@@ -111,7 +111,7 @@ sealed class PageProperty {
     @Serializable
     @SerialName("unique_id")
     data class UniqueId(
-        @SerialName("id") override val id: String,
+        @SerialName("id") override val id: String = "",
         @SerialName("type") override val type: String,
         @SerialName("unique_id") val uniqueId: UniqueIdValue?,
     ) : PageProperty() {
@@ -133,7 +133,7 @@ sealed class PageProperty {
     @Serializable
     @SerialName("place")
     data class Place(
-        @SerialName("id") override val id: String,
+        @SerialName("id") override val id: String = "",
         @SerialName("type") override val type: String,
         @SerialName("place") val place: PlaceValue?,
     ) : PageProperty() {
@@ -159,7 +159,7 @@ sealed class PageProperty {
     @Serializable
     @SerialName("select")
     data class Select(
-        @SerialName("id") override val id: String,
+        @SerialName("id") override val id: String = "",
         @SerialName("type") override val type: String,
         @SerialName("select") val select: SelectOption?,
     ) : PageProperty()
@@ -167,7 +167,7 @@ sealed class PageProperty {
     @Serializable
     @SerialName("multi_select")
     data class MultiSelect(
-        @SerialName("id") override val id: String,
+        @SerialName("id") override val id: String = "",
         @SerialName("type") override val type: String,
         @SerialName("multi_select") val multiSelect: List<SelectOption>,
     ) : PageProperty()
@@ -175,7 +175,7 @@ sealed class PageProperty {
     @Serializable
     @SerialName("status")
     data class Status(
-        @SerialName("id") override val id: String,
+        @SerialName("id") override val id: String = "",
         @SerialName("type") override val type: String,
         @SerialName("status") val status: StatusOption?,
     ) : PageProperty()
@@ -183,7 +183,7 @@ sealed class PageProperty {
     @Serializable
     @SerialName("date")
     data class Date(
-        @SerialName("id") override val id: String,
+        @SerialName("id") override val id: String = "",
         @SerialName("type") override val type: String,
         @SerialName("date") val date: DateData?,
     ) : PageProperty()
@@ -191,7 +191,7 @@ sealed class PageProperty {
     @Serializable
     @SerialName("people")
     data class People(
-        @SerialName("id") override val id: String,
+        @SerialName("id") override val id: String = "",
         @SerialName("type") override val type: String,
         @SerialName("people") val people: List<User>,
     ) : PageProperty()
@@ -199,7 +199,7 @@ sealed class PageProperty {
     @Serializable
     @SerialName("files")
     data class Files(
-        @SerialName("id") override val id: String,
+        @SerialName("id") override val id: String = "",
         @SerialName("type") override val type: String,
         @SerialName("files") val files: List<FileData>,
     ) : PageProperty()
@@ -207,7 +207,7 @@ sealed class PageProperty {
     @Serializable
     @SerialName("relation")
     data class Relation(
-        @SerialName("id") override val id: String,
+        @SerialName("id") override val id: String = "",
         @SerialName("type") override val type: String,
         @SerialName("relation") val relation: List<PageReference>,
         @SerialName("has_more") val hasMore: Boolean = false,
@@ -216,7 +216,7 @@ sealed class PageProperty {
     @Serializable
     @SerialName("formula")
     data class Formula(
-        @SerialName("id") override val id: String,
+        @SerialName("id") override val id: String = "",
         @SerialName("type") override val type: String,
         @SerialName("formula") val formula: FormulaResult,
     ) : PageProperty()
@@ -224,7 +224,7 @@ sealed class PageProperty {
     @Serializable
     @SerialName("rollup")
     data class Rollup(
-        @SerialName("id") override val id: String,
+        @SerialName("id") override val id: String = "",
         @SerialName("type") override val type: String,
         @SerialName("rollup") val rollup: RollupResult,
     ) : PageProperty()
@@ -232,7 +232,7 @@ sealed class PageProperty {
     @Serializable
     @SerialName("created_time")
     data class CreatedTime(
-        @SerialName("id") override val id: String,
+        @SerialName("id") override val id: String = "",
         @SerialName("type") override val type: String,
         @SerialName("created_time") val createdTime: String,
     ) : PageProperty()
@@ -240,7 +240,7 @@ sealed class PageProperty {
     @Serializable
     @SerialName("last_edited_time")
     data class LastEditedTime(
-        @SerialName("id") override val id: String,
+        @SerialName("id") override val id: String = "",
         @SerialName("type") override val type: String,
         @SerialName("last_edited_time") val lastEditedTime: String,
     ) : PageProperty()
@@ -248,7 +248,7 @@ sealed class PageProperty {
     @Serializable
     @SerialName("created_by")
     data class CreatedBy(
-        @SerialName("id") override val id: String,
+        @SerialName("id") override val id: String = "",
         @SerialName("type") override val type: String,
         @SerialName("created_by") val createdBy: User,
     ) : PageProperty()
@@ -256,7 +256,7 @@ sealed class PageProperty {
     @Serializable
     @SerialName("last_edited_by")
     data class LastEditedBy(
-        @SerialName("id") override val id: String,
+        @SerialName("id") override val id: String = "",
         @SerialName("type") override val type: String,
         @SerialName("last_edited_by") val lastEditedBy: User,
     ) : PageProperty()
@@ -270,7 +270,7 @@ sealed class PageProperty {
     @Serializable
     @SerialName("verification")
     data class Verification(
-        @SerialName("id") override val id: String,
+        @SerialName("id") override val id: String = "",
         @SerialName("type") override val type: String,
         @SerialName("verification") val verification: VerificationData?,
     ) : PageProperty()
@@ -287,7 +287,7 @@ sealed class PageProperty {
      */
     @Serializable
     data class Unknown(
-        @SerialName("id") override val id: String,
+        @SerialName("id") override val id: String = "",
         @SerialName("type") override val type: String,
         val rawContent: JsonElement,
     ) : PageProperty()

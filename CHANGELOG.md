@@ -5,6 +5,66 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.1] - 2026-05-02
+
+### 🐛 Fixed
+
+- **Rollup `show_original` deserialization**: Rollup properties using `show_original` return an array of page property items without the `id` field. Previously this caused a `SerializationException`; now all `PageProperty` subtypes default `id` to `""`, matching the API's behaviour for inline property values.
+
+## [0.4.0] - 2026-04-15
+
+### ⚠️ Breaking Changes
+
+- **Notion API version**: Now targets **2026-03-11**
+- **`archived` -> `inTrash`**: All models (`Page`, `Database`, `Block`, `Comment`, etc.) now expose `inTrash: Boolean` instead of `archived`
+- **`archive()`/`unarchive()` -> `trash()`/`restore()`**: Renamed on `PagesApi`, `DatabasesApi`, `DataSourceRequestBuilder`, `UpdatePageRequestBuilder`
+- **`appendChildren` position parameter**: The `after` parameter is replaced by a typed `BlockAppendPosition` sealed class: `AfterBlock(blockRef)`, `Start`, `End`
+
+### ✨ Added
+
+**Views API** — Full implementation of all 8 Views API endpoints (`client.views`):
+- Create, retrieve, update, delete views and view queries
+- Get view query results
+- Typed `ViewConfiguration` sealed class for all 10 view types (table, board, list, calendar, timeline, gallery, chart, form, feed, AI)
+- `GroupByConfig` for board/gallery/timeline/chart views
+
+**Markdown Content API** (`client.markdown`):
+- `retrieve(pageId)` — fetch a page's content as enhanced markdown
+- `updateContent(pageId, ...)` — find/replace within existing content
+- `replaceContent(pageId, markdown)` — replace all content with markdown
+- Create pages with markdown via `CreatePageRequestBuilder.markdown()`
+- Create comments with markdown
+
+**New Block Types**:
+- `heading_4` — with toggleable support
+- `tab` — tab container blocks with icon support
+- `meeting_notes` — read-only response model (renamed from `transcription`)
+
+**Filter Enhancements**:
+- Relative date filters: `pastWeek()`, `pastMonth()`, `nextWeek()`, `nextYear()`, etc.
+- People filter: `containsMe()` / `doesNotContainMe()` (filter by the authenticated user)
+
+**Icon Consolidation**:
+- `PageIcon` renamed to `Icon` and moved to `models.base` — used consistently across pages, databases, callouts, and tabs
+
+**Other Additions**:
+- `Status` property creation in `DatabaseRequestBuilder`
+- Property and option descriptions for database properties
+- Native icon listing (`client.customEmojis.listNativeIcons()`)
+- Custom emoji listing (`client.customEmojis.list()`)
+- `Verification` property type (read model)
+- `queryFirstPage()` on `DataSourcesApi` — single API call, exposes `hasMore`/`nextCursor`
+- `retrieveChildrenFirstPage()` on `BlocksApi` — single API call
+
+### 🔧 Changed
+
+**Dependencies**:
+- Kotlin 2.3.0, Ktor 3.4.0, kotlinx-datetime 0.7.1, Kotest 6.1.2
+
+### 📊 Statistics
+
+- **Test coverage**: 600+ unit tests
+
 ## [0.3.0] - 2026-02-08
 
 ### ✨ Added

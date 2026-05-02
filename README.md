@@ -25,7 +25,7 @@ A modern, type-safe Kotlin client for the Notion API with comprehensive DSL supp
 ```kotlin
 // Gradle (Kotlin DSL)
 dependencies {
-    implementation("it.saabel:kotlin-notion-client:0.4.0")
+    implementation("it.saabel:kotlin-notion-client:0.4.1")
 }
 ```
 
@@ -34,7 +34,7 @@ dependencies {
 <dependency>
     <groupId>it.saabel</groupId>
     <artifactId>kotlin-notion-client</artifactId>
-    <version>0.4.0</version>
+    <version>0.4.1</version>
 </dependency>
 ```
 
@@ -171,7 +171,7 @@ The **[Kotlin Notebooks](notebooks/)** are the best way to learn the library:
 7. [File Uploads](notebooks/07-file-uploads.ipynb) - Uploading files, external imports, media blocks
 8. [What's New in v0.4.0](notebooks/08-whats-new-in-v0.4.ipynb) — Tour of all breaking changes and new features added in v0.4.0
 
-All notebooks use v0.4.0 and can be run in IntelliJ IDEA (with the Kotlin Notebook plugin) or Jupyter (with kotlin-jupyter-kernel). Run each cell in order; set the required environment variables before starting.
+All notebooks use v0.4.1 and can be run in IntelliJ IDEA (with the Kotlin Notebook plugin) or Jupyter (with kotlin-jupyter-kernel). Run each cell in order; set the required environment variables before starting.
 
 ## Building from Source
 
