@@ -56,6 +56,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `queryFirstPage()` on `DataSourcesApi` — single API call, exposes `hasMore`/`nextCursor`
 - `retrieveChildrenFirstPage()` on `BlocksApi` — single API call
 
+### 🐛 Fixed
+
+- `dateMention(LocalDateTime, TimeZone)` was incorrectly sending the UTC instant representation — it now sends the local date-time as intended
+- Database icon is now automatically propagated to the initial data source when creating a database
+
 ### 🔧 Changed
 
 **Dependencies**:
@@ -214,8 +219,10 @@ This is the first public release of the Kotlin Notion Client library.
 
 ---
 
-**Note**: This is an early release (0.1.0). While comprehensive testing has been performed, users should expect potential issues and are encouraged to report them via GitHub Issues.
+**Note**: This is an early release. Users should expect potential issues and are encouraged to report them via GitHub Issues.
 
+[0.4.1]: https://github.com/jsaabel/kotlin-notion-client/compare/v0.4.0...v0.4.1
+[0.4.0]: https://github.com/jsaabel/kotlin-notion-client/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/jsaabel/kotlin-notion-client/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/jsaabel/kotlin-notion-client/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/jsaabel/kotlin-notion-client/releases/tag/v0.1.0
