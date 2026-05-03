@@ -12,6 +12,7 @@ import it.saabel.kotlinnotionclient.models.pages.PageCover
 import it.saabel.kotlinnotionclient.models.users.User
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
 
 /**
@@ -74,7 +75,7 @@ data class Database(
  * - PagePropertyValue: Property values for requests (PageRequests.kt)
  * - base.RichText: Actual rich text content structure (base package)
  */
-@Serializable
+@Serializable(with = DatabasePropertySerializer::class)
 sealed class DatabaseProperty {
     abstract val id: String
     abstract val name: String
@@ -399,6 +400,23 @@ sealed class DatabaseProperty {
         @SerialName("type")
         override val type: String = "status"
     }
+
+    /**
+     * Fallback for unknown/unsupported database property types.
+     *
+     * This type is used when the Notion API returns a property type that isn't
+     * explicitly supported by the client (e.g., "button"). This ensures forward
+     * compatibility as Notion adds new property types.
+     *
+     * The raw JSON is preserved so users can inspect it or handle it manually.
+     */
+    @Serializable
+    data class Unknown(
+        @SerialName("id") override val id: String = "",
+        @SerialName("name") override val name: String = "",
+        @SerialName("type") override val type: String,
+        val rawContent: JsonElement,
+    ) : DatabaseProperty()
 }
 
 /**

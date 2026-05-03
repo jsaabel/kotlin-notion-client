@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.2] - 2026-05-03
+
+### 🐛 Fixed
+
+- **DatabaseProperty forward compatibility**: Unknown database property types (e.g., `"button"`) now deserialize as `DatabaseProperty.Unknown` with raw JSON preserved, instead of crashing with a `SerializationException`. This mirrors the existing `PageProperty.Unknown` fallback pattern.
+
 ## [0.4.1] - 2026-05-02
 
 ### 🐛 Fixed
