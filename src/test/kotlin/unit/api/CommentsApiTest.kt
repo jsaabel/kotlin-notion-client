@@ -20,6 +20,7 @@ import it.saabel.kotlinnotionclient.models.comments.CommentDisplayNameRequest
 import it.saabel.kotlinnotionclient.models.comments.CommentDisplayNameType
 import it.saabel.kotlinnotionclient.models.comments.CommentList
 import it.saabel.kotlinnotionclient.models.comments.CreateCommentRequest
+import it.saabel.kotlinnotionclient.models.comments.UpdateCommentRequest
 import it.saabel.kotlinnotionclient.models.requests.RequestBuilders
 import unit.util.TestFixtures
 import unit.util.mockClient
@@ -339,6 +340,109 @@ class CommentsApiTest :
 
                 exception.code shouldBe "400"
                 exception.status shouldBe 400
+            }
+        }
+
+        context("update comment") {
+            test("should update comment successfully with rich text") {
+                val client =
+                    mockClient {
+                        addJsonResponse(
+                            method = HttpMethod.Patch,
+                            path = "/v1/comments/",
+                            responseBody = TestFixtures.Comments.createCommentAsString(),
+                        )
+                    }
+
+                api = CommentsApi(client, config)
+
+                val request =
+                    UpdateCommentRequest(
+                        richText = listOf(RequestBuilders.createSimpleRichText("Updated content")),
+                    )
+
+                val result = api.update("b52b8ed6-e029-4707-a671-832549c09de3", request)
+
+                result.shouldBeInstanceOf<Comment>()
+                result.id shouldBe "b52b8ed6-e029-4707-a671-832549c09de3"
+            }
+
+            test("should update comment successfully with markdown") {
+                val client =
+                    mockClient {
+                        addJsonResponse(
+                            method = HttpMethod.Patch,
+                            path = "/v1/comments/",
+                            responseBody = TestFixtures.Comments.createCommentAsString(),
+                        )
+                    }
+
+                api = CommentsApi(client, config)
+
+                val request = UpdateCommentRequest(markdown = "**Updated** via markdown")
+
+                val result = api.update("b52b8ed6-e029-4707-a671-832549c09de3", request)
+
+                result.shouldBeInstanceOf<Comment>()
+                result.id shouldBe "b52b8ed6-e029-4707-a671-832549c09de3"
+            }
+
+            test("should reject both rich_text and markdown being set") {
+                val client = mockClient { }
+                api = CommentsApi(client, config)
+
+                val request =
+                    UpdateCommentRequest(
+                        richText = listOf(RequestBuilders.createSimpleRichText("hello")),
+                        markdown = "**hello**",
+                    )
+
+                val exception =
+                    shouldThrow<IllegalArgumentException> {
+                        api.update("comment-id", request)
+                    }
+
+                exception.message shouldContain "either rich_text or markdown, not both"
+            }
+
+            test("should reject neither rich_text nor markdown being set") {
+                val client = mockClient { }
+                api = CommentsApi(client, config)
+
+                val request = UpdateCommentRequest()
+
+                val exception =
+                    shouldThrow<IllegalArgumentException> {
+                        api.update("comment-id", request)
+                    }
+
+                exception.message shouldContain "Comment content cannot be empty"
+            }
+
+            test("should map 404 to ApiError when updating a not-owned comment") {
+                val client =
+                    mockClient {
+                        addErrorResponse(
+                            method = HttpMethod.Patch,
+                            urlPattern = "*/v1/comments*",
+                            statusCode = HttpStatusCode.NotFound,
+                        )
+                    }
+
+                api = CommentsApi(client, config)
+
+                val request =
+                    UpdateCommentRequest(
+                        richText = listOf(RequestBuilders.createSimpleRichText("This will fail")),
+                    )
+
+                val exception =
+                    shouldThrow<NotionException.ApiError> {
+                        api.update("not-owned-comment-id", request)
+                    }
+
+                exception.code shouldBe "404"
+                exception.status shouldBe 404
             }
         }
     })
