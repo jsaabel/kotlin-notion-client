@@ -324,9 +324,27 @@ class NumberFilterBuilder(
 class SelectFilterBuilder(
     private val propertyName: String,
 ) {
-    fun equals(value: String): DataSourceFilter = createFilter(SelectCondition(equals = value))
+    /**
+     * Filter for entries whose select value equals one of [values].
+     *
+     * A single value serializes to a JSON string (`"equals": "X"`); multiple values serialize to a
+     * JSON array (`"equals": ["X","Y"]`). At least one value is required.
+     */
+    fun equals(vararg values: String): DataSourceFilter {
+        require(values.isNotEmpty()) { "equals requires at least one value" }
+        return createFilter(SelectCondition(equals = FilterValues(values.toList())))
+    }
 
-    fun doesNotEqual(value: String): DataSourceFilter = createFilter(SelectCondition(doesNotEqual = value))
+    /**
+     * Filter for entries whose select value does not equal any of [values].
+     *
+     * A single value serializes to a JSON string; multiple values serialize to a JSON array. At
+     * least one value is required.
+     */
+    fun doesNotEqual(vararg values: String): DataSourceFilter {
+        require(values.isNotEmpty()) { "doesNotEqual requires at least one value" }
+        return createFilter(SelectCondition(doesNotEqual = FilterValues(values.toList())))
+    }
 
     fun isEmpty(): DataSourceFilter = createFilter(SelectCondition(isEmpty = true))
 
@@ -345,9 +363,27 @@ class SelectFilterBuilder(
 class MultiSelectFilterBuilder(
     private val propertyName: String,
 ) {
-    fun contains(value: String): DataSourceFilter = createFilter(MultiSelectCondition(contains = value))
+    /**
+     * Filter for entries whose multi-select contains one of [values].
+     *
+     * A single value serializes to a JSON string (`"contains": "X"`); multiple values serialize to
+     * a JSON array (`"contains": ["X","Y"]`). At least one value is required.
+     */
+    fun contains(vararg values: String): DataSourceFilter {
+        require(values.isNotEmpty()) { "contains requires at least one value" }
+        return createFilter(MultiSelectCondition(contains = FilterValues(values.toList())))
+    }
 
-    fun doesNotContain(value: String): DataSourceFilter = createFilter(MultiSelectCondition(doesNotContain = value))
+    /**
+     * Filter for entries whose multi-select does not contain any of [values].
+     *
+     * A single value serializes to a JSON string; multiple values serialize to a JSON array. At
+     * least one value is required.
+     */
+    fun doesNotContain(vararg values: String): DataSourceFilter {
+        require(values.isNotEmpty()) { "doesNotContain requires at least one value" }
+        return createFilter(MultiSelectCondition(doesNotContain = FilterValues(values.toList())))
+    }
 
     fun isEmpty(): DataSourceFilter = createFilter(MultiSelectCondition(isEmpty = true))
 
@@ -553,9 +589,27 @@ class PeopleFilterBuilder(
 class StatusFilterBuilder(
     private val propertyName: String,
 ) {
-    fun equals(value: String): DataSourceFilter = createFilter(StatusCondition(equals = value))
+    /**
+     * Filter for entries whose status equals one of [values].
+     *
+     * A single value serializes to a JSON string (`"equals": "X"`); multiple values serialize to a
+     * JSON array (`"equals": ["X","Y"]`). At least one value is required.
+     */
+    fun equals(vararg values: String): DataSourceFilter {
+        require(values.isNotEmpty()) { "equals requires at least one value" }
+        return createFilter(StatusCondition(equals = FilterValues(values.toList())))
+    }
 
-    fun doesNotEqual(value: String): DataSourceFilter = createFilter(StatusCondition(doesNotEqual = value))
+    /**
+     * Filter for entries whose status does not equal any of [values].
+     *
+     * A single value serializes to a JSON string; multiple values serialize to a JSON array. At
+     * least one value is required.
+     */
+    fun doesNotEqual(vararg values: String): DataSourceFilter {
+        require(values.isNotEmpty()) { "doesNotEqual requires at least one value" }
+        return createFilter(StatusCondition(doesNotEqual = FilterValues(values.toList())))
+    }
 
     fun isEmpty(): DataSourceFilter = createFilter(StatusCondition(isEmpty = true))
 
