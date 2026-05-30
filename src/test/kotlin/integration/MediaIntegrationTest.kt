@@ -624,14 +624,24 @@ class MediaIntegrationTest :
                     notion.fileUploads.createFileUpload(
                         CreateFileUploadRequest(filename = "data.txt", contentType = "text/plain"),
                     )
-                notion.fileUploads.sendFileUpload(uploadA.id, createSampleFileContent("data.txt"))
+                notion.fileUploads.sendFileUpload(
+                    uploadA.id,
+                    createSampleFileContent("data.txt"),
+                    contentType = "text/plain",
+                )
                 println("  ✓ Uploaded A: ${uploadA.id}")
 
                 val uploadB =
                     notion.fileUploads.createFileUpload(
                         CreateFileUploadRequest(filename = "config.json", contentType = "application/json"),
                     )
-                notion.fileUploads.sendFileUpload(uploadB.id, createSampleFileContent("config.json"))
+                notion.fileUploads.sendFileUpload(
+                    uploadB.id,
+                    createSampleFileContent("config.json"),
+                    // Must match the content type declared at creation; an omitted part
+                    // content-type defaults to text/plain and Notion rejects the mismatch.
+                    contentType = "application/json",
+                )
                 println("  ✓ Uploaded B: ${uploadB.id}")
 
                 delay(2000)
