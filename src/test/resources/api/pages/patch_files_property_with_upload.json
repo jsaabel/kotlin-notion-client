@@ -1,0 +1,15 @@
+{
+  "properties": {
+    "Blueprint": {
+      "files": [
+        {
+          "type": "file_upload",
+          "file_upload": {
+            "id": "c2c5c4a4-1f1f-4f1f-9f1f-1f1f1f1f1f1f"
+          },
+          "name": "project-alpha-blueprint.pdf"
+        }
+      ]
+    }
+  }
+}
