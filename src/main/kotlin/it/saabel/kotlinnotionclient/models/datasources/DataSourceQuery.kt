@@ -192,9 +192,9 @@ data class NumberCondition(
 @Serializable
 data class SelectCondition(
     @SerialName("equals")
-    val equals: String? = null,
+    val equals: FilterValues? = null,
     @SerialName("does_not_equal")
-    val doesNotEqual: String? = null,
+    val doesNotEqual: FilterValues? = null,
     @SerialName("is_empty")
     val isEmpty: Boolean? = null,
     @SerialName("is_not_empty")
@@ -207,9 +207,9 @@ data class SelectCondition(
 @Serializable
 data class MultiSelectCondition(
     @SerialName("contains")
-    val contains: String? = null,
+    val contains: FilterValues? = null,
     @SerialName("does_not_contain")
-    val doesNotContain: String? = null,
+    val doesNotContain: FilterValues? = null,
     @SerialName("is_empty")
     val isEmpty: Boolean? = null,
     @SerialName("is_not_empty")
@@ -317,9 +317,9 @@ data class PeopleCondition(
 @Serializable
 data class StatusCondition(
     @SerialName("equals")
-    val equals: String? = null,
+    val equals: FilterValues? = null,
     @SerialName("does_not_equal")
-    val doesNotEqual: String? = null,
+    val doesNotEqual: FilterValues? = null,
     @SerialName("is_empty")
     val isEmpty: Boolean? = null,
     @SerialName("is_not_empty")

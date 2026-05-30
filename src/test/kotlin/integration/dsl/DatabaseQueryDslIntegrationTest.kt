@@ -13,6 +13,14 @@ import it.saabel.kotlinnotionclient.config.NotionConfig
 import it.saabel.kotlinnotionclient.models.datasources.SortDirection
 import kotlinx.coroutines.delay
 
+/** Test page seed data for the Query DSL integration fixture. */
+private data class TestPage(
+    val name: String,
+    val priority: Int,
+    val status: String,
+    val stage: String,
+)
+
 /**
  * Integration tests for the Database Query DSL functionality.
  *
@@ -66,6 +74,11 @@ class DatabaseQueryDslIntegrationTest :
                                 option("QueryDSL_Important")
                                 option("QueryDSL_NiceToHave")
                             }
+                            status("Stage") {
+                                option("QueryDSL_Backlog")
+                                option("QueryDSL_InReview")
+                                option("QueryDSL_Shipped")
+                            }
                             date("Due Date")
                             email("Assignee Email")
                             url("Reference URL")
@@ -84,25 +97,28 @@ class DatabaseQueryDslIntegrationTest :
 
                 // Create some test pages with varied data for all tests to use
                 println("📝 Creating test pages...")
+                // Each row: task name, priority, select "Status" option, status "Stage" option.
+                // Stage options are distributed so at least one page exists per option value.
                 val testPages =
                     listOf(
-                        Triple("High Priority Task", 5, "QueryDSL_ToDo"),
-                        Triple("Medium Priority Task", 3, "QueryDSL_InProgress"),
-                        Triple("Low Priority Task", 1, "QueryDSL_Done"),
-                        Triple("Urgent High Task", 5, "QueryDSL_ToDo"),
-                        Triple("Completed Medium Task", 3, "QueryDSL_Done"),
+                        TestPage("High Priority Task", 5, "QueryDSL_ToDo", "QueryDSL_Backlog"),
+                        TestPage("Medium Priority Task", 3, "QueryDSL_InProgress", "QueryDSL_Backlog"),
+                        TestPage("Low Priority Task", 1, "QueryDSL_Done", "QueryDSL_InReview"),
+                        TestPage("Urgent High Task", 5, "QueryDSL_ToDo", "QueryDSL_InReview"),
+                        TestPage("Completed Medium Task", 3, "QueryDSL_Done", "QueryDSL_Shipped"),
                     )
 
-                testPages.forEach { (name, priority, status) ->
+                testPages.forEach { page ->
                     client.pages.create {
                         parent.dataSource(dataSourceId)
                         properties {
-                            title("Task Name", name)
-                            richText("Description", "Description for $name")
-                            number("Priority", priority)
-                            checkbox("Completed", status == "QueryDSL_Done")
-                            select("Status", status)
-                            if (name.contains("Urgent")) {
+                            title("Task Name", page.name)
+                            richText("Description", "Description for ${page.name}")
+                            number("Priority", page.priority)
+                            checkbox("Completed", page.status == "QueryDSL_Done")
+                            select("Status", page.status)
+                            status("Stage", page.stage)
+                            if (page.name.contains("Urgent")) {
                                 multiSelect("Tags", "QueryDSL_Urgent", "QueryDSL_Important")
                             } else {
                                 multiSelect("Tags", "QueryDSL_NiceToHave")
@@ -316,6 +332,61 @@ class DatabaseQueryDslIntegrationTest :
 
                 pages.shouldNotBeEmpty()
                 println("Found ${pages.size} filtered, sorted tasks")
+            }
+
+            // §6b — multi-value equals/contains for select, status, multi_select filters
+
+            "Query DSL - multi-value select equals should match pages from any listed option" {
+                val pages =
+                    client.dataSources.query(dataSourceId) {
+                        filter {
+                            select("Status").equals("QueryDSL_ToDo", "QueryDSL_Done")
+                        }
+                    }
+
+                pages.shouldNotBeEmpty()
+                // ToDo: "High Priority Task", "Urgent High Task"; Done: "Low Priority Task", "Completed Medium Task"
+                pages.size shouldBe 4
+                println("Found ${pages.size} tasks with Status in {ToDo, Done}")
+            }
+
+            "Query DSL - multi-value multiSelect contains should match any listed tag" {
+                val pages =
+                    client.dataSources.query(dataSourceId) {
+                        filter {
+                            multiSelect("Tags").contains("QueryDSL_Urgent", "QueryDSL_NiceToHave")
+                        }
+                    }
+
+                pages.shouldNotBeEmpty()
+                println("Found ${pages.size} tasks tagged Urgent or NiceToHave")
+            }
+
+            "Query DSL - single-value select equals stays back-compatible (string wire form)" {
+                val pages =
+                    client.dataSources.query(dataSourceId) {
+                        filter {
+                            select("Status").equals("QueryDSL_ToDo")
+                        }
+                    }
+
+                pages.shouldNotBeEmpty()
+                pages.size shouldBeGreaterThan 0
+                println("Found ${pages.size} ToDo tasks (single-value back-compat)")
+            }
+
+            "Query DSL - multi-value status equals should match pages from any listed option" {
+                val pages =
+                    client.dataSources.query(dataSourceId) {
+                        filter {
+                            status("Stage").equals("QueryDSL_Backlog", "QueryDSL_InReview")
+                        }
+                    }
+
+                pages.shouldNotBeEmpty()
+                // Backlog: 2 pages; InReview: 2 pages
+                pages.size shouldBe 4
+                println("Found ${pages.size} tasks with Stage in {Backlog, InReview}")
             }
         }
     })
