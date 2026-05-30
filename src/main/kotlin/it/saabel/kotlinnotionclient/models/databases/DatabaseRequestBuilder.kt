@@ -462,6 +462,19 @@ class DatabasePropertiesBuilder {
     }
 
     /**
+     * Adds a "Files & media" property to the database.
+     *
+     * @param name The property name
+     * @param description Optional description (max 280 characters)
+     */
+    fun files(
+        name: String,
+        description: String? = null,
+    ) {
+        properties[name] = CreateDatabaseProperty.Files(description = description)
+    }
+
+    /**
      * Builds the properties map.
      *
      * @return The configured properties map
