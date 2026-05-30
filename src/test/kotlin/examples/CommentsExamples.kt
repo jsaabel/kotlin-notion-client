@@ -133,6 +133,29 @@ class CommentsExamples :
                 println("Comment richText elements: ${comment.richText.size}")
             }
 
+            "Example 3c: Update a comment" {
+                // Create a comment, then update its content via the DSL overload
+                val comment =
+                    notion.comments.create {
+                        parent.page(testPageId!!)
+                        richText {
+                            text("Original comment content")
+                        }
+                    }
+                println("Before update: ${comment.richText.joinToString("") { it.plainText }}")
+
+                delay(500)
+
+                val updated =
+                    notion.comments.update(comment.id) {
+                        content {
+                            text("Edited comment content via update()")
+                        }
+                    }
+
+                println("After update:  ${updated.richText.joinToString("") { it.plainText }}")
+            }
+
             "Example 4: Comment on a specific block" {
                 // Create a page with blocks for this example
                 val blockPage =

@@ -3,6 +3,7 @@ package it.saabel.kotlinnotionclient.api
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.request.get
+import io.ktor.client.request.patch
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import io.ktor.client.statement.HttpResponse
@@ -17,8 +18,11 @@ import it.saabel.kotlinnotionclient.models.comments.CommentList
 import it.saabel.kotlinnotionclient.models.comments.CreateCommentRequest
 import it.saabel.kotlinnotionclient.models.comments.CreateCommentRequestBuilder
 import it.saabel.kotlinnotionclient.models.comments.RetrieveCommentsRequestBuilder
+import it.saabel.kotlinnotionclient.models.comments.UpdateCommentRequest
+import it.saabel.kotlinnotionclient.models.comments.UpdateCommentRequestBuilder
 import it.saabel.kotlinnotionclient.models.comments.createCommentRequest
 import it.saabel.kotlinnotionclient.models.comments.retrieveCommentsRequest
+import it.saabel.kotlinnotionclient.models.comments.updateCommentRequest
 import it.saabel.kotlinnotionclient.ratelimit.executeWithRateLimit
 import it.saabel.kotlinnotionclient.utils.Pagination
 import kotlinx.coroutines.flow.Flow
@@ -273,6 +277,109 @@ class CommentsApi(
     suspend fun create(builder: CreateCommentRequestBuilder.() -> Unit): Comment {
         val request = createCommentRequest(builder)
         return create(request)
+    }
+
+    /**
+     * Updates the content of an existing comment.
+     *
+     * Notion's `PATCH /v1/comments/{comment_id}` endpoint accepts only content changes —
+     * no parent, discussion, attachments, or display name. Exactly one of rich_text or
+     * markdown must be provided.
+     *
+     * Non-DLP integrations can only modify comments they created; updating a comment that
+     * was not created by the integration returns a 404.
+     *
+     * @param commentId The ID of the comment to update
+     * @param request The update request containing the new rich text or markdown content
+     * @return Comment The updated comment
+     * @throws NotionException.NetworkError for network-related failures
+     * @throws NotionException.ApiError for API-related errors (4xx, 5xx responses)
+     * @throws NotionException.AuthenticationError for authentication failures
+     * @throws IllegalArgumentException if both or neither of rich_text and markdown are set
+     */
+    suspend fun update(
+        commentId: String,
+        request: UpdateCommentRequest,
+    ): Comment =
+        try {
+            // Validate exactly one of rich_text or markdown is provided
+            val hasRichText = !request.richText.isNullOrEmpty()
+            val hasMarkdown = request.markdown != null
+            if (hasRichText && hasMarkdown) {
+                throw IllegalArgumentException("Comment content must use either rich_text or markdown, not both")
+            }
+            if (!hasRichText && !hasMarkdown) {
+                throw IllegalArgumentException("Comment content cannot be empty — provide either rich_text or markdown")
+            }
+
+            val url = "${config.baseUrl}/comments/$commentId"
+            val response: HttpResponse =
+                httpClient.patch(url) {
+                    contentType(ContentType.Application.Json)
+                    setBody(request)
+                }
+
+            if (response.status.isSuccess()) {
+                response.body<Comment>()
+            } else {
+                val errorBody =
+                    try {
+                        response.body<String>()
+                    } catch (e: Exception) {
+                        "Could not read error response body"
+                    }
+
+                throw NotionException.ApiError(
+                    code = response.status.value.toString(),
+                    status = response.status.value,
+                    details = "HTTP ${response.status.value}: ${response.status.description}. Response: $errorBody",
+                )
+            }
+        } catch (e: IllegalArgumentException) {
+            throw e // Re-throw validation errors as-is
+        } catch (e: NotionException) {
+            throw e // Re-throw our own exceptions
+        } catch (e: Exception) {
+            throw NotionException.NetworkError(e)
+        }
+
+    /**
+     * Updates the content of an existing comment using the DSL builder.
+     *
+     * This is a convenience method that provides a fluent DSL for updating comments
+     * without manually constructing UpdateCommentRequest objects.
+     *
+     * ## Basic Usage:
+     * ```kotlin
+     * val comment = client.comments.update("comment-id") {
+     *     content {
+     *         text("Updated comment text.")
+     *     }
+     * }
+     * ```
+     *
+     * ## Markdown Usage:
+     * ```kotlin
+     * val comment = client.comments.update("comment-id") {
+     *     markdown("**Updated** comment via markdown.")
+     * }
+     * ```
+     *
+     * @param commentId The ID of the comment to update
+     * @param builder DSL block for building the update request
+     * @return Comment The updated comment
+     * @throws NotionException.NetworkError for network-related failures
+     * @throws NotionException.ApiError for API-related errors (4xx, 5xx responses)
+     * @throws NotionException.AuthenticationError for authentication failures
+     * @throws IllegalArgumentException if validation fails (both or neither content type set)
+     * @throws IllegalStateException if required fields are not set in the DSL
+     */
+    suspend fun update(
+        commentId: String,
+        builder: UpdateCommentRequestBuilder.() -> Unit,
+    ): Comment {
+        val request = updateCommentRequest(builder)
+        return update(commentId, request)
     }
 
     // ========== Pagination Helper Methods ==========

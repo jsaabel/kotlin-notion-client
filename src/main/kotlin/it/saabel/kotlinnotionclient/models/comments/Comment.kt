@@ -151,6 +151,21 @@ data class CreateCommentRequest(
 )
 
 /**
+ * Request model for updating a comment.
+ *
+ * Notion's `PATCH /v1/comments/{comment_id}` endpoint accepts only content changes —
+ * no parent, discussion, attachments, or display name. Exactly one of [richText] or
+ * [markdown] must be provided. Null fields are omitted on the wire.
+ */
+@Serializable
+data class UpdateCommentRequest(
+    @SerialName("rich_text")
+    val richText: List<RichText>? = null,
+    @SerialName("markdown")
+    val markdown: String? = null,
+)
+
+/**
  * Request model for comment attachments.
  */
 @Serializable

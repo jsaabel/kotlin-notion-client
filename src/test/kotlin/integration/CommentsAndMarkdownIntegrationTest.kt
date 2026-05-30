@@ -16,6 +16,7 @@ import it.saabel.kotlinnotionclient.models.base.Parent
 import it.saabel.kotlinnotionclient.models.blocks.pageContent
 import it.saabel.kotlinnotionclient.models.comments.CommentAttachmentRequest
 import it.saabel.kotlinnotionclient.models.comments.CreateCommentRequest
+import it.saabel.kotlinnotionclient.models.comments.UpdateCommentRequest
 import it.saabel.kotlinnotionclient.models.markdown.ContentUpdate
 import it.saabel.kotlinnotionclient.models.pages.createPageRequest
 import it.saabel.kotlinnotionclient.models.requests.RequestBuilders
@@ -91,9 +92,9 @@ class CommentsAndMarkdownIntegrationTest :
             }
 
             // ------------------------------------------------------------------
-            // 1. Comments — page-level workflow: create, reply, retrieve
+            // 1. Comments — page-level lifecycle: create, reply, update, (delete)
             // ------------------------------------------------------------------
-            "should create page comments, reply in the same discussion, and retrieve them" {
+            "should create, reply to, update, and delete page comments" {
                 val page =
                     notion.pages.create {
                         parent.page(containerPageId)
@@ -138,10 +139,37 @@ class CommentsAndMarkdownIntegrationTest :
 
                 delay(1000)
 
+                // Update the first comment's content via the request overload (richText path)
+                val updatedRichText =
+                    notion.comments.update(
+                        firstComment.id,
+                        UpdateCommentRequest(
+                            richText = listOf(RequestBuilders.createSimpleRichText("Edited first comment (rich text)")),
+                        ),
+                    )
+
+                updatedRichText.id shouldBe firstComment.id
+                updatedRichText.richText.shouldNotBeEmpty()
+                updatedRichText.richText.joinToString("") { it.plainText } shouldContain "Edited first comment"
+
+                delay(1000)
+
+                // Update again via the DSL overload (markdown path)
+                val updatedMarkdown =
+                    notion.comments.update(firstComment.id) {
+                        markdown("Edited **again** via markdown DSL")
+                    }
+
+                updatedMarkdown.id shouldBe firstComment.id
+                updatedMarkdown.richText.shouldNotBeEmpty()
+                updatedMarkdown.richText.joinToString("") { it.plainText } shouldContain "Edited"
+
+                delay(1000)
+
                 val allComments = notion.comments.retrieve(page.id)
                 println("  Retrieved ${allComments.size} comments (eventual consistency may delay appearance)")
 
-                println("  ✅ Page-level comments and discussion thread verified")
+                println("  ✅ Page-level comments, discussion thread, and updates verified")
             }
 
             // ------------------------------------------------------------------
