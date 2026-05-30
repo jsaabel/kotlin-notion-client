@@ -14,7 +14,7 @@ Target **v0.5.0**. Ten work items spanning three groups:
   §5 pagination cap → throws `QueryResultLimitReached` on the
   auto-paginating path; §6a comment update/delete (mirrors `create`
   pattern); §6b multi-value filters as vararg overloads; §6c person
-  filter cleanup.
+  filter cleanup — **verified no-op (2026-05-30)**.
 - **Carry-overs (§7–§8)**: §7 rate-limiting — **full overhaul** (all 9
   ranked defects, sequenced last); §8 files-property `FileUpload` variant.
 - **Consumer conveniences (§9–§10)**: §9 rich-text → HTML — **minimal
@@ -245,11 +245,29 @@ sequence.
 > Person filters set via the API also now round-trip cleanly on read without
 > extra combinator nesting.
 
-- **Required work**:
-  - Spot-check `PeopleCondition` deserialization — if Notion previously
-    wrapped person filters in an extra `or` combinator on read and we had
-    a workaround for that, the workaround can be removed.
-  - Otherwise no-op.
+- **Status (verified 2026-05-30): no-op — no workaround in tree.**
+- **What was checked**:
+  - `PeopleCondition` (`DataSourceQuery.kt:295-304`) is a plain
+    `@Serializable data class` with `contains` / `does_not_contain` /
+    `is_empty` / `is_not_empty`. No custom serializer.
+  - `DataSourceFilter.people` (`DataSourceQuery.kt:85-86`) is a straight
+    sibling slot to every other property condition.
+  - `PeopleFilterBuilder` (`DataSourceQueryBuilder.kt:526-548`) builds a
+    flat `DataSourceFilter(property=..., people=PeopleCondition(...))`.
+    Nothing ever auto-wraps a person filter in `or`.
+  - Grepped for `workaround` / `HACK` / `TODO` / `FIXME` / `wrap` near
+    people/person code — zero matches.
+  - Existing tests (`PeopleMeFilterTest`, `DatabaseQueryFiltersTest`,
+    `NewFilterTypesIntegrationTest`) all assume the flat
+    `{ "property": "...", "people": { ... } }` shape — which matches the
+    now-correct round-trip shape per the changelog.
+- **Conclusion**: Notion fixed read-path nesting that we apparently never
+  compensated for client-side, so §6c lands as zero code change. The
+  phasing-table entry can be ticked off without a commit.
+- **Optional follow-up**: add a tiny round-trip unit test that deserializes
+  a flat `{"property":"Assignee","people":{"contains":"<uuid>"}}` fixture
+  into `DataSourceFilter` and re-serializes byte-identical — cheap
+  regression guard that the round-trip stays clean.
 
 ---
 
@@ -361,7 +379,7 @@ removed (skipped). §7 commitment is now full overhaul.
 | --- | --- | --- | --- |
 | 1 | §3 `agent_id` parent type | S | Isolated, deserialize-only |
 | 2 | §4 Cursor-opaqueness audit | S | Cheap audit; likely already correct |
-| 3 | §6c Person filter cleanup | S | Likely a deletion, not an addition |
+| 3 | ~~§6c Person filter cleanup~~ | — | **Done (verified 2026-05-30): no-op, no workaround in tree** |
 | 4 | §6a Update / Delete comment endpoints | S | Mirrors existing `create` |
 | 5 | §8 Files-property `FileUpload` variant | S | Closes a known gap; scope already documented |
 | 6 | §10 Number → integer plain-text rendering | S | Tiny helper, three call sites |
