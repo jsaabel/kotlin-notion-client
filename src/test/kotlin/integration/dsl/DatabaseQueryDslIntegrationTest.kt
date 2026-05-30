@@ -334,8 +334,6 @@ class DatabaseQueryDslIntegrationTest :
                 println("Found ${pages.size} filtered, sorted tasks")
             }
 
-            // §6b — multi-value equals/contains for select, status, multi_select filters
-
             "Query DSL - multi-value select equals should match pages from any listed option" {
                 val pages =
                     client.dataSources.query(dataSourceId) {
