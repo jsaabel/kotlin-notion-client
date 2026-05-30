@@ -128,7 +128,10 @@ class FileUploadApi(
      *
      * @param fileUploadId The ID of the file upload
      * @param fileContent The file content as a byte array
-     * @param contentType Optional MIME type of the file being uploaded (must match the type used during creation). If not provided, Notion uses the content type from the file upload creation.
+     * @param contentType MIME type of the file being uploaded. When the file upload was created
+     * with a specific content type, this **must** match it. If omitted, the multipart part carries
+     * no content type and Notion treats it as `text/plain`, so any non-text upload will be rejected
+     * with a validation error — pass the same content type used at creation.
      * @param partNumber Optional part number for multi-part uploads (1-1000)
      * @return The updated FileUpload object
      * @throws NotionException.ApiError for API-related errors (4xx, 5xx responses)
