@@ -166,10 +166,18 @@ class CommentsAndMarkdownIntegrationTest :
 
                 delay(1000)
 
-                val allComments = notion.comments.retrieve(page.id)
-                println("  Retrieved ${allComments.size} comments (eventual consistency may delay appearance)")
+                // Delete the first comment — the delete call returns the deleted comment.
+                val deleted = notion.comments.delete(firstComment.id)
+                deleted.id shouldBe firstComment.id
 
-                println("  ✅ Page-level comments, discussion thread, and updates verified")
+                delay(500)
+
+                // The deleted comment should no longer appear; the reply may still be present.
+                val remainingComments = notion.comments.retrieve(page.id)
+                remainingComments.any { it.id == firstComment.id } shouldBe false
+                println("  Retrieved ${remainingComments.size} comments after delete (eventual consistency may delay appearance)")
+
+                println("  ✅ Page-level comments, discussion thread, updates, and delete verified")
             }
 
             // ------------------------------------------------------------------

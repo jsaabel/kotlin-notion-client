@@ -2,6 +2,7 @@ package it.saabel.kotlinnotionclient.api
 
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
+import io.ktor.client.request.delete
 import io.ktor.client.request.get
 import io.ktor.client.request.patch
 import io.ktor.client.request.post
@@ -381,6 +382,50 @@ class CommentsApi(
         val request = updateCommentRequest(builder)
         return update(commentId, request)
     }
+
+    /**
+     * Deletes an existing comment.
+     *
+     * Notion's `DELETE /v1/comments/{comment_id}` endpoint takes no request body and returns
+     * the deleted [Comment] object, which this method decodes and returns.
+     *
+     * Non-DLP integrations can only delete comments they created; deleting a comment that was
+     * not created by the integration returns a 404.
+     *
+     * @param commentId The ID of the comment to delete
+     * @return Comment The deleted comment
+     * @throws NotionException.NetworkError for network-related failures
+     * @throws NotionException.ApiError for API-related errors (4xx, 5xx responses)
+     * @throws NotionException.AuthenticationError for authentication failures
+     */
+    suspend fun delete(commentId: String): Comment =
+        try {
+            val url = "${config.baseUrl}/comments/$commentId"
+            val response: HttpResponse = httpClient.delete(url)
+
+            if (response.status.isSuccess()) {
+                response.body<Comment>()
+            } else {
+                val errorBody =
+                    try {
+                        response.body<String>()
+                    } catch (e: Exception) {
+                        "Could not read error response body"
+                    }
+
+                throw NotionException.ApiError(
+                    code = response.status.value.toString(),
+                    status = response.status.value,
+                    details = "HTTP ${response.status.value}: ${response.status.description}. Response: $errorBody",
+                )
+            }
+        } catch (e: IllegalArgumentException) {
+            throw e // Re-throw validation errors as-is
+        } catch (e: NotionException) {
+            throw e // Re-throw our own exceptions
+        } catch (e: Exception) {
+            throw NotionException.NetworkError(e)
+        }
 
     // ========== Pagination Helper Methods ==========
 
