@@ -156,6 +156,23 @@ class CommentsExamples :
                 println("After update:  ${updated.richText.joinToString("") { it.plainText }}")
             }
 
+            "Example 3d: Delete a comment" {
+                // Create a comment, then delete it. The delete call returns the deleted comment.
+                val comment =
+                    notion.comments.create {
+                        parent.page(testPageId!!)
+                        richText {
+                            text("This comment will be deleted")
+                        }
+                    }
+                println("Created comment: ${comment.id}")
+
+                delay(500)
+
+                val deleted = notion.comments.delete(comment.id)
+                println("Deleted comment: ${deleted.id}")
+            }
+
             "Example 4: Comment on a specific block" {
                 // Create a page with blocks for this example
                 val blockPage =

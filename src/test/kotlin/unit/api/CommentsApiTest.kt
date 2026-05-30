@@ -445,4 +445,45 @@ class CommentsApiTest :
                 exception.status shouldBe 404
             }
         }
+
+        context("delete comment") {
+            test("should delete comment successfully and return the deleted comment") {
+                val client =
+                    mockClient {
+                        addJsonResponse(
+                            method = HttpMethod.Delete,
+                            path = "/v1/comments/",
+                            responseBody = TestFixtures.Comments.createCommentAsString(),
+                        )
+                    }
+
+                api = CommentsApi(client, config)
+
+                val result = api.delete("b52b8ed6-e029-4707-a671-832549c09de3")
+
+                result.shouldBeInstanceOf<Comment>()
+                result.id shouldBe "b52b8ed6-e029-4707-a671-832549c09de3"
+            }
+
+            test("should map 404 to ApiError when deleting a not-owned comment") {
+                val client =
+                    mockClient {
+                        addErrorResponse(
+                            method = HttpMethod.Delete,
+                            urlPattern = "*/v1/comments*",
+                            statusCode = HttpStatusCode.NotFound,
+                        )
+                    }
+
+                api = CommentsApi(client, config)
+
+                val exception =
+                    shouldThrow<NotionException.ApiError> {
+                        api.delete("not-owned-comment-id")
+                    }
+
+                exception.code shouldBe "404"
+                exception.status shouldBe 404
+            }
+        }
     })
