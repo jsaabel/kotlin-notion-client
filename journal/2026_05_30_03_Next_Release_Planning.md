@@ -10,11 +10,13 @@
 Target **v0.5.0**. Ten work items spanning three groups:
 
 - **API changelog items (§1–§6)**: §1 (`insert_content`) skipped as
-  deprecated; §2 docs-only; §3 `agent_id` parent type; §4 cursor audit;
-  §5 pagination cap → throws `QueryResultLimitReached` on the
-  auto-paginating path; §6a comment update/delete (mirrors `create`
-  pattern); §6b multi-value filters as vararg overloads; §6c person
-  filter cleanup — **verified no-op (2026-05-30)**.
+  deprecated; §2 docs-only; §3 `agent_id` parent type **shipped
+  (2026-05-30)**; §4 cursor audit **closed — already opaque end-to-end,
+  no work needed (2026-05-30)**; §5 pagination cap → throws
+  `QueryResultLimitReached` on the auto-paginating path; §6a comment
+  update/delete (mirrors `create` pattern); §6b multi-value filters as
+  vararg overloads; §6c person filter cleanup — **verified no-op
+  (2026-05-30)**.
 - **Carry-overs (§7–§8)**: §7 rate-limiting — **full overhaul** (all 9
   ranked defects, sequenced last); §8 files-property `FileUpload` variant.
 - **Consumer conveniences (§9–§10)**: §9 rich-text → HTML — **minimal
@@ -66,25 +68,28 @@ sequence.
 
 ---
 
-### 3. `agent_id` parent type (2026-05-11)
+### 3. `agent_id` parent type (2026-05-11) — **DONE (2026-05-30)**
 
 > Pages and blocks parented by an agent now serialize their parent as
 > `{ "type": "agent_id", "agent_id": "..." }` instead of being rejected or
 > rewritten.
 
-- **Current state**: `ParentSerializer` (`models/base/ParentSerializer.kt`)
-  handles `page_id`, `data_source_id`, `database_id`, `block_id`, `workspace`
-  — no `agent_id`. Pages whose parent is an agent will currently fail
-  deserialization with `Unknown Parent type: agent_id`.
-- **Required work**:
-  - Add `Parent.AgentParent(agentId: String)`.
-  - Extend `ParentSerializer` + `ParentSurrogate`.
-  - Unit test: round-trip the new variant.
+- **Status**: Implemented on branch `worktree-task-01-agent-id-parent`. See
+  [`_task_01_agent_id_parent.md`](_task_01_agent_id_parent.md) for the
+  per-task journal (Results section).
+- **Shipped**:
+  - `Parent.AgentParent(agentId: String)` added (type = `"agent_id"`).
+  - `Parent.id` accessor extended to return `agentId` for `AgentParent`.
+  - `ParentSerializer.selectDeserializer` and `ParentSurrogate` both
+    extended with the new variant.
+  - `unit/base/ParentAgentIdTest.kt` — 3 tests (decode, encode, decode →
+    encode → decode round-trip). All pass. Full unit suite green.
 - **Reference:** [`_next_release_docs/03_parent_object.md`](_next_release_docs/03_parent_object.md)
 - **Confirmed from fetched docs**: read-only / system-assigned; appears on
   "agent instruction pages and the blocks that make them up." No
-  documented path to set `agent_id` on create. Model it as a
-  deserialize-only variant.
+  documented path to set `agent_id` on create — modelled as a
+  deserialize-only variant (no DSL/builder surface; `@Serializable` just
+  lets it round-trip if encountered).
 - **Skipped from this changelog entry**: the Query meeting notes endpoint
   (`POST /v1/blocks/meeting_notes/query`) — out of scope, no user need yet.
 - **Tangent surfaced by fetched docs**: `data_source_id` parents are
@@ -94,28 +99,40 @@ sequence.
 
 ---
 
-### 4. Pagination cursor reliability (2026-04-22)
+### 4. Pagination cursor reliability (2026-04-22) — **CLOSED**
 
 > Pagination cursors now embed a session identifier... The `start_cursor`
 > parameter now accepts opaque string values in addition to UUIDs... cursors
 > should always be treated as opaque.
 
-- **Client impact**: **Should be a no-op** if our code already treats cursors
-  as opaque strings.
-- **Required work**:
-  - Audit usages of `next_cursor` / `start_cursor` in:
-    - `DataSourcesApi` query pagination
-    - `BlocksApi.children`
-    - `SearchApi`
-    - `ViewsApi` query
-    - `UsersApi.list`
-    - `CommentsApi.list`
-    - Any other paginated endpoint.
-  - Confirm cursor is typed as `String?` end-to-end with no UUID parsing,
-    validation, or coercion.
-  - Add a regression unit test using a non-UUID opaque-string cursor in a
-    fixture.
-- **Low risk, quick audit.**
+- **Status**: Audit complete on 2026-05-30 — **PASS, no code changes
+  required for v0.5.0**. Full per-endpoint findings in
+  [`_task_02_cursor_audit.md`](_task_02_cursor_audit.md).
+- **Audit summary**:
+  - All 10 paginated endpoints already treat `startCursor` / `nextCursor`
+    as `String?` end-to-end (`DataSourcesApi.query`,
+    `BlocksApi.retrieveChildrenPage`, `SearchApi.search`, `ViewsApi.list`,
+    `ViewsApi.getQueryResults`, `UsersApi.list`,
+    `CommentsApi.retrievePage`, `PagesApi.retrievePropertyItems`,
+    `CustomEmojisApi.list`, `DataSourcesApi.listTemplatesSinglePage`).
+    `FileUploadApi` is not paginated.
+  - Wire transport is either query-param append, query-string
+    interpolation, or JSON-body via `@SerialName("start_cursor")` — no
+    custom serializers, no encoding beyond Ktor's standard handling.
+  - Hidden-coercion grep across `src/main` for `UUID.fromString`,
+    `toUuid`, UUID regex, and `trim`/`replace`/hyphen-stripping near
+    `cursor` — **zero hits**.
+  - Central pagination helpers (`utils/Pagination.kt`) operate on
+    `String?` exclusively; the `PaginatedResponse<T>` contract prevents
+    callers from sneaking in UUID coercion.
+- **Regression test**: Not needed. Existing unit tests already exercise
+  non-UUID cursor strings (`"some-complex-cursor-string-123"`,
+  `"cursor-123"`, `"cursor1"`, etc.) across `RetrieveCommentsRequestBuilderTest`,
+  `UsersApiTest`, `DataSourcesApiTest`, and `PaginationTest` — any future
+  introduction of UUID validation would fail these tests.
+- **Optional follow-up (not in scope)**: a one-line doc comment near
+  `Pagination.kt:26` and `:74` clarifying that cursors are opaque and
+  must not be parsed or validated, to deter future regressions.
 
 ---
 
@@ -377,8 +394,8 @@ removed (skipped). §7 commitment is now full overhaul.
 
 | Phase | Item | Effort | Notes |
 | --- | --- | --- | --- |
-| 1 | §3 `agent_id` parent type | S | Isolated, deserialize-only |
-| 2 | §4 Cursor-opaqueness audit | S | Cheap audit; likely already correct |
+| 1 ✅ | §3 `agent_id` parent type | S | Isolated, deserialize-only — **done 2026-05-30** |
+| 2 ✅ | §4 Cursor-opaqueness audit | S | **Closed 2026-05-30** — audit PASSed, no code changes (see [`_task_02_cursor_audit.md`](_task_02_cursor_audit.md)) |
 | 3 | ~~§6c Person filter cleanup~~ | — | **Done (verified 2026-05-30): no-op, no workaround in tree** |
 | 4 | §6a Update / Delete comment endpoints | S | Mirrors existing `create` |
 | 5 | §8 Files-property `FileUpload` variant | S | Closes a known gap; scope already documented |

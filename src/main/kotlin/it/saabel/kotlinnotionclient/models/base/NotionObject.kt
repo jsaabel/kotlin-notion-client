@@ -37,6 +37,7 @@ interface NotionObject {
  *     is Parent.DatabaseParent -> println("Parent database: ${page.parent.databaseId}")
  *     is Parent.BlockParent -> println("Parent block: ${page.parent.blockId}")
  *     is Parent.WorkspaceParent -> println("Parent is workspace")
+ *     is Parent.AgentParent -> println("Parent agent: ${page.parent.agentId}")
  * }
  * ```
  */
@@ -71,6 +72,7 @@ sealed class Parent {
                 is DatabaseParent -> this.databaseId
                 is BlockParent -> this.blockId
                 is WorkspaceParent -> null
+                is AgentParent -> this.agentId
             }
 
     /**
@@ -124,6 +126,20 @@ sealed class Parent {
     @Serializable
     data object WorkspaceParent : Parent() {
         override val type: String = "workspace"
+    }
+
+    /**
+     * Parent is an agent. Appears on agent instruction pages and the blocks
+     * that compose them. Read-only / system-assigned by Notion — the API does
+     * not document a path to set `agent_id` on create, so this variant is
+     * deserialize-only in practice.
+     */
+    @Serializable
+    data class AgentParent(
+        @SerialName("agent_id")
+        val agentId: String,
+    ) : Parent() {
+        override val type: String = "agent_id"
     }
 }
 

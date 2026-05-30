@@ -22,6 +22,7 @@ import kotlinx.serialization.json.jsonPrimitive
  * - "database_id" -> [Parent.DatabaseParent]
  * - "block_id" -> [Parent.BlockParent]
  * - "workspace" -> [Parent.WorkspaceParent]
+ * - "agent_id" -> [Parent.AgentParent]
  */
 object ParentSerializer : JsonContentPolymorphicSerializer<Parent>(Parent::class) {
     override fun selectDeserializer(element: JsonElement): DeserializationStrategy<Parent> {
@@ -35,6 +36,7 @@ object ParentSerializer : JsonContentPolymorphicSerializer<Parent>(Parent::class
             "database_id" -> Parent.DatabaseParent.serializer()
             "block_id" -> Parent.BlockParent.serializer()
             "workspace" -> Parent.WorkspaceParent.serializer()
+            "agent_id" -> Parent.AgentParent.serializer()
             else -> throw SerializationException("Unknown Parent type: $type")
         }
     }
@@ -58,4 +60,6 @@ internal data class ParentSurrogate(
     val blockId: String? = null,
     @SerialName("workspace")
     val workspace: Boolean? = null,
+    @SerialName("agent_id")
+    val agentId: String? = null,
 )
