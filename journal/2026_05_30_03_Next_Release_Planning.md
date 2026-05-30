@@ -14,16 +14,18 @@ Target **v0.5.0**. Ten work items spanning three groups:
   (2026-05-30)**; §4 cursor audit **closed — already opaque end-to-end,
   no work needed (2026-05-30)**; §5 pagination cap → throws
   `QueryResultLimitReached` on the auto-paginating path — **shipped
-  (2026-05-30)**; §6a comment
-  update/delete (mirrors `create` pattern); §6b multi-value filters as
-  vararg overloads; §6c person filter cleanup — **verified no-op
-  (2026-05-30)**.
+  (2026-05-30)**; §6a comment update/delete (mirrors `create` pattern)
+  — **shipped (2026-05-30)**; §6b multi-value filters as vararg
+  overloads — **shipped (2026-05-30)**; §6c person filter cleanup —
+  **verified no-op (2026-05-30)**.
 - **Carry-overs (§7–§8)**: §7 rate-limiting — **full overhaul** (all 9
-  ranked defects, sequenced last); §8 files-property `FileUpload` variant.
-- **Consumer conveniences (§9–§10)**: §9 rich-text → HTML — **minimal
-  first cut** (annotations + links + escape; colours/mentions/equations
-  deferred); §10 integer-aware number rendering across Number / Formula /
-  Rollup.
+  ranked defects, sequenced last); §8 files-property `FileUpload`
+  variant — **shipped (2026-05-30)**.
+- **Consumer conveniences (§9–§10)**: §9 rich-text → HTML — **shipped
+  (2026-05-30)** (annotations + links + paragraph splitting + escape;
+  colours/mentions/equations deferred to v0.6.0+); §10 integer-aware
+  number rendering across Number / Formula / Rollup — **shipped
+  (2026-05-30)**.
 
 All decisions resolved (see "Decisions log" at bottom). Items are
 independent enough to land in any order. Phasing table proposes a
@@ -194,71 +196,74 @@ sequence.
 
 ### 6. Update/Delete comments GA + multi-value filters + person filters (2026-04-17)
 
-#### 6a. Update / Delete comment endpoints — now GA
+#### 6a. Update / Delete comment endpoints — now GA — **DONE (2026-05-30)**
 
 > The Update a comment (PATCH /v1/comments/:comment_id) and Delete a comment
 > (DELETE /v1/comments/:comment_id) endpoints are now generally available.
 > Non-DLP integrations can only modify or delete comments they created.
 
+- **Status**: Shipped via GitHub issues
+  [#1](https://github.com/jsaabel/kotlin-notion-client/issues/1) (update)
+  and [#2](https://github.com/jsaabel/kotlin-notion-client/issues/2)
+  (delete), both closed 2026-05-30.
 - **References:**
   [`_next_release_docs/06a_update_a_comment.md`](_next_release_docs/06a_update_a_comment.md),
   [`_next_release_docs/06a_delete_a_comment.md`](_next_release_docs/06a_delete_a_comment.md)
-- **Current state**: `CommentsApi.create` exists; `update`/`delete` do not
-  (`grep` confirms).
-- **Confirmed from fetched docs**:
-  - **Update**: `PATCH /v1/comments/{id}` with **exactly one** of
-    `rich_text` (max 100 items) or `markdown`. Both/neither → 400.
-  - **Delete**: `DELETE /v1/comments/{id}`, no body. Returns the deleted
-    comment object.
-  - Both: caller can only modify/delete comments **it created**, else 404.
-- **Required work**:
-  - `CommentsApi.update(commentId, request: UpdateCommentRequest)` + DSL
-    overload `update(commentId) { content { … } }`. Mirrors the existing
-    `create` pattern (single request object with **runtime** XOR
-    validation between `richText` and `markdown`, see CommentsApi.kt:189).
-    Chosen for consistency with `create` over per-call compile-time
-    safety; if we ever want compile-time XOR we should do `create` and
-    `update` together as a deliberate API improvement (out of scope).
-  - `CommentsApi.delete(commentId)`.
-  - Unit + integration tests. Integration test creates → updates → deletes
-    a comment owned by the integration.
+- **Shipped**:
+  - `UpdateCommentRequest` + `UpdateCommentRequestBuilder` (content-only
+    surface: `content { … }` / `richText { … }` / `markdown("…")`) with
+    runtime XOR mirroring `create`.
+  - `CommentsApi.update(commentId, request)` and DSL overload
+    `update(commentId) { … }` — `PATCH /v1/comments/{id}`.
+  - `CommentsApi.delete(commentId)` — `DELETE /v1/comments/{id}`, returns
+    the deleted comment object.
+  - Unit tests (builder XOR; API success/XOR/404 for update; success/404
+    for delete) and integration scenario extended to full
+    create → reply → update → update → delete → retrieve lifecycle.
+  - `CommentsExamples.kt` gained update + delete examples.
 
-#### 6b. Multi-value filters for select / status / multi_select
+#### 6b. Multi-value filters for select / status / multi_select — **DONE (2026-05-30)**
 
 > Database and data source filters now accept an array of values for
 > `equals` / `does_not_equal` on select and status properties, and for
 > `contains` / `does_not_contain` on multi_select properties...
 
-- **Current state**: `DataSourceQueryBuilder.kt`:
-  - `SelectFilterBuilder.equals/doesNotEqual` take `String` (single value).
-  - `StatusFilterBuilder.equals/doesNotEqual` take `String`.
-  - `MultiSelectFilterBuilder.contains/doesNotContain` take `String`.
+- **Status**: Shipped on `main` in commit
+  [`c7c05ab`](https://github.com/jsaabel/kotlin-notion-client/commit/c7c05ab)
+  ("feat(filters): multi-value equals/contains for select, status,
+  multi_select (§6b)"), closing
+  [#4](https://github.com/jsaabel/kotlin-notion-client/issues/4). See
+  [`_task_06b_multi_value_filters.md`](_task_06b_multi_value_filters.md)
+  for the per-task journal.
+- **Shipped**:
+  - New `FilterValues` value class
+    (`models/datasources/FilterValues.kt`) with a custom `KSerializer`:
+    size==1 → JSON string (byte-identical to the legacy wire shape),
+    size>1 → JSON array. Deserialization accepts both shapes; empty
+    throws `IllegalArgumentException`.
+  - `SelectCondition`, `StatusCondition`, `MultiSelectCondition` now use
+    `FilterValues?` for the four affected slots
+    (`equals` / `doesNotEqual` on select & status;
+    `contains` / `doesNotContain` on multi_select).
+  - `SelectFilterBuilder`, `StatusFilterBuilder`, `MultiSelectFilterBuilder`
+    gain `vararg values: String` overloads with
+    `require(values.isNotEmpty())`. Single-value call sites compile and
+    serialize unchanged (strict superset).
+  - `FilterValuesSerializerTest` (string ↔ array round-trips, empty
+    throws) and `Select/Status/MultiSelectFilterBuilderMultiValueTest`
+    (per-builder DSL). Query DSL integration spec extended with a
+    seeded status property and four new cases (multi-value
+    select/status/multi_select + single-value back-compat). All unit
+    tests green.
 - **References:**
   [`_next_release_docs/06b_filter_data_source_entries.md`](_next_release_docs/06b_filter_data_source_entries.md),
   [`_next_release_docs/06b_post_database_query_filter.md`](_next_release_docs/06b_post_database_query_filter.md),
   [`_next_release_docs/06b_quick_filters.md`](_next_release_docs/06b_quick_filters.md)
-- **Wire format confirmed**: array as value under the same key, **not** a
-  new `equals_any`/`contains_any` key. Spec is `"string" or "string[]"`
-  for `equals` / `does_not_equal` (select, status) and `contains` /
-  `does_not_contain` (multi_select).
-- **Bonus**: the same multi-value support extends to `ViewsApi`
-  quick_filters configuration — single implementation, multiple call
-  sites benefit.
-- **Required work**:
-  - **DSL shape (decided)**: vararg on existing methods —
-    `equals(vararg values: String)`, `doesNotEqual(vararg values: String)`,
-    `contains(vararg values: String)`, `doesNotContain(vararg values: String)`.
-    Strict superset of current API. Empty varargs throws.
-  - **Wire serialization**: size==1 → single JSON string (preserves
-    existing wire shape, back-compat for fixtures), size>1 → JSON array.
-    Implement via custom serializer on the value type used by
-    `SelectCondition` / `StatusCondition` / `MultiSelectCondition`.
-  - Update `SelectCondition` / `StatusCondition` / `MultiSelectCondition`:
-    change the `equals`/`doesNotEqual`/`contains`/`doesNotContain` fields
-    from `String?` to the new union value type.
-  - Unit tests against the sample JSON from the fetched references
-    (single + multi shapes); integration test exercising both shapes
-    against a real data source.
+- **Skipped from this slice** (not in scope for v0.5.0):
+  - Extending the same `FilterValues` mechanism to `ViewsApi`
+    `quick_filters` configuration. The bonus surface area noted in the
+    decision is still open — track as a follow-up if a user need
+    surfaces.
 
 #### 6c. Person filters round-trip cleanly
 
@@ -319,74 +324,131 @@ sequence.
 
 ---
 
-### 8. Files-property `FileObject.FileUpload(id)` variant
+### 8. Files-property `FileObject.FileUpload(id)` variant — **DONE (2026-05-30)**
 
-- **See:** [`2026_05_30_02_Files_Property_Gap_Analysis.md`](2026_05_30_02_Files_Property_Gap_Analysis.md)
-  — proposed work itemised at the bottom of that journal (sealed-class
-  variant, `PagePropertiesBuilder.files(...)` DSL, integration test,
-  serialization fixture/unit test).
-- **One-line summary** (for orientation only): the gap blocks scenario (b)
-  — uploading a local file then attaching it to a Files & media property
-  on a database row. The block-side analogues already have the variant; the
-  page-property side is the odd one out.
-- **Recommend including in full** — small, self-contained, closes a real
-  user-visible gap.
+- **Status**: Shipped on `main` across five commits, closing issues
+  [#6](https://github.com/jsaabel/kotlin-notion-client/issues/6)
+  (variant) and [#7](https://github.com/jsaabel/kotlin-notion-client/issues/7)
+  (DSL). See
+  [`_task_08_files_property_fileupload_variant.md`](_task_08_files_property_fileupload_variant.md)
+  for the per-task journal and
+  [`2026_05_30_02_Files_Property_Gap_Analysis.md`](2026_05_30_02_Files_Property_Gap_Analysis.md)
+  for the original gap analysis.
+- **Shipped**:
+  - [`d736127`](https://github.com/jsaabel/kotlin-notion-client/commit/d736127)
+    `FileObject.FileUpload(fileUpload: FileUploadReference, name: String? = null)`
+    sealed variant (`@SerialName("file_upload")`) reusing the existing
+    `FileUploadReference` from `models/files`. Companion helpers
+    `FileObject.upload(id, name?)` and `FileObject.external(name, url)`.
+    Encode/decode round-trips + response-shape regression covered by
+    unit tests; request-body JSON fixture committed.
+  - [`4d6dfd9`](https://github.com/jsaabel/kotlin-notion-client/commit/4d6dfd9)
+    `FilesBuilder` with `@FilesDslMarker` exposing `upload()` /
+    `external()` / `existing()` (routes both `FileData.External` and
+    `FileData.Uploaded`) / `add()` escape hatch.
+    `PagePropertiesBuilder.files()` in three forms: DSL block, vararg
+    `FileObject`, and `List<FileObject>` — all backed by `FilesValue`.
+    `DatabasePropertiesBuilder.files()` schema method so a Files &
+    media property can be created programmatically. Unit tests cover
+    each builder method, `existing()` routing for both subtypes, and
+    JSON-equivalence of the three overloads. Live scenario added to
+    `MediaIntegrationTest`: create database with `Attachments`
+    property → attach two uploads via DSL → re-fetch → update with
+    mixed `existing()` + `external()` array → re-fetch.
+  - [`c479f2c`](https://github.com/jsaabel/kotlin-notion-client/commit/c479f2c)
+    Fix: `CreateDatabaseProperty.Files` variant was missing (empty
+    config object, mirroring `People`), which broke compilation of the
+    builder work.
+  - [`3a2656b`](https://github.com/jsaabel/kotlin-notion-client/commit/3a2656b)
+    + [`3e9449b`](https://github.com/jsaabel/kotlin-notion-client/commit/3e9449b)
+    Fix surfaced by the integration scenario: an omitted multipart
+    part content-type defaults to `text/plain`, so a
+    `create(application/json)` + `sendFileUpload(id, bytes)` flow was
+    rejected as a content-type mismatch. Corrected the integration
+    test to pass the matching type; added a robust
+    `sendFileUpload(FileUpload, ByteArray, Int?)` overload that
+    threads the creation-time content type onto the multipart part
+    automatically; corrected the docstring on the id-based overload to
+    state that callers must pass the same content type used at
+    creation for non-text files.
+- **Out of scope (still)**: format-aware rendering of file properties
+  (download helper, etc.); extending `PageCover` / block-side request
+  models (already had the variant); read-path changes (response shape
+  unchanged).
 
 ---
 
-### 9. Rich text → HTML converter — **MINIMAL FIRST CUT**
+### 9. Rich text → HTML converter — **DONE (2026-05-30)**
 
-- **Status**: New utility for v0.5.0. No existing renderer to extend —
-  `RichText.plainText` is a pre-rendered string Notion sends back, not the
-  output of a walker we control.
-- **Decision: ship a minimal first cut.** Pure function
-  `List<RichText>.toHtml(): String`. Iterate via follow-ups.
-- **In scope (v0.5.0)**:
-  - Annotation handling: bold → `<strong>`, italic → `<em>`, strikethrough
-    → `<s>`, code → `<code>`, underline → `<u>`.
-  - Link rendering: `RichText` with a `href` → `<a href="…">…</a>`.
-  - HTML escape of plain-text segments (XSS safety — non-negotiable).
-- **Deferred to v0.6.0+** (rendered as plain escaped text in v0.5.0):
+- **Status**: Shipped on `main` in commit
+  [`dd911ea`](https://github.com/jsaabel/kotlin-notion-client/commit/dd911ea)
+  ("feat(utils): add List<RichText>?.toHtml() rich-text → HTML
+  converter (§9)"), closing
+  [#8](https://github.com/jsaabel/kotlin-notion-client/issues/8). Port
+  of the production-tested `RichTextHtmlRenderer` from festival-scripts.
+- **Shipped**:
+  - Public surface: single extension
+    `List<RichText>?.toHtml(): String?` in
+    `it.saabel.kotlinnotionclient.utils` (package per D5), backed by an
+    `internal object RichTextHtmlRenderer` (D1).
+  - Annotation handling: bold → `<strong>`, italic → `<em>`,
+    strikethrough → `<s>`, code → `<code>`, underline → `<u>`.
+  - Real text-link hrefs → `<a href="…" rel="nofollow noreferrer
+    noopener">…</a>` (D4). Notion-internal hrefs dropped.
+  - HTML escaping of plain-text segments (XSS safety).
+  - Paragraph splitting: single newline → `<br>`; blank line → wrapped
+    in `<p>…</p>`.
+  - Mention / equation / unknown segments render as escaped `plainText`.
+  - Null / empty / blank input → `null`.
+  - KDoc enumerates the v0.6.0+ deferrals (D6) — colours,
+    mention-aware rendering, equations, `RenderOptions`.
+  - `unit/utils/RichTextHtmlTest.kt` — ~24 cases mirroring the
+    festival-scripts test, including the `rel="nofollow noreferrer
+    noopener"` assertion and the full behaviour matrix. All pass.
+- **Deferred to v0.6.0+** (rendered as escaped plain text in v0.5.0):
   - Colour annotations (inline `style=` vs class is a design decision).
-  - Mentions (`page`/`user`/`date`/`database`/`template`) — needs a
-    configurable link resolver design.
+  - Mention-aware rendering (`page`/`user`/`date`/`database`/`template`)
+    — needs a configurable link resolver design.
   - Equations — needs choice of MathML / KaTeX / `<code>`.
-- **No HTTP client involvement.** No `options` object yet (kept
-  zero-config to keep the surface small; options arrive when colours /
-  mentions / equations land).
+  - `RenderOptions` object — arrives when colours / mentions /
+    equations land.
 - **Out of scope entirely**: rich-text-to-Markdown, full block-tree to
   HTML.
 
 ---
 
-### 10. Integer-aware plain-text rendering for number properties
+### 10. Integer-aware plain-text rendering for number properties — **DONE (2026-05-30)**
 
-- **Status**: New utility for v0.5.0. Symptom confirmed (value `17`
-  renders as `"17.0"`).
-- **Root cause confirmed**:
-  - Storage type is `Double?` (`PageProperty.kt:76`).
-  - Plain-text path is `property.number?.toString()`
-    (`PageExtensions.kt:175`).
-  - Same `.toString()` is used at three sites: `PageProperty.Number`
-    (line 175), `FormulaResult.NumberResult` (line 229), and
-    `RollupResult.NumberResult` (line 237). All exhibit the same
-    symptom.
-- **Decision**:
-  - **Rule**: render as integer iff `value == value.toLong().toDouble()`.
-  - **Scope**: apply at all three numeric render sites via a shared
-    `Double.formatPlainText()` helper. Notion's UI displays integral
-    rollups and formula numbers as integers too, so this matches user
-    expectations across the board.
-  - **Storage unchanged**: `Double?` stays. Callers wanting the raw
-    double use the typed accessor (`property.number`).
-  - **Out of scope**: format-aware rendering (`$17`, `17%`, `€17.50`)
-    based on `number.format` from the property schema — requires schema
-    access that the page-level helper doesn't have today. Track as a
-    follow-up if a user need surfaces.
-- **Edge cases to handle in the helper**:
-  - NaN / Infinity → fall back to `toString()` (don't call `toLong()`).
-  - Values outside the safe integer range (~|value| > 2^53) → fall back
-    to `toString()` to avoid lossy truncation.
+- **Status**: Shipped on `main` in commit
+  [`6550bfc`](https://github.com/jsaabel/kotlin-notion-client/commit/6550bfc)
+  ("feat(pages): integer-aware plain-text rendering for number
+  properties (§10)"), closing
+  [#9](https://github.com/jsaabel/kotlin-notion-client/issues/9). See
+  [`_task_10_number_plain_text_rendering.md`](_task_10_number_plain_text_rendering.md)
+  for the per-task journal.
+- **Shipped**:
+  - Private `Double.formatPlainText()` helper in
+    `models/pages/PageExtensions.kt` — integer form when
+    `value == value.toLong().toDouble()`, else `value.toString()`. NaN /
+    ±Infinity and `|value| > MAX_SAFE_INTEGER` (2^53) fall back to
+    `toString()` to avoid coercion and lossy truncation.
+  - Applied at all three numeric render sites in
+    `getPlainTextForProperty`: `PageProperty.Number` (line 175),
+    `FormulaResult.NumberResult` (line 229), `RollupResult.NumberResult`
+    (line 237).
+  - Storage unchanged — `Double?` everywhere, no new public API surface.
+  - `unit/properties/NumberFormatPlainTextTest.kt` — 11 cases covering
+    integral / decimal / zero / negatives / NaN / ±Infinity / above
+    MAX_SAFE_INTEGER / null / Formula NumberResult / Rollup
+    NumberResult. Existing `PagePropertyAccessTest` (`Price: 2.5`) stays
+    green. Full unit suite green.
+  - `CorePagesIntegrationTest` extended with two assertions in the CRUD
+    lifecycle block (`"Score" == "85.5"` then `"95"` after update) — the
+    second is the regression guard that would have failed pre-fix.
+- **Out of scope (deferred — follow up if needed)**: format-aware
+  rendering (`$17`, `17%`, `€17.50`) based on `number.format` from the
+  property schema; locale-aware rendering; exposing
+  `Double.formatPlainText()` publicly.
 
 ---
 
@@ -399,13 +461,13 @@ removed (skipped). §7 commitment is now full overhaul.
 | --- | --- | --- | --- |
 | 1 ✅ | §3 `agent_id` parent type | S | Isolated, deserialize-only — **done 2026-05-30** |
 | 2 ✅ | §4 Cursor-opaqueness audit | S | **Closed 2026-05-30** — audit PASSed, no code changes (see [`_task_02_cursor_audit.md`](_task_02_cursor_audit.md)) |
-| 3 | ~~§6c Person filter cleanup~~ | — | **Done (verified 2026-05-30): no-op, no workaround in tree** |
-| 4 | §6a Update / Delete comment endpoints | S | Mirrors existing `create` |
-| 5 | §8 Files-property `FileUpload` variant | S | Closes a known gap; scope already documented |
-| 6 | §10 Number → integer plain-text rendering | S | Tiny helper, three call sites |
+| 3 ✅ | ~~§6c Person filter cleanup~~ | — | **Done (verified 2026-05-30): no-op, no workaround in tree** |
+| 4 ✅ | §6a Update / Delete comment endpoints | S | **Done 2026-05-30** — issues [#1](https://github.com/jsaabel/kotlin-notion-client/issues/1) (update) and [#2](https://github.com/jsaabel/kotlin-notion-client/issues/2) (delete) both shipped |
+| 5 ✅ | §8 Files-property `FileUpload` variant | S | **Done 2026-05-30** — commits [`d736127`](https://github.com/jsaabel/kotlin-notion-client/commit/d736127) + [`4d6dfd9`](https://github.com/jsaabel/kotlin-notion-client/commit/4d6dfd9) (+ [`c479f2c`](https://github.com/jsaabel/kotlin-notion-client/commit/c479f2c), [`3a2656b`](https://github.com/jsaabel/kotlin-notion-client/commit/3a2656b), [`3e9449b`](https://github.com/jsaabel/kotlin-notion-client/commit/3e9449b) fix-ups), closes [#6](https://github.com/jsaabel/kotlin-notion-client/issues/6) + [#7](https://github.com/jsaabel/kotlin-notion-client/issues/7) |
+| 6 ✅ | §10 Number → integer plain-text rendering | S | **Done 2026-05-30** — commit [`6550bfc`](https://github.com/jsaabel/kotlin-notion-client/commit/6550bfc), closes [#9](https://github.com/jsaabel/kotlin-notion-client/issues/9) |
 | 7 ✅ | §5 `request_status` + auto-paginate handling | M | **Done 2026-05-30** — `RequestStatus` modelled on three response types, `query` + `queryAsFlow` throw `QueryResultLimitReached` with partial results |
-| 8 | §6b Multi-value select/status/multi_select filters | M | Vararg DSL + custom serializer (string \| array) |
-| 9 | §9 Rich text → HTML converter | M | Minimal first cut: annotations + links + escape |
+| 8 ✅ | §6b Multi-value select/status/multi_select filters | M | **Done 2026-05-30** — commit [`c7c05ab`](https://github.com/jsaabel/kotlin-notion-client/commit/c7c05ab), closes [#4](https://github.com/jsaabel/kotlin-notion-client/issues/4) |
+| 9 ✅ | §9 Rich text → HTML converter | M | **Done 2026-05-30** — commit [`dd911ea`](https://github.com/jsaabel/kotlin-notion-client/commit/dd911ea), closes [#8](https://github.com/jsaabel/kotlin-notion-client/issues/8). Minimal first cut: annotations + links + paragraph splitting + escape |
 | 10 | §2 Docs note for PATs | S | After everything else lands |
 | 11 | §7 Rate-limiting overhaul | L–XL | Full overhaul (all 9 defects). Sequenced last so smaller items can still ship if this slips |
 
