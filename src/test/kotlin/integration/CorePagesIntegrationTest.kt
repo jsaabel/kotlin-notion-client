@@ -19,6 +19,7 @@ import it.saabel.kotlinnotionclient.models.pages.UpdatePageRequest
 import it.saabel.kotlinnotionclient.models.pages.getCheckboxProperty
 import it.saabel.kotlinnotionclient.models.pages.getEmailProperty
 import it.saabel.kotlinnotionclient.models.pages.getNumberProperty
+import it.saabel.kotlinnotionclient.models.pages.getPlainTextForProperty
 import it.saabel.kotlinnotionclient.models.pages.getRichTextAsPlainText
 import it.saabel.kotlinnotionclient.models.pages.getTitleAsPlainText
 import it.saabel.kotlinnotionclient.models.pages.pageProperties
@@ -176,6 +177,10 @@ class CorePagesIntegrationTest :
                 retrievedPage.getCheckboxProperty("Completed") shouldBe false
                 retrievedPage.getEmailProperty("Contact") shouldBe "test@example.com"
 
+                // §10 — plain-text rendering should strip the trailing .0 for
+                // integral values without affecting decimals.
+                retrievedPage.getPlainTextForProperty("Score") shouldBe "85.5"
+
                 val updatedPage =
                     notion.pages.update(
                         createdPage.id,
@@ -190,6 +195,9 @@ class CorePagesIntegrationTest :
 
                 updatedPage.getCheckboxProperty("Completed") shouldBe true
                 updatedPage.getNumberProperty("Score") shouldBe 95.0
+                // After the update writes 95.0 (an integral value), the plain-text
+                // render proves the §10 fix: today it would be "95.0", now "95".
+                updatedPage.getPlainTextForProperty("Score") shouldBe "95"
 
                 println("  ✅ CRUD lifecycle with type-safe properties verified")
             }
