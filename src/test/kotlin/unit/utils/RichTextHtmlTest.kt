@@ -162,18 +162,18 @@ class RichTextHtmlTest :
             test("text segment with link.url → <a> with rel + target=_blank") {
                 val rt = text("click", linkUrl = "https://example.com")
                 rt.toHtmlList() shouldBe
-                    """<p><a href="https://example.com" rel="nofollow noreferrer noopener" target="_blank">click</a></p>"""
+                    """<p><a href="https://example.com" rel="noopener noreferrer" target="_blank">click</a></p>"""
             }
 
-            test("anchor carries the rel=\"nofollow noreferrer noopener\" attribute") {
+            test("anchor carries the rel=\"noopener noreferrer\" attribute") {
                 val rt = listOf(text("click", linkUrl = "https://example.com"))
-                rt.toHtml() shouldContain """rel="nofollow noreferrer noopener""""
+                rt.toHtml() shouldContain """rel="noopener noreferrer""""
             }
 
             test("annotations nest inside the anchor") {
                 val rt = text("click", bold = true, linkUrl = "https://example.com")
                 rt.toHtmlList() shouldBe
-                    """<p><a href="https://example.com" rel="nofollow noreferrer noopener" target="_blank"><strong>click</strong></a></p>"""
+                    """<p><a href="https://example.com" rel="noopener noreferrer" target="_blank"><strong>click</strong></a></p>"""
             }
         }
 
@@ -226,7 +226,7 @@ class RichTextHtmlTest :
             test("\" and ' inside link.url are escaped in the href attribute") {
                 val rt = text("x", linkUrl = """https://example.com/?q="a'b""")
                 rt.toHtmlList() shouldBe
-                    """<p><a href="https://example.com/?q=&quot;a&#39;b" rel="nofollow noreferrer noopener" target="_blank">x</a></p>"""
+                    """<p><a href="https://example.com/?q=&quot;a&#39;b" rel="noopener noreferrer" target="_blank">x</a></p>"""
             }
 
             test("annotations apply on escaped content (no double-escaping of tag chars)") {
