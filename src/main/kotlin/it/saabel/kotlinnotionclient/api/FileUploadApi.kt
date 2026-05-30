@@ -186,6 +186,40 @@ class FileUploadApi(
     }
 
     /**
+     * Sends file content to a file upload, deriving the content type from the
+     * [FileUpload] returned by [createFileUpload].
+     *
+     * Prefer this overload for single-part uploads: it threads the exact content type Notion
+     * recorded at creation, so the multipart part can never fall back to the `text/plain` default
+     * that an omitted part content-type produces (which Notion rejects as a mismatch for any
+     * non-text file).
+     *
+     * ```kotlin
+     * val upload = notion.fileUploads.createFileUpload(
+     *     CreateFileUploadRequest(filename = "config.json", contentType = "application/json"),
+     * )
+     * notion.fileUploads.sendFileUpload(upload, jsonBytes) // content type threaded automatically
+     * ```
+     *
+     * @param fileUpload The FileUpload returned by [createFileUpload]
+     * @param fileContent The file content as a byte array
+     * @param partNumber Optional part number for multi-part uploads (1-1000)
+     * @return The updated FileUpload object
+     * @throws NotionException.ApiError for API-related errors (4xx, 5xx responses)
+     */
+    suspend fun sendFileUpload(
+        fileUpload: FileUpload,
+        fileContent: ByteArray,
+        partNumber: Int? = null,
+    ): FileUpload =
+        sendFileUpload(
+            fileUploadId = fileUpload.id,
+            fileContent = fileContent,
+            contentType = fileUpload.contentType,
+            partNumber = partNumber,
+        )
+
+    /**
      * Completes a multi-part file upload.
      *
      * Finalizes a multi-part file upload after all parts have been sent successfully.
