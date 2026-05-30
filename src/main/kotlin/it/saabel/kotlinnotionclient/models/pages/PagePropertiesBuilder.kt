@@ -696,6 +696,53 @@ class PagePropertiesBuilder {
     }
 
     /**
+     * Adds a "Files & media" property value using the files DSL.
+     *
+     * Example:
+     * ```kotlin
+     * files("Attachments") {
+     *     upload("upload-abc-123", name = "report.pdf")
+     *     external("Spec doc", "https://example.com/spec.pdf")
+     * }
+     * ```
+     *
+     * @param name The property name
+     * @param block The files DSL builder block
+     */
+    fun files(
+        name: String,
+        block: FilesBuilder.() -> Unit,
+    ) {
+        properties[name] = PagePropertyValue.FilesValue(files = FilesBuilder().apply(block).build())
+    }
+
+    /**
+     * Adds a "Files & media" property value from a terse list of file objects.
+     *
+     * @param name The property name
+     * @param files The file objects to attach
+     */
+    fun files(
+        name: String,
+        vararg files: FileObject,
+    ) {
+        properties[name] = PagePropertyValue.FilesValue(files = files.toList())
+    }
+
+    /**
+     * Adds a "Files & media" property value from a programmatically-built list.
+     *
+     * @param name The property name
+     * @param files The file objects to attach
+     */
+    fun files(
+        name: String,
+        files: List<FileObject>,
+    ) {
+        properties[name] = PagePropertyValue.FilesValue(files = files)
+    }
+
+    /**
      * Marks a page as verified in a wiki database.
      *
      * Optionally provide an ISO 8601 [start] date/datetime for when the verification begins,
