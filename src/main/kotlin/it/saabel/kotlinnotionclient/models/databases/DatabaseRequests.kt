@@ -289,6 +289,25 @@ sealed class CreateDatabaseProperty {
             requirePropertyDescriptionLength(description)
         }
     }
+
+    /**
+     * Files & media property for file attachments (uploaded or external).
+     *
+     * The schema config is an empty object; per-row file values are set via
+     * `PagePropertiesBuilder.files(...)`.
+     */
+    @Serializable
+    @SerialName("files")
+    data class Files(
+        @SerialName("files")
+        val files: EmptyObject = EmptyObject(),
+        @SerialName("description")
+        val description: String? = null,
+    ) : CreateDatabaseProperty() {
+        init {
+            requirePropertyDescriptionLength(description)
+        }
+    }
 }
 
 /**
