@@ -13,7 +13,7 @@ import it.saabel.kotlinnotionclient.models.base.RichText
  * **In scope (v0.5.0):**
  * - Annotations: bold → `<strong>`, italic → `<em>`, underline → `<u>`,
  *   strikethrough → `<s>`, code → `<code>`.
- * - Real `text.link.url` links → `<a href="…" rel="noopener noreferrer" target="_blank">`.
+ * - Real `text.link.url` links → `<a href="…" rel="nofollow noreferrer noopener" target="_blank">`.
  * - HTML escaping of all text content (`&`, `<`, `>`, `"`, `'`).
  * - Line breaks: a single `\n` becomes `<br>`; two or more consecutive newlines
  *   start a new paragraph. Output is always wrapped in `<p>…</p>`.
@@ -77,7 +77,7 @@ internal object RichTextHtmlRenderer {
         // Real text-typed links only. Mention hrefs are dropped — they point at
         // Notion-internal URLs and would leak into public-facing HTML.
         val url = segment.text?.link?.url ?: return html
-        return """<a href="${htmlEscape(url)}" rel="noopener noreferrer" target="_blank">$html</a>"""
+        return """<a href="${htmlEscape(url)}" rel="nofollow noreferrer noopener" target="_blank">$html</a>"""
     }
 
     private fun wrapInParagraphs(raw: String): String =
