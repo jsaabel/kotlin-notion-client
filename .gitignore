@@ -56,3 +56,6 @@ credentials/
 ### Local Test Data ###
 test-data/
 *.local.json
+
+### Local-only working folders (anything starting with _) ###
+_*/
