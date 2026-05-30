@@ -5,6 +5,7 @@ package integration
 import io.kotest.core.annotation.Tags
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.collections.shouldHaveSize
+import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.types.shouldBeInstanceOf
@@ -18,6 +19,9 @@ import it.saabel.kotlinnotionclient.models.files.FileUploadProgress
 import it.saabel.kotlinnotionclient.models.files.FileUploadResult
 import it.saabel.kotlinnotionclient.models.files.FileUploadStatus
 import it.saabel.kotlinnotionclient.models.files.UploadProgressStatus
+import it.saabel.kotlinnotionclient.models.pages.FileData
+import it.saabel.kotlinnotionclient.models.pages.PageProperty
+import it.saabel.kotlinnotionclient.models.pages.updatePageRequest
 import it.saabel.kotlinnotionclient.utils.FileUploadUtils
 import kotlinx.coroutines.delay
 import kotlin.io.path.createTempFile
@@ -590,6 +594,162 @@ class MediaIntegrationTest :
                 println("  ✓ Added ${appendResponse.results.size} blocks")
 
                 println("  ✅ External file import verified (filename='${result.filename}', extension auto-added)")
+            }
+
+            // ------------------------------------------------------------------
+            // 7. Files property DSL — attach uploads to a database row
+            // ------------------------------------------------------------------
+            "files property DSL attaches uploads to a database row" {
+                // Create a database with a Files property under the container page.
+                val database =
+                    notion.databases.create {
+                        parent.page(containerPageId)
+                        title("Files Property DSL — Attachments DB")
+                        icon.emoji("📎")
+                        properties {
+                            title("Name")
+                            files("Attachments")
+                        }
+                    }
+                println("  📊 Database: ${database.id}")
+
+                val dataSourceId = database.dataSources.firstOrNull()?.id
+                dataSourceId.shouldNotBeNull()
+                println("  ✓ Data source: $dataSourceId")
+
+                delay(500)
+
+                // Upload two files to attach.
+                val uploadA =
+                    notion.fileUploads.createFileUpload(
+                        CreateFileUploadRequest(filename = "data.txt", contentType = "text/plain"),
+                    )
+                notion.fileUploads.sendFileUpload(uploadA.id, createSampleFileContent("data.txt"))
+                println("  ✓ Uploaded A: ${uploadA.id}")
+
+                val uploadB =
+                    notion.fileUploads.createFileUpload(
+                        CreateFileUploadRequest(filename = "config.json", contentType = "application/json"),
+                    )
+                notion.fileUploads.sendFileUpload(uploadB.id, createSampleFileContent("config.json"))
+                println("  ✓ Uploaded B: ${uploadB.id}")
+
+                delay(2000)
+
+                // Create the row UNDER THE DATA SOURCE with the files DSL.
+                val row =
+                    notion.pages.create {
+                        parent.dataSource(dataSourceId)
+                        properties {
+                            title("Name", "Row with attachments")
+                            files("Attachments") {
+                                upload(uploadA.id, name = "data.txt")
+                                upload(uploadB.id)
+                            }
+                        }
+                    }
+                println("  ✓ Row created: ${row.id}")
+
+                delay(1000)
+
+                // Re-fetch and verify two uploaded files round-tripped.
+                val fetched = notion.pages.retrieve(row.id)
+                val filesProp = fetched.properties["Attachments"]
+                filesProp.shouldBeInstanceOf<PageProperty.Files>()
+                filesProp.files shouldHaveSize 2
+                filesProp.files.forEach { it.shouldBeInstanceOf<FileData.Uploaded>() }
+
+                val names = filesProp.files.map { it.name }
+                names shouldHaveSize 2
+                // The explicitly-named upload should be preserved.
+                names.contains("data.txt") shouldBe true
+
+                println("  ✅ Files property DSL verified (2 uploaded attachments round-tripped)")
+            }
+
+            // ------------------------------------------------------------------
+            // 8. existing() preserves an upload while adding an external (mixed)
+            // ------------------------------------------------------------------
+            "existing() preserves an upload while adding an external in a mixed update" {
+                val database =
+                    notion.databases.create {
+                        parent.page(containerPageId)
+                        title("Files Property DSL — Mixed Update DB")
+                        icon.emoji("📎")
+                        properties {
+                            title("Name")
+                            files("Attachments")
+                        }
+                    }
+                println("  📊 Database: ${database.id}")
+
+                val dataSourceId = database.dataSources.firstOrNull()?.id
+                dataSourceId.shouldNotBeNull()
+                println("  ✓ Data source: $dataSourceId")
+
+                delay(500)
+
+                // Seed the row with a single uploaded file.
+                val upload =
+                    notion.fileUploads.createFileUpload(
+                        CreateFileUploadRequest(filename = "seed.txt", contentType = "text/plain"),
+                    )
+                notion.fileUploads.sendFileUpload(upload.id, createSampleFileContent("seed.txt"))
+                println("  ✓ Uploaded seed: ${upload.id}")
+
+                delay(2000)
+
+                val row =
+                    notion.pages.create {
+                        parent.dataSource(dataSourceId)
+                        properties {
+                            title("Name", "Row for mixed update")
+                            files("Attachments") {
+                                upload(upload.id, name = "seed.txt")
+                            }
+                        }
+                    }
+                println("  ✓ Row created: ${row.id}")
+
+                delay(1000)
+
+                // Fetch the existing uploaded file from the live response.
+                val before = notion.pages.retrieve(row.id)
+                val beforeProp = before.properties["Attachments"]
+                beforeProp.shouldBeInstanceOf<PageProperty.Files>()
+                beforeProp.files shouldHaveSize 1
+                val existingUpload = beforeProp.files[0]
+                existingUpload.shouldBeInstanceOf<FileData.Uploaded>()
+
+                // Update to a MIXED array: preserve the existing upload + add an external.
+                val updateRequest =
+                    updatePageRequest {
+                        properties {
+                            files("Attachments") {
+                                existing(existingUpload)
+                                external("Spec", "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf")
+                            }
+                        }
+                    }
+                notion.pages.update(row.id, updateRequest)
+                println("  ✓ Row updated with mixed attachments")
+
+                delay(1000)
+
+                // Confirm the mixed-type round-trip.
+                val after = notion.pages.retrieve(row.id)
+                val afterProp = after.properties["Attachments"]
+                afterProp.shouldBeInstanceOf<PageProperty.Files>()
+                afterProp.files shouldHaveSize 2
+
+                val uploaded = afterProp.files.filterIsInstance<FileData.Uploaded>()
+                val external = afterProp.files.filterIsInstance<FileData.External>()
+                uploaded shouldHaveSize 1
+                external shouldHaveSize 1
+                external[0].name shouldBe "Spec"
+                external[0].external.url shouldNotBe null
+
+                println("  ✅ Mixed update verified (1 uploaded preserved via existing() + 1 external added)")
             }
         }
     })
