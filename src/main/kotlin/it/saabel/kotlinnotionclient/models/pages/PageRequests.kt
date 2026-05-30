@@ -7,6 +7,7 @@ import it.saabel.kotlinnotionclient.models.base.Parent
 import it.saabel.kotlinnotionclient.models.base.RichText
 import it.saabel.kotlinnotionclient.models.base.SelectOptionColor
 import it.saabel.kotlinnotionclient.models.blocks.BlockRequest
+import it.saabel.kotlinnotionclient.models.files.FileUploadReference
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
@@ -473,6 +474,49 @@ sealed class FileObject {
         @SerialName("file")
         val file: UploadedFileUrl,
     ) : FileObject()
+
+    /**
+     * References a file uploaded via the File Upload API, for attaching to a
+     * Files & media page-property value.
+     *
+     * This is the request-shape counterpart to [Uploaded] (the response shape):
+     * after creating a file upload with `FileUploadApi`, reference it here by ID.
+     *
+     * Per the Notion docs, [name] is optional when providing a file upload and
+     * defaults to the filename of the original File Upload.
+     */
+    @Serializable
+    @SerialName("file_upload")
+    data class FileUpload(
+        @SerialName("file_upload")
+        val fileUpload: FileUploadReference,
+        @SerialName("name")
+        val name: String? = null,
+    ) : FileObject()
+
+    companion object {
+        /**
+         * Builds a [FileUpload] referencing an uploaded file by its ID.
+         *
+         * @param id the ID of a file created via the File Upload API
+         * @param name optional display name; defaults to the original upload filename when omitted
+         */
+        fun upload(
+            id: String,
+            name: String? = null,
+        ): FileUpload = FileUpload(fileUpload = FileUploadReference(id), name = name)
+
+        /**
+         * Builds an [External] file reference from a public URL.
+         *
+         * @param name display name (required for external files per the Notion docs)
+         * @param url the public URL of the file
+         */
+        fun external(
+            name: String,
+            url: String,
+        ): External = External(name = name, external = ExternalFileUrl(url))
+    }
 }
 
 @Serializable
