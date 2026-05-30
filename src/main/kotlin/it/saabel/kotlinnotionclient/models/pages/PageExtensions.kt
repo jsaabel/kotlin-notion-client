@@ -172,7 +172,7 @@ fun Page.getPlainTextForProperty(name: String): String? {
         }
 
         is PageProperty.Number -> {
-            property.number?.toString()
+            property.number?.formatPlainText()
         }
 
         is PageProperty.Checkbox -> {
@@ -226,7 +226,7 @@ fun Page.getPlainTextForProperty(name: String): String? {
         is PageProperty.Formula -> {
             when (val formula = property.formula) {
                 is FormulaResult.StringResult -> formula.string
-                is FormulaResult.NumberResult -> formula.number?.toString()
+                is FormulaResult.NumberResult -> formula.number?.formatPlainText()
                 is FormulaResult.BooleanResult -> formula.boolean?.toString()
                 is FormulaResult.DateResult -> formula.date?.start
             }
@@ -234,7 +234,7 @@ fun Page.getPlainTextForProperty(name: String): String? {
 
         is PageProperty.Rollup -> {
             when (val rollup = property.rollup) {
-                is RollupResult.NumberResult -> rollup.number?.toString()
+                is RollupResult.NumberResult -> rollup.number?.formatPlainText()
                 is RollupResult.DateResult -> rollup.date?.start
                 is RollupResult.ArrayResult -> "${rollup.array.size} item(s)"
             }
@@ -261,3 +261,23 @@ fun Page.getPlainTextForProperty(name: String): String? {
         }
     }
 }
+
+/**
+ * Renders a [Double] for plain-text output, dropping the trailing `.0` for integral
+ * values so a Notion Number cell holding `17` reads as `"17"` rather than `"17.0"`,
+ * matching how Notion's UI renders integral number/formula/rollup results.
+ *
+ * Non-integral values are rendered verbatim via [toString], preserving full
+ * floating-point precision (e.g. `0.1 + 0.2` → `"0.30000000000000004"`).
+ *
+ * Falls back to [toString] for `NaN`/`±Infinity` (where [toLong] would silently coerce
+ * to `0`/`Long.MIN_VALUE`/`Long.MAX_VALUE`) and for magnitudes beyond [MAX_SAFE_INTEGER]
+ * (where the `Double`→`Long` round-trip would be lossy).
+ */
+private fun Double.formatPlainText(): String {
+    if (isNaN() || isInfinite()) return toString()
+    if (kotlin.math.abs(this) > MAX_SAFE_INTEGER) return toString()
+    return if (this == toLong().toDouble()) toLong().toString() else toString()
+}
+
+private const val MAX_SAFE_INTEGER: Double = 9_007_199_254_740_992.0
