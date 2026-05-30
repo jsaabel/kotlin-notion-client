@@ -2,6 +2,7 @@
 
 package it.saabel.kotlinnotionclient.models.views
 
+import it.saabel.kotlinnotionclient.models.base.RequestStatus
 import it.saabel.kotlinnotionclient.models.datasources.DataSourceFilter
 import it.saabel.kotlinnotionclient.models.datasources.DataSourceSort
 import it.saabel.kotlinnotionclient.models.users.User
@@ -1021,6 +1022,13 @@ data class ViewList(
 /**
  * Response from creating a view query (POST /v1/views/{view_id}/queries).
  * Contains the first page of results and a query ID for fetching subsequent pages.
+ *
+ * [totalCount] reflects the cached result set size. When [requestStatus] is incomplete
+ * (i.e. the matching row count exceeded the 10,000 cap), [totalCount] reports only
+ * the truncated cache size — not the true number of matching rows.
+ *
+ * [requestStatus] is `null` for non-truncated responses, or carries `type = "incomplete"`
+ * with `incomplete_reason = "query_result_limit_reached"` when the cache is truncated.
  */
 @Serializable
 data class ViewQuery(
@@ -1040,10 +1048,15 @@ data class ViewQuery(
     val nextCursor: String? = null,
     @SerialName("has_more")
     val hasMore: Boolean = false,
+    @SerialName("request_status")
+    val requestStatus: RequestStatus? = null,
 )
 
 /**
  * Response from retrieving cached query results (GET /v1/views/{view_id}/queries/{query_id}).
+ *
+ * Per the Notion docs, [requestStatus] is surfaced on every page of a truncated query —
+ * callers can detect incompleteness without walking to the last page.
  */
 @Serializable
 data class ViewQueryResults(
@@ -1055,6 +1068,8 @@ data class ViewQueryResults(
     val nextCursor: String? = null,
     @SerialName("has_more")
     val hasMore: Boolean = false,
+    @SerialName("request_status")
+    val requestStatus: RequestStatus? = null,
 )
 
 /**

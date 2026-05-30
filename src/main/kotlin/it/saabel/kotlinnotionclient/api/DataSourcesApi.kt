@@ -31,6 +31,7 @@ import it.saabel.kotlinnotionclient.utils.Pagination
 import it.saabel.kotlinnotionclient.validation.RequestValidator
 import it.saabel.kotlinnotionclient.validation.ValidationConfig
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
 
 /**
  * API client for Notion Data Sources endpoints (API version 2025-09-03+).
@@ -130,6 +131,9 @@ class DataSourcesApi(
      * @param dataSourceId The ID of the data source to query
      * @param request The query request with filters and sorts
      * @return List of all matching pages across all result pages
+     * @throws NotionException.QueryResultLimitReached when Notion truncates the result
+     *     set at its 10,000-row cap. The exception carries the partial results, the
+     *     `nextCursor`, and the raw `requestStatus`.
      * @throws NotionException.NetworkError for network-related failures
      * @throws NotionException.ApiError for API-related errors (4xx, 5xx responses)
      * @throws NotionException.AuthenticationError for authentication failures
@@ -151,6 +155,14 @@ class DataSourcesApi(
 
             val response = querySinglePage(dataSourceId, paginatedRequest)
             allPages.addAll(response.results)
+
+            response.requestStatus?.takeIf { it.isIncomplete }?.let { status ->
+                throw NotionException.QueryResultLimitReached(
+                    partialResults = allPages.toList(),
+                    nextCursor = response.nextCursor,
+                    requestStatus = status,
+                )
+            }
 
             currentCursor = response.nextCursor
             pageCount++
@@ -495,6 +507,11 @@ class DataSourcesApi(
     /**
      * Queries a data source and returns results as a Flow for reactive processing.
      *
+     * Throws [NotionException.QueryResultLimitReached] (terminating the flow) when
+     * Notion truncates the result set at its 10,000-row cap. To inspect truncation
+     * without losing the per-page metadata, use [queryPagedFlow] instead — it emits
+     * the raw response (including `requestStatus`) without throwing.
+     *
      * @param dataSourceId The ID of the data source to query
      * @param request The query request with filters and sorts
      * @return Flow<Page> that emits individual pages from all result pages
@@ -503,14 +520,31 @@ class DataSourcesApi(
         dataSourceId: String,
         request: DataSourceQueryRequest = DataSourceQueryRequest(),
     ): Flow<it.saabel.kotlinnotionclient.models.pages.Page> =
-        Pagination.asFlow { cursor ->
-            querySinglePage(
-                dataSourceId,
-                request.copy(
-                    startCursor = cursor,
-                    pageSize = NotionApiLimits.Response.MAX_PAGE_SIZE,
-                ),
-            )
+        flow {
+            val emitted = mutableListOf<it.saabel.kotlinnotionclient.models.pages.Page>()
+            var cursor: String? = null
+            do {
+                val response =
+                    querySinglePage(
+                        dataSourceId,
+                        request.copy(
+                            startCursor = cursor,
+                            pageSize = NotionApiLimits.Response.MAX_PAGE_SIZE,
+                        ),
+                    )
+                response.results.forEach {
+                    emitted.add(it)
+                    emit(it)
+                }
+                response.requestStatus?.takeIf { it.isIncomplete }?.let { status ->
+                    throw NotionException.QueryResultLimitReached(
+                        partialResults = emitted.toList(),
+                        nextCursor = response.nextCursor,
+                        requestStatus = status,
+                    )
+                }
+                cursor = response.nextCursor
+            } while (response.hasMore)
         }
 
     /**

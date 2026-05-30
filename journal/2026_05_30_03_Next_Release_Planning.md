@@ -13,7 +13,8 @@ Target **v0.5.0**. Ten work items spanning three groups:
   deprecated; §2 docs-only; §3 `agent_id` parent type **shipped
   (2026-05-30)**; §4 cursor audit **closed — already opaque end-to-end,
   no work needed (2026-05-30)**; §5 pagination cap → throws
-  `QueryResultLimitReached` on the auto-paginating path; §6a comment
+  `QueryResultLimitReached` on the auto-paginating path — **shipped
+  (2026-05-30)**; §6a comment
   update/delete (mirrors `create` pattern); §6b multi-value filters as
   vararg overloads; §6c person filter cleanup — **verified no-op
   (2026-05-30)**.
@@ -136,7 +137,7 @@ sequence.
 
 ---
 
-### 5. Pagination depth limit + `request_status` field (2026-04-20)
+### 5. Pagination depth limit + `request_status` field (2026-04-20) — **DONE (2026-05-30)**
 
 > The Query a data source, Create a view query, and Get view query results
 > endpoints now enforce a maximum pagination depth of 10,000 results per
@@ -144,48 +145,50 @@ sequence.
 > `{ "request_status": { "type": "incomplete", "incomplete_reason":
 > "query_result_limit_reached" } }`
 
-- **Current state**: We don't model `request_status` at all (`grep` confirms).
-  Our auto-pagination in `DataSourcesApi.query` will silently iterate until
-  `has_more=false`, hitting the new 10k cap without surfacing it.
-- **Required work**:
-  - **Model**: `RequestStatus { type: "complete" | "incomplete",
-    incompleteReason: String? }` added to:
-    - `QueryDataSourceResponse`
-    - View query response (create + get results)
-    - Anything else the docs list.
-  - **Behavior (decided)**: when auto-pagination terminates because of
-    `request_status.type == "incomplete"`, **throw
-    `NotionException.QueryResultLimitReached`**. The exception carries the
-    partial `List<T>` collected so far and the `nextCursor`/`requestStatus`
-    so callers can recover.
-    - *Rationale*: high-level methods currently return `List<T>` with no
-      wrapper, so there is no field-on-result to repurpose. Truncation at
-      10k means the caller is getting incomplete data — silent log lines
-      would lose that signal. An exception forces the caller to make a
-      conscious choice.
-    - *Single-page methods* (which already return `*Response` wrappers)
-      additionally expose `requestStatus` directly — the exception only
-      applies to the auto-paginating path.
-  - **Docs**: README / notebook example must explain the 10k limit, how to
-    catch the new exception, and how to chunk via filters or webhooks.
+- **Status**: Implemented on `main` (no worktree — landed directly). All
+  unit tests green.
+- **Shipped**:
+  - `models/base/RequestStatus.kt` — new `RequestStatus(type,
+    incompleteReason)` data class with `isComplete` / `isIncomplete`
+    helpers and constants for the documented values
+    (`TYPE_COMPLETE`, `TYPE_INCOMPLETE`,
+    `REASON_QUERY_RESULT_LIMIT_REACHED`).
+  - `DataSourceQueryResponse`, `ViewQuery`, `ViewQueryResults` each gain
+    a nullable `requestStatus: RequestStatus?` field. KDoc on
+    `ViewQuery.totalCount` flags the truncation trap (cached size, not
+    true row count).
+  - `NotionException.QueryResultLimitReached(partialResults: List<Page>,
+    nextCursor: String?, requestStatus: RequestStatus)` — bound to
+    `List<Page>` since that's the only auto-paginating path that hides
+    the raw response.
+  - `DataSourcesApi.query` (auto-paginating `List<Page>` path) throws
+    `QueryResultLimitReached` as soon as any page comes back with
+    `requestStatus.isIncomplete`, carrying everything collected so far
+    + the page's `nextCursor`.
+  - `DataSourcesApi.queryAsFlow` rewritten as a custom `flow {}` that
+    tracks emitted items and throws the same exception, terminating the
+    flow. `queryPagedFlow` and `queryFirstPage` are unchanged — they
+    return the raw response, so callers already see `requestStatus`.
+  - `unit/api/RequestStatusTest.kt` — 9 tests: model round-trip,
+    response-model round-trip (DataSourceQueryResponse, ViewQuery,
+    ViewQueryResults), happy path through `query()`, throw on first
+    incomplete page, throw mid-stream collects everything emitted so far,
+    `queryAsFlow` throw behaviour. All pass; full unit suite green.
+- **Skipped from this slice** (not in scope for v0.5.0 — track as
+  follow-ups if a user need surfaces):
+  - README / notebook documentation note about the 10k limit and how to
+    catch the exception. Cheap to add but wanted to confirm the surface
+    first.
+  - Integration test against a real ≥10k-row data source to verify that
+    Notion actually emits `request_status` on the *data source* query
+    endpoint (the changelog lists it but the data-source filter reference
+    doesn't enumerate the field).
 - **References:**
   [`_next_release_docs/05_create_view_query.md`](_next_release_docs/05_create_view_query.md),
   [`_next_release_docs/05_get_view_query_results.md`](_next_release_docs/05_get_view_query_results.md)
-- **Confirmed from fetched docs**:
-  - Only one `incomplete_reason` is documented: `query_result_limit_reached`.
-  - `request_status` is surfaced on **every page** of paginated results
-    for a truncated query (not just the last) — callers can short-circuit.
-  - Trap: when truncated, `total_count` reflects **only the truncated
-    cache size**, not the true matching row count. We should document this
-    prominently on whichever model exposes `totalCount`.
-  - The 10k limit is documented on the **view query** endpoints. The
-    changelog also names the *data source* query endpoint — the data
-    source filter reference (fetched separately) doesn't enumerate
-    `request_status`, so we should verify in an integration test whether
-    it actually appears there too.
 - **Ties into Idea #10** (limited-result querying / opt-out from
-  auto-pagination) — worth thinking about together because both touch the
-  same pagination loop.
+  auto-pagination) — the new exception surface is friendly to a future
+  "collect up to N then stop" knob if we add one.
 
 ---
 
@@ -400,7 +403,7 @@ removed (skipped). §7 commitment is now full overhaul.
 | 4 | §6a Update / Delete comment endpoints | S | Mirrors existing `create` |
 | 5 | §8 Files-property `FileUpload` variant | S | Closes a known gap; scope already documented |
 | 6 | §10 Number → integer plain-text rendering | S | Tiny helper, three call sites |
-| 7 | §5 `request_status` + auto-paginate handling | M | Throws `QueryResultLimitReached` on the auto-paginating path |
+| 7 ✅ | §5 `request_status` + auto-paginate handling | M | **Done 2026-05-30** — `RequestStatus` modelled on three response types, `query` + `queryAsFlow` throw `QueryResultLimitReached` with partial results |
 | 8 | §6b Multi-value select/status/multi_select filters | M | Vararg DSL + custom serializer (string \| array) |
 | 9 | §9 Rich text → HTML converter | M | Minimal first cut: annotations + links + escape |
 | 10 | §2 Docs note for PATs | S | After everything else lands |

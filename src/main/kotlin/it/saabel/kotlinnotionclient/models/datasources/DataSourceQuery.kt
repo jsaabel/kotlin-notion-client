@@ -3,6 +3,7 @@
 package it.saabel.kotlinnotionclient.models.datasources
 
 import it.saabel.kotlinnotionclient.models.base.EmptyObject
+import it.saabel.kotlinnotionclient.models.base.RequestStatus
 import it.saabel.kotlinnotionclient.models.pages.Page
 import it.saabel.kotlinnotionclient.utils.PaginatedResponse
 import kotlinx.serialization.ExperimentalSerializationApi
@@ -31,6 +32,11 @@ data class DataSourceQueryRequest(
  * Response model for data source queries.
  *
  * Contains the matching pages and pagination information for handling large result sets.
+ *
+ * [requestStatus] is non-null when the API caps the result set at 10,000 entries and
+ * truncates beyond that. The auto-paginating [it.saabel.kotlinnotionclient.api.DataSourcesApi.query]
+ * detects this and throws [it.saabel.kotlinnotionclient.exceptions.NotionException.QueryResultLimitReached].
+ * Single-page callers can inspect [requestStatus] directly.
  */
 @Serializable
 data class DataSourceQueryResponse(
@@ -46,6 +52,8 @@ data class DataSourceQueryResponse(
     val type: String, // Always "page_or_database"
     @SerialName("page_or_database")
     val pageOrDatabase: EmptyObject = EmptyObject(),
+    @SerialName("request_status")
+    val requestStatus: RequestStatus? = null,
 ) : PaginatedResponse<Page>
 
 /**

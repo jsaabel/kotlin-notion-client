@@ -2,6 +2,9 @@
 
 package it.saabel.kotlinnotionclient.exceptions
 
+import it.saabel.kotlinnotionclient.models.base.RequestStatus
+import it.saabel.kotlinnotionclient.models.pages.Page
+
 /**
  * Base exception class for all Notion API related errors.
  *
@@ -57,4 +60,22 @@ sealed class NotionException(
         val details: String,
         val originalCause: Throwable? = null,
     ) : NotionException("Unexpected error: $details", originalCause)
+
+    /**
+     * Thrown by auto-paginating data source queries when Notion's API truncates the
+     * result set at its 10,000-row cap (`request_status.type == "incomplete"`).
+     *
+     * The exception carries the [partialResults] collected so far, the [nextCursor]
+     * the API returned, and the raw [requestStatus] so the caller can decide how to
+     * recover — for example by narrowing the query, switching to a single-page method
+     * such as `queryFirstPage` / `queryPagedFlow`, or moving to a webhook flow.
+     */
+    data class QueryResultLimitReached(
+        val partialResults: List<Page>,
+        val nextCursor: String?,
+        val requestStatus: RequestStatus,
+    ) : NotionException(
+            "Query result limit reached (Notion caps data source query results at 10,000 entries). " +
+                "Collected ${partialResults.size} partial results before truncation.",
+        )
 }
