@@ -178,3 +178,17 @@ This testing approach ensures our models can handle the complexity of real Notio
 
 ### Test Execution Guidelines
 - **Never run all integration tests unless explicitly told to do so.** Integration tests use the real life API and take a long time to finish. In certain cases it's acceptable to run individual real life integration tests, but never all of them at once.
+
+## Agent skills
+
+### Issue tracker
+
+GitHub issues on `jsaabel/kotlin-notion-client` via the `gh` CLI. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+Canonical defaults (`needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`). See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context: `CONTEXT.md` and `docs/adr/` at the repo root (created lazily by `/grill-with-docs`). See `docs/agents/domain.md`.
