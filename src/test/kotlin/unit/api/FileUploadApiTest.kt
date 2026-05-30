@@ -6,13 +6,30 @@ import io.kotest.core.annotation.Tags
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
+import io.kotest.matchers.string.shouldContain
+import io.kotest.matchers.string.shouldNotContain
+import io.ktor.client.HttpClient
+import io.ktor.client.engine.mock.MockEngine
+import io.ktor.client.engine.mock.respond
+import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
+import io.ktor.client.request.HttpRequestData
+import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpMethod
+import io.ktor.http.HttpStatusCode
+import io.ktor.http.content.OutgoingContent
+import io.ktor.http.headersOf
+import io.ktor.serialization.kotlinx.json.json
+import io.ktor.utils.io.ByteChannel
+import io.ktor.utils.io.readRemaining
 import it.saabel.kotlinnotionclient.api.FileUploadApi
 import it.saabel.kotlinnotionclient.config.NotionConfig
 import it.saabel.kotlinnotionclient.models.files.CreateFileUploadRequest
 import it.saabel.kotlinnotionclient.models.files.FileUpload
 import it.saabel.kotlinnotionclient.models.files.FileUploadMode
 import it.saabel.kotlinnotionclient.models.files.FileUploadStatus
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.launch
+import kotlinx.io.readByteArray
 import kotlinx.serialization.json.Json
 import unit.util.TestFixtures
 import unit.util.mockClient
@@ -280,6 +297,73 @@ class FileUploadApiTest :
 
                 // This test is limited due to the multipart form data handling
                 // Full testing would be done in integration tests
+            }
+        }
+
+        context("sendFileUpload content type threading") {
+            // Captures the rendered multipart body of the /send request so we can assert
+            // which Content-Type the file part carries.
+            suspend fun OutgoingContent.renderToString(): String {
+                val writable = this as OutgoingContent.WriteChannelContent
+                val channel = ByteChannel()
+                lateinit var bytes: ByteArray
+                coroutineScope {
+                    val writer =
+                        launch {
+                            writable.writeTo(channel)
+                            channel.flushAndClose()
+                        }
+                    bytes = channel.readRemaining().readByteArray()
+                    writer.join()
+                }
+                return bytes.decodeToString()
+            }
+
+            fun capturingApi(capture: (String) -> Unit): FileUploadApi {
+                val engine =
+                    MockEngine { request: HttpRequestData ->
+                        capture(request.body.renderToString())
+                        respond(
+                            content = TestFixtures.FileUploads.sendFileUploadAsString(),
+                            status = HttpStatusCode.OK,
+                            headers = headersOf(HttpHeaders.ContentType, "application/json"),
+                        )
+                    }
+                val httpClient =
+                    HttpClient(engine) {
+                        install(ContentNegotiation) { json(TestFixtures.json) }
+                    }
+                return FileUploadApi(httpClient, config)
+            }
+
+            test("FileUpload overload threads the creation content type onto the file part") {
+                var body = ""
+                api = capturingApi { body = it }
+
+                val created =
+                    FileUpload(
+                        id = "upload-json-1",
+                        createdTime = "2026-05-30T00:00:00.000Z",
+                        lastEditedTime = "2026-05-30T00:00:00.000Z",
+                        status = FileUploadStatus.PENDING,
+                        filename = "config.json",
+                        contentType = "application/json",
+                    )
+
+                api.sendFileUpload(created, """{"k":1}""".toByteArray())
+
+                body shouldContain "Content-Type: application/json"
+            }
+
+            test("id overload without contentType sends no part content type (footgun)") {
+                var body = ""
+                api = capturingApi { body = it }
+
+                api.sendFileUpload("upload-json-2", """{"k":1}""".toByteArray())
+
+                // No content type means Notion defaults the part to text/plain — the exact
+                // mismatch the FileUpload overload exists to prevent.
+                body shouldNotContain "Content-Type: application/json"
             }
         }
     })
