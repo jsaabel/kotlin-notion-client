@@ -29,7 +29,6 @@ import it.saabel.kotlinnotionclient.models.views.ViewQueryResults
 import it.saabel.kotlinnotionclient.models.views.ViewReference
 import it.saabel.kotlinnotionclient.models.views.createViewRequest
 import it.saabel.kotlinnotionclient.models.views.updateViewRequest
-import it.saabel.kotlinnotionclient.ratelimit.executeWithRateLimit
 import it.saabel.kotlinnotionclient.utils.Pagination
 import kotlinx.coroutines.flow.Flow
 
@@ -92,23 +91,21 @@ class ViewsApi(
         require(parentCount == 1) {
             "Exactly one of databaseId, viewId, or createDatabase must be provided (got $parentCount)"
         }
-        return httpClient.executeWithRateLimit {
-            try {
-                val response: HttpResponse =
-                    httpClient.post("${config.baseUrl}/views") {
-                        contentType(ContentType.Application.Json)
-                        setBody(request)
-                    }
-                if (response.status.isSuccess()) {
-                    response.body<View>()
-                } else {
-                    throw response.toApiError()
+        return try {
+            val response: HttpResponse =
+                httpClient.post("${config.baseUrl}/views") {
+                    contentType(ContentType.Application.Json)
+                    setBody(request)
                 }
-            } catch (e: NotionException) {
-                throw e
-            } catch (e: Exception) {
-                throw NotionException.NetworkError(e)
+            if (response.status.isSuccess()) {
+                response.body<View>()
+            } else {
+                throw response.toApiError()
             }
+        } catch (e: NotionException) {
+            throw e
+        } catch (e: Exception) {
+            throw NotionException.NetworkError(e)
         }
     }
 
@@ -121,19 +118,17 @@ class ViewsApi(
      * @throws NotionException.NetworkError for network failures
      */
     suspend fun retrieve(viewId: String): View =
-        httpClient.executeWithRateLimit {
-            try {
-                val response: HttpResponse = httpClient.get("${config.baseUrl}/views/$viewId")
-                if (response.status.isSuccess()) {
-                    response.body<View>()
-                } else {
-                    throw response.toApiError()
-                }
-            } catch (e: NotionException) {
-                throw e
-            } catch (e: Exception) {
-                throw NotionException.NetworkError(e)
+        try {
+            val response: HttpResponse = httpClient.get("${config.baseUrl}/views/$viewId")
+            if (response.status.isSuccess()) {
+                response.body<View>()
+            } else {
+                throw response.toApiError()
             }
+        } catch (e: NotionException) {
+            throw e
+        } catch (e: Exception) {
+            throw NotionException.NetworkError(e)
         }
 
     /**
@@ -171,23 +166,21 @@ class ViewsApi(
         viewId: String,
         request: UpdateViewRequest,
     ): View =
-        httpClient.executeWithRateLimit {
-            try {
-                val response: HttpResponse =
-                    httpClient.patch("${config.baseUrl}/views/$viewId") {
-                        contentType(ContentType.Application.Json)
-                        setBody(request)
-                    }
-                if (response.status.isSuccess()) {
-                    response.body<View>()
-                } else {
-                    throw response.toApiError()
+        try {
+            val response: HttpResponse =
+                httpClient.patch("${config.baseUrl}/views/$viewId") {
+                    contentType(ContentType.Application.Json)
+                    setBody(request)
                 }
-            } catch (e: NotionException) {
-                throw e
-            } catch (e: Exception) {
-                throw NotionException.NetworkError(e)
+            if (response.status.isSuccess()) {
+                response.body<View>()
+            } else {
+                throw response.toApiError()
             }
+        } catch (e: NotionException) {
+            throw e
+        } catch (e: Exception) {
+            throw NotionException.NetworkError(e)
         }
 
     /**
@@ -201,19 +194,17 @@ class ViewsApi(
      * @throws NotionException.NetworkError for network failures
      */
     suspend fun delete(viewId: String): PartialView =
-        httpClient.executeWithRateLimit {
-            try {
-                val response: HttpResponse = httpClient.delete("${config.baseUrl}/views/$viewId")
-                if (response.status.isSuccess()) {
-                    response.body<PartialView>()
-                } else {
-                    throw response.toApiError()
-                }
-            } catch (e: NotionException) {
-                throw e
-            } catch (e: Exception) {
-                throw NotionException.NetworkError(e)
+        try {
+            val response: HttpResponse = httpClient.delete("${config.baseUrl}/views/$viewId")
+            if (response.status.isSuccess()) {
+                response.body<PartialView>()
+            } else {
+                throw response.toApiError()
             }
+        } catch (e: NotionException) {
+            throw e
+        } catch (e: Exception) {
+            throw NotionException.NetworkError(e)
         }
 
     // ========== Listing ==========
@@ -245,25 +236,23 @@ class ViewsApi(
         pageSize?.let {
             require(it in 1..100) { "pageSize must be between 1 and 100 (got $it)" }
         }
-        return httpClient.executeWithRateLimit {
-            try {
-                val response: HttpResponse =
-                    httpClient.get("${config.baseUrl}/views") {
-                        databaseId?.let { url.parameters.append("database_id", it) }
-                        dataSourceId?.let { url.parameters.append("data_source_id", it) }
-                        startCursor?.let { url.parameters.append("start_cursor", it) }
-                        pageSize?.let { url.parameters.append("page_size", it.toString()) }
-                    }
-                if (response.status.isSuccess()) {
-                    response.body<ViewList>()
-                } else {
-                    throw response.toApiError()
+        return try {
+            val response: HttpResponse =
+                httpClient.get("${config.baseUrl}/views") {
+                    databaseId?.let { url.parameters.append("database_id", it) }
+                    dataSourceId?.let { url.parameters.append("data_source_id", it) }
+                    startCursor?.let { url.parameters.append("start_cursor", it) }
+                    pageSize?.let { url.parameters.append("page_size", it.toString()) }
                 }
-            } catch (e: NotionException) {
-                throw e
-            } catch (e: Exception) {
-                throw NotionException.NetworkError(e)
+            if (response.status.isSuccess()) {
+                response.body<ViewList>()
+            } else {
+                throw response.toApiError()
             }
+        } catch (e: NotionException) {
+            throw e
+        } catch (e: Exception) {
+            throw NotionException.NetworkError(e)
         }
     }
 
@@ -326,23 +315,21 @@ class ViewsApi(
         pageSize?.let {
             require(it in 1..100) { "pageSize must be between 1 and 100 (got $it)" }
         }
-        return httpClient.executeWithRateLimit {
-            try {
-                val response: HttpResponse =
-                    httpClient.post("${config.baseUrl}/views/$viewId/queries") {
-                        contentType(ContentType.Application.Json)
-                        setBody(CreateViewQueryRequest(pageSize = pageSize))
-                    }
-                if (response.status.isSuccess()) {
-                    response.body<ViewQuery>()
-                } else {
-                    throw response.toApiError()
+        return try {
+            val response: HttpResponse =
+                httpClient.post("${config.baseUrl}/views/$viewId/queries") {
+                    contentType(ContentType.Application.Json)
+                    setBody(CreateViewQueryRequest(pageSize = pageSize))
                 }
-            } catch (e: NotionException) {
-                throw e
-            } catch (e: Exception) {
-                throw NotionException.NetworkError(e)
+            if (response.status.isSuccess()) {
+                response.body<ViewQuery>()
+            } else {
+                throw response.toApiError()
             }
+        } catch (e: NotionException) {
+            throw e
+        } catch (e: Exception) {
+            throw NotionException.NetworkError(e)
         }
     }
 
@@ -366,23 +353,21 @@ class ViewsApi(
         pageSize?.let {
             require(it in 1..100) { "pageSize must be between 1 and 100 (got $it)" }
         }
-        return httpClient.executeWithRateLimit {
-            try {
-                val response: HttpResponse =
-                    httpClient.get("${config.baseUrl}/views/$viewId/queries/$queryId") {
-                        startCursor?.let { url.parameters.append("start_cursor", it) }
-                        pageSize?.let { url.parameters.append("page_size", it.toString()) }
-                    }
-                if (response.status.isSuccess()) {
-                    response.body<ViewQueryResults>()
-                } else {
-                    throw response.toApiError()
+        return try {
+            val response: HttpResponse =
+                httpClient.get("${config.baseUrl}/views/$viewId/queries/$queryId") {
+                    startCursor?.let { url.parameters.append("start_cursor", it) }
+                    pageSize?.let { url.parameters.append("page_size", it.toString()) }
                 }
-            } catch (e: NotionException) {
-                throw e
-            } catch (e: Exception) {
-                throw NotionException.NetworkError(e)
+            if (response.status.isSuccess()) {
+                response.body<ViewQueryResults>()
+            } else {
+                throw response.toApiError()
             }
+        } catch (e: NotionException) {
+            throw e
+        } catch (e: Exception) {
+            throw NotionException.NetworkError(e)
         }
     }
 
@@ -399,20 +384,18 @@ class ViewsApi(
         viewId: String,
         queryId: String,
     ): DeletedViewQuery =
-        httpClient.executeWithRateLimit {
-            try {
-                val response: HttpResponse =
-                    httpClient.delete("${config.baseUrl}/views/$viewId/queries/$queryId")
-                if (response.status.isSuccess()) {
-                    response.body<DeletedViewQuery>()
-                } else {
-                    throw response.toApiError()
-                }
-            } catch (e: NotionException) {
-                throw e
-            } catch (e: Exception) {
-                throw NotionException.NetworkError(e)
+        try {
+            val response: HttpResponse =
+                httpClient.delete("${config.baseUrl}/views/$viewId/queries/$queryId")
+            if (response.status.isSuccess()) {
+                response.body<DeletedViewQuery>()
+            } else {
+                throw response.toApiError()
             }
+        } catch (e: NotionException) {
+            throw e
+        } catch (e: Exception) {
+            throw NotionException.NetworkError(e)
         }
 
     // ========== Internal helpers ==========

@@ -18,7 +18,6 @@ import it.saabel.kotlinnotionclient.models.blocks.BlockList
 import it.saabel.kotlinnotionclient.models.blocks.BlockRequest
 import it.saabel.kotlinnotionclient.models.blocks.PageContentBuilder
 import it.saabel.kotlinnotionclient.models.blocks.pageContent
-import it.saabel.kotlinnotionclient.ratelimit.executeWithRateLimit
 import it.saabel.kotlinnotionclient.utils.Pagination
 import it.saabel.kotlinnotionclient.validation.RequestValidator
 import it.saabel.kotlinnotionclient.validation.ValidationConfig
@@ -53,31 +52,29 @@ class BlocksApi(
      * @throws NotionException.AuthenticationError for authentication failures
      */
     suspend fun retrieve(blockId: String): Block =
-        httpClient.executeWithRateLimit {
-            try {
-                val response: HttpResponse = httpClient.get("${config.baseUrl}/blocks/$blockId")
+        try {
+            val response: HttpResponse = httpClient.get("${config.baseUrl}/blocks/$blockId")
 
-                if (response.status.isSuccess()) {
-                    response.body<Block>()
-                } else {
-                    val errorBody =
-                        try {
-                            response.body<String>()
-                        } catch (e: Exception) {
-                            "Could not read error response body"
-                        }
+            if (response.status.isSuccess()) {
+                response.body<Block>()
+            } else {
+                val errorBody =
+                    try {
+                        response.body<String>()
+                    } catch (e: Exception) {
+                        "Could not read error response body"
+                    }
 
-                    throw NotionException.ApiError(
-                        code = response.status.value.toString(),
-                        status = response.status.value,
-                        details = "HTTP ${response.status.value}: ${response.status.description}. Response: $errorBody",
-                    )
-                }
-            } catch (e: NotionException) {
-                throw e // Re-throw our own exceptions
-            } catch (e: Exception) {
-                throw NotionException.NetworkError(e)
+                throw NotionException.ApiError(
+                    code = response.status.value.toString(),
+                    status = response.status.value,
+                    details = "HTTP ${response.status.value}: ${response.status.description}. Response: $errorBody",
+                )
             }
+        } catch (e: NotionException) {
+            throw e // Re-throw our own exceptions
+        } catch (e: Exception) {
+            throw NotionException.NetworkError(e)
         }
 
     /**
@@ -136,42 +133,40 @@ class BlocksApi(
         startCursor: String? = null,
         pageSize: Int? = null,
     ): BlockList =
-        httpClient.executeWithRateLimit {
-            try {
-                val url =
-                    buildString {
-                        append("${config.baseUrl}/blocks/$blockId/children")
-                        val params = mutableListOf<String>()
-                        startCursor?.let { params.add("start_cursor=$it") }
-                        pageSize?.let { params.add("page_size=$it") }
-                        if (params.isNotEmpty()) {
-                            append("?${params.joinToString("&")}")
-                        }
+        try {
+            val url =
+                buildString {
+                    append("${config.baseUrl}/blocks/$blockId/children")
+                    val params = mutableListOf<String>()
+                    startCursor?.let { params.add("start_cursor=$it") }
+                    pageSize?.let { params.add("page_size=$it") }
+                    if (params.isNotEmpty()) {
+                        append("?${params.joinToString("&")}")
+                    }
+                }
+
+            val response: HttpResponse = httpClient.get(url)
+
+            if (response.status.isSuccess()) {
+                response.body<BlockList>()
+            } else {
+                val errorBody =
+                    try {
+                        response.body<String>()
+                    } catch (e: Exception) {
+                        "Could not read error response body"
                     }
 
-                val response: HttpResponse = httpClient.get(url)
-
-                if (response.status.isSuccess()) {
-                    response.body<BlockList>()
-                } else {
-                    val errorBody =
-                        try {
-                            response.body<String>()
-                        } catch (e: Exception) {
-                            "Could not read error response body"
-                        }
-
-                    throw NotionException.ApiError(
-                        code = response.status.value.toString(),
-                        status = response.status.value,
-                        details = "HTTP ${response.status.value}: ${response.status.description}. Response: $errorBody",
-                    )
-                }
-            } catch (e: NotionException) {
-                throw e // Re-throw our own exceptions
-            } catch (e: Exception) {
-                throw NotionException.NetworkError(e)
+                throw NotionException.ApiError(
+                    code = response.status.value.toString(),
+                    status = response.status.value,
+                    details = "HTTP ${response.status.value}: ${response.status.description}. Response: $errorBody",
+                )
             }
+        } catch (e: NotionException) {
+            throw e // Re-throw our own exceptions
+        } catch (e: Exception) {
+            throw NotionException.NetworkError(e)
         }
 
     /**
@@ -219,36 +214,34 @@ class BlocksApi(
     ): BlockList {
         validator.validateOrThrow("children", children)
 
-        return httpClient.executeWithRateLimit {
-            try {
-                val request = AppendBlockChildrenRequest(children = children, position = position)
-                val response: HttpResponse =
-                    httpClient.patch("${config.baseUrl}/blocks/$blockId/children") {
-                        contentType(ContentType.Application.Json)
-                        setBody(request)
+        return try {
+            val request = AppendBlockChildrenRequest(children = children, position = position)
+            val response: HttpResponse =
+                httpClient.patch("${config.baseUrl}/blocks/$blockId/children") {
+                    contentType(ContentType.Application.Json)
+                    setBody(request)
+                }
+
+            if (response.status.isSuccess()) {
+                response.body<BlockList>()
+            } else {
+                val errorBody =
+                    try {
+                        response.body<String>()
+                    } catch (e: Exception) {
+                        "Could not read error response body"
                     }
 
-                if (response.status.isSuccess()) {
-                    response.body<BlockList>()
-                } else {
-                    val errorBody =
-                        try {
-                            response.body<String>()
-                        } catch (e: Exception) {
-                            "Could not read error response body"
-                        }
-
-                    throw NotionException.ApiError(
-                        code = response.status.value.toString(),
-                        status = response.status.value,
-                        details = "HTTP ${response.status.value}: ${response.status.description}. Response: $errorBody",
-                    )
-                }
-            } catch (e: NotionException) {
-                throw e // Re-throw our own exceptions
-            } catch (e: Exception) {
-                throw NotionException.NetworkError(e)
+                throw NotionException.ApiError(
+                    code = response.status.value.toString(),
+                    status = response.status.value,
+                    details = "HTTP ${response.status.value}: ${response.status.description}. Response: $errorBody",
+                )
             }
+        } catch (e: NotionException) {
+            throw e // Re-throw our own exceptions
+        } catch (e: Exception) {
+            throw NotionException.NetworkError(e)
         }
     }
 
@@ -301,35 +294,33 @@ class BlocksApi(
     ): Block {
         validator.validateOrThrow("block", listOf(request))
 
-        return httpClient.executeWithRateLimit {
-            try {
-                val response: HttpResponse =
-                    httpClient.patch("${config.baseUrl}/blocks/$blockId") {
-                        contentType(ContentType.Application.Json)
-                        setBody(request)
+        return try {
+            val response: HttpResponse =
+                httpClient.patch("${config.baseUrl}/blocks/$blockId") {
+                    contentType(ContentType.Application.Json)
+                    setBody(request)
+                }
+
+            if (response.status.isSuccess()) {
+                response.body<Block>()
+            } else {
+                val errorBody =
+                    try {
+                        response.body<String>()
+                    } catch (e: Exception) {
+                        "Could not read error response body"
                     }
 
-                if (response.status.isSuccess()) {
-                    response.body<Block>()
-                } else {
-                    val errorBody =
-                        try {
-                            response.body<String>()
-                        } catch (e: Exception) {
-                            "Could not read error response body"
-                        }
-
-                    throw NotionException.ApiError(
-                        code = response.status.value.toString(),
-                        status = response.status.value,
-                        details = "HTTP ${response.status.value}: ${response.status.description}. Response: $errorBody",
-                    )
-                }
-            } catch (e: NotionException) {
-                throw e // Re-throw our own exceptions
-            } catch (e: Exception) {
-                throw NotionException.NetworkError(e)
+                throw NotionException.ApiError(
+                    code = response.status.value.toString(),
+                    status = response.status.value,
+                    details = "HTTP ${response.status.value}: ${response.status.description}. Response: $errorBody",
+                )
             }
+        } catch (e: NotionException) {
+            throw e // Re-throw our own exceptions
+        } catch (e: Exception) {
+            throw NotionException.NetworkError(e)
         }
     }
 
@@ -346,36 +337,34 @@ class BlocksApi(
      * @throws NotionException.AuthenticationError for authentication failures
      */
     suspend fun delete(blockId: String): Block =
-        httpClient.executeWithRateLimit {
-            try {
-                val request = TrashBlockRequest(inTrash = true)
-                val response: HttpResponse =
-                    httpClient.patch("${config.baseUrl}/blocks/$blockId") {
-                        contentType(ContentType.Application.Json)
-                        setBody(request)
+        try {
+            val request = TrashBlockRequest(inTrash = true)
+            val response: HttpResponse =
+                httpClient.patch("${config.baseUrl}/blocks/$blockId") {
+                    contentType(ContentType.Application.Json)
+                    setBody(request)
+                }
+
+            if (response.status.isSuccess()) {
+                response.body<Block>()
+            } else {
+                val errorBody =
+                    try {
+                        response.body<String>()
+                    } catch (e: Exception) {
+                        "Could not read error response body"
                     }
 
-                if (response.status.isSuccess()) {
-                    response.body<Block>()
-                } else {
-                    val errorBody =
-                        try {
-                            response.body<String>()
-                        } catch (e: Exception) {
-                            "Could not read error response body"
-                        }
-
-                    throw NotionException.ApiError(
-                        code = response.status.value.toString(),
-                        status = response.status.value,
-                        details = "HTTP ${response.status.value}: ${response.status.description}. Response: $errorBody",
-                    )
-                }
-            } catch (e: NotionException) {
-                throw e // Re-throw our own exceptions
-            } catch (e: Exception) {
-                throw NotionException.NetworkError(e)
+                throw NotionException.ApiError(
+                    code = response.status.value.toString(),
+                    status = response.status.value,
+                    details = "HTTP ${response.status.value}: ${response.status.description}. Response: $errorBody",
+                )
             }
+        } catch (e: NotionException) {
+            throw e // Re-throw our own exceptions
+        } catch (e: Exception) {
+            throw NotionException.NetworkError(e)
         }
 
     // ========== Pagination Helper Methods ==========

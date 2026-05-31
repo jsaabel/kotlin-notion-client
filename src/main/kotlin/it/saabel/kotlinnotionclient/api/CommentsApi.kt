@@ -24,7 +24,6 @@ import it.saabel.kotlinnotionclient.models.comments.UpdateCommentRequestBuilder
 import it.saabel.kotlinnotionclient.models.comments.createCommentRequest
 import it.saabel.kotlinnotionclient.models.comments.retrieveCommentsRequest
 import it.saabel.kotlinnotionclient.models.comments.updateCommentRequest
-import it.saabel.kotlinnotionclient.ratelimit.executeWithRateLimit
 import it.saabel.kotlinnotionclient.utils.Pagination
 import kotlinx.coroutines.flow.Flow
 
@@ -135,41 +134,39 @@ class CommentsApi(
         startCursor: String? = null,
         pageSize: Int? = null,
     ): CommentList =
-        httpClient.executeWithRateLimit {
-            try {
-                val url =
-                    buildString {
-                        append("${config.baseUrl}/comments")
-                        val params = mutableListOf<String>()
-                        params.add("block_id=$blockId")
-                        startCursor?.let { params.add("start_cursor=$it") }
-                        pageSize?.let { params.add("page_size=$it") }
-                        append("?${params.joinToString("&")}")
+        try {
+            val url =
+                buildString {
+                    append("${config.baseUrl}/comments")
+                    val params = mutableListOf<String>()
+                    params.add("block_id=$blockId")
+                    startCursor?.let { params.add("start_cursor=$it") }
+                    pageSize?.let { params.add("page_size=$it") }
+                    append("?${params.joinToString("&")}")
+                }
+
+            val response: HttpResponse = httpClient.get(url)
+
+            if (response.status.isSuccess()) {
+                response.body<CommentList>()
+            } else {
+                val errorBody =
+                    try {
+                        response.body<String>()
+                    } catch (e: Exception) {
+                        "Could not read error response body"
                     }
 
-                val response: HttpResponse = httpClient.get(url)
-
-                if (response.status.isSuccess()) {
-                    response.body<CommentList>()
-                } else {
-                    val errorBody =
-                        try {
-                            response.body<String>()
-                        } catch (e: Exception) {
-                            "Could not read error response body"
-                        }
-
-                    throw NotionException.ApiError(
-                        code = response.status.value.toString(),
-                        status = response.status.value,
-                        details = "HTTP ${response.status.value}: ${response.status.description}. Response: $errorBody",
-                    )
-                }
-            } catch (e: NotionException) {
-                throw e // Re-throw our own exceptions
-            } catch (e: Exception) {
-                throw NotionException.NetworkError(e)
+                throw NotionException.ApiError(
+                    code = response.status.value.toString(),
+                    status = response.status.value,
+                    details = "HTTP ${response.status.value}: ${response.status.description}. Response: $errorBody",
+                )
             }
+        } catch (e: NotionException) {
+            throw e // Re-throw our own exceptions
+        } catch (e: Exception) {
+            throw NotionException.NetworkError(e)
         }
 
     /**

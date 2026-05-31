@@ -9,7 +9,6 @@ import it.saabel.kotlinnotionclient.config.NotionConfig
 import it.saabel.kotlinnotionclient.exceptions.NotionException
 import it.saabel.kotlinnotionclient.models.users.User
 import it.saabel.kotlinnotionclient.models.users.UserList
-import it.saabel.kotlinnotionclient.ratelimit.executeWithRateLimit
 import it.saabel.kotlinnotionclient.utils.Pagination
 import kotlinx.coroutines.flow.Flow
 
@@ -41,31 +40,29 @@ class UsersApi(
      * @throws NotionException.AuthenticationError for authentication failures
      */
     suspend fun retrieve(userId: String): User =
-        httpClient.executeWithRateLimit {
-            try {
-                val response: HttpResponse = httpClient.get("${config.baseUrl}/users/$userId")
+        try {
+            val response: HttpResponse = httpClient.get("${config.baseUrl}/users/$userId")
 
-                if (response.status.isSuccess()) {
-                    response.body<User>()
-                } else {
-                    val errorBody =
-                        try {
-                            response.body<String>()
-                        } catch (e: Exception) {
-                            "Could not read error response body"
-                        }
+            if (response.status.isSuccess()) {
+                response.body<User>()
+            } else {
+                val errorBody =
+                    try {
+                        response.body<String>()
+                    } catch (e: Exception) {
+                        "Could not read error response body"
+                    }
 
-                    throw NotionException.ApiError(
-                        code = response.status.value.toString(),
-                        status = response.status.value,
-                        details = "HTTP ${response.status.value}: ${response.status.description}. Response: $errorBody",
-                    )
-                }
-            } catch (e: NotionException) {
-                throw e // Re-throw our own exceptions
-            } catch (e: Exception) {
-                throw NotionException.NetworkError(e)
+                throw NotionException.ApiError(
+                    code = response.status.value.toString(),
+                    status = response.status.value,
+                    details = "HTTP ${response.status.value}: ${response.status.description}. Response: $errorBody",
+                )
             }
+        } catch (e: NotionException) {
+            throw e // Re-throw our own exceptions
+        } catch (e: Exception) {
+            throw NotionException.NetworkError(e)
         }
 
     /**
@@ -93,42 +90,40 @@ class UsersApi(
             require(it in 1..100) { "Page size must be between 1 and 100, but was $it" }
         }
 
-        return httpClient.executeWithRateLimit {
-            try {
-                val url =
-                    buildString {
-                        append("${config.baseUrl}/users")
-                        val params = mutableListOf<String>()
-                        startCursor?.let { params.add("start_cursor=$it") }
-                        pageSize?.let { params.add("page_size=$it") }
-                        if (params.isNotEmpty()) {
-                            append("?${params.joinToString("&")}")
-                        }
+        return try {
+            val url =
+                buildString {
+                    append("${config.baseUrl}/users")
+                    val params = mutableListOf<String>()
+                    startCursor?.let { params.add("start_cursor=$it") }
+                    pageSize?.let { params.add("page_size=$it") }
+                    if (params.isNotEmpty()) {
+                        append("?${params.joinToString("&")}")
+                    }
+                }
+
+            val response: HttpResponse = httpClient.get(url)
+
+            if (response.status.isSuccess()) {
+                response.body<UserList>()
+            } else {
+                val errorBody =
+                    try {
+                        response.body<String>()
+                    } catch (e: Exception) {
+                        "Could not read error response body"
                     }
 
-                val response: HttpResponse = httpClient.get(url)
-
-                if (response.status.isSuccess()) {
-                    response.body<UserList>()
-                } else {
-                    val errorBody =
-                        try {
-                            response.body<String>()
-                        } catch (e: Exception) {
-                            "Could not read error response body"
-                        }
-
-                    throw NotionException.ApiError(
-                        code = response.status.value.toString(),
-                        status = response.status.value,
-                        details = "HTTP ${response.status.value}: ${response.status.description}. Response: $errorBody",
-                    )
-                }
-            } catch (e: NotionException) {
-                throw e // Re-throw our own exceptions
-            } catch (e: Exception) {
-                throw NotionException.NetworkError(e)
+                throw NotionException.ApiError(
+                    code = response.status.value.toString(),
+                    status = response.status.value,
+                    details = "HTTP ${response.status.value}: ${response.status.description}. Response: $errorBody",
+                )
             }
+        } catch (e: NotionException) {
+            throw e // Re-throw our own exceptions
+        } catch (e: Exception) {
+            throw NotionException.NetworkError(e)
         }
     }
 
@@ -143,31 +138,29 @@ class UsersApi(
      * @throws NotionException.AuthenticationError for authentication failures
      */
     suspend fun getCurrentUser(): User =
-        httpClient.executeWithRateLimit {
-            try {
-                val response: HttpResponse = httpClient.get("${config.baseUrl}/users/me")
+        try {
+            val response: HttpResponse = httpClient.get("${config.baseUrl}/users/me")
 
-                if (response.status.isSuccess()) {
-                    response.body<User>()
-                } else {
-                    val errorBody =
-                        try {
-                            response.body<String>()
-                        } catch (e: Exception) {
-                            "Could not read error response body"
-                        }
+            if (response.status.isSuccess()) {
+                response.body<User>()
+            } else {
+                val errorBody =
+                    try {
+                        response.body<String>()
+                    } catch (e: Exception) {
+                        "Could not read error response body"
+                    }
 
-                    throw NotionException.ApiError(
-                        code = response.status.value.toString(),
-                        status = response.status.value,
-                        details = "HTTP ${response.status.value}: ${response.status.description}. Response: $errorBody",
-                    )
-                }
-            } catch (e: NotionException) {
-                throw e // Re-throw our own exceptions
-            } catch (e: Exception) {
-                throw NotionException.NetworkError(e)
+                throw NotionException.ApiError(
+                    code = response.status.value.toString(),
+                    status = response.status.value,
+                    details = "HTTP ${response.status.value}: ${response.status.description}. Response: $errorBody",
+                )
             }
+        } catch (e: NotionException) {
+            throw e // Re-throw our own exceptions
+        } catch (e: Exception) {
+            throw NotionException.NetworkError(e)
         }
 
     // ========== Pagination Helper Methods ==========

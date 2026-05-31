@@ -26,7 +26,6 @@ import it.saabel.kotlinnotionclient.models.datasources.UpdateDataSourceRequestBu
 import it.saabel.kotlinnotionclient.models.datasources.createDataSourceRequest
 import it.saabel.kotlinnotionclient.models.datasources.dataSourceQuery
 import it.saabel.kotlinnotionclient.models.datasources.updateDataSourceRequest
-import it.saabel.kotlinnotionclient.ratelimit.executeWithRateLimit
 import it.saabel.kotlinnotionclient.utils.Pagination
 import it.saabel.kotlinnotionclient.validation.RequestValidator
 import it.saabel.kotlinnotionclient.validation.ValidationConfig
@@ -60,31 +59,29 @@ class DataSourcesApi(
      * @throws NotionException.AuthenticationError for authentication failures
      */
     suspend fun retrieve(dataSourceId: String): DataSource =
-        httpClient.executeWithRateLimit {
-            try {
-                val response: HttpResponse = httpClient.get("${config.baseUrl}/data_sources/$dataSourceId")
+        try {
+            val response: HttpResponse = httpClient.get("${config.baseUrl}/data_sources/$dataSourceId")
 
-                if (response.status.isSuccess()) {
-                    response.body<DataSource>()
-                } else {
-                    val errorBody =
-                        try {
-                            response.body<String>()
-                        } catch (e: Exception) {
-                            "Could not read error response body"
-                        }
+            if (response.status.isSuccess()) {
+                response.body<DataSource>()
+            } else {
+                val errorBody =
+                    try {
+                        response.body<String>()
+                    } catch (e: Exception) {
+                        "Could not read error response body"
+                    }
 
-                    throw NotionException.ApiError(
-                        code = response.status.value.toString(),
-                        status = response.status.value,
-                        details = "HTTP ${response.status.value}: ${response.status.description}. Response: $errorBody",
-                    )
-                }
-            } catch (e: NotionException) {
-                throw e // Re-throw our own exceptions
-            } catch (e: Exception) {
-                throw NotionException.NetworkError(e)
+                throw NotionException.ApiError(
+                    code = response.status.value.toString(),
+                    status = response.status.value,
+                    details = "HTTP ${response.status.value}: ${response.status.description}. Response: $errorBody",
+                )
             }
+        } catch (e: NotionException) {
+            throw e // Re-throw our own exceptions
+        } catch (e: Exception) {
+            throw NotionException.NetworkError(e)
         }
 
     /**
@@ -198,35 +195,33 @@ class DataSourcesApi(
         dataSourceId: String,
         request: DataSourceQueryRequest,
     ): DataSourceQueryResponse =
-        httpClient.executeWithRateLimit {
-            try {
-                val response: HttpResponse =
-                    httpClient.post("${config.baseUrl}/data_sources/$dataSourceId/query") {
-                        contentType(ContentType.Application.Json)
-                        setBody(request)
+        try {
+            val response: HttpResponse =
+                httpClient.post("${config.baseUrl}/data_sources/$dataSourceId/query") {
+                    contentType(ContentType.Application.Json)
+                    setBody(request)
+                }
+
+            if (response.status.isSuccess()) {
+                response.body<DataSourceQueryResponse>()
+            } else {
+                val errorBody =
+                    try {
+                        response.body<String>()
+                    } catch (e: Exception) {
+                        "Could not read error response body"
                     }
 
-                if (response.status.isSuccess()) {
-                    response.body<DataSourceQueryResponse>()
-                } else {
-                    val errorBody =
-                        try {
-                            response.body<String>()
-                        } catch (e: Exception) {
-                            "Could not read error response body"
-                        }
-
-                    throw NotionException.ApiError(
-                        code = response.status.value.toString(),
-                        status = response.status.value,
-                        details = "HTTP ${response.status.value}: ${response.status.description}. Response: $errorBody",
-                    )
-                }
-            } catch (e: NotionException) {
-                throw e // Re-throw our own exceptions
-            } catch (e: Exception) {
-                throw NotionException.NetworkError(e)
+                throw NotionException.ApiError(
+                    code = response.status.value.toString(),
+                    status = response.status.value,
+                    details = "HTTP ${response.status.value}: ${response.status.description}. Response: $errorBody",
+                )
             }
+        } catch (e: NotionException) {
+            throw e // Re-throw our own exceptions
+        } catch (e: Exception) {
+            throw NotionException.NetworkError(e)
         }
 
     /**
@@ -266,35 +261,33 @@ class DataSourcesApi(
      * @throws NotionException.AuthenticationError for authentication failures
      */
     suspend fun create(request: CreateDataSourceRequest): DataSource =
-        httpClient.executeWithRateLimit {
-            try {
-                val response: HttpResponse =
-                    httpClient.post("${config.baseUrl}/data_sources") {
-                        contentType(ContentType.Application.Json)
-                        setBody(request)
+        try {
+            val response: HttpResponse =
+                httpClient.post("${config.baseUrl}/data_sources") {
+                    contentType(ContentType.Application.Json)
+                    setBody(request)
+                }
+
+            if (response.status.isSuccess()) {
+                response.body<DataSource>()
+            } else {
+                val errorBody =
+                    try {
+                        response.body<String>()
+                    } catch (e: Exception) {
+                        "Could not read error response body"
                     }
 
-                if (response.status.isSuccess()) {
-                    response.body<DataSource>()
-                } else {
-                    val errorBody =
-                        try {
-                            response.body<String>()
-                        } catch (e: Exception) {
-                            "Could not read error response body"
-                        }
-
-                    throw NotionException.ApiError(
-                        code = response.status.value.toString(),
-                        status = response.status.value,
-                        details = "HTTP ${response.status.value}: ${response.status.description}. Response: $errorBody",
-                    )
-                }
-            } catch (e: NotionException) {
-                throw e // Re-throw our own exceptions
-            } catch (e: Exception) {
-                throw NotionException.NetworkError(e)
+                throw NotionException.ApiError(
+                    code = response.status.value.toString(),
+                    status = response.status.value,
+                    details = "HTTP ${response.status.value}: ${response.status.description}. Response: $errorBody",
+                )
             }
+        } catch (e: NotionException) {
+            throw e // Re-throw our own exceptions
+        } catch (e: Exception) {
+            throw NotionException.NetworkError(e)
         }
 
     /**
@@ -341,35 +334,33 @@ class DataSourcesApi(
         dataSourceId: String,
         request: UpdateDataSourceRequest,
     ): DataSource =
-        httpClient.executeWithRateLimit {
-            try {
-                val response: HttpResponse =
-                    httpClient.patch("${config.baseUrl}/data_sources/$dataSourceId") {
-                        contentType(ContentType.Application.Json)
-                        setBody(request)
+        try {
+            val response: HttpResponse =
+                httpClient.patch("${config.baseUrl}/data_sources/$dataSourceId") {
+                    contentType(ContentType.Application.Json)
+                    setBody(request)
+                }
+
+            if (response.status.isSuccess()) {
+                response.body<DataSource>()
+            } else {
+                val errorBody =
+                    try {
+                        response.body<String>()
+                    } catch (e: Exception) {
+                        "Could not read error response body"
                     }
 
-                if (response.status.isSuccess()) {
-                    response.body<DataSource>()
-                } else {
-                    val errorBody =
-                        try {
-                            response.body<String>()
-                        } catch (e: Exception) {
-                            "Could not read error response body"
-                        }
-
-                    throw NotionException.ApiError(
-                        code = response.status.value.toString(),
-                        status = response.status.value,
-                        details = "HTTP ${response.status.value}: ${response.status.description}. Response: $errorBody",
-                    )
-                }
-            } catch (e: NotionException) {
-                throw e // Re-throw our own exceptions
-            } catch (e: Exception) {
-                throw NotionException.NetworkError(e)
+                throw NotionException.ApiError(
+                    code = response.status.value.toString(),
+                    status = response.status.value,
+                    details = "HTTP ${response.status.value}: ${response.status.description}. Response: $errorBody",
+                )
             }
+        } catch (e: NotionException) {
+            throw e // Re-throw our own exceptions
+        } catch (e: Exception) {
+            throw NotionException.NetworkError(e)
         }
 
     /**
@@ -438,40 +429,38 @@ class DataSourcesApi(
         nameFilter: String? = null,
         startCursor: String? = null,
     ): TemplatesResponse =
-        httpClient.executeWithRateLimit {
-            try {
-                val response: HttpResponse =
-                    httpClient.get("${config.baseUrl}/data_sources/$dataSourceId/templates") {
-                        if (nameFilter != null) {
-                            url.parameters.append("name", nameFilter)
-                        }
-                        if (startCursor != null) {
-                            url.parameters.append("start_cursor", startCursor)
-                        }
-                        url.parameters.append("page_size", NotionApiLimits.Response.MAX_PAGE_SIZE.toString())
+        try {
+            val response: HttpResponse =
+                httpClient.get("${config.baseUrl}/data_sources/$dataSourceId/templates") {
+                    if (nameFilter != null) {
+                        url.parameters.append("name", nameFilter)
+                    }
+                    if (startCursor != null) {
+                        url.parameters.append("start_cursor", startCursor)
+                    }
+                    url.parameters.append("page_size", NotionApiLimits.Response.MAX_PAGE_SIZE.toString())
+                }
+
+            if (response.status.isSuccess()) {
+                response.body<TemplatesResponse>()
+            } else {
+                val errorBody =
+                    try {
+                        response.body<String>()
+                    } catch (e: Exception) {
+                        "Could not read error response body"
                     }
 
-                if (response.status.isSuccess()) {
-                    response.body<TemplatesResponse>()
-                } else {
-                    val errorBody =
-                        try {
-                            response.body<String>()
-                        } catch (e: Exception) {
-                            "Could not read error response body"
-                        }
-
-                    throw NotionException.ApiError(
-                        code = response.status.value.toString(),
-                        status = response.status.value,
-                        details = "HTTP ${response.status.value}: ${response.status.description}. Response: $errorBody",
-                    )
-                }
-            } catch (e: NotionException) {
-                throw e // Re-throw our own exceptions
-            } catch (e: Exception) {
-                throw NotionException.NetworkError(e)
+                throw NotionException.ApiError(
+                    code = response.status.value.toString(),
+                    status = response.status.value,
+                    details = "HTTP ${response.status.value}: ${response.status.description}. Response: $errorBody",
+                )
             }
+        } catch (e: NotionException) {
+            throw e // Re-throw our own exceptions
+        } catch (e: Exception) {
+            throw NotionException.NetworkError(e)
         }
 
     // ========== Pagination Helper Methods ==========

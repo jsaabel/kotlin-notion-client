@@ -18,7 +18,6 @@ import it.saabel.kotlinnotionclient.models.markdown.ReplaceContentBody
 import it.saabel.kotlinnotionclient.models.markdown.ReplaceContentRequest
 import it.saabel.kotlinnotionclient.models.markdown.UpdateContentBody
 import it.saabel.kotlinnotionclient.models.markdown.UpdateContentRequest
-import it.saabel.kotlinnotionclient.ratelimit.executeWithRateLimit
 
 /**
  * API client for the Notion Page Markdown endpoints.
@@ -71,32 +70,30 @@ class MarkdownApi(
         pageId: String,
         includeTranscript: Boolean = false,
     ): PageMarkdownResponse =
-        httpClient.executeWithRateLimit {
-            try {
-                val url =
-                    buildString {
-                        append("${config.baseUrl}/pages/$pageId/markdown")
-                        if (includeTranscript) append("?include_transcript=true")
-                    }
-                val response: HttpResponse = httpClient.get(url)
-
-                if (response.status.isSuccess()) {
-                    response.body<PageMarkdownResponse>()
-                } else {
-                    val errorBody = readErrorBody(response)
-                    throw NotionException.ApiError(
-                        code = response.status.value.toString(),
-                        status = response.status.value,
-                        details = "HTTP ${response.status.value}: ${response.status.description}. Response: $errorBody",
-                    )
+        try {
+            val url =
+                buildString {
+                    append("${config.baseUrl}/pages/$pageId/markdown")
+                    if (includeTranscript) append("?include_transcript=true")
                 }
-            } catch (e: NotionException) {
-                throw e
-            } catch (e: ClientRequestException) {
-                throw clientError(e)
-            } catch (e: Exception) {
-                throw NotionException.NetworkError(e)
+            val response: HttpResponse = httpClient.get(url)
+
+            if (response.status.isSuccess()) {
+                response.body<PageMarkdownResponse>()
+            } else {
+                val errorBody = readErrorBody(response)
+                throw NotionException.ApiError(
+                    code = response.status.value.toString(),
+                    status = response.status.value,
+                    details = "HTTP ${response.status.value}: ${response.status.description}. Response: $errorBody",
+                )
             }
+        } catch (e: NotionException) {
+            throw e
+        } catch (e: ClientRequestException) {
+            throw clientError(e)
+        } catch (e: Exception) {
+            throw NotionException.NetworkError(e)
         }
 
     /**
@@ -207,31 +204,29 @@ class MarkdownApi(
         pageId: String,
         request: T,
     ): PageMarkdownResponse =
-        httpClient.executeWithRateLimit {
-            try {
-                val response: HttpResponse =
-                    httpClient.patch("${config.baseUrl}/pages/$pageId/markdown") {
-                        contentType(ContentType.Application.Json)
-                        setBody(request)
-                    }
-
-                if (response.status.isSuccess()) {
-                    response.body<PageMarkdownResponse>()
-                } else {
-                    val errorBody = readErrorBody(response)
-                    throw NotionException.ApiError(
-                        code = response.status.value.toString(),
-                        status = response.status.value,
-                        details = "HTTP ${response.status.value}: ${response.status.description}. Response: $errorBody",
-                    )
+        try {
+            val response: HttpResponse =
+                httpClient.patch("${config.baseUrl}/pages/$pageId/markdown") {
+                    contentType(ContentType.Application.Json)
+                    setBody(request)
                 }
-            } catch (e: NotionException) {
-                throw e
-            } catch (e: ClientRequestException) {
-                throw clientError(e)
-            } catch (e: Exception) {
-                throw NotionException.NetworkError(e)
+
+            if (response.status.isSuccess()) {
+                response.body<PageMarkdownResponse>()
+            } else {
+                val errorBody = readErrorBody(response)
+                throw NotionException.ApiError(
+                    code = response.status.value.toString(),
+                    status = response.status.value,
+                    details = "HTTP ${response.status.value}: ${response.status.description}. Response: $errorBody",
+                )
             }
+        } catch (e: NotionException) {
+            throw e
+        } catch (e: ClientRequestException) {
+            throw clientError(e)
+        } catch (e: Exception) {
+            throw NotionException.NetworkError(e)
         }
 
     private suspend fun readErrorBody(response: HttpResponse): String =
