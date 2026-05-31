@@ -20,10 +20,11 @@ import it.saabel.kotlinnotionclient.exceptions.NotionException
 import it.saabel.kotlinnotionclient.models.files.CreateFileUploadRequest
 import it.saabel.kotlinnotionclient.models.search.SearchRequest
 import it.saabel.kotlinnotionclient.ratelimit.NotionRateLimit
-import it.saabel.kotlinnotionclient.ratelimit.RateLimitStrategy
+import it.saabel.kotlinnotionclient.ratelimit.RateLimitConfig
 import kotlinx.serialization.json.Json
 import unit.util.TestFixtures
 import java.util.concurrent.atomic.AtomicInteger
+import kotlin.time.Duration.Companion.milliseconds
 
 /**
  * Verifies that [NotionRateLimit], now a `createClientPlugin` registered on the `Send` phase,
@@ -66,11 +67,13 @@ class RateLimitPluginTest :
                     json(Json { ignoreUnknownKeys = true })
                 }
                 install(NotionRateLimit) {
-                    strategy = RateLimitStrategy.CUSTOM
-                    maxRetries = retries
-                    baseDelayMs = 1
-                    maxDelayMs = 5
-                    jitterFactor = 0.0
+                    rateLimitConfig =
+                        RateLimitConfig(
+                            maxRetries = retries,
+                            retryBaseDelay = 1.milliseconds,
+                            retryMaxDelay = 5.milliseconds,
+                            jitterFactor = 0.0,
+                        )
                 }
             }
 

@@ -14,7 +14,7 @@ import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.headersOf
 import it.saabel.kotlinnotionclient.ratelimit.NotionRateLimit
-import it.saabel.kotlinnotionclient.ratelimit.RateLimitStrategy
+import it.saabel.kotlinnotionclient.ratelimit.RateLimitConfig
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.currentTime
@@ -49,10 +49,12 @@ class TokenBucketPluginTest :
                 },
             ) {
                 install(NotionRateLimit) {
-                    strategy = RateLimitStrategy.CUSTOM
-                    maxRetries = 0
-                    sustainedRate = rate
-                    burstCapacity = burst
+                    rateLimitConfig =
+                        RateLimitConfig(
+                            maxRetries = 0,
+                            sustainedRate = rate,
+                            burstCapacity = burst,
+                        )
                     timeSourceMillis = timeSource
                 }
             }

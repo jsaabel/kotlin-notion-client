@@ -181,12 +181,7 @@ class NotionClient
                     // Install rate limiting if enabled
                     if (config.enableRateLimit) {
                         install(NotionRateLimit) {
-                            strategy = config.rateLimitConfig.strategy
-                            maxRetries = config.rateLimitConfig.maxRetries
-                            baseDelayMs = config.rateLimitConfig.baseDelayMs
-                            maxDelayMs = config.rateLimitConfig.maxDelayMs
-                            jitterFactor = config.rateLimitConfig.jitterFactor
-                            respectRetryAfter = config.rateLimitConfig.respectRetryAfter
+                            rateLimitConfig = config.rateLimitConfig
                         }
                     }
 
