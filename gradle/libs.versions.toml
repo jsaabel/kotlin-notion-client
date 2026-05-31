@@ -5,6 +5,7 @@ dokka = "2.2.0"
 kotlin = "2.3.21"
 kotlinter = "5.5.0"
 maven-publish = "0.36.0"
+kotlinx-coroutines = "1.10.2"
 kotlinx-datetime = "0.8.0"
 kotlinx-serialization-json = "1.11.0"
 ktor = "3.5.0"
@@ -23,6 +24,7 @@ maven-publish = { id = "com.vanniktech.maven.publish", version.ref = "maven-publ
 kotest-runner-junit5 = { group = "io.kotest", name = "kotest-runner-junit5", version.ref = "kotest" }
 kotest-framework-engine = { group = "io.kotest", name = "kotest-framework-engine", version.ref = "kotest" }
 kotest-assertions-core = { group = "io.kotest", name = "kotest-assertions-core", version.ref = "kotest" }
+kotlinx-coroutines-test = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-test", version.ref = "kotlinx-coroutines" }
 kotlinx-datetime = { group = "org.jetbrains.kotlinx", name = "kotlinx-datetime", version.ref = "kotlinx-datetime" }
 kotlinx-serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "kotlinx-serialization-json" }
 ktor-client-cio = { group = "io.ktor", name = "ktor-client-cio", version.ref = "ktor" }
