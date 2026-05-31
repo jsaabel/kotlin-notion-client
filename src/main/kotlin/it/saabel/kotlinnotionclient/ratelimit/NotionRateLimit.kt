@@ -2,7 +2,9 @@ package it.saabel.kotlinnotionclient.ratelimit
 
 import io.ktor.client.plugins.api.Send
 import io.ktor.client.plugins.api.createClientPlugin
+import io.ktor.http.HttpHeaders
 import kotlinx.coroutines.delay
+import kotlin.time.Duration.Companion.seconds
 
 /**
  * Configuration for the [NotionRateLimit] plugin.
@@ -87,8 +89,13 @@ class NotionRateLimitConfig {
  *   at `sustainedRate` req/s, bursting up to `burstCapacity`). A token is acquired before each
  *   send, including retries.
  * - Retries only on `429` responses.
- * - Uses exponential backoff with jitter via [BackoffCalculator].
- * - Does **not** read `Retry-After` / `x-ratelimit-*` headers yet.
+ * - On a `429`, honours the `Retry-After` header (seconds) when present and [respectRetryAfter] is
+ *   enabled: waits exactly that long plus a 1s rounding-safety margin, then retries. This is
+ *   Notion's published 429 contract. The header-driven delay deliberately does **not** stack with
+ *   the exponential schedule.
+ * - Falls back to exponential backoff with jitter via [BackoffCalculator] when a `429` arrives
+ *   without `Retry-After` (defence-in-depth — per the docs this shouldn't happen).
+ * - Does **not** read `x-ratelimit-*` headers — Notion does not emit them on 2xx responses.
  *
  * Usage:
  * ```kotlin
@@ -127,9 +134,26 @@ val NotionRateLimit =
                         cumulativeDelay = cumulativeDelay,
                     )
 
-                // Preserve current behaviour: 429-only retry with exponential backoff,
-                // no header reading yet.
-                val delayDuration = backoffCalculator.calculateDelay(retryAttempt, null)
+                // Notion publishes `Retry-After` (seconds) as its 429 contract. When present (and
+                // honouring is enabled), it is load-bearing: wait exactly that long plus a 1s
+                // rounding-safety margin, then retry. This delay does NOT stack with the
+                // exponential schedule — it replaces it on the primary 429 path.
+                val retryAfterSeconds =
+                    if (config.respectRetryAfter) {
+                        call.response.headers[HttpHeaders.RetryAfter]?.toLongOrNull()
+                    } else {
+                        null
+                    }
+
+                val delayDuration =
+                    if (retryAfterSeconds != null) {
+                        retryAfterSeconds.seconds + 1.seconds
+                    } else {
+                        // Defence-in-depth: a 429 without `Retry-After` shouldn't happen per the
+                        // docs, but if it does, fall back to the exponential schedule (the same one
+                        // used for 5xx/network errors).
+                        backoffCalculator.calculateDelay(retryAttempt, null)
+                    }
                 delay(delayDuration)
                 cumulativeDelay += delayDuration
                 attemptNumber++
