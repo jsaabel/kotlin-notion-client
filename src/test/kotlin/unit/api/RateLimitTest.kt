@@ -4,10 +4,8 @@ import io.kotest.core.annotation.Tags
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
-import io.kotest.matchers.types.shouldBeInstanceOf
 import it.saabel.kotlinnotionclient.ratelimit.BackoffCalculator
 import it.saabel.kotlinnotionclient.ratelimit.RateLimitConfig
-import it.saabel.kotlinnotionclient.ratelimit.RateLimitDecision
 import it.saabel.kotlinnotionclient.ratelimit.RateLimitState
 import it.saabel.kotlinnotionclient.ratelimit.RateLimitStrategy
 import it.saabel.kotlinnotionclient.ratelimit.RetryAttempt
@@ -164,52 +162,9 @@ class RateLimitTest :
             }
         }
 
-        context("Retry logic") {
-            test("should allow retries for rate limit errors") {
-                val config = RateLimitConfig(maxRetries = 3)
-                val calculator = BackoffCalculator(config)
-
-                val rateLimitError = RuntimeException("429: Too Many Requests")
-                val attempt = RetryAttempt.initial()
-
-                val decision = calculator.shouldRetry(attempt, rateLimitError, null)
-                decision.shouldBeInstanceOf<RateLimitDecision.Wait>()
-            }
-
-            test("should reject after max retries") {
-                val config = RateLimitConfig(maxRetries = 2)
-                val calculator = BackoffCalculator(config)
-
-                val rateLimitError = RuntimeException("429: Too Many Requests")
-                var attempt = RetryAttempt.initial()
-
-                // First retry should be allowed
-                attempt = attempt.nextAttempt(rateLimitError, 1.seconds)
-                val decision1 = calculator.shouldRetry(attempt, rateLimitError, null)
-                decision1.shouldBeInstanceOf<RateLimitDecision.Wait>()
-
-                // Second retry should be allowed
-                attempt = attempt.nextAttempt(rateLimitError, 1.seconds)
-                val decision2 = calculator.shouldRetry(attempt, rateLimitError, null)
-                decision2.shouldBeInstanceOf<RateLimitDecision.Wait>()
-
-                // Third retry should be rejected (exceeded maxRetries)
-                attempt = attempt.nextAttempt(rateLimitError, 1.seconds)
-                val decision3 = calculator.shouldRetry(attempt, rateLimitError, null)
-                decision3.shouldBeInstanceOf<RateLimitDecision.Reject>()
-            }
-
-            test("should not retry non-retryable errors") {
-                val config = RateLimitConfig(maxRetries = 3)
-                val calculator = BackoffCalculator(config)
-
-                val clientError = RuntimeException("400: Bad Request")
-                val attempt = RetryAttempt.initial()
-
-                val decision = calculator.shouldRetry(attempt, clientError, null)
-                decision.shouldBeInstanceOf<RateLimitDecision.Reject>()
-            }
-        }
+        // Retry classification moved out of BackoffCalculator into the NotionRateLimit plugin,
+        // which now classifies failures by HTTP status / exception type (no string-matching).
+        // See unit.ratelimit.TypedRetryClassifierPluginTest for that coverage.
 
         context("Configuration validation") {
             test("should validate positive values") {
