@@ -17,8 +17,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   retry configuration for the whole client.
 
   **Migration**: configure retry behaviour via `NotionConfig.rateLimitConfig`
-  (a `RateLimitConfig` with `maxRetries`, `baseDelayMs`, `maxDelayMs`,
-  `jitterFactor`, `strategy`, and `respectRetryAfter`) instead of passing a
+  (a `RateLimitConfig` with `sustainedRate`, `burstCapacity`, `maxRetries`,
+  `retryBaseDelay`, `retryMaxDelay`, and `jitterFactor`) instead of passing a
   per-upload `FileUploadOptions.retryConfig`. There is no compatibility shim —
   this is a clean break.
 
@@ -40,6 +40,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   chunks remains in `EnhancedFileUploadApi`. The pipeline plugin handles
   HTTP/network retry of a single request; it does not replace application-level
   multipart resume logic.
+
+- **`RateLimitConfig` surface trimmed to the load-bearing knobs**: the config is
+  now `RateLimitConfig(sustainedRate, burstCapacity, maxRetries, retryBaseDelay,
+  retryMaxDelay, jitterFactor)`. Removed in this pass:
+  - the `RateLimitStrategy` enum and the `CONSERVATIVE` / `BALANCED` /
+    `AGGRESSIVE` presets — redundant once the token bucket landed;
+  - the `respectRetryAfter` flag — `Retry-After` is now always honoured on `429`
+    (it is Notion's published contract);
+  - `baseDelayMs` / `maxDelayMs` (`Long`, milliseconds) — replaced by
+    `retryBaseDelay` / `retryMaxDelay` (`kotlin.time.Duration`);
+  - the header-derived `RateLimitState` type and all `x-ratelimit-*` parsing —
+    Notion does not emit those headers.
+
+  **Migration**: `RateLimitConfig.BALANCED` → `RateLimitConfig()`;
+  `baseDelayMs = 1000` → `retryBaseDelay = 1.seconds`;
+  `maxDelayMs = 30000` → `retryMaxDelay = 30.seconds`; drop `strategy` and
+  `respectRetryAfter`.
+
+### 🐛 Fixed
+
+- **No wasted backoff sleep on exhausted retries**: when every attempt fails and
+  `maxRetries` is reached, the client now throws/returns immediately instead of
+  sleeping one final, unused backoff interval (~8s with default settings) before
+  giving up.
 
 ## [0.4.2] - 2026-05-03
 

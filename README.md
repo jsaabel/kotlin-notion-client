@@ -99,6 +99,60 @@ val client = NotionClient(
 
 Both patterns are fully supported - use whichever feels more natural to you.
 
+## Rate Limiting & Throttling
+
+Every request the client sends flows through a single rate-limit pipeline that
+does two things automatically:
+
+1. **Proactive throttling** — a continuous-refill token bucket paces outbound
+   requests so you stay under Notion's documented sustained ceiling (≈3 req/s)
+   instead of firing a burst that earns a wave of `429`s.
+2. **Reactive retry** — `429` responses (honouring `Retry-After`), transient
+   `5xx` (`502` / `503` / `504`), and network errors are retried with
+   exponential backoff and jitter. Other `4xx`, plain `500`, and successes are
+   returned immediately.
+
+Tune it through `NotionConfig.rateLimitConfig`:
+
+```kotlin
+val client = NotionClient(
+    NotionConfig(
+        apiToken = "your-api-token",
+        rateLimitConfig = RateLimitConfig(
+            sustainedRate = 3.0,            // tokens (requests) refilled per second
+            burstCapacity = 20,            // requests allowed to fire immediately
+            maxRetries = 3,                // retries AFTER the first attempt (see note)
+            retryBaseDelay = 1.seconds,    // first retry waits ~this long
+            retryMaxDelay = 30.seconds,    // cap on any single backoff delay
+            jitterFactor = 0.1,            // ±10% randomness to avoid thundering herds
+        ),
+    ),
+)
+```
+
+| Field | Default | What it controls |
+|-------|---------|------------------|
+| `sustainedRate` | `3.0` | Steady-state requests per second. Notion's sustained ceiling — lower for politeness; raising it risks `429`s. |
+| `burstCapacity` | `20` | How many requests can go out back-to-back before pacing kicks in. |
+| `maxRetries` | `3` | Retries after the initial attempt. |
+| `retryBaseDelay` | `1s` | Base of the exponential backoff schedule. |
+| `retryMaxDelay` | `30s` | Upper bound on a single backoff wait. |
+| `jitterFactor` | `0.1` | Randomness added to each delay. |
+
+> **Off-by-one note:** `maxRetries` counts *retries*, not total attempts.
+> `maxRetries = 3` permits up to **4** HTTP calls (1 initial + 3 retries); `0`
+> disables retrying entirely.
+
+**Tuning for heavy concurrency.** If you fan out many requests at once (e.g.
+bulk-creating pages or hydrating a large database), raise **`burstCapacity`**
+rather than `sustainedRate`. A larger bucket lets the initial burst drain
+immediately, after which everything is paced at `sustainedRate`; `sustainedRate`
+itself should stay pinned to what Notion allows. The bucket is scoped per
+`NotionClient`, so independent clients throttle independently.
+
+To opt out entirely (e.g. when you front the client with your own limiter), set
+`enableRateLimit = false`.
+
 ## Understanding Databases vs. Data Sources
 
 **Important**: The 2025-09-03 API introduced a fundamental change to how databases work:

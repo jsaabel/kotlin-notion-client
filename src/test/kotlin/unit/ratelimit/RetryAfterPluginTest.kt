@@ -17,10 +17,11 @@ import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.headersOf
 import it.saabel.kotlinnotionclient.ratelimit.NotionRateLimit
-import it.saabel.kotlinnotionclient.ratelimit.RateLimitStrategy
+import it.saabel.kotlinnotionclient.ratelimit.RateLimitConfig
 import kotlinx.coroutines.test.currentTime
 import kotlinx.coroutines.test.runTest
 import java.util.concurrent.atomic.AtomicInteger
+import kotlin.time.Duration.Companion.milliseconds
 
 /**
  * Verifies the [NotionRateLimit] plugin makes `Retry-After` load-bearing on `429` responses
@@ -65,13 +66,15 @@ class RetryAfterPluginTest :
                         },
                     ) {
                         install(NotionRateLimit) {
-                            strategy = RateLimitStrategy.CUSTOM
-                            maxRetries = 3
                             // Exponential schedule kept tiny: were Retry-After ignored, the observed
                             // delay would be ~0ms, so the >= 3s assertion proves the header drove it.
-                            baseDelayMs = 1
-                            maxDelayMs = 5
-                            jitterFactor = 0.0
+                            rateLimitConfig =
+                                RateLimitConfig(
+                                    maxRetries = 3,
+                                    retryBaseDelay = 1.milliseconds,
+                                    retryMaxDelay = 5.milliseconds,
+                                    jitterFactor = 0.0,
+                                )
                             timeSourceMillis = { currentTime }
                         }
                     }
@@ -113,11 +116,13 @@ class RetryAfterPluginTest :
                         },
                     ) {
                         install(NotionRateLimit) {
-                            strategy = RateLimitStrategy.CUSTOM
-                            maxRetries = 3
-                            baseDelayMs = 1
-                            maxDelayMs = 5
-                            jitterFactor = 0.0
+                            rateLimitConfig =
+                                RateLimitConfig(
+                                    maxRetries = 3,
+                                    retryBaseDelay = 1.milliseconds,
+                                    retryMaxDelay = 5.milliseconds,
+                                    jitterFactor = 0.0,
+                                )
                             timeSourceMillis = { currentTime }
                         }
                     }

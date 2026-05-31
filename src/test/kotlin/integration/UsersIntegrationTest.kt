@@ -22,13 +22,13 @@ import it.saabel.kotlinnotionclient.models.pages.PageProperty
 import it.saabel.kotlinnotionclient.models.users.UserType
 import it.saabel.kotlinnotionclient.ratelimit.NotionRateLimit
 import it.saabel.kotlinnotionclient.ratelimit.RateLimitConfig
-import it.saabel.kotlinnotionclient.ratelimit.RateLimitStrategy
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.serialization.json.Json
 import unit.util.TestFixtures
+import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.measureTime
 
@@ -38,7 +38,7 @@ import kotlin.time.measureTime
  * Covers:
  * - Users: getCurrentUser(), retrieve(userId), list() with pagination, validation
  * - Wiki verification: verify/unverify a page inside a wiki database (requires NOTION_TEST_WIKI_PAGE_ID)
- * - Rate limiting (mock-based): header parsing, 429 handling, strategy configuration
+ * - Rate limiting (mock-based): 429 handling, configuration variants
  * - Rate limiting (live): 100 concurrent requests under real API conditions (heavy)
  *
  * A container page is created for documentation. Users and rate-limit tests do not
@@ -77,12 +77,7 @@ class UsersIntegrationTest :
                     }
                     if (config.enableRateLimit) {
                         install(NotionRateLimit) {
-                            strategy = config.rateLimitConfig.strategy
-                            maxRetries = config.rateLimitConfig.maxRetries
-                            baseDelayMs = config.rateLimitConfig.baseDelayMs
-                            maxDelayMs = config.rateLimitConfig.maxDelayMs
-                            jitterFactor = config.rateLimitConfig.jitterFactor
-                            respectRetryAfter = config.rateLimitConfig.respectRetryAfter
+                            rateLimitConfig = config.rateLimitConfig
                         }
                     }
                 }
@@ -111,7 +106,7 @@ class UsersIntegrationTest :
                                 "ℹ️",
                                 "Covers the Users API (getCurrentUser, retrieve by ID, list with pagination, validation), " +
                                     "wiki page verification (requires NOTION_TEST_WIKI_PAGE_ID), " +
-                                    "and rate limiting (mock-based header parsing, 429 handling, strategy config, " +
+                                    "and rate limiting (mock-based 429 handling and config variants, " +
                                     "plus a live 100-concurrent-request verification).",
                             )
                         }
@@ -352,7 +347,7 @@ class UsersIntegrationTest :
                     }
 
                 val config =
-                    NotionConfig(apiToken = "secret_test_token", enableRateLimit = true, rateLimitConfig = RateLimitConfig.BALANCED)
+                    NotionConfig(apiToken = "secret_test_token", enableRateLimit = true, rateLimitConfig = RateLimitConfig())
                 val client = createMockClient(mockEngine, config)
 
                 val response1 = client.pages.retrieve("test-page-1")
@@ -388,7 +383,7 @@ class UsersIntegrationTest :
                     NotionConfig(
                         apiToken = "secret_test_token",
                         enableRateLimit = true,
-                        rateLimitConfig = RateLimitConfig(maxRetries = 1, baseDelayMs = 100, respectRetryAfter = true, jitterFactor = 0.0),
+                        rateLimitConfig = RateLimitConfig(maxRetries = 1, retryBaseDelay = 100.milliseconds, jitterFactor = 0.0),
                     )
 
                 val client = createMockClient(mockEngine, config)
@@ -403,17 +398,24 @@ class UsersIntegrationTest :
             }
 
             // ------------------------------------------------------------------
-            // 10. Rate limiting (mock) — strategy configuration variants
+            // 10. Rate limiting (mock) — configuration variants
             // ------------------------------------------------------------------
-            "should properly configure conservative, balanced, and aggressive strategies" {
-                val strategies =
+            "should properly configure varied rate-limit settings" {
+                val variants =
                     listOf(
-                        RateLimitStrategy.CONSERVATIVE to RateLimitConfig.CONSERVATIVE,
-                        RateLimitStrategy.BALANCED to RateLimitConfig.BALANCED,
-                        RateLimitStrategy.AGGRESSIVE to RateLimitConfig.AGGRESSIVE,
+                        "conservative" to
+                            RateLimitConfig(maxRetries = 2, retryBaseDelay = 2.seconds, retryMaxDelay = 60.seconds, jitterFactor = 0.2),
+                        "balanced" to RateLimitConfig(),
+                        "aggressive" to
+                            RateLimitConfig(
+                                maxRetries = 5,
+                                retryBaseDelay = 500.milliseconds,
+                                retryMaxDelay = 15.seconds,
+                                jitterFactor = 0.05,
+                            ),
                     )
 
-                strategies.forEach { (strategy, config) ->
+                variants.forEach { (label, config) ->
                     val mockEngine =
                         MockEngine { _ ->
                             respond(
@@ -434,10 +436,10 @@ class UsersIntegrationTest :
 
                     val response = client.pages.retrieve("test-page")
                     response shouldNotBe null
-                    println("  $strategy ✓")
+                    println("  $label ✓")
                 }
 
-                println("  ✅ All rate limit strategy configurations verified (mock)")
+                println("  ✅ All rate limit configuration variants verified (mock)")
             }
 
             // ------------------------------------------------------------------
@@ -475,10 +477,9 @@ class UsersIntegrationTest :
                         enableRateLimit = true,
                         rateLimitConfig =
                             RateLimitConfig(
-                                strategy = RateLimitStrategy.BALANCED,
                                 maxRetries = 3,
-                                baseDelayMs = 1000,
-                                maxDelayMs = 30000,
+                                retryBaseDelay = 1.seconds,
+                                retryMaxDelay = 30.seconds,
                                 jitterFactor = 0.1,
                             ),
                     )

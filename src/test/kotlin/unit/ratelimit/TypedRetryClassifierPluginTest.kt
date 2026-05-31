@@ -17,11 +17,12 @@ import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.headersOf
 import it.saabel.kotlinnotionclient.ratelimit.NotionRateLimit
-import it.saabel.kotlinnotionclient.ratelimit.RateLimitStrategy
+import it.saabel.kotlinnotionclient.ratelimit.RateLimitConfig
 import kotlinx.coroutines.test.currentTime
 import kotlinx.coroutines.test.runTest
 import java.net.SocketTimeoutException
 import java.util.concurrent.atomic.AtomicInteger
+import kotlin.time.Duration.Companion.milliseconds
 
 /**
  * Verifies the [NotionRateLimit] plugin's typed retry classifier (issue #17). Classification is
@@ -59,11 +60,13 @@ class TypedRetryClassifierPluginTest :
                         },
                     ) {
                         install(NotionRateLimit) {
-                            strategy = RateLimitStrategy.CUSTOM
-                            maxRetries = 3
-                            baseDelayMs = 1
-                            maxDelayMs = 5
-                            jitterFactor = 0.0
+                            rateLimitConfig =
+                                RateLimitConfig(
+                                    maxRetries = 3,
+                                    retryBaseDelay = 1.milliseconds,
+                                    retryMaxDelay = 5.milliseconds,
+                                    jitterFactor = 0.0,
+                                )
                             timeSourceMillis = { currentTime }
                         }
                     }
@@ -93,11 +96,13 @@ class TypedRetryClassifierPluginTest :
                         },
                     ) {
                         install(NotionRateLimit) {
-                            strategy = RateLimitStrategy.CUSTOM
-                            maxRetries = 3
-                            baseDelayMs = 1
-                            maxDelayMs = 5
-                            jitterFactor = 0.0
+                            rateLimitConfig =
+                                RateLimitConfig(
+                                    maxRetries = 3,
+                                    retryBaseDelay = 1.milliseconds,
+                                    retryMaxDelay = 5.milliseconds,
+                                    jitterFactor = 0.0,
+                                )
                             timeSourceMillis = { currentTime }
                         }
                     }
@@ -123,11 +128,13 @@ class TypedRetryClassifierPluginTest :
                     ) {
                         expectSuccess = true
                         install(NotionRateLimit) {
-                            strategy = RateLimitStrategy.CUSTOM
-                            maxRetries = 3
-                            baseDelayMs = 1
-                            maxDelayMs = 5
-                            jitterFactor = 0.0
+                            rateLimitConfig =
+                                RateLimitConfig(
+                                    maxRetries = 3,
+                                    retryBaseDelay = 1.milliseconds,
+                                    retryMaxDelay = 5.milliseconds,
+                                    jitterFactor = 0.0,
+                                )
                             timeSourceMillis = { currentTime }
                         }
                     }
@@ -158,11 +165,13 @@ class TypedRetryClassifierPluginTest :
                         ) {
                             expectSuccess = true
                             install(NotionRateLimit) {
-                                strategy = RateLimitStrategy.CUSTOM
-                                maxRetries = 3
-                                baseDelayMs = 1
-                                maxDelayMs = 5
-                                jitterFactor = 0.0
+                                rateLimitConfig =
+                                    RateLimitConfig(
+                                        maxRetries = 3,
+                                        retryBaseDelay = 1.milliseconds,
+                                        retryMaxDelay = 5.milliseconds,
+                                        jitterFactor = 0.0,
+                                    )
                                 timeSourceMillis = { currentTime }
                             }
                         }

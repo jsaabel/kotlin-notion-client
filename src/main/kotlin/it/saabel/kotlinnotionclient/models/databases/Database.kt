@@ -49,7 +49,6 @@ data class Database(
     @SerialName("parent")
     val parent: Parent,
     // TODO: Verify if url should be nullable - official sample doesn't include it, but FAQ mentions database URLs exist
-    // See: journal/2025_10_04_03_API_Model_Assumptions.md
     @SerialName("url")
     val url: String? = null,
     @SerialName("public_url")

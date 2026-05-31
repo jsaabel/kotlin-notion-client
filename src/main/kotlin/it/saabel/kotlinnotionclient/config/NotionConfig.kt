@@ -35,7 +35,7 @@ data class NotionConfig(
     val socketTimeout: Duration = 30.seconds,
     val logLevel: LogLevel = LogLevel.NONE,
     val prettyPrint: Boolean = false,
-    val rateLimitConfig: RateLimitConfig = RateLimitConfig.BALANCED,
+    val rateLimitConfig: RateLimitConfig = RateLimitConfig(),
     val enableRateLimit: Boolean = true,
     val validationConfig: ValidationConfig = ValidationConfig.default(),
 ) {
