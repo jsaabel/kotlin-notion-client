@@ -3,7 +3,7 @@
 A modern, type-safe Kotlin client for the Notion API with comprehensive DSL support and coroutine-based operations.
 
 > **⚠️ AI-Assisted Development Notice**
-> This library was developed with significant assistance from Claude Code (AI). While it includes comprehensive testing (600+ unit tests) and validation against official Notion API samples, please be aware of potential issues:
+> This library was developed with significant assistance from Claude Code (AI). While it includes comprehensive testing (860+ unit tests) and validation against official Notion API samples, please be aware of potential issues:
 > - Documentation examples may not perfectly match implementation
 > - Edge cases may exist that weren't covered in testing
 > - Some API patterns may have inconsistencies
@@ -25,7 +25,7 @@ A modern, type-safe Kotlin client for the Notion API with comprehensive DSL supp
 ```kotlin
 // Gradle (Kotlin DSL)
 dependencies {
-    implementation("it.saabel:kotlin-notion-client:0.4.1")
+    implementation("it.saabel:kotlin-notion-client:0.5.0")
 }
 ```
 
@@ -34,13 +34,13 @@ dependencies {
 <dependency>
     <groupId>it.saabel</groupId>
     <artifactId>kotlin-notion-client</artifactId>
-    <version>0.4.1</version>
+    <version>0.5.0</version>
 </dependency>
 ```
 
 ### Requirements
 
-- Kotlin 2.3.0 or higher
+- Kotlin 2.3.21 or higher
 - JVM target 21+
 
 ## Quick Start
@@ -225,7 +225,7 @@ The **[Kotlin Notebooks](notebooks/)** are the best way to learn the library:
 7. [File Uploads](notebooks/07-file-uploads.ipynb) - Uploading files, external imports, media blocks
 8. [What's New in v0.4.0](notebooks/08-whats-new-in-v0.4.ipynb) — Tour of all breaking changes and new features added in v0.4.0
 
-All notebooks use v0.4.1 and can be run in IntelliJ IDEA (with the Kotlin Notebook plugin) or Jupyter (with kotlin-jupyter-kernel). Run each cell in order; set the required environment variables before starting.
+All notebooks use v0.5.0 and can be run in IntelliJ IDEA (with the Kotlin Notebook plugin) or Jupyter (with kotlin-jupyter-kernel). Run each cell in order; set the required environment variables before starting. Note that notebook output cells reflect the authoring-time version and have not all been re-run for v0.5.0.
 
 ## Building from Source
 

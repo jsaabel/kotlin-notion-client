@@ -9,6 +9,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### ⚠️ Breaking Changes
 
+- **JVM target bumped to 21**: The library's Kotlin toolchain and JVM bytecode
+  target are now Java 21 (was 17). Consumers compiling against this library
+  must run a JDK 21+ toolchain.
+
+- **`RateLimitConfig` surface trimmed to the load-bearing knobs**: the config is
+  now `RateLimitConfig(sustainedRate, burstCapacity, maxRetries, retryBaseDelay,
+  retryMaxDelay, jitterFactor)`. Removed in this pass:
+  - the `RateLimitStrategy` enum and the `CONSERVATIVE` / `BALANCED` /
+    `AGGRESSIVE` presets — redundant once the token bucket landed;
+  - the `respectRetryAfter` flag — `Retry-After` is now always honoured on `429`
+    (it is Notion's published contract);
+  - `baseDelayMs` / `maxDelayMs` (`Long`, milliseconds) — replaced by
+    `retryBaseDelay` / `retryMaxDelay` (`kotlin.time.Duration`);
+  - the header-derived `RateLimitState` type and all `x-ratelimit-*` parsing —
+    Notion does not emit those headers.
+
+  **Migration**: `RateLimitConfig.BALANCED` → `RateLimitConfig()`;
+  `baseDelayMs = 1000` → `retryBaseDelay = 1.seconds`;
+  `maxDelayMs = 30000` → `retryMaxDelay = 30.seconds`; drop `strategy` and
+  `respectRetryAfter`.
+
 - **Unified retry pipeline for file uploads**: The file-upload subsystem no
   longer has its own retry mechanism. `EnhancedFileUploadApi.withRetry`, the
   `RetryConfig` class in `models.files`, and the `FileUploadOptions.retryConfig`
@@ -41,29 +62,157 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   HTTP/network retry of a single request; it does not replace application-level
   multipart resume logic.
 
-- **`RateLimitConfig` surface trimmed to the load-bearing knobs**: the config is
-  now `RateLimitConfig(sustainedRate, burstCapacity, maxRetries, retryBaseDelay,
-  retryMaxDelay, jitterFactor)`. Removed in this pass:
-  - the `RateLimitStrategy` enum and the `CONSERVATIVE` / `BALANCED` /
-    `AGGRESSIVE` presets — redundant once the token bucket landed;
-  - the `respectRetryAfter` flag — `Retry-After` is now always honoured on `429`
-    (it is Notion's published contract);
-  - `baseDelayMs` / `maxDelayMs` (`Long`, milliseconds) — replaced by
-    `retryBaseDelay` / `retryMaxDelay` (`kotlin.time.Duration`);
-  - the header-derived `RateLimitState` type and all `x-ratelimit-*` parsing —
-    Notion does not emit those headers.
+- **Truncated queries now throw**: When a `DataSourcesApi.query()` or
+  `queryAsFlow()` auto-paginating call receives a response with
+  `request_status.incomplete_reason == "query_result_limit_reached"` (the new
+  Notion 10,000-row ceiling), the call now throws
+  `NotionException.QueryResultLimitReached(partialResults, nextCursor,
+  requestStatus)` instead of silently returning a truncated list. Single-page
+  variants (`queryFirstPage`, `queryPagedFlow`) are unchanged — they expose
+  `requestStatus` directly on their response wrapper.
 
-  **Migration**: `RateLimitConfig.BALANCED` → `RateLimitConfig()`;
-  `baseDelayMs = 1000` → `retryBaseDelay = 1.seconds`;
-  `maxDelayMs = 30000` → `retryMaxDelay = 30.seconds`; drop `strategy` and
-  `respectRetryAfter`.
+### ✨ Added
+
+**Rate-limit pipeline plugin** — proactive throttle + reactive retry on
+every outbound request:
+- `NotionRateLimit` is now a real `createClientPlugin` registered on Ktor's
+  `Send` pipeline phase. Every request flows through it automatically — no
+  more per-call `executeWithRateLimit { … }` wrapping. `SearchApi` and
+  `FileUploadApi` (previously uncovered) gain rate-limit handling for free.
+- New continuous-refill **token bucket** scoped per `NotionClient`:
+  `sustainedRate` tokens/sec (default `3.0`, Notion's documented ceiling)
+  refilled into a bucket clamped at `burstCapacity` (default `20`, ≈6.7s of
+  headroom). Up to `burstCapacity` requests proceed immediately; further
+  requests pace at `sustainedRate`. A single `Mutex` around the bucket math
+  gives FIFO fairness across coroutines.
+- `Retry-After` on `429` responses is now **load-bearing**: the plugin
+  sleeps `Retry-After + 1s` before retrying instead of falling through to the
+  exponential schedule. A `429` missing the header still gets the
+  exponential schedule as defence-in-depth.
+- Retry classifier is now typed `HttpStatusCode` / exception-class checks.
+  Retried automatically: `429`, `502` / `503` / `504`, and the `IOException`
+  family (`SocketTimeoutException`, `ConnectException`,
+  `UnknownHostException`). Plain `500`, other `4xx`, and
+  `CancellationException` propagate immediately.
+
+**Multi-value filters** — array form for `select` / `status` /
+`multi_select`:
+- `SelectFilterBuilder`, `StatusFilterBuilder`, `MultiSelectFilterBuilder`
+  gain `vararg values: String` overloads on `equals` / `doesNotEqual` (select,
+  status) and `contains` / `doesNotContain` (multi_select).
+- Single-value call sites continue to compile and serialize unchanged. The
+  new `FilterValues` value class emits a JSON string for size==1 and a JSON
+  array for size>1, matching the Notion 2026-04-17 changelog.
+
+**Files & media `FileUpload` variant** — attach freshly-uploaded files to a
+Files & media page property:
+- `FileObject.FileUpload(fileUpload: FileUploadReference, name: String? = null)`
+  sealed variant (`@SerialName("file_upload")`).
+- Companion helpers `FileObject.upload(id, name?)` and
+  `FileObject.external(name, url)`.
+- New `FilesBuilder` DSL with `upload()` / `external()` / `existing()` /
+  `add()` exposed via `PagePropertiesBuilder.files()` (DSL block, vararg, and
+  `List<FileObject>` overloads).
+- `DatabasePropertiesBuilder.files()` schema method so the property type can
+  be created programmatically (previously absent — see Fixed below).
+- `FileUploadApi.sendFileUpload(FileUpload, ByteArray, partNumber?)` overload
+  that threads the creation-time content type onto the multipart part
+  automatically, so the round-trip for non-text uploads no longer requires
+  manually re-specifying the content type.
+
+**Comments update / delete**:
+- `CommentsApi.update(commentId, request)` — `PATCH /v1/comments/{id}`. Both
+  the data-class form and an `update(commentId) { … }` DSL overload are
+  supported (content-only surface mirroring `create`'s XOR pattern).
+- `CommentsApi.delete(commentId)` — `DELETE /v1/comments/{id}`. Returns the
+  deleted comment object.
+- Non-DLP integrations can only modify or delete comments they themselves
+  created.
+
+**Rich text → HTML** — `List<RichText>?.toHtml(): String?`:
+- New extension in `it.saabel.kotlinnotionclient.utils` that renders a
+  rich-text array to HTML with bold/italic/strikethrough/code/underline,
+  paragraph splitting (single newline → `<br>`, blank line → wrapped in
+  `<p>…</p>`), text-link hrefs (rendered as
+  `<a href="…" rel="nofollow noreferrer noopener">…</a>` with the
+  Notion-internal hrefs dropped), and HTML escaping on all plain-text
+  segments.
+- Null / empty / blank input returns `null`.
+- Colours, mention-aware rendering, and equations are intentionally rendered
+  as escaped plain text in this first cut — full support is deferred to
+  v0.6.0+ alongside a `RenderOptions` object.
+
+**Truncated-query surface** — `RequestStatus` model and exception:
+- New `RequestStatus(type, incompleteReason)` data class with `isComplete` /
+  `isIncomplete` helpers and the documented constants (`TYPE_COMPLETE`,
+  `TYPE_INCOMPLETE`, `REASON_QUERY_RESULT_LIMIT_REACHED`).
+- Surfaced on `DataSourceQueryResponse`, `ViewQuery`, and `ViewQueryResults`.
+- `DataSourcesApi.query` and `queryAsFlow` throw
+  `NotionException.QueryResultLimitReached(partialResults, nextCursor,
+  requestStatus)` when Notion's 10k pagination ceiling is hit, so callers can
+  recover what was collected and decide whether to resume.
+
+**Integer-aware number rendering**:
+- `getPlainTextForProperty()` on `Number`, `FormulaResult.NumberResult`, and
+  `RollupResult.NumberResult` now drops the trailing `.0` for whole-valued
+  doubles (e.g. `95.0` → `"95"`, `2.5` → `"2.5"` unchanged). NaN / ±Infinity
+  and values outside the safe-integer range fall back to `Double.toString()`
+  to avoid lossy coercion.
+
+**New parent type** — `Parent.AgentParent(agentId)`:
+- Round-trips the new `{ "type": "agent_id", "agent_id": "..." }` parent shape
+  introduced by Notion on 2026-05-11.
+- Deserialize-only / read-path support — Notion sets `agent_id` parents
+  server-side on agent instruction pages and the blocks that make them up.
+  `Parent.id` returns the agent ID for this variant.
 
 ### 🐛 Fixed
 
+- **`SearchApi` and `FileUploadApi` were bypassing the rate limiter entirely**.
+  Both endpoints now flow through the same pipeline plugin as the rest of the
+  API.
+- **`Retry-After` is no longer dead config**: the value was previously modelled
+  but never consulted at runtime; the plugin now actually reads it on every
+  `429` response.
 - **No wasted backoff sleep on exhausted retries**: when every attempt fails and
   `maxRetries` is reached, the client now throws/returns immediately instead of
   sleeping one final, unused backoff interval (~8s with default settings) before
   giving up.
+- **Files property schema gap**: `CreateDatabaseProperty.Files` variant was
+  missing entirely (the schema-side equivalent of `People`), which blocked
+  creating a Files & media property programmatically. Now present.
+- **Multipart content type defaults**: an omitted multipart part content type
+  defaults to `text/plain`, causing a `create(application/json)` +
+  `sendFileUpload(id, bytes)` flow to be rejected with a content-type
+  mismatch. The new `sendFileUpload(FileUpload, ByteArray, …)` overload
+  threads the creation-time type onto the part automatically; the id-based
+  overload's docstring was corrected to state that callers must pass the
+  same content type used at creation for non-text files.
+- **Brittle string-matching error classifier replaced with typed
+  `HttpStatusCode` / exception-class checks**, eliminating the latent
+  brittleness of inspecting `error.message`.
+- **`maxRetries` KDoc spells out the off-by-one**: `maxRetries = 3` permits up
+  to **4** HTTP calls (1 initial + 3 retries). `0` disables retrying.
+- **Unreachable `RateLimitDecision.Proceed` branch removed**.
+
+### 🔧 Changed
+
+**Dependencies**:
+- Kotlin **2.3.0 → 2.3.21**
+- Ktor **3.4.0 → 3.5.0**
+- kotlinx-datetime **0.7.1 → 0.8.0**
+- (plus other minor bumps in the same batch)
+
+**Rate-limiting architecture** — internal restructuring captured under
+Breaking / Added / Fixed above. Net code impact: `ratelimit/` collapsed from
+~600 LOC across three files to 286 LOC across three files
+(`NotionRateLimit.kt`, `RateLimitConfig.kt`, `TokenBucket.kt`), with
+`BackoffCalculator`, `RateLimitState`, and `RetryAttempt` inlined into the
+plugin.
+
+### 📊 Statistics
+
+- **Test coverage**: 864 unit tests (up from 600+ in v0.4.0)
 
 ## [0.4.2] - 2026-05-03
 
@@ -287,6 +436,8 @@ This is the first public release of the Kotlin Notion Client library.
 
 **Note**: This is an early release. Users should expect potential issues and are encouraged to report them via GitHub Issues.
 
+[0.5.0]: https://github.com/jsaabel/kotlin-notion-client/compare/v0.4.2...v0.5.0
+[0.4.2]: https://github.com/jsaabel/kotlin-notion-client/compare/v0.4.1...v0.4.2
 [0.4.1]: https://github.com/jsaabel/kotlin-notion-client/compare/v0.4.0...v0.4.1
 [0.4.0]: https://github.com/jsaabel/kotlin-notion-client/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/jsaabel/kotlin-notion-client/compare/v0.2.0...v0.3.0
