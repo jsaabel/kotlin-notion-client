@@ -9,7 +9,6 @@ import it.saabel.kotlinnotionclient.config.NotionConfig
 import it.saabel.kotlinnotionclient.exceptions.NotionException
 import it.saabel.kotlinnotionclient.models.base.CustomEmojiList
 import it.saabel.kotlinnotionclient.models.base.CustomEmojiObject
-import it.saabel.kotlinnotionclient.ratelimit.executeWithRateLimit
 import it.saabel.kotlinnotionclient.utils.Pagination
 import kotlinx.coroutines.flow.Flow
 
@@ -43,43 +42,41 @@ class CustomEmojisApi(
             require(it in 1..100) { "Page size must be between 1 and 100, but was $it" }
         }
 
-        return httpClient.executeWithRateLimit {
-            try {
-                val url =
-                    buildString {
-                        append("${config.baseUrl}/custom_emojis")
-                        val params = mutableListOf<String>()
-                        startCursor?.let { params.add("start_cursor=$it") }
-                        pageSize?.let { params.add("page_size=$it") }
-                        name?.let { params.add("name=$it") }
-                        if (params.isNotEmpty()) {
-                            append("?${params.joinToString("&")}")
-                        }
+        return try {
+            val url =
+                buildString {
+                    append("${config.baseUrl}/custom_emojis")
+                    val params = mutableListOf<String>()
+                    startCursor?.let { params.add("start_cursor=$it") }
+                    pageSize?.let { params.add("page_size=$it") }
+                    name?.let { params.add("name=$it") }
+                    if (params.isNotEmpty()) {
+                        append("?${params.joinToString("&")}")
+                    }
+                }
+
+            val response: HttpResponse = httpClient.get(url)
+
+            if (response.status.isSuccess()) {
+                response.body<CustomEmojiList>()
+            } else {
+                val errorBody =
+                    try {
+                        response.body<String>()
+                    } catch (e: Exception) {
+                        "Could not read error response body"
                     }
 
-                val response: HttpResponse = httpClient.get(url)
-
-                if (response.status.isSuccess()) {
-                    response.body<CustomEmojiList>()
-                } else {
-                    val errorBody =
-                        try {
-                            response.body<String>()
-                        } catch (e: Exception) {
-                            "Could not read error response body"
-                        }
-
-                    throw NotionException.ApiError(
-                        code = response.status.value.toString(),
-                        status = response.status.value,
-                        details = "HTTP ${response.status.value}: ${response.status.description}. Response: $errorBody",
-                    )
-                }
-            } catch (e: NotionException) {
-                throw e
-            } catch (e: Exception) {
-                throw NotionException.NetworkError(e)
+                throw NotionException.ApiError(
+                    code = response.status.value.toString(),
+                    status = response.status.value,
+                    details = "HTTP ${response.status.value}: ${response.status.description}. Response: $errorBody",
+                )
             }
+        } catch (e: NotionException) {
+            throw e
+        } catch (e: Exception) {
+            throw NotionException.NetworkError(e)
         }
     }
 

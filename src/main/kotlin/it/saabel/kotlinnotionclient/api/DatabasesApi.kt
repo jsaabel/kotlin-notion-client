@@ -18,7 +18,6 @@ import it.saabel.kotlinnotionclient.models.databases.Database
 import it.saabel.kotlinnotionclient.models.databases.DatabaseRequestBuilder
 import it.saabel.kotlinnotionclient.models.databases.databaseRequest
 import it.saabel.kotlinnotionclient.models.datasources.UpdateDataSourceRequest
-import it.saabel.kotlinnotionclient.ratelimit.executeWithRateLimit
 import it.saabel.kotlinnotionclient.validation.RequestValidator
 import it.saabel.kotlinnotionclient.validation.ValidationConfig
 import it.saabel.kotlinnotionclient.validation.ValidationException
@@ -57,31 +56,29 @@ class DatabasesApi(
      * @see DataSourcesApi.retrieve
      */
     suspend fun retrieve(databaseId: String): Database =
-        httpClient.executeWithRateLimit {
-            try {
-                val response: HttpResponse = httpClient.get("${config.baseUrl}/databases/$databaseId")
+        try {
+            val response: HttpResponse = httpClient.get("${config.baseUrl}/databases/$databaseId")
 
-                if (response.status.isSuccess()) {
-                    response.body<Database>()
-                } else {
-                    val errorBody =
-                        try {
-                            response.body<String>()
-                        } catch (e: Exception) {
-                            "Could not read error response body"
-                        }
+            if (response.status.isSuccess()) {
+                response.body<Database>()
+            } else {
+                val errorBody =
+                    try {
+                        response.body<String>()
+                    } catch (e: Exception) {
+                        "Could not read error response body"
+                    }
 
-                    throw NotionException.ApiError(
-                        code = response.status.value.toString(),
-                        status = response.status.value,
-                        details = "HTTP ${response.status.value}: ${response.status.description}. Response: $errorBody",
-                    )
-                }
-            } catch (e: NotionException) {
-                throw e // Re-throw our own exceptions
-            } catch (e: Exception) {
-                throw NotionException.NetworkError(e)
+                throw NotionException.ApiError(
+                    code = response.status.value.toString(),
+                    status = response.status.value,
+                    details = "HTTP ${response.status.value}: ${response.status.description}. Response: $errorBody",
+                )
             }
+        } catch (e: NotionException) {
+            throw e // Re-throw our own exceptions
+        } catch (e: Exception) {
+            throw NotionException.NetworkError(e)
         }
 
     /**
@@ -115,65 +112,63 @@ class DatabasesApi(
     suspend fun create(request: CreateDatabaseRequest): Database {
         val finalRequest = validator.validateOrFix(request)
 
-        return httpClient.executeWithRateLimit {
-            try {
-                val response: HttpResponse =
-                    httpClient.post("${config.baseUrl}/databases") {
-                        contentType(ContentType.Application.Json)
-                        setBody(finalRequest)
-                    }
-
-                if (response.status.isSuccess()) {
-                    val database = response.body<Database>()
-                    // Propagate the icon to the initial data source.
-                    // In the 2025-09-03 API, the UI renders the data source view, not the
-                    // database container, so an icon set on the container won't appear unless
-                    // it is also set on the data source.
-                    if (finalRequest.icon != null) {
-                        val dataSourceId = database.dataSources.firstOrNull()?.id
-                        if (dataSourceId != null) {
-                            val iconPatchResponse: HttpResponse =
-                                httpClient.patch("${config.baseUrl}/data_sources/$dataSourceId") {
-                                    contentType(ContentType.Application.Json)
-                                    setBody(UpdateDataSourceRequest(icon = finalRequest.icon))
-                                }
-                            if (!iconPatchResponse.status.isSuccess()) {
-                                val errorBody =
-                                    try {
-                                        iconPatchResponse.body<String>()
-                                    } catch (e: Exception) {
-                                        "Could not read error response body"
-                                    }
-                                throw NotionException.ApiError(
-                                    code = iconPatchResponse.status.value.toString(),
-                                    status = iconPatchResponse.status.value,
-                                    details =
-                                        "HTTP ${iconPatchResponse.status.value}: " +
-                                            "${iconPatchResponse.status.description}. Response: $errorBody",
-                                )
-                            }
-                        }
-                    }
-                    database
-                } else {
-                    val errorBody =
-                        try {
-                            response.body<String>()
-                        } catch (e: Exception) {
-                            "Could not read error response body"
-                        }
-
-                    throw NotionException.ApiError(
-                        code = response.status.value.toString(),
-                        status = response.status.value,
-                        details = "HTTP ${response.status.value}: ${response.status.description}. Response: $errorBody",
-                    )
+        return try {
+            val response: HttpResponse =
+                httpClient.post("${config.baseUrl}/databases") {
+                    contentType(ContentType.Application.Json)
+                    setBody(finalRequest)
                 }
-            } catch (e: NotionException) {
-                throw e // Re-throw our own exceptions
-            } catch (e: Exception) {
-                throw NotionException.NetworkError(e)
+
+            if (response.status.isSuccess()) {
+                val database = response.body<Database>()
+                // Propagate the icon to the initial data source.
+                // In the 2025-09-03 API, the UI renders the data source view, not the
+                // database container, so an icon set on the container won't appear unless
+                // it is also set on the data source.
+                if (finalRequest.icon != null) {
+                    val dataSourceId = database.dataSources.firstOrNull()?.id
+                    if (dataSourceId != null) {
+                        val iconPatchResponse: HttpResponse =
+                            httpClient.patch("${config.baseUrl}/data_sources/$dataSourceId") {
+                                contentType(ContentType.Application.Json)
+                                setBody(UpdateDataSourceRequest(icon = finalRequest.icon))
+                            }
+                        if (!iconPatchResponse.status.isSuccess()) {
+                            val errorBody =
+                                try {
+                                    iconPatchResponse.body<String>()
+                                } catch (e: Exception) {
+                                    "Could not read error response body"
+                                }
+                            throw NotionException.ApiError(
+                                code = iconPatchResponse.status.value.toString(),
+                                status = iconPatchResponse.status.value,
+                                details =
+                                    "HTTP ${iconPatchResponse.status.value}: " +
+                                        "${iconPatchResponse.status.description}. Response: $errorBody",
+                            )
+                        }
+                    }
+                }
+                database
+            } else {
+                val errorBody =
+                    try {
+                        response.body<String>()
+                    } catch (e: Exception) {
+                        "Could not read error response body"
+                    }
+
+                throw NotionException.ApiError(
+                    code = response.status.value.toString(),
+                    status = response.status.value,
+                    details = "HTTP ${response.status.value}: ${response.status.description}. Response: $errorBody",
+                )
             }
+        } catch (e: NotionException) {
+            throw e // Re-throw our own exceptions
+        } catch (e: Exception) {
+            throw NotionException.NetworkError(e)
         }
     }
 
@@ -191,35 +186,33 @@ class DatabasesApi(
      * @throws NotionException.AuthenticationError for authentication failures
      */
     suspend fun trash(databaseId: String): Database =
-        httpClient.executeWithRateLimit {
-            try {
-                val request = ArchiveDatabaseRequest(inTrash = true)
-                val response: HttpResponse =
-                    httpClient.patch("${config.baseUrl}/databases/$databaseId") {
-                        contentType(ContentType.Application.Json)
-                        setBody(request)
+        try {
+            val request = ArchiveDatabaseRequest(inTrash = true)
+            val response: HttpResponse =
+                httpClient.patch("${config.baseUrl}/databases/$databaseId") {
+                    contentType(ContentType.Application.Json)
+                    setBody(request)
+                }
+
+            if (response.status.isSuccess()) {
+                response.body<Database>()
+            } else {
+                val errorBody =
+                    try {
+                        response.body<String>()
+                    } catch (e: Exception) {
+                        "Could not read error response body"
                     }
 
-                if (response.status.isSuccess()) {
-                    response.body<Database>()
-                } else {
-                    val errorBody =
-                        try {
-                            response.body<String>()
-                        } catch (e: Exception) {
-                            "Could not read error response body"
-                        }
-
-                    throw NotionException.ApiError(
-                        code = response.status.value.toString(),
-                        status = response.status.value,
-                        details = "HTTP ${response.status.value}: ${response.status.description}. Response: $errorBody",
-                    )
-                }
-            } catch (e: NotionException) {
-                throw e // Re-throw our own exceptions
-            } catch (e: Exception) {
-                throw NotionException.NetworkError(e)
+                throw NotionException.ApiError(
+                    code = response.status.value.toString(),
+                    status = response.status.value,
+                    details = "HTTP ${response.status.value}: ${response.status.description}. Response: $errorBody",
+                )
             }
+        } catch (e: NotionException) {
+            throw e // Re-throw our own exceptions
+        } catch (e: Exception) {
+            throw NotionException.NetworkError(e)
         }
 }
