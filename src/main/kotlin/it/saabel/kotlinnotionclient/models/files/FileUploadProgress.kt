@@ -137,45 +137,15 @@ sealed class FileUploadError : Exception {
 }
 
 /**
- * Configuration for upload retry behavior.
- */
-data class RetryConfig(
-    val maxRetries: Int = 3,
-    val baseDelayMs: Long = 1000,
-    val maxDelayMs: Long = 30000,
-    val backoffMultiplier: Double = 2.0,
-    val retryableErrors: Set<Class<out FileUploadError>> =
-        setOf(
-            FileUploadError.NetworkError::class.java,
-            FileUploadError.RateLimitError::class.java,
-            FileUploadError.TimeoutError::class.java,
-            FileUploadError.PartUploadError::class.java,
-        ),
-) {
-    /**
-     * Calculates delay for a retry attempt.
-     */
-    fun calculateDelay(attempt: Int): Long {
-        val exponentialDelay = (baseDelayMs * Math.pow(backoffMultiplier, attempt.toDouble())).toLong()
-        return minOf(exponentialDelay, maxDelayMs)
-    }
-
-    /**
-     * Determines if an error should be retried.
-     */
-    fun shouldRetry(
-        error: FileUploadError,
-        attempt: Int,
-    ): Boolean = attempt < maxRetries && retryableErrors.contains(error::class.java)
-}
-
-/**
  * Options for file upload operations.
+ *
+ * Retry of failed HTTP/network requests is handled centrally by the rate-limit
+ * pipeline plugin and configured via `NotionConfig.rateLimitConfig`; there is no
+ * per-upload retry configuration.
  */
 data class FileUploadOptions(
     val contentType: String? = null,
     val progressCallback: UploadProgressCallback? = null,
-    val retryConfig: RetryConfig = RetryConfig(),
     val timeoutMs: Long = 300_000, // 5 minutes default
     val enableConcurrentParts: Boolean = true,
     val maxConcurrentParts: Int = 4,

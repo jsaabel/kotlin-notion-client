@@ -5,6 +5,42 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.0] - Unreleased
+
+### ⚠️ Breaking Changes
+
+- **Unified retry pipeline for file uploads**: The file-upload subsystem no
+  longer has its own retry mechanism. `EnhancedFileUploadApi.withRetry`, the
+  `RetryConfig` class in `models.files`, and the `FileUploadOptions.retryConfig`
+  field have all been **removed**. Uploads now route through the same
+  rate-limit pipeline plugin as every other request, so there is a single
+  retry configuration for the whole client.
+
+  **Migration**: configure retry behaviour via `NotionConfig.rateLimitConfig`
+  (a `RateLimitConfig` with `maxRetries`, `baseDelayMs`, `maxDelayMs`,
+  `jitterFactor`, `strategy`, and `respectRetryAfter`) instead of passing a
+  per-upload `FileUploadOptions.retryConfig`. There is no compatibility shim —
+  this is a clean break.
+
+  ```kotlin
+  // Before
+  client.enhancedFileUploads.uploadFile(
+      file,
+      FileUploadOptions(retryConfig = RetryConfig(maxRetries = 5)),
+  )
+
+  // After — retry is configured once, on the client
+  val config = NotionConfig(
+      token = token,
+      rateLimitConfig = RateLimitConfig(maxRetries = 5),
+  )
+  ```
+
+  Note: chunked-upload mid-stream resume of partially-uploaded multipart
+  chunks remains in `EnhancedFileUploadApi`. The pipeline plugin handles
+  HTTP/network retry of a single request; it does not replace application-level
+  multipart resume logic.
+
 ## [0.4.2] - 2026-05-03
 
 ### 🐛 Fixed
