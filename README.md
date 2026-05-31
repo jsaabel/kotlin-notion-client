@@ -41,7 +41,7 @@ dependencies {
 ### Requirements
 
 - Kotlin 2.3.0 or higher
-- JVM target 17+
+- JVM target 21+
 
 ## Quick Start
 
