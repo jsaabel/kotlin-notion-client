@@ -208,36 +208,6 @@ data class RateLimitConfig(
 }
 
 /**
- * Result of a rate limit check.
- */
-sealed class RateLimitDecision {
-    /**
-     * Request should proceed immediately.
-     */
-    data object Proceed : RateLimitDecision()
-
-    /**
-     * Request should wait for the specified duration before proceeding.
-     *
-     * @param delay Duration to wait before retrying
-     * @param reason Human-readable reason for the delay
-     */
-    data class Wait(
-        val delay: Duration,
-        val reason: String,
-    ) : RateLimitDecision()
-
-    /**
-     * Request should be rejected (e.g., too many retries, queue full).
-     *
-     * @param reason Human-readable reason for rejection
-     */
-    data class Reject(
-        val reason: String,
-    ) : RateLimitDecision()
-}
-
-/**
  * Tracks retry attempts for a specific request.
  */
 data class RetryAttempt(
