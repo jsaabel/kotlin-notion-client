@@ -194,10 +194,7 @@ class EnhancedFileUploadApi(
                     externalUrl = externalUrl,
                 )
 
-            val fileUpload =
-                withRetry(options.retryConfig) {
-                    basicApi.createFileUpload(request)
-                }
+            val fileUpload = basicApi.createFileUpload(request)
 
             reportProgress(
                 options,
@@ -298,10 +295,7 @@ class EnhancedFileUploadApi(
                     contentType = contentType,
                 )
 
-            val fileUpload =
-                withRetry(options.retryConfig) {
-                    basicApi.createFileUpload(request)
-                }
+            val fileUpload = basicApi.createFileUpload(request)
 
             // Report upload progress
             reportProgress(
@@ -315,10 +309,7 @@ class EnhancedFileUploadApi(
 
             // Upload content
             val data = source.openStream().use { it.readBytes() }
-            val finalUpload =
-                withRetry(options.retryConfig) {
-                    basicApi.sendFileUpload(fileUpload.id, data, contentType)
-                }
+            val finalUpload = basicApi.sendFileUpload(fileUpload.id, data, contentType)
 
             // Report completion
             reportProgress(
@@ -381,10 +372,7 @@ class EnhancedFileUploadApi(
                     numberOfParts = chunking.numberOfParts,
                 )
 
-            val fileUpload =
-                withRetry(options.retryConfig) {
-                    basicApi.createFileUpload(request)
-                }
+            val fileUpload = basicApi.createFileUpload(request)
 
             // Upload parts
             val uploadedBytes =
@@ -409,10 +397,7 @@ class EnhancedFileUploadApi(
             )
 
             // Complete upload
-            val finalUpload =
-                withRetry(options.retryConfig) {
-                    basicApi.completeFileUpload(fileUpload.id)
-                }
+            val finalUpload = basicApi.completeFileUpload(fileUpload.id)
 
             // Report completion
             reportProgress(
@@ -479,23 +464,21 @@ class EnhancedFileUploadApi(
                         batch
                             .map { (partNumber, chunkData) ->
                                 async {
-                                    withRetry(options.retryConfig) {
-                                        basicApi.sendFileUpload(fileUpload.id, chunkData, contentType, partNumber)
+                                    basicApi.sendFileUpload(fileUpload.id, chunkData, contentType, partNumber)
 
-                                        uploadedBytes += chunkData.size
-                                        reportProgress(
-                                            options,
-                                            fileUpload.id,
-                                            source.filename,
-                                            source.sizeBytes,
-                                            uploadedBytes,
-                                            status = UploadProgressStatus.UPLOADING,
-                                            currentPart = partNumber,
-                                            totalParts = chunking.numberOfParts,
-                                        )
+                                    uploadedBytes += chunkData.size
+                                    reportProgress(
+                                        options,
+                                        fileUpload.id,
+                                        source.filename,
+                                        source.sizeBytes,
+                                        uploadedBytes,
+                                        status = UploadProgressStatus.UPLOADING,
+                                        currentPart = partNumber,
+                                        totalParts = chunking.numberOfParts,
+                                    )
 
-                                        chunkData.size.toLong()
-                                    }
+                                    chunkData.size.toLong()
                                 }
                             }.awaitAll()
                     }
@@ -512,9 +495,7 @@ class EnhancedFileUploadApi(
                         val chunkData = ByteArray(chunkSize)
                         inputStream.readNBytes(chunkData, 0, chunkSize)
 
-                        withRetry(options.retryConfig) {
-                            basicApi.sendFileUpload(fileUpload.id, chunkData, contentType, partNumber)
-                        }
+                        basicApi.sendFileUpload(fileUpload.id, chunkData, contentType, partNumber)
 
                         uploadedBytes += chunkSize
                         reportProgress(
@@ -575,35 +556,5 @@ class EnhancedFileUploadApi(
                 error = error,
             ),
         )
-    }
-
-    private suspend fun <T> withRetry(
-        retryConfig: it.saabel.kotlinnotionclient.models.files.RetryConfig,
-        operation: suspend () -> T,
-    ): T {
-        var lastError: Exception? = null
-
-        repeat(retryConfig.maxRetries + 1) { attempt ->
-            try {
-                return operation()
-            } catch (e: Exception) {
-                lastError = e
-
-                val uploadError =
-                    when (e) {
-                        is FileUploadError -> e
-                        else -> FileUploadError.UnknownError(e)
-                    }
-
-                if (attempt < retryConfig.maxRetries && retryConfig.shouldRetry(uploadError, attempt)) {
-                    val delayMs = retryConfig.calculateDelay(attempt)
-                    delay(delayMs)
-                } else {
-                    throw uploadError
-                }
-            }
-        }
-
-        throw lastError!!
     }
 }

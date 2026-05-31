@@ -321,6 +321,15 @@ sequence.
 - **Risk acknowledged**: this is the largest single workstream in v0.5.0;
   may push the release date. Sequencing puts it last in the phasing table
   so the smaller items can ship even if this one slips.
+- **⚠️ BREAKING (release-notes flag)**: the "unify with
+  `EnhancedFileUploadApi.withRetry`" sub-item is a **clean break, no shim**
+  (per Q11). `EnhancedFileUploadApi.withRetry`, `models.files.RetryConfig`,
+  and `FileUploadOptions.retryConfig` are **removed**; uploads now retry via
+  the shared pipeline plugin configured through `NotionConfig.rateLimitConfig`.
+  Migration path `FileUploadOptions.retryConfig` → `NotionConfig.rateLimitConfig`.
+  Documented in `CHANGELOG.md` under `[0.5.0]`. Must be called out loudly in
+  the v0.5.0 release notes. (Issue
+  [#18](https://github.com/jsaabel/kotlin-notion-client/issues/18).)
 
 ---
 

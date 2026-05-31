@@ -103,14 +103,12 @@ val options = FileUploadOptions(
             UploadProgressStatus.COMPLETING -> println("\nFinalizing...")
             UploadProgressStatus.COMPLETED -> println("Done!")
         }
-    },
-    
-    // Configure retry behavior
-    retryConfig = RetryConfig(
-        maxRetries = 3,
-        baseDelayMs = 1000
-    )
+    }
 )
+
+// Note: retry of failed upload requests (network errors, 429s, 5xx) is
+// handled by the shared rate-limit pipeline and configured once on the
+// client via NotionConfig.rateLimitConfig — not per upload.
 
 val result = notion.enhancedFileUploads.uploadFile(
     file = File("large-presentation.pptx"),
@@ -409,12 +407,13 @@ val result = notion.enhancedFileUploads.uploadFile(
 
 ### For Production Applications
 ```kotlin
-// ✅ Include error recovery
+// ✅ Include error recovery. Retry of transient failures is handled by the
+// shared rate-limit pipeline — configure it once on the client via
+// NotionConfig(rateLimitConfig = RateLimitConfig(maxRetries = 3)).
 val result = notion.enhancedFileUploads.uploadFile(
     file = file,
     options = FileUploadOptions(
-        validateBeforeUpload = true,
-        retryConfig = RetryConfig(maxRetries = 3)
+        validateBeforeUpload = true
     )
 )
 
