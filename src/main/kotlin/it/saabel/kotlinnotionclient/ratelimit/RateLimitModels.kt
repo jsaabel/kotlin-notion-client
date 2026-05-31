@@ -148,12 +148,24 @@ data class RateLimitConfig(
      * Whether to respect retry-after headers from 429 responses.
      */
     val respectRetryAfter: Boolean = true,
+    /**
+     * Sustained request rate, in tokens (requests) per second, for the proactive token bucket.
+     * Defaults to Notion's documented sustained ceiling of 3 requests/second.
+     */
+    val sustainedRate: Double = 3.0,
+    /**
+     * Burst capacity (token-bucket size). Allows up to this many requests to proceed immediately
+     * before pacing kicks in at [sustainedRate]. Tune higher for heavy-concurrency callers.
+     */
+    val burstCapacity: Int = 20,
 ) {
     init {
         require(maxRetries >= 0) { "maxRetries must be non-negative" }
         require(baseDelayMs > 0) { "baseDelayMs must be positive" }
         require(maxDelayMs >= baseDelayMs) { "maxDelayMs must be >= baseDelayMs" }
         require(jitterFactor in 0.0..1.0) { "jitterFactor must be between 0.0 and 1.0" }
+        require(sustainedRate > 0.0) { "sustainedRate must be positive" }
+        require(burstCapacity >= 1) { "burstCapacity must be at least 1" }
     }
 
     companion object {

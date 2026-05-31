@@ -39,6 +39,24 @@ class NotionRateLimitConfig {
     var respectRetryAfter: Boolean = true
 
     /**
+     * Sustained request rate (tokens/second) for the proactive token bucket. Defaults to Notion's
+     * documented sustained ceiling of 3 requests/second.
+     */
+    var sustainedRate: Double = 3.0
+
+    /**
+     * Burst capacity (token-bucket size). Up to this many requests proceed immediately before
+     * pacing kicks in at [sustainedRate].
+     */
+    var burstCapacity: Int = 20
+
+    /**
+     * Test seam: overrides the token bucket's millisecond time source so tests can drive pacing
+     * with `kotlinx.coroutines.test` virtual time. `null` uses a real monotonic clock.
+     */
+    internal var timeSourceMillis: (() -> Long)? = null
+
+    /**
      * Converts this config to a [RateLimitConfig].
      */
     internal fun toRateLimitConfig(): RateLimitConfig =
@@ -49,6 +67,8 @@ class NotionRateLimitConfig {
             jitterFactor = jitterFactor,
             strategy = strategy,
             respectRetryAfter = respectRetryAfter,
+            sustainedRate = sustainedRate,
+            burstCapacity = burstCapacity,
         )
 }
 
@@ -63,10 +83,12 @@ class NotionRateLimitConfig {
  * interceptor waits for the backoff delay and re-sends the same request.
  *
  * Current behaviour (structural foundation — see the rate-limiting overhaul task):
+ * - Proactively throttles outbound requests through a per-client [TokenBucket] (continuous refill
+ *   at `sustainedRate` req/s, bursting up to `burstCapacity`). A token is acquired before each
+ *   send, including retries.
  * - Retries only on `429` responses.
  * - Uses exponential backoff with jitter via [BackoffCalculator].
  * - Does **not** read `Retry-After` / `x-ratelimit-*` headers yet.
- * - Has no proactive token bucket / concurrency control yet.
  *
  * Usage:
  * ```kotlin
@@ -83,9 +105,18 @@ val NotionRateLimit =
         val config = pluginConfig.toRateLimitConfig()
         val backoffCalculator = BackoffCalculator(config)
 
+        // One bucket per plugin install == one per HttpClient / NotionClient (never global).
+        val tokenBucket =
+            TokenBucket(
+                sustainedRate = config.sustainedRate,
+                burstCapacity = config.burstCapacity,
+                currentTimeMillis = pluginConfig.timeSourceMillis ?: { System.nanoTime() / 1_000_000 },
+            )
+
         on(Send) { request ->
             var attemptNumber = 0
             var cumulativeDelay = kotlin.time.Duration.ZERO
+            tokenBucket.acquire()
             var call = proceed(request)
 
             while (call.response.status.value == 429 && attemptNumber < config.maxRetries) {
@@ -103,6 +134,8 @@ val NotionRateLimit =
                 cumulativeDelay += delayDuration
                 attemptNumber++
 
+                // A retry is another outbound request — pace it through the bucket too.
+                tokenBucket.acquire()
                 call = proceed(request)
             }
 
