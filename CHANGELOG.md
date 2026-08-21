@@ -5,6 +5,66 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- **Date read accessors now say which time they give you.** Reading a Notion date
+  value answers one of three different questions, and the accessor name now states
+  which one, so a call site is readable without opening the library:
+
+  | Question | Accessor |
+  |----------|----------|
+  | wall-clock digits, as stored | `wallClockDateTime` / `endWallClockDateTime` |
+  | absolute instant in UTC | `utcInstant` / `endUtcInstant` |
+  | the value's own stored UTC offset | `storedOffset` / `endStoredOffset` |
+
+  `storedOffset` is new capability, not a rename: nothing previously exposed the
+  offset a value actually carries, which is the question you have to ask to detect
+  that a value has drifted (local times silently stored as UTC, say).
+
+- **`offsetIn(timeZone)` / `endOffsetIn(timeZone)`** return the offset a named zone
+  would have had at the value's *own* wall-clock date and time, DST included.
+  Comparing it against `storedOffset` is the audit: a mismatch means the value is not
+  the local time in that zone it is supposed to be. Ambiguous wall-clock times resolve
+  to the earlier offset; nonexistent ones shift forward past the gap.
+
+- **`requireUtcInstant()` / `requireEndUtcInstant()`** return the UTC instant or throw
+  `IllegalArgumentException` naming the offending value and what to do about it, for
+  call sites where a missing instant is a bug rather than an absence.
+
+### Deprecated
+
+No behaviour changed — each deprecated accessor delegates to its replacement, so
+existing code still compiles and still returns exactly what it returned before.
+
+| Deprecated | Replacement |
+|------------|-------------|
+| `localDateTimeNaive` | `wallClockDateTime` |
+| `endLocalDateTimeNaive` | `endWallClockDateTime` |
+| `instantValue` | `utcInstant` |
+| `endInstantValue` | `endUtcInstant` |
+| `toLocalDateTime(timeZone)` | `localDateTimeIn(timeZone)` |
+| `endToLocalDateTime(timeZone)` | `endLocalDateTimeIn(timeZone)` |
+
+`localDateTimeNaive`'s behaviour is deliberately kept: reading wall-clock digits is a
+legitimate need, not a mistake. Only the name changed, so that choosing it reads as a
+decision rather than an implementation detail.
+
+### Changed
+
+- Date values with sub-second precision now keep it. The old accessors stripped the
+  fractional seconds before parsing, so `…T14:30:00.123Z` read back as `14:30:00`.
+  Notion returns `.000` for every value it stores, so this is invisible in practice.
+
+### Unchanged, deliberately
+
+`utcInstant` still returns null — rather than throwing — for a value that is absent,
+date-only, offset-less or malformed. Notion returns an offset for every time-bearing
+value, so in practice null means "no time here", and throwing from a property getter
+would break every existing caller. The strictness is opt-in via `requireUtcInstant()`,
+which distinguishes the four cases in its message.
+
 ## [0.5.0] - Unreleased
 
 ### ⚠️ Breaking Changes
