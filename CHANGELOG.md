@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+
 ### ⚠️ Breaking Changes — the write side is now offset-preserving, zone-explicit and validating
 
 A consumer shipped a bug in which offset-less datetimes written through this library were
@@ -124,7 +125,17 @@ value, so in practice null means "no time here", and throwing from a property ge
 would break every existing caller. The strictness is opt-in via `requireUtcInstant()`,
 which distinguishes the four cases in its message.
 
-## [0.5.0] - Unreleased
+### Build
+
+- Dependency refresh: Ktor `3.5.0` → `3.5.2`, Kotest `6.1.11` → `6.2.4`,
+  kotlinx-coroutines-test `1.10.2` → `1.11.0`, Logback `1.5.33` → `1.6.3`,
+  and the Gradle plugins (Vanniktech Maven Publish `0.36.0` → `0.37.0`, kotlinter
+  `5.5.0` → `5.7.0`, ben-manes-versions `0.54.0` → `0.61.0`, whose plugin id also
+  moved from `com.github.ben-manes.versions` to `io.github.ben-manes.versions`).
+  Kotlin stays on `2.3.21` — the `2.4.x` bump is held for 0.6.0 final so the date
+  changes are validated without a compiler change in the mix.
+
+## [0.5.0] - 2026-05-31
 
 ### ⚠️ Breaking Changes
 

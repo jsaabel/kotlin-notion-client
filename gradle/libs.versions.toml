@@ -1,19 +1,19 @@
 [versions]
-kotest = "6.1.11"
-ben-manes-versions = "0.54.0"
+kotest = "6.2.4"
+ben-manes-versions = "0.61.0"
 dokka = "2.2.0"
 kotlin = "2.3.21"
-kotlinter = "5.5.0"
-maven-publish = "0.36.0"
-kotlinx-coroutines = "1.10.2"
+kotlinter = "5.7.0"
+maven-publish = "0.37.0"
+kotlinx-coroutines = "1.11.0"
 kotlinx-datetime = "0.8.0"
 kotlinx-serialization-json = "1.11.0"
-ktor = "3.5.0"
-logback = "1.5.33"
+ktor = "3.5.2"
+logback = "1.6.3"
 slf4j = "2.0.18"
 
 [plugins]
-ben-manes-versions = { id = "com.github.ben-manes.versions", version.ref = "ben-manes-versions" }
+ben-manes-versions = { id = "io.github.ben-manes.versions", version.ref = "ben-manes-versions" }
 dokka = { id = "org.jetbrains.dokka", version.ref = "dokka" }
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
