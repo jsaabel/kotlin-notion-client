@@ -9,10 +9,13 @@ import io.kotest.matchers.shouldNotBe
 import it.saabel.kotlinnotionclient.models.base.SelectOptionColor
 import it.saabel.kotlinnotionclient.models.databases.CreateDatabaseProperty
 import it.saabel.kotlinnotionclient.models.databases.CreateSelectOption
+import it.saabel.kotlinnotionclient.models.databases.CreateStatusOption
 import it.saabel.kotlinnotionclient.models.databases.RelationConfiguration
 import it.saabel.kotlinnotionclient.models.databases.StatusConfiguration
+import it.saabel.kotlinnotionclient.models.databases.StatusOptionGroup
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 
@@ -57,15 +60,79 @@ class CreateDatabasePropertyTest :
                         StatusConfiguration(
                             options =
                                 listOf(
-                                    CreateSelectOption("Backlog", SelectOptionColor.GRAY),
-                                    CreateSelectOption("In Progress", SelectOptionColor.BLUE),
-                                    CreateSelectOption("Done", SelectOptionColor.GREEN),
+                                    CreateStatusOption("Backlog", SelectOptionColor.GRAY),
+                                    CreateStatusOption("In Progress", SelectOptionColor.BLUE),
+                                    CreateStatusOption("Done", SelectOptionColor.GREEN),
                                 ),
                         ),
                 )
             property shouldNotBe null
             property.status.options shouldHaveSize 3
             property.status.options.map { it.name } shouldBe listOf("Backlog", "In Progress", "Done")
+            property.status.options.map { it.group } shouldBe listOf(null, null, null)
+        }
+
+        "Should assign status options to predefined groups" {
+            val property =
+                CreateDatabaseProperty.Status(
+                    status =
+                        StatusConfiguration(
+                            options =
+                                listOf(
+                                    CreateStatusOption("Backlog", SelectOptionColor.GRAY, group = StatusOptionGroup.TO_DO),
+                                    CreateStatusOption("In Review", SelectOptionColor.BLUE, group = StatusOptionGroup.IN_PROGRESS),
+                                    CreateStatusOption("Shipped", SelectOptionColor.GREEN, group = StatusOptionGroup.COMPLETE),
+                                ),
+                        ),
+                )
+            property.status.options.map { it.group } shouldBe
+                listOf(StatusOptionGroup.TO_DO, StatusOptionGroup.IN_PROGRESS, StatusOptionGroup.COMPLETE)
+        }
+
+        "Should serialize status option group using Notion's group names" {
+            val json = Json { encodeDefaults = false }
+            val prop =
+                CreateDatabaseProperty.Status(
+                    status =
+                        StatusConfiguration(
+                            options =
+                                listOf(
+                                    CreateStatusOption("Backlog", group = StatusOptionGroup.TO_DO),
+                                    CreateStatusOption("In Review", group = StatusOptionGroup.IN_PROGRESS),
+                                    CreateStatusOption("Shipped", group = StatusOptionGroup.COMPLETE),
+                                ),
+                        ),
+                )
+            val encoded = json.encodeToString<CreateDatabaseProperty>(prop)
+            val options =
+                Json
+                    .parseToJsonElement(encoded)
+                    .jsonObject["status"]!!
+                    .jsonObject["options"]!!
+                    .jsonArray
+            options.map { it.jsonObject["group"]?.jsonPrimitive?.content } shouldBe
+                listOf("To-do", "In progress", "Complete")
+        }
+
+        "Should omit status option group from JSON when null" {
+            // Matches the production Json configuration (encodeDefaults = true, explicitNulls = false)
+            val json =
+                Json {
+                    encodeDefaults = true
+                    explicitNulls = false
+                }
+            val prop =
+                CreateDatabaseProperty.Status(
+                    status = StatusConfiguration(options = listOf(CreateStatusOption("Backlog"))),
+                )
+            val encoded = json.encodeToString<CreateDatabaseProperty>(prop)
+            val option =
+                Json
+                    .parseToJsonElement(encoded)
+                    .jsonObject["status"]!!
+                    .jsonObject["options"]!!
+                    .jsonArray[0]
+            option.jsonObject.containsKey("group") shouldBe false
         }
 
         "Should create Relation property with single property correctly" {

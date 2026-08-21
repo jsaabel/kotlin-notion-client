@@ -321,11 +321,13 @@ val database = notion.databases.create {
     properties {
         title("Task")
         status("State") {
-            option("Backlog", SelectOptionColor.GRAY, description = "Work not yet started")
-            option("In Progress", SelectOptionColor.YELLOW)
-            option("Done", SelectOptionColor.GREEN)
+            option("Backlog", SelectOptionColor.GRAY, description = "Work not yet started", group = StatusOptionGroup.TO_DO)
+            option("In Progress", SelectOptionColor.YELLOW, group = StatusOptionGroup.IN_PROGRESS)
+            option("Done", SelectOptionColor.GREEN, group = StatusOptionGroup.COMPLETE)
         }
-        // Note: groups cannot be configured via the API — Notion auto-creates them
+        // group is optional: options without one default to the "To-do" group on create,
+        // and keep their current group on update. Only the three predefined groups
+        // (To-do, In progress, Complete) exist — custom groups cannot be created.
     }
 }
 ```
