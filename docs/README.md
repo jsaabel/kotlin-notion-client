@@ -22,6 +22,7 @@
 - **[Pagination](pagination.md)** - Handle paginated results efficiently
 - **[Rich Text DSL](rich-text-dsl.md)** - Format text with mentions, links, and more
 - **[File Uploads](file-uploads.md)** - Upload and manage files and images
+- **[Webhooks](webhooks.md)** - Verify webhook signatures and parse event payloads
 - **[Error Handling](error-handling.md)** - Handle API errors gracefully
 - **[Testing](testing.md)** - Test your Notion integrations
 
