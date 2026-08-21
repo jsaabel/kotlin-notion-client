@@ -199,8 +199,14 @@ try {
 ### Page ID
 
 From a Notion page URL:
-- URL: `https://notion.so/My-Page-12345678123456781234567812345678`
+- URL: `https://app.notion.com/p/12345678123456781234567812345678`
+- Legacy URL: `https://www.notion.so/My-Page-12345678123456781234567812345678`
 - ID: `12345678-1234-5678-1234-567812345678` (add hyphens)
+
+> Notion moved API-generated record links from `notion.so` to `app.notion.com` in
+> July 2026. Both forms still open, and both still contain the same 32-character
+> ID. Treat `url`/`public_url` as human-facing links only — use the `id` field for
+> anything programmatic.
 
 ### Data Source ID
 

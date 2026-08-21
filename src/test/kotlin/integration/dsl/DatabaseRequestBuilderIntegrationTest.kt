@@ -209,7 +209,7 @@ class DatabaseRequestBuilderIntegrationTest :
                                 checkbox("Done", description = "Whether the task is complete")
                             }
                         }
-                    println("✅ Database created: https://notion.so/${database.id.replace("-", "")}")
+                    println("✅ Database created: https://app.notion.com/p/${database.id.replace("-", "")}")
 
                     delay(500)
 

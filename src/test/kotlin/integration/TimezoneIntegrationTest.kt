@@ -130,7 +130,7 @@ class TimezoneIntegrationTest :
                     notion.pages.trash(containerPageId)
                     println("🧹 Container page trashed")
                 } else {
-                    println("🔧 Cleanup skipped — container: https://notion.so/${containerPageId.replace("-", "")}")
+                    println("🔧 Cleanup skipped — container: https://app.notion.com/p/${containerPageId.replace("-", "")}")
                 }
                 notion.close()
             }
