@@ -1,9 +1,9 @@
 package unit.dsl
 
+import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
-import io.kotest.matchers.string.shouldContain
 import it.saabel.kotlinnotionclient.models.base.Annotations
 import it.saabel.kotlinnotionclient.models.base.Color
 import it.saabel.kotlinnotionclient.models.base.Equation
@@ -517,11 +517,11 @@ class RichTextBuilderTest :
             result shouldHaveSize 1
             result[0].type shouldBe "mention"
             val dateMention = result[0].mention as? Mention.Date
-            // Builder passes the local datetime string directly (no instant conversion),
-            // so seconds are omitted when zero: "2025-10-15T14:30" not "2025-10-15T14:30:00Z"
-            dateMention?.date?.start shouldBe "2025-10-15T14:30"
+            // Wall clock preserved, offset resolved locally — same semantics as the
+            // dateTime property builder.
+            dateMention?.date?.start shouldBe "2025-10-15T14:30:00+00:00"
             dateMention?.date?.end shouldBe null
-            dateMention?.date?.timeZone shouldBe "UTC"
+            dateMention?.date?.timeZone shouldBe null
         }
 
         test("dateMention should create datetime range using LocalDateTime with timezone") {
@@ -537,9 +537,49 @@ class RichTextBuilderTest :
             result shouldHaveSize 1
             result[0].type shouldBe "mention"
             val dateMention = result[0].mention as? Mention.Date
-            dateMention?.date?.start shouldContain "2025-10-15"
-            dateMention?.date?.end shouldContain "2025-10-15"
-            dateMention?.date?.timeZone shouldBe "America/New_York"
+            dateMention?.date?.start shouldBe "2025-10-15T09:00:00-04:00"
+            dateMention?.date?.end shouldBe "2025-10-15T17:00:00-04:00"
+            dateMention?.date?.timeZone shouldBe null
+        }
+
+        test("dateMention using LocalDateTime resolves DST at each value's own date") {
+            val oslo = TimeZone.of("Europe/Oslo")
+            val result =
+                richText {
+                    dateMention(
+                        start = LocalDateTime(2026, 10, 24, 13, 0),
+                        end = LocalDateTime(2026, 10, 25, 13, 0),
+                        timeZone = oslo,
+                    )
+                }
+
+            val dateMention = result[0].mention as? Mention.Date
+            dateMention?.date?.start shouldBe "2026-10-24T13:00:00+02:00"
+            dateMention?.date?.end shouldBe "2026-10-25T13:00:00+01:00"
+        }
+
+        test("dateMention rejects an offset-less datetime string without time_zone") {
+            shouldThrow<IllegalArgumentException> {
+                richText {
+                    dateMention("2025-10-15T09:00:00")
+                }
+            }
+        }
+
+        test("dateMention rejects an offset-bearing datetime string combined with time_zone") {
+            shouldThrow<IllegalArgumentException> {
+                richText {
+                    dateMention("2025-10-15T09:00:00Z", timeZone = "America/New_York")
+                }
+            }
+        }
+
+        test("dateMention rejects a time_zone on a date-only value") {
+            shouldThrow<IllegalArgumentException> {
+                richText {
+                    dateMention("2025-10-15", timeZone = "America/New_York")
+                }
+            }
         }
 
         test("dateMention should create instant mention using Instant") {

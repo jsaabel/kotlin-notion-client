@@ -155,13 +155,12 @@ class PagePropertiesBuilderTest :
                     date("StartDate", "2024-01-15")
                     date("EmptyDate", null)
                     dateRange("Duration", "2024-01-15", "2024-01-20")
-                    dateTime("CreatedAt", "2024-01-15T14:30:00")
-                    dateTimeRange("Meeting", "2024-01-15T14:30:00", "2024-01-15T15:30:00")
-                    dateWithTimeZone("Launch", "2024-01-15", "America/Los_Angeles")
+                    dateTime("CreatedAt", "2024-01-15T14:30:00+01:00")
+                    dateTimeRange("Meeting", "2024-01-15T14:30:00+01:00", "2024-01-15T15:30:00+01:00")
                     dateTimeWithTimeZone("Webinar", "2024-01-15T14:30:00", "UTC")
                 }
 
-            properties shouldHaveSize 7
+            properties shouldHaveSize 6
 
             val startDateValue = properties["StartDate"] as PagePropertyValue.DateValue
             startDateValue.date!!.start shouldBe "2024-01-15"
@@ -175,10 +174,7 @@ class PagePropertiesBuilderTest :
             durationValue.date.end shouldBe "2024-01-20"
 
             val createdAtValue = properties["CreatedAt"] as PagePropertyValue.DateValue
-            createdAtValue.date!!.start shouldBe "2024-01-15T14:30:00"
-
-            val launchValue = properties["Launch"] as PagePropertyValue.DateValue
-            launchValue.date!!.timeZone shouldBe "America/Los_Angeles"
+            createdAtValue.date!!.start shouldBe "2024-01-15T14:30:00+01:00"
 
             val webinarValue = properties["Webinar"] as PagePropertyValue.DateValue
             webinarValue.date!!.timeZone shouldBe "UTC"
@@ -217,7 +213,7 @@ class PagePropertiesBuilderTest :
                     select("Status", "In Progress")
                     multiSelect("Tags", "test", "comprehensive", "unit/validation")
                     date("StartDate", "2024-01-01")
-                    dateTime("CreatedAt", "2024-01-01T09:00:00")
+                    dateTime("CreatedAt", "2024-01-01T09:00:00Z")
                     dateRange("Sprint", "2024-01-01", "2024-01-14")
                     people("Assignees", "user-1", "user-2")
                     relation("Dependencies", "page-1", "page-2", "page-3")
@@ -262,8 +258,8 @@ class PagePropertiesBuilderTest :
             dateValue.date!!.start shouldBe "2024-12-31"
             dateValue.date.end shouldBe null
 
-            val dateTimeValue = PagePropertyValue.DateValue.fromDateTimeString("2024-12-31T23:59:59")
-            dateTimeValue.date!!.start shouldBe "2024-12-31T23:59:59"
+            val dateTimeValue = PagePropertyValue.DateValue.fromDateTimeString("2024-12-31T23:59:59-05:00")
+            dateTimeValue.date!!.start shouldBe "2024-12-31T23:59:59-05:00"
 
             val dateRangeValue = PagePropertyValue.DateValue.fromDateRange("2024-01-01", "2024-12-31")
             dateRangeValue.date!!.start shouldBe "2024-01-01"

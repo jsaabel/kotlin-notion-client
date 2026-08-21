@@ -3,11 +3,10 @@
 package it.saabel.kotlinnotionclient.models.datasources
 
 import it.saabel.kotlinnotionclient.models.base.EmptyObject
-import it.saabel.kotlinnotionclient.models.datasources.RelativeDateValue
+import it.saabel.kotlinnotionclient.models.dates.NotionDateStrings
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.TimeZone
-import kotlinx.datetime.toInstant
 import kotlin.time.Instant
 
 /**
@@ -402,16 +401,23 @@ class MultiSelectFilterBuilder(
 class DateFilterBuilder(
     private val propertyName: String,
 ) {
-    // String-based methods (existing, for backward compatibility)
-    fun equals(date: String): DataSourceFilter = createFilter(DateCondition(equals = date))
+    // String-based methods. A datetime string must carry a UTC offset — filter
+    // conditions have no time_zone field, so an offset-less datetime would be read
+    // as UTC. Date-only strings and relative values ("today", …) pass through.
+    fun equals(date: String): DataSourceFilter = createFilter(DateCondition(equals = validated(date)))
 
-    fun before(date: String): DataSourceFilter = createFilter(DateCondition(before = date))
+    fun before(date: String): DataSourceFilter = createFilter(DateCondition(before = validated(date)))
 
-    fun after(date: String): DataSourceFilter = createFilter(DateCondition(after = date))
+    fun after(date: String): DataSourceFilter = createFilter(DateCondition(after = validated(date)))
 
-    fun onOrBefore(date: String): DataSourceFilter = createFilter(DateCondition(onOrBefore = date))
+    fun onOrBefore(date: String): DataSourceFilter = createFilter(DateCondition(onOrBefore = validated(date)))
 
-    fun onOrAfter(date: String): DataSourceFilter = createFilter(DateCondition(onOrAfter = date))
+    fun onOrAfter(date: String): DataSourceFilter = createFilter(DateCondition(onOrAfter = validated(date)))
+
+    private fun validated(date: String): String {
+        NotionDateStrings.validateDateString(date, field = "filter")
+        return date
+    }
 
     // Typed overloads using kotlinx-datetime
 
@@ -430,35 +436,40 @@ class DateFilterBuilder(
     /** Filter for dates on or after the given LocalDate. */
     fun onOrAfter(date: LocalDate): DataSourceFilter = onOrAfter(date.toString())
 
-    /** Filter for datetimes equal to the given LocalDateTime in the specified timezone. */
+    // LocalDateTime overloads mean "this wall-clock time, in this zone": the value is
+    // sent as an offset-bearing string with the zone's offset at that local date (DST
+    // resolved per value), matching the write-side dateTime semantics. The zone is
+    // required — a LocalDateTime alone does not identify a point in time.
+
+    /** Filter for datetimes equal to the given wall-clock time in the given zone. */
     fun equals(
         dateTime: LocalDateTime,
-        timeZone: TimeZone = TimeZone.UTC,
-    ): DataSourceFilter = equals(dateTime.toInstant(timeZone).toString())
+        timeZone: TimeZone,
+    ): DataSourceFilter = equals(NotionDateStrings.zonedDateTimeString(dateTime, timeZone))
 
-    /** Filter for datetimes before the given LocalDateTime in the specified timezone. */
+    /** Filter for datetimes before the given wall-clock time in the given zone. */
     fun before(
         dateTime: LocalDateTime,
-        timeZone: TimeZone = TimeZone.UTC,
-    ): DataSourceFilter = before(dateTime.toInstant(timeZone).toString())
+        timeZone: TimeZone,
+    ): DataSourceFilter = before(NotionDateStrings.zonedDateTimeString(dateTime, timeZone))
 
-    /** Filter for datetimes after the given LocalDateTime in the specified timezone. */
+    /** Filter for datetimes after the given wall-clock time in the given zone. */
     fun after(
         dateTime: LocalDateTime,
-        timeZone: TimeZone = TimeZone.UTC,
-    ): DataSourceFilter = after(dateTime.toInstant(timeZone).toString())
+        timeZone: TimeZone,
+    ): DataSourceFilter = after(NotionDateStrings.zonedDateTimeString(dateTime, timeZone))
 
-    /** Filter for datetimes on or before the given LocalDateTime in the specified timezone. */
+    /** Filter for datetimes on or before the given wall-clock time in the given zone. */
     fun onOrBefore(
         dateTime: LocalDateTime,
-        timeZone: TimeZone = TimeZone.UTC,
-    ): DataSourceFilter = onOrBefore(dateTime.toInstant(timeZone).toString())
+        timeZone: TimeZone,
+    ): DataSourceFilter = onOrBefore(NotionDateStrings.zonedDateTimeString(dateTime, timeZone))
 
-    /** Filter for datetimes on or after the given LocalDateTime in the specified timezone. */
+    /** Filter for datetimes on or after the given wall-clock time in the given zone. */
     fun onOrAfter(
         dateTime: LocalDateTime,
-        timeZone: TimeZone = TimeZone.UTC,
-    ): DataSourceFilter = onOrAfter(dateTime.toInstant(timeZone).toString())
+        timeZone: TimeZone,
+    ): DataSourceFilter = onOrAfter(NotionDateStrings.zonedDateTimeString(dateTime, timeZone))
 
     /** Filter for instants equal to the given Instant. */
     fun equals(instant: Instant): DataSourceFilter = equals(instant.toString())
@@ -673,16 +684,23 @@ class FilesFilterBuilder(
 class TimestampFilterBuilder(
     private val timestampType: String, // "created_time" or "last_edited_time"
 ) {
-    // String-based methods
-    fun equals(date: String): DataSourceFilter = createFilter(DateCondition(equals = date))
+    // String-based methods. A datetime string must carry a UTC offset — filter
+    // conditions have no time_zone field, so an offset-less datetime would be read
+    // as UTC. Date-only strings and relative values ("today", …) pass through.
+    fun equals(date: String): DataSourceFilter = createFilter(DateCondition(equals = validated(date)))
 
-    fun before(date: String): DataSourceFilter = createFilter(DateCondition(before = date))
+    fun before(date: String): DataSourceFilter = createFilter(DateCondition(before = validated(date)))
 
-    fun after(date: String): DataSourceFilter = createFilter(DateCondition(after = date))
+    fun after(date: String): DataSourceFilter = createFilter(DateCondition(after = validated(date)))
 
-    fun onOrBefore(date: String): DataSourceFilter = createFilter(DateCondition(onOrBefore = date))
+    fun onOrBefore(date: String): DataSourceFilter = createFilter(DateCondition(onOrBefore = validated(date)))
 
-    fun onOrAfter(date: String): DataSourceFilter = createFilter(DateCondition(onOrAfter = date))
+    fun onOrAfter(date: String): DataSourceFilter = createFilter(DateCondition(onOrAfter = validated(date)))
+
+    private fun validated(date: String): String {
+        NotionDateStrings.validateDateString(date, field = "filter")
+        return date
+    }
 
     // Typed overloads using kotlinx-datetime
 
@@ -701,35 +719,40 @@ class TimestampFilterBuilder(
     /** Filter for timestamps on or after the given LocalDate. */
     fun onOrAfter(date: LocalDate): DataSourceFilter = onOrAfter(date.toString())
 
-    /** Filter for timestamps equal to the given LocalDateTime in the specified timezone. */
+    // LocalDateTime overloads mean "this wall-clock time, in this zone": the value is
+    // sent as an offset-bearing string with the zone's offset at that local date (DST
+    // resolved per value), matching the write-side dateTime semantics. The zone is
+    // required — a LocalDateTime alone does not identify a point in time.
+
+    /** Filter for timestamps equal to the given wall-clock time in the given zone. */
     fun equals(
         dateTime: LocalDateTime,
-        timeZone: TimeZone = TimeZone.UTC,
-    ): DataSourceFilter = equals(dateTime.toInstant(timeZone).toString())
+        timeZone: TimeZone,
+    ): DataSourceFilter = equals(NotionDateStrings.zonedDateTimeString(dateTime, timeZone))
 
-    /** Filter for timestamps before the given LocalDateTime in the specified timezone. */
+    /** Filter for timestamps before the given wall-clock time in the given zone. */
     fun before(
         dateTime: LocalDateTime,
-        timeZone: TimeZone = TimeZone.UTC,
-    ): DataSourceFilter = before(dateTime.toInstant(timeZone).toString())
+        timeZone: TimeZone,
+    ): DataSourceFilter = before(NotionDateStrings.zonedDateTimeString(dateTime, timeZone))
 
-    /** Filter for timestamps after the given LocalDateTime in the specified timezone. */
+    /** Filter for timestamps after the given wall-clock time in the given zone. */
     fun after(
         dateTime: LocalDateTime,
-        timeZone: TimeZone = TimeZone.UTC,
-    ): DataSourceFilter = after(dateTime.toInstant(timeZone).toString())
+        timeZone: TimeZone,
+    ): DataSourceFilter = after(NotionDateStrings.zonedDateTimeString(dateTime, timeZone))
 
-    /** Filter for timestamps on or before the given LocalDateTime in the specified timezone. */
+    /** Filter for timestamps on or before the given wall-clock time in the given zone. */
     fun onOrBefore(
         dateTime: LocalDateTime,
-        timeZone: TimeZone = TimeZone.UTC,
-    ): DataSourceFilter = onOrBefore(dateTime.toInstant(timeZone).toString())
+        timeZone: TimeZone,
+    ): DataSourceFilter = onOrBefore(NotionDateStrings.zonedDateTimeString(dateTime, timeZone))
 
-    /** Filter for timestamps on or after the given LocalDateTime in the specified timezone. */
+    /** Filter for timestamps on or after the given wall-clock time in the given zone. */
     fun onOrAfter(
         dateTime: LocalDateTime,
-        timeZone: TimeZone = TimeZone.UTC,
-    ): DataSourceFilter = onOrAfter(dateTime.toInstant(timeZone).toString())
+        timeZone: TimeZone,
+    ): DataSourceFilter = onOrAfter(NotionDateStrings.zonedDateTimeString(dateTime, timeZone))
 
     /** Filter for timestamps equal to the given Instant. */
     fun equals(instant: Instant): DataSourceFilter = equals(instant.toString())

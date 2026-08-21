@@ -285,7 +285,7 @@ class CorePagesIntegrationTest :
                                 email("Email", "test@comprehensive.com")
                                 phoneNumber("Phone", "+1-555-0199")
                                 date("Start Date", "2024-03-15")
-                                dateTime("Meeting Time", "2024-03-15T14:30:00")
+                                dateTime("Meeting Time", "2024-03-15T14:30:00Z")
                                 select("Single Select", "High Priority")
                                 multiSelect("Multi Select", "testing", "kotlin", "api")
                             },

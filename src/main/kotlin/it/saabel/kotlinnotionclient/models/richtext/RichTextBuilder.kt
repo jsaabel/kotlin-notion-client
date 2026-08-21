@@ -12,11 +12,11 @@ import it.saabel.kotlinnotionclient.models.base.Mention
 import it.saabel.kotlinnotionclient.models.base.PageReference
 import it.saabel.kotlinnotionclient.models.base.RichText
 import it.saabel.kotlinnotionclient.models.base.TextContent
+import it.saabel.kotlinnotionclient.models.dates.NotionDateStrings
 import it.saabel.kotlinnotionclient.models.users.User
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.TimeZone
-import kotlinx.datetime.toInstant
 import kotlin.time.Instant
 
 /**
@@ -368,16 +368,24 @@ class RichTextBuilder {
     /**
      * Adds a date mention.
      *
+     * A datetime string must either carry a UTC offset or be a naive local string paired
+     * with [timeZone] — never neither (Notion would silently read it as UTC) and never
+     * both (Notion strips the offset and re-applies the zone).
+     *
      * @param start The start date (ISO 8601 format)
      * @param end The end date (optional, for date ranges)
-     * @param timeZone The time zone (optional)
+     * @param timeZone The IANA time zone id (only for naive datetime strings)
      * @return This builder for chaining
+     * @throws IllegalArgumentException when the strings and [timeZone] violate the rules above
      */
     fun dateMention(
         start: String,
         end: String? = null,
         timeZone: String? = null,
     ): RichTextBuilder {
+        NotionDateStrings.validateDateString(start, timeZone = timeZone, field = "start")
+        end?.let { NotionDateStrings.validateDateString(it, timeZone = timeZone, field = "end") }
+        timeZone?.let { NotionDateStrings.validateTimeZoneId(it) }
         segments.add(
             RichText(
                 type = "mention",
@@ -408,32 +416,36 @@ class RichTextBuilder {
     }
 
     /**
-     * Adds a date mention using LocalDateTime with timezone.
+     * Adds a date mention meaning "this wall-clock time, in this zone".
      *
-     * @param start The start datetime
-     * @param end The end datetime (optional, for datetime ranges)
-     * @param timeZone The timezone (defaults to UTC)
+     * Same semantics as the `dateTime(name, LocalDateTime, TimeZone)` property builder:
+     * each value is written as an offset-bearing string with the zone's UTC offset at
+     * that value's own local date (DST resolved per value; an ambiguous local time takes
+     * the earlier instant, a nonexistent one is shifted forward by the gap). It is never
+     * converted to a UTC instant.
+     *
+     * @param start The start wall-clock datetime
+     * @param timeZone The zone the wall clock belongs to — required, because a
+     *        [LocalDateTime] alone does not identify a point in time
+     * @param end The end wall-clock datetime (optional, for datetime ranges)
      * @return This builder for chaining
      */
     fun dateMention(
         start: LocalDateTime,
+        timeZone: TimeZone,
         end: LocalDateTime? = null,
-        timeZone: TimeZone = TimeZone.UTC,
-    ): RichTextBuilder {
-        // Pass the local datetime string + timezone.id directly.
-        // Do NOT convert to an Instant first — Notion treats the datetime string as
-        // local time and applies the timezone offset to it. Converting to a UTC instant
-        // before sending causes Notion to misinterpret the time (it would treat the UTC
-        // time as local time in the given timezone instead of converting it).
-        return dateMention(
-            start = start.toString(),
-            end = end?.toString(),
-            timeZone = timeZone.id,
+    ): RichTextBuilder =
+        dateMention(
+            start = NotionDateStrings.zonedDateTimeString(start, timeZone),
+            end = end?.let { NotionDateStrings.zonedDateTimeString(it, timeZone) },
+            timeZone = null,
         )
-    }
 
     /**
-     * Adds a date mention using Instant (timezone-unambiguous).
+     * Adds a date mention from an absolute instant, written as UTC (`...Z`).
+     *
+     * Use this when the value is a point in time; for "13:00 in Oslo", use the
+     * [LocalDateTime] overload, which preserves the local digits and offset.
      *
      * @param start The start instant
      * @param end The end instant (optional, for instant ranges)
