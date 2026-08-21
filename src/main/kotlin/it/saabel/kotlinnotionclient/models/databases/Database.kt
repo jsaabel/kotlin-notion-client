@@ -362,10 +362,18 @@ sealed class DatabaseProperty {
         @SerialName("description")
         val description: String? = null,
         @SerialName("formula")
-        val formula: JsonObject,
+        val formula: FormulaConfiguration,
     ) : DatabaseProperty() {
         @SerialName("type")
         override val type: String = "formula"
+
+        /**
+         * The formula expression. Since Aug 2026 Notion (gradually) returns this in the
+         * readable `prop("Property Name")` syntax; expressions that cannot be rendered
+         * that way still use the internal `{{notion:block_property:...}}` syntax — see
+         * [FormulaConfiguration.usesInternalReferences].
+         */
+        val expression: String get() = formula.expression
     }
 
     @Serializable

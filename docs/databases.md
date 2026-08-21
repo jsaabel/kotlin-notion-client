@@ -283,8 +283,38 @@ When defining the initial schema in `properties { }`, you can use:
 | Email | `email(name)` | `email("Contact")` |
 | Phone | `phoneNumber(name)` | `phoneNumber("Phone")` |
 | Relation | `relation(name, targetDbId) { }` | See relation example above |
+| Formula | `formula(name, expression)` | `formula("Total", """prop("Price") * 2""")` |
 
-**Note**: Formula and Rollup properties cannot be created via the API - they must be added through the Notion UI.
+**Note**: Rollup properties cannot be created via the API - they must be added through the Notion UI.
+
+### Formula Properties
+
+Formula expressions reference other properties with `prop("Property Name")`. Since the
+Aug 2026 API update, `prop()` references are stored exactly as written, and schemas are
+(gradually) read back in the same readable syntax — `DatabaseProperty.Formula.expression`
+exposes the typed expression, `formula.propertyReferences()` lists the referenced
+property names, and `formula.usesInternalReferences()` reveals expressions still using
+Notion's internal `{{notion:block_property:...}}` syntax.
+
+```kotlin
+val request = databaseRequest {
+    parent.page(parentPageId)
+    title("Inventory")
+    properties {
+        title("Name")
+        number("Price", format = "dollar")
+        checkbox("In stock")
+        formula("Updated price", """if(prop("In stock"), 0, prop("Price"))""")
+    }
+}
+```
+
+Structurally broken expressions fail fast at the call site with `IllegalArgumentException`
+(blank expression, unterminated string, unbalanced brackets, malformed `prop()` call), and
+create requests additionally reject `prop()` references to properties not defined in the
+same schema. Semantic validity (unknown functions, type errors, circular references) is
+not locally decidable — Notion reports those as a `validation_error` when the request is
+sent.
 
 ### Property and Option Descriptions (v0.4.0+)
 
