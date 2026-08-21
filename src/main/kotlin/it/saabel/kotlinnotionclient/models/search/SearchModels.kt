@@ -31,15 +31,21 @@ data class SearchRequest(
 /**
  * Filter criteria for search.
  *
- * @property value The type to filter by: "page" or "data_source"
- * @property property The property to filter on (currently only "object" is supported)
+ * @property value The type to filter by: "page" or "data_source". Null when the filter only
+ *   narrows by trash status.
+ * @property property The property to filter on (currently only "object" is supported). Should be
+ *   null whenever [value] is null.
+ * @property inTrash When `true`, search returns trashed pages and data sources instead of the
+ *   default non-trashed set. Null omits the option.
  */
 @Serializable
 data class SearchFilter(
     @SerialName("value")
-    val value: String, // "page" or "data_source"
+    val value: String? = null, // "page" or "data_source"
     @SerialName("property")
-    val property: String = "object",
+    val property: String? = "object",
+    @SerialName("in_trash")
+    val inTrash: Boolean? = null,
 )
 
 /**
@@ -91,7 +97,8 @@ data class SearchResponse(
  */
 class SearchRequestBuilder {
     private var query: String? = null
-    private var filter: SearchFilter? = null
+    private var filterValue: String? = null
+    private var inTrash: Boolean? = null
     private var sort: SearchSort? = null
     private var startCursor: String? = null
     private var pageSize: Int? = null
@@ -101,11 +108,25 @@ class SearchRequestBuilder {
     }
 
     fun filterPages() {
-        filter = SearchFilter(value = "page")
+        filterValue = "page"
     }
 
     fun filterDataSources() {
-        filter = SearchFilter(value = "data_source")
+        filterValue = "data_source"
+    }
+
+    /**
+     * Restricts the search to trashed (or explicitly non-trashed) results.
+     *
+     * Notion returns either trashed or non-trashed objects, never both. Omitting this call
+     * leaves `filter.in_trash` out of the request, which returns non-trashed objects. This
+     * composes with [filterPages] and [filterDataSources].
+     *
+     * @param value `true` to list trashed pages and data sources, `false` to explicitly
+     *   request the non-trashed set.
+     */
+    fun inTrash(value: Boolean = true) {
+        inTrash = value
     }
 
     fun sortAscending() {
@@ -128,11 +149,20 @@ class SearchRequestBuilder {
     fun build(): SearchRequest =
         SearchRequest(
             query = query,
-            filter = filter,
+            filter = buildFilter(),
             sort = sort,
             startCursor = startCursor,
             pageSize = pageSize,
         )
+
+    private fun buildFilter(): SearchFilter? {
+        if (filterValue == null && inTrash == null) return null
+        return SearchFilter(
+            value = filterValue,
+            property = filterValue?.let { "object" },
+            inTrash = inTrash,
+        )
+    }
 }
 
 /**
