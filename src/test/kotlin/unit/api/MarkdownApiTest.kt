@@ -80,6 +80,7 @@ class MarkdownApiTest :
             response.id shouldBe "59833787-2cf9-4fdf-8782-e53db20768a5"
             response.truncated shouldBe false
             response.unknownBlockIds shouldBe emptyList()
+            response.unknownBlockCount shouldBe 0
             response.markdown.contains("Tuscan Kale") shouldBe true
         }
 
@@ -208,7 +209,8 @@ class MarkdownApiTest :
                   "id": "abc123",
                   "markdown": "# Part 1\n\nContent here...",
                   "truncated": true,
-                  "unknown_block_ids": ["block-id-1", "block-id-2"]
+                  "unknown_block_ids": ["block-id-1", "block-id-2"],
+                  "unknown_block_count": 2
                 }
                 """.trimIndent()
 
@@ -225,5 +227,61 @@ class MarkdownApiTest :
 
             response.truncated shouldBe true
             response.unknownBlockIds shouldBe listOf("block-id-1", "block-id-2")
+            response.unknownBlockCount shouldBe 2
+        }
+
+        "unknown_block_count may exceed the capped unknown_block_ids list" {
+            val truncatedJson =
+                """
+                {
+                  "object": "page_markdown",
+                  "id": "abc123",
+                  "markdown": "# Part 1\n\nContent here...",
+                  "truncated": true,
+                  "unknown_block_ids": ["block-id-1"],
+                  "unknown_block_count": 137
+                }
+                """.trimIndent()
+
+            val api =
+                markdownApi { _ ->
+                    respond(
+                        content = truncatedJson,
+                        status = HttpStatusCode.OK,
+                        headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString()),
+                    )
+                }
+
+            val response = api.retrieve("abc123")
+
+            response.unknownBlockIds shouldBe listOf("block-id-1")
+            response.unknownBlockCount shouldBe 137
+        }
+
+        "unknown_block_count defaults to zero when absent" {
+            val legacyJson =
+                """
+                {
+                  "object": "page_markdown",
+                  "id": "abc123",
+                  "markdown": "# Part 1",
+                  "truncated": false,
+                  "unknown_block_ids": []
+                }
+                """.trimIndent()
+
+            val api =
+                markdownApi { _ ->
+                    respond(
+                        content = legacyJson,
+                        status = HttpStatusCode.OK,
+                        headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString()),
+                    )
+                }
+
+            val response = api.retrieve("abc123")
+
+            response.truncated shouldBe false
+            response.unknownBlockCount shouldBe 0
         }
     })

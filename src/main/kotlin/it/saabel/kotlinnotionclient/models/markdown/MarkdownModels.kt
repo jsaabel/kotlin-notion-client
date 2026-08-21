@@ -9,6 +9,11 @@ import kotlinx.serialization.Serializable
  * Response model for the Page Markdown API.
  *
  * Returned by both GET (retrieve) and PATCH (update) markdown endpoints.
+ *
+ * @property truncated `true` when the page was large enough that some subtrees could not be loaded
+ * @property unknownBlockIds Up to 50 root IDs of the omitted subtrees
+ * @property unknownBlockCount Total number of omitted subtree roots, which may exceed the number of
+ *   IDs in [unknownBlockIds]. Defaults to `0` when the API omits the field.
  */
 @Serializable
 data class PageMarkdownResponse(
@@ -22,6 +27,8 @@ data class PageMarkdownResponse(
     val truncated: Boolean,
     @SerialName("unknown_block_ids")
     val unknownBlockIds: List<String> = emptyList(),
+    @SerialName("unknown_block_count")
+    val unknownBlockCount: Int = 0,
 )
 
 /**
