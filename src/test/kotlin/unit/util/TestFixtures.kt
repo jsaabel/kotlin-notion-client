@@ -253,6 +253,21 @@ object TestFixtures {
         fun deletedViewQueryAsString() = loadSampleResponseAsString("views", "deleted_view_query")
     }
 
+    // Async task helpers
+    object AsyncTasks {
+        fun retrieveQueued() = loadSampleResponse("async_tasks", "retrieve_async_task_queued")
+
+        fun retrieveSucceeded() = loadSampleResponse("async_tasks", "retrieve_async_task_succeeded")
+
+        fun retrieveFailed() = loadSampleResponse("async_tasks", "retrieve_async_task_failed")
+
+        fun retrieveQueuedAsString() = loadSampleResponseAsString("async_tasks", "retrieve_async_task_queued")
+
+        fun retrieveSucceededAsString() = loadSampleResponseAsString("async_tasks", "retrieve_async_task_succeeded")
+
+        fun retrieveFailedAsString() = loadSampleResponseAsString("async_tasks", "retrieve_async_task_failed")
+    }
+
     // Custom emoji helpers
     object CustomEmojis {
         fun listCustomEmojis() = loadSampleResponse("custom_emojis", "list_custom_emojis")
