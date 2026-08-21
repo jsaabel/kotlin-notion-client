@@ -31,6 +31,9 @@ Status: `open` · `filed` (issue created) · `done` · `wont-do`
 | 19 | #38 | No integration test covers the async markdown path: a 202 cannot be forced deterministically (the API decides), so a live test would be flaky. The `Completed` fallback makes the code safe either way, but an opportunistic integration exercise could be filed. | open |
 | 20 | #38 | Async-task field optionality is modelled defensively (`operation`, `created_time` nullable) at **medium** confidence — endpoint path, five status values, `allow_async` and the 202 flow are high-confidence, cross-checked against Notion's MCP tool schema. Worth confirming minor-field optionality against a real 202 response. | open |
 | 21 | #38 | `pollAsFlow` deliberately does not throw on a failed task (it completes at the first terminal status), unlike `waitForCompletion` which throws `AsyncTaskException.TaskFailed`. Intentional, but the asymmetry is worth a conscious ratification. | open |
+| 22 | #39 | **IDEAS.md #4 is not unblocked**, contrary to the "bonus" note on #39. `NewFilterTypesIntegrationTest` also needs a `unique_id` property, still absent from the live property-schema reference's creatable types and from `CreateDatabaseProperty`. The status side of that setup is now fully API-doable. Either annotate #4 or file a narrower issue to make the test self-contained minus the unique_id filters. | open |
+| 23 | #39 | Status group assignment is implemented at high confidence from live docs but **never exercised against the live API** — integration tests were out of bounds for this run. The existing "verify standard groups" test in `DatabaseFeaturesIntegrationTest` is the natural place for a live assertion. | open |
+| 24 | #39 | Documented API behaviour worth ratifying: on update, an omitted `group` preserves the option's current group, and new options default to "To-do". Currently captured only in KDoc. | open |
 
 ## Notes
 
