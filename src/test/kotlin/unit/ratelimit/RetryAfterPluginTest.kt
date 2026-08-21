@@ -24,10 +24,11 @@ import java.util.concurrent.atomic.AtomicInteger
 import kotlin.time.Duration.Companion.milliseconds
 
 /**
- * Verifies the [NotionRateLimit] plugin makes `Retry-After` load-bearing on `429` responses
- * (issue #16). Notion publishes `Retry-After` (seconds) as its 429 handling contract, so when the
- * header is present the plugin must wait exactly that long (plus a 1s rounding-safety margin)
- * rather than fall back to its exponential schedule.
+ * Verifies the [NotionRateLimit] plugin makes `Retry-After` load-bearing on `429` (issue #16) and
+ * `529` (issue #32) responses. Notion publishes `Retry-After` (seconds) as its handling contract
+ * for both rate limiting and service overload, so when the header is present the plugin must wait
+ * exactly that long (plus a 1s rounding-safety margin) rather than fall back to its exponential
+ * schedule.
  *
  * Timing is asserted under `kotlinx.coroutines.test` virtual time: the token bucket's clock is
  * wired to the test scheduler and `delay()` advances virtual time, so a "3 second" wait costs no
@@ -38,6 +39,11 @@ class RetryAfterPluginTest :
     FunSpec({
 
         val errorBody = """{"object":"error","status":429,"code":"rate_limited","message":"slow down"}"""
+
+        // Notion's service-overload status (issue #32). Ktor has no named constant for 529.
+        val serviceOverloaded = HttpStatusCode(529, "Service Overloaded")
+        val overloadedBody =
+            """{"object":"error","status":529,"code":"service_unavailable","message":"overloaded"}"""
 
         test("429 with Retry-After: 3 then 200 — exactly one retry, delay honours the header (~4s)") {
             runTest {
@@ -104,6 +110,103 @@ class RetryAfterPluginTest :
                                 respond(
                                     content = errorBody,
                                     status = HttpStatusCode.TooManyRequests,
+                                    headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString()),
+                                )
+                            } else {
+                                respond(
+                                    content = "{}",
+                                    status = HttpStatusCode.OK,
+                                    headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString()),
+                                )
+                            }
+                        },
+                    ) {
+                        install(NotionRateLimit) {
+                            rateLimitConfig =
+                                RateLimitConfig(
+                                    maxRetries = 3,
+                                    retryBaseDelay = 1.milliseconds,
+                                    retryMaxDelay = 5.milliseconds,
+                                    jitterFactor = 0.0,
+                                )
+                            timeSourceMillis = { currentTime }
+                        }
+                    }
+
+                val response: HttpResponse = client.get("https://api.notion.com/v1/ping")
+
+                counter.get() shouldBe 2 // exponential fallback still retries successfully
+                response.status shouldBe HttpStatusCode.OK
+
+                client.close()
+            }
+        }
+
+        test("529 with Retry-After: 2 then 200 — exactly one retry, delay honours the header (~3s)") {
+            runTest {
+                val counter = AtomicInteger(0)
+                val client =
+                    HttpClient(
+                        MockEngine { _ ->
+                            val attempt = counter.incrementAndGet()
+                            if (attempt == 1) {
+                                respond(
+                                    content = overloadedBody,
+                                    status = serviceOverloaded,
+                                    headers =
+                                        headersOf(
+                                            HttpHeaders.ContentType to listOf(ContentType.Application.Json.toString()),
+                                            HttpHeaders.RetryAfter to listOf("2"),
+                                        ),
+                                )
+                            } else {
+                                respond(
+                                    content = "{}",
+                                    status = HttpStatusCode.OK,
+                                    headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString()),
+                                )
+                            }
+                        },
+                    ) {
+                        install(NotionRateLimit) {
+                            // Exponential schedule kept tiny: were Retry-After ignored, the observed
+                            // delay would be ~0ms, so the >= 2s assertion proves the header drove it.
+                            rateLimitConfig =
+                                RateLimitConfig(
+                                    maxRetries = 3,
+                                    retryBaseDelay = 1.milliseconds,
+                                    retryMaxDelay = 5.milliseconds,
+                                    jitterFactor = 0.0,
+                                )
+                            timeSourceMillis = { currentTime }
+                        }
+                    }
+
+                val start = currentTime
+                val response: HttpResponse = client.get("https://api.notion.com/v1/ping")
+                val elapsed = currentTime - start
+
+                counter.get() shouldBe 2 // one 529 + one 200 → exactly one retry
+                response.status shouldBe HttpStatusCode.OK
+                // Retry-After: 2 + 1s rounding-safety margin = 3s.
+                elapsed shouldBeGreaterThanOrEqual 2_000L
+                elapsed shouldBeLessThanOrEqual 4_000L
+
+                client.close()
+            }
+        }
+
+        test("529 without Retry-After then 200 — falls back to the exponential schedule and retries") {
+            runTest {
+                val counter = AtomicInteger(0)
+                val client =
+                    HttpClient(
+                        MockEngine { _ ->
+                            val attempt = counter.incrementAndGet()
+                            if (attempt == 1) {
+                                respond(
+                                    content = overloadedBody,
+                                    status = serviceOverloaded,
                                     headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString()),
                                 )
                             } else {
