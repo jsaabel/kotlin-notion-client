@@ -5,13 +5,17 @@ package it.saabel.kotlinnotionclient.api
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.plugins.ClientRequestException
+import io.ktor.client.request.HttpRequestBuilder
 import io.ktor.client.request.get
+import io.ktor.client.request.parameter
 import io.ktor.client.request.patch
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import io.ktor.client.statement.HttpResponse
 import io.ktor.http.ContentType
+import io.ktor.http.URLDecodeException
 import io.ktor.http.contentType
+import io.ktor.http.decodeURLQueryComponent
 import io.ktor.http.isSuccess
 import it.saabel.kotlinnotionclient.config.NotionConfig
 import it.saabel.kotlinnotionclient.exceptions.NotionException
@@ -53,14 +57,23 @@ class PagesApi(
      * Retrieves a page object using the ID specified.
      *
      * @param pageId The ID of the page to retrieve
+     * @param filterProperties Optional list of property IDs to restrict the properties returned in
+     *   the response. Accepts both the percent-encoded form returned by the data source schema
+     *   (e.g. `%7DVpb`) and the decoded form returned elsewhere (e.g. `}Vpb`).
      * @return Page object with all properties and metadata
      * @throws NotionException.NetworkError for network-related failures
      * @throws NotionException.ApiError for API-related errors (4xx, 5xx responses)
      * @throws NotionException.AuthenticationError for authentication failures
      */
-    suspend fun retrieve(pageId: String): Page =
+    suspend fun retrieve(
+        pageId: String,
+        filterProperties: List<String>? = null,
+    ): Page =
         try {
-            val response: HttpResponse = httpClient.get("${config.baseUrl}/pages/$pageId")
+            val response: HttpResponse =
+                httpClient.get("${config.baseUrl}/pages/$pageId") {
+                    filterProperties(filterProperties)
+                }
 
             if (response.status.isSuccess()) {
                 response.body<Page>()
@@ -106,6 +119,8 @@ class PagesApi(
      * This is a convenience method that accepts a DSL builder lambda for more natural
      * Kotlin-style API usage. The builder provides type-safe construction of page requests.
      *
+     * @param filterProperties Optional list of property IDs to restrict the properties returned in
+     *   the response.
      * @param builder DSL builder lambda for constructing the page request
      * @return Page object representing the created page
      * @throws NotionException.NetworkError for network-related failures
@@ -113,9 +128,12 @@ class PagesApi(
      * @throws NotionException.AuthenticationError for authentication failures
      * @throws ValidationException if validation fails for non-fixable violations
      */
-    suspend fun create(builder: CreatePageRequestBuilder.() -> Unit): Page {
+    suspend fun create(
+        filterProperties: List<String>? = null,
+        builder: CreatePageRequestBuilder.() -> Unit,
+    ): Page {
         val request = createPageRequest(builder)
-        return create(request)
+        return create(request, filterProperties)
     }
 
     /**
@@ -129,19 +147,26 @@ class PagesApi(
      * configuration, violations will either cause an exception or be automatically fixed.
      *
      * @param request The page creation request with parent, properties, and optional content
+     * @param filterProperties Optional list of property IDs to restrict the properties returned in
+     *   the response. Accepts both the percent-encoded form returned by the data source schema
+     *   (e.g. `%7DVpb`) and the decoded form returned elsewhere (e.g. `}Vpb`).
      * @return Page object representing the created page
      * @throws NotionException.NetworkError for network-related failures
      * @throws NotionException.ApiError for API-related errors (4xx, 5xx responses)
      * @throws NotionException.AuthenticationError for authentication failures
      * @throws ValidationException if validation fails for non-fixable violations
      */
-    suspend fun create(request: CreatePageRequest): Page {
+    suspend fun create(
+        request: CreatePageRequest,
+        filterProperties: List<String>? = null,
+    ): Page {
         val finalRequest = validator.validateOrFix(request)
 
         return try {
             val response: HttpResponse =
                 httpClient.post("${config.baseUrl}/pages") {
                     contentType(ContentType.Application.Json)
+                    filterProperties(filterProperties)
                     setBody(finalRequest)
                 }
 
@@ -193,6 +218,9 @@ class PagesApi(
      *
      * @param pageId The ID of the page to update
      * @param request The update request with modified properties
+     * @param filterProperties Optional list of property IDs to restrict the properties returned in
+     *   the response. Accepts both the percent-encoded form returned by the data source schema
+     *   (e.g. `%7DVpb`) and the decoded form returned elsewhere (e.g. `}Vpb`).
      * @return Page object representing the updated page
      * @throws NotionException.NetworkError for network-related failures
      * @throws NotionException.ApiError for API-related errors (4xx, 5xx responses)
@@ -202,6 +230,7 @@ class PagesApi(
     suspend fun update(
         pageId: String,
         request: UpdatePageRequest,
+        filterProperties: List<String>? = null,
     ): Page {
         val finalRequest = validator.validateOrFix(request)
 
@@ -209,6 +238,7 @@ class PagesApi(
             val response: HttpResponse =
                 httpClient.patch("${config.baseUrl}/pages/$pageId") {
                     contentType(ContentType.Application.Json)
+                    filterProperties(filterProperties)
                     setBody(finalRequest)
                 }
 
@@ -258,6 +288,8 @@ class PagesApi(
      * Kotlin-style API usage. The builder provides type-safe construction of update requests.
      *
      * @param pageId The ID of the page to update
+     * @param filterProperties Optional list of property IDs to restrict the properties returned in
+     *   the response.
      * @param builder DSL builder lambda for constructing the update request
      * @return Page object representing the updated page
      * @throws NotionException.NetworkError for network-related failures
@@ -267,10 +299,11 @@ class PagesApi(
      */
     suspend fun update(
         pageId: String,
+        filterProperties: List<String>? = null,
         builder: UpdatePageRequestBuilder.() -> Unit,
     ): Page {
         val request = updatePageRequest(builder)
-        return update(pageId, request)
+        return update(pageId, request, filterProperties)
     }
 
     /**
@@ -592,3 +625,27 @@ class PagesApi(
             retrievePropertyItemsPage(url)
         }
 }
+
+/**
+ * Appends the `filter_properties` query parameter once per property ID.
+ *
+ * Notion exposes property IDs in two shapes: percent-encoded in the data source schema
+ * (e.g. `%7DVpb`, `ue%5Cl`) and decoded everywhere else (e.g. `}Vpb`, `ue\l`). Both are accepted
+ * here — each ID is decoded first, so Ktor's own query encoding produces the same wire value
+ * either way instead of double-encoding the already-encoded shape.
+ */
+private fun HttpRequestBuilder.filterProperties(propertyIds: List<String>?) {
+    propertyIds?.forEach { propertyId ->
+        parameter("filter_properties", decodePropertyId(propertyId))
+    }
+}
+
+/**
+ * Percent-decodes a property ID, returning it unchanged if it isn't a valid encoding.
+ */
+private fun decodePropertyId(propertyId: String): String =
+    try {
+        propertyId.decodeURLQueryComponent()
+    } catch (_: URLDecodeException) {
+        propertyId
+    }
