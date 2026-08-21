@@ -2,10 +2,10 @@
 
 package it.saabel.kotlinnotionclient.models.pages
 
+import it.saabel.kotlinnotionclient.models.dates.NotionDateStrings
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.TimeZone
-import kotlinx.datetime.toInstant
 import kotlin.time.Instant
 
 /**
@@ -75,17 +75,19 @@ class LocalDateTimeRangeBuilder(
     var end: LocalDateTime? = null
 
     /**
-     * Builds the datetime range as ISO-8601 formatted strings with timezone.
+     * Builds the datetime range as offset-bearing ISO-8601 strings.
      *
-     * @return Pair of (startDateTime, endDateTime) as ISO-8601 strings with timezone
+     * Each end keeps its wall-clock digits and gets the zone's UTC offset at its own
+     * local date — the values are not converted to UTC instants, and a range may span
+     * a DST changeover with different offsets on each end.
+     *
+     * @return Pair of (startDateTime, endDateTime) as offset-bearing ISO-8601 strings
      * @throws IllegalStateException if start datetime is not set
      */
     fun build(): Pair<String, String?> {
         val startDateTime = start ?: throw IllegalStateException("Start datetime must be set")
-        val startInstant = startDateTime.toInstant(timeZone)
-        val endInstant = end?.toInstant(timeZone)
-
-        return startInstant.toString() to endInstant?.toString()
+        return NotionDateStrings.zonedDateTimeString(startDateTime, timeZone) to
+            end?.let { NotionDateStrings.zonedDateTimeString(it, timeZone) }
     }
 }
 

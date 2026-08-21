@@ -166,6 +166,10 @@ richText {
 
 **Using LocalDateTime with timezone:**
 
+The value means "this wall-clock time, in this zone": the digits are preserved and the
+zone's UTC offset at that value's own local date is attached (DST resolved per value).
+The `timeZone` is required — a `LocalDateTime` alone does not identify a point in time.
+
 ```kotlin
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.TimeZone
@@ -175,7 +179,7 @@ richText {
     dateMention(
         start = LocalDateTime(2025, 10, 15, 14, 30),
         timeZone = TimeZone.of("America/New_York")
-    )
+    )  // sent as 2025-10-15T14:30:00-04:00
 }
 
 // Datetime ranges
@@ -418,10 +422,15 @@ Available convenience methods:
 
    // ✅ Also correct - using ISO 8601 strings
    dateMention("2025-10-15")
+   dateMention("2025-10-15T14:30:00Z")
    dateMention("2025-10-15T14:30:00", timeZone = "America/New_York")
 
    // ❌ Incorrect format
    dateMention("10/15/2025")
+
+   // ❌ Throws - a datetime string needs a UTC offset or a timeZone
+   //    (Notion would silently read it as UTC)
+   dateMention("2025-10-15T14:30:00")
    ```
 
 3. **Background colors** - Use the `_BACKGROUND` suffix

@@ -3,12 +3,12 @@
 package it.saabel.kotlinnotionclient.models.pages
 
 import it.saabel.kotlinnotionclient.models.base.RichText
+import it.saabel.kotlinnotionclient.models.dates.NotionDateStrings
 import it.saabel.kotlinnotionclient.models.richtext.RichTextBuilder
 import it.saabel.kotlinnotionclient.models.richtext.richText
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.TimeZone
-import kotlinx.datetime.toInstant
 import kotlin.time.Instant
 
 /**
@@ -340,6 +340,8 @@ class PagePropertiesBuilder {
      *
      * @param name The property name
      * @param date The date string in ISO format (YYYY-MM-DD)
+     * @throws IllegalArgumentException for a datetime string with no UTC offset —
+     *         Notion would silently read it as UTC
      */
     fun date(
         name: String,
@@ -356,8 +358,14 @@ class PagePropertiesBuilder {
     /**
      * Adds a datetime property value from a datetime string.
      *
+     * The string must carry a UTC offset (e.g. `2026-06-15T14:30:00+02:00` or `...Z`);
+     * for a wall-clock time in a named zone, use [dateTime] with a
+     * [LocalDateTime] and [TimeZone], or [dateTimeWithTimeZone].
+     *
      * @param name The property name
-     * @param datetime The datetime string in ISO format (YYYY-MM-DDTHH:MM:SS or with timezone)
+     * @param datetime The datetime string in ISO format, including a UTC offset
+     * @throws IllegalArgumentException for a datetime string with no UTC offset —
+     *         Notion would silently read it as UTC
      */
     fun dateTime(
         name: String,
@@ -389,9 +397,14 @@ class PagePropertiesBuilder {
     /**
      * Adds a datetime range property value.
      *
+     * Both strings must carry a UTC offset; each end keeps the offset it was sent with,
+     * so a range may legitimately span a DST changeover with different offsets.
+     *
      * @param name The property name
-     * @param startDateTime The start datetime string in ISO format
-     * @param endDateTime The end datetime string in ISO format
+     * @param startDateTime The start datetime string in ISO format, including a UTC offset
+     * @param endDateTime The end datetime string in ISO format, including a UTC offset
+     * @throws IllegalArgumentException for a datetime string with no UTC offset —
+     *         Notion would silently read it as UTC
      */
     fun dateTimeRange(
         name: String,
@@ -402,26 +415,19 @@ class PagePropertiesBuilder {
     }
 
     /**
-     * Adds a date property value with timezone.
+     * Adds a datetime property value from a **naive** local datetime string plus a named
+     * time zone. Notion resolves the zone's UTC offset at that local date (DST included)
+     * and stores an offset-bearing value; the named zone itself is not preserved.
+     *
+     * Prefer the typed [dateTime] overload with a [LocalDateTime] and [TimeZone], which
+     * resolves the offset locally to the same result.
      *
      * @param name The property name
-     * @param date The date string in ISO format (YYYY-MM-DD)
-     * @param timeZone The timezone (e.g., "America/Los_Angeles", "UTC")
-     */
-    fun dateWithTimeZone(
-        name: String,
-        date: String,
-        timeZone: String,
-    ) {
-        properties[name] = PagePropertyValue.DateValue.fromDateWithTimeZone(date, timeZone)
-    }
-
-    /**
-     * Adds a datetime property value with timezone.
-     *
-     * @param name The property name
-     * @param datetime The datetime string in ISO format
-     * @param timeZone The timezone (e.g., "America/Los_Angeles", "UTC")
+     * @param datetime The naive local datetime string (e.g. `2026-06-15T14:30:00` — no offset,
+     *        since Notion misinterprets an offset combined with a time_zone)
+     * @param timeZone The IANA zone id (e.g. "America/New_York", "Europe/Oslo")
+     * @throws IllegalArgumentException for a date-only or offset-bearing [datetime],
+     *         or an unknown [timeZone] id
      */
     fun dateTimeWithTimeZone(
         name: String,
@@ -436,11 +442,16 @@ class PagePropertiesBuilder {
      *
      * @param name The property name
      * @param dateData The date data
+     * @throws IllegalArgumentException for a start or end datetime with neither a UTC offset
+     *         nor a time_zone, a time_zone on a date-only value, or an unknown time_zone id
      */
     fun date(
         name: String,
         dateData: DateData,
     ) {
+        NotionDateStrings.validateDateString(dateData.start, timeZone = dateData.timeZone, field = "start")
+        dateData.end?.let { NotionDateStrings.validateDateString(it, timeZone = dateData.timeZone, field = "end") }
+        dateData.timeZone?.let { NotionDateStrings.validateTimeZoneId(it) }
         properties[name] = PagePropertyValue.DateValue(date = dateData)
     }
 
@@ -462,23 +473,40 @@ class PagePropertiesBuilder {
     }
 
     /**
-     * Adds a datetime property value using LocalDateTime with timezone.
+     * Adds a datetime property value meaning "this wall-clock time, in this zone".
+     *
+     * The value is written as an offset-bearing string (e.g. `2026-10-25T13:00:00+01:00`),
+     * preserving the wall clock exactly as given — it is **not** converted to a UTC
+     * instant. The offset is resolved at the value's own local date, so DST is handled
+     * per value: Europe/Oslo 13:00 is `+02:00` on 2026-10-24 and `+01:00` on 2026-10-25.
+     * An ambiguous local time (clocks fell back) resolves to the earlier instant; a
+     * nonexistent one (clocks sprang forward) is shifted forward by the gap — the same
+     * policy Notion itself applies when resolving a named time_zone.
+     *
+     * For an absolute point in time, use the [Instant] overload instead.
      *
      * @param name The property name
-     * @param value The LocalDateTime value
-     * @param timeZone The timezone (defaults to UTC)
+     * @param value The wall-clock datetime
+     * @param timeZone The zone the wall clock belongs to — required, because a
+     *        [LocalDateTime] alone does not identify a point in time
      */
     fun dateTime(
         name: String,
         value: LocalDateTime,
-        timeZone: TimeZone = TimeZone.UTC,
+        timeZone: TimeZone,
     ) {
-        val instant = value.toInstant(timeZone)
-        properties[name] = PagePropertyValue.DateValue.fromDateTimeString(instant.toString())
+        properties[name] =
+            PagePropertyValue.DateValue.fromDateTimeString(
+                NotionDateStrings.zonedDateTimeString(value, timeZone),
+            )
     }
 
     /**
-     * Adds a datetime property value using Instant (timezone-unambiguous).
+     * Adds a datetime property value from an absolute instant, written as UTC (`...Z`).
+     *
+     * Use this when the value is a point in time — a deployment, a measurement — rather
+     * than a wall-clock time somewhere. For "13:00 in Oslo", use the [LocalDateTime]
+     * overload, which preserves the local digits and offset.
      *
      * @param name The property name
      * @param value The Instant value
@@ -548,13 +576,17 @@ class PagePropertiesBuilder {
      * }
      * ```
      *
+     * Both ends are written as offset-bearing local times (see the [LocalDateTime]
+     * overload of [dateTime] for the semantics); each end's offset is resolved at its
+     * own local date, so a range may span a DST changeover.
+     *
      * @param name The property name
-     * @param timeZone The timezone for the datetime values
+     * @param timeZone The zone the wall-clock values belong to — required
      * @param block The datetime range builder configuration
      */
     fun dateTimeRange(
         name: String,
-        timeZone: TimeZone = TimeZone.UTC,
+        timeZone: TimeZone,
         block: LocalDateTimeRangeBuilder.() -> Unit,
     ) {
         val (startDateTime, endDateTime) = LocalDateTimeRangeBuilder(timeZone).apply(block).build()
@@ -569,24 +601,28 @@ class PagePropertiesBuilder {
     /**
      * Adds a datetime range property value using LocalDateTime directly.
      *
+     * Both ends are written as offset-bearing local times (see the [LocalDateTime]
+     * overload of [dateTime] for the semantics); each end's offset is resolved at its
+     * own local date, so a range may span a DST changeover.
+     *
      * @param name The property name
-     * @param start The start datetime
-     * @param end The end datetime (null for open-ended)
-     * @param timeZone The timezone for the datetime values (defaults to UTC)
+     * @param start The start wall-clock datetime
+     * @param end The end wall-clock datetime (null for open-ended)
+     * @param timeZone The zone the wall-clock values belong to — required
      */
     fun dateTimeRange(
         name: String,
         start: LocalDateTime,
         end: LocalDateTime?,
-        timeZone: TimeZone = TimeZone.UTC,
+        timeZone: TimeZone,
     ) {
-        val startInstant = start.toInstant(timeZone)
-        val endInstant = end?.toInstant(timeZone)
+        val startString = NotionDateStrings.zonedDateTimeString(start, timeZone)
+        val endString = end?.let { NotionDateStrings.zonedDateTimeString(it, timeZone) }
         properties[name] =
-            if (endInstant != null) {
-                PagePropertyValue.DateValue.fromDateTimeRange(startInstant.toString(), endInstant.toString())
+            if (endString != null) {
+                PagePropertyValue.DateValue.fromDateTimeRange(startString, endString)
             } else {
-                PagePropertyValue.DateValue.fromDateTimeString(startInstant.toString())
+                PagePropertyValue.DateValue.fromDateTimeString(startString)
             }
     }
 
@@ -751,12 +787,16 @@ class PagePropertiesBuilder {
      * @param name The property name (typically "Verification")
      * @param start Optional ISO 8601 start date/datetime string for the verification period
      * @param end Optional ISO 8601 end date/datetime string after which the verification expires
+     * @throws IllegalArgumentException for a datetime string with no UTC offset —
+     *         Notion would silently read it as UTC
      */
     fun verify(
         name: String,
         start: String? = null,
         end: String? = null,
     ) {
+        start?.let { NotionDateStrings.validateDateString(it, field = "start") }
+        end?.let { NotionDateStrings.validateDateString(it, field = "end") }
         val date = if (start != null) DateData(start = start, end = end) else null
         properties[name] = PagePropertyValue.VerificationValue(VerificationRequest(state = "verified", date = date))
     }
@@ -768,6 +808,24 @@ class PagePropertiesBuilder {
      */
     fun unverify(name: String) {
         properties[name] = PagePropertyValue.VerificationValue(VerificationRequest(state = "unverified"))
+    }
+
+    /**
+     * Sets a property to a pre-built [PagePropertyValue], bypassing the builder's
+     * validation.
+     *
+     * This is the deliberate escape hatch for values the typed methods reject —
+     * e.g. reproducing Notion's raw behaviour for an offset-less datetime in a test.
+     * Prefer the typed methods everywhere else.
+     *
+     * @param name The property name
+     * @param value The raw property value, sent exactly as given
+     */
+    fun property(
+        name: String,
+        value: PagePropertyValue,
+    ) {
+        properties[name] = value
     }
 
     /**

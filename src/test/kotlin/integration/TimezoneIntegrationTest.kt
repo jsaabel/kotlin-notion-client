@@ -13,6 +13,7 @@ import it.saabel.kotlinnotionclient.models.base.Mention
 import it.saabel.kotlinnotionclient.models.blocks.Block
 import it.saabel.kotlinnotionclient.models.pages.DateData
 import it.saabel.kotlinnotionclient.models.pages.PageProperty
+import it.saabel.kotlinnotionclient.models.pages.PagePropertyValue
 import kotlinx.coroutines.delay
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
@@ -36,8 +37,9 @@ import kotlin.time.Instant
  * - Sending a UTC instant (e.g. "2026-06-15T18:30:00Z") with time_zone="America/New_York"
  *   causes Notion to misinterpret the time — it strips the Z and applies the NY offset,
  *   returning "2026-06-15T18:30:00.000-04:00" instead of the correct "14:30-04:00".
- *   This is why dateMention(LocalDateTime, TimeZone) must pass the local time string
- *   directly, not convert to an Instant first.
+ *   This is why the LocalDateTime + TimeZone builders never pair an instant with a
+ *   time_zone — they resolve the zone's offset locally and send the wall clock with
+ *   that offset (and no time_zone field).
  *
  * Part 3 — naive datetimes and DST boundaries (scenarios N1-N6):
  *
@@ -177,22 +179,23 @@ class TimezoneIntegrationTest :
                         parent.dataSource(ds.id)
                         properties {
                             title("Scenario", "B: LocalDateTime UTC")
-                            richText("Sent Value", "start=$localDateTimeUtcExpected → as instant, tz=null")
+                            richText("Sent Value", "start=$localDateTimeUtcExpected+00:00 (offset-bearing), tz=null")
                             dateTime("Date Prop", localDateTimeUtcExpected, TimeZone.UTC)
                         }
                     }
 
-                // ── C: LocalDateTime + named TZ (converted to UTC instant) ────
-                // The dateTime() builder converts LocalDateTime+TZ to a UTC instant,
-                // so the named timezone is not preserved in the stored value.
+                // ── C: LocalDateTime + named TZ (offset-preserving) ───────────
+                // The dateTime() builder resolves the zone's offset at the value's own
+                // local date and sends the wall clock with that offset — it does NOT
+                // convert to a UTC instant.
                 val namedTz = TimeZone.of("America/New_York")
                 val localDateTimeNyExpected = LocalDateTime(2026, 6, 15, 14, 30)
                 val localDateTimeNyPage =
                     notion.pages.create {
                         parent.dataSource(ds.id)
                         properties {
-                            title("Scenario", "C: LocalDateTime named TZ (builder → UTC instant, tz lost)")
-                            richText("Sent Value", "start=$localDateTimeNyExpected converted to UTC instant, tz=null (named TZ not sent)")
+                            title("Scenario", "C: LocalDateTime named TZ (builder → wall clock + offset)")
+                            richText("Sent Value", "start=$localDateTimeNyExpected-04:00 (offset resolved locally), tz=null")
                             dateTime("Date Prop", localDateTimeNyExpected, namedTz)
                         }
                     }
@@ -247,8 +250,8 @@ class TimezoneIntegrationTest :
 
                 val aOk = actualA?.start == localDateExpected.toString() && actualA.timeZone == null
                 val bOk = actualB?.start?.startsWith("2026-06-15T14:30:00") == true && actualB.timeZone == null
-                // C: named TZ lost, stored as UTC equivalent (NY is UTC-4 in June → 18:30Z)
-                val cOk = actualC?.start?.startsWith("2026-06-15T18:30:00") == true && actualC.timeZone == null
+                // C: wall clock preserved with the NY offset (UTC-4 in June → 14:30-04:00)
+                val cOk = actualC?.start?.startsWith("2026-06-15T14:30:00") == true && actualC.timeZone == null
                 // D: Notion applies the UTC offset and drops the named TZ from response
                 val dOk = actualD?.start?.startsWith("2026-06-15T14:30:00") == true && actualD.timeZone == null
                 val eOk =
@@ -276,10 +279,10 @@ class TimezoneIntegrationTest :
                     }
                     paragraph {
                         text("C: LocalDateTime named TZ via builder — ")
-                        italic("named TZ is converted to UTC instant, so time_zone is never sent")
+                        italic("wall clock preserved, offset resolved locally, time_zone never sent")
                         text("  ")
                         bold("sent:")
-                        text(" instant, tz=null  ")
+                        text(" start=$localDateTimeNyExpected-04:00, tz=null  ")
                         bold("got:")
                         text(" start=${actualC?.start}, tz=${actualC?.timeZone}  ${passOrFail(cOk)}")
                     }
@@ -315,8 +318,9 @@ class TimezoneIntegrationTest :
                 actualB?.start?.startsWith("2026-06-15T14:30:00") shouldBe true
                 actualB?.timeZone shouldBe null
 
-                // C: builder converts to UTC instant — NY is UTC-4 in June → 18:30 UTC
-                actualC?.start?.startsWith("2026-06-15T18:30:00") shouldBe true
+                // C: builder preserves the wall clock and sends the NY offset — Notion
+                // stores it as sent (NY is UTC-4 in June → 14:30-04:00)
+                actualC?.start?.startsWith("2026-06-15T14:30:00") shouldBe true
                 actualC?.timeZone shouldBe null
 
                 // D: Notion converts naive local+TZ to offset string, drops named TZ
@@ -416,7 +420,8 @@ class TimezoneIntegrationTest :
                 val m2StartOk = actualM2?.start?.startsWith("2026-06-15T14:30:00") == true
                 val m2TzOk = actualM2?.timeZone == null
                 val m3Ok = actualM3?.start == dt3Date.toString() && actualM3.timeZone == null
-                // After builder fix: M4 sends local time + tz.id, Notion returns 14:30 with offset
+                // M4 sends the wall clock with the locally-resolved offset (14:30-04:00);
+                // Notion preserves it.
                 val m4StartOk = actualM4?.start?.startsWith("2026-06-15T14:30:00") == true
                 val m4TzOk = actualM4?.timeZone == null
                 val m5Ok = actualM5?.start?.startsWith("2026-06-15T18:30:00") == true && actualM5.timeZone == null
@@ -447,9 +452,10 @@ class TimezoneIntegrationTest :
                     paragraph {
                         bold("M4:")
                         text(
-                            " sent start=$dt4Local (local, no conversion), tz=${dt4Tz.id}  |  got start=${actualM4?.start}, tz=${actualM4?.timeZone}  ",
+                            " sent start=$dt4Local with ${dt4Tz.id}'s offset (wall clock preserved), tz=null  " +
+                                "|  got start=${actualM4?.start}, tz=${actualM4?.timeZone}  ",
                         )
-                        text("start: ${passOrFail(m4StartOk)}  tz (Notion drops it): ${passOrFail(m4TzOk)}")
+                        text("start: ${passOrFail(m4StartOk)}  tz: ${passOrFail(m4TzOk)}")
                     }
                     paragraph {
                         bold("M5:")
@@ -492,8 +498,8 @@ class TimezoneIntegrationTest :
                 actualM3?.start shouldBe dt3Date.toString()
                 actualM3?.timeZone shouldBe null
 
-                // M4: builder now passes local time + tz.id (no instant conversion)
-                // Notion applies the UTC-4 offset to the local time → "2026-06-15T14:30:00.000-04:00"
+                // M4: builder sends the wall clock with the locally-resolved -04:00 offset
+                // (no instant conversion); Notion preserves it → "2026-06-15T14:30:00.000-04:00"
                 actualM4?.start?.startsWith("2026-06-15T14:30:00") shouldBe true
                 actualM4?.timeZone shouldBe null
 
@@ -664,8 +670,14 @@ class TimezoneIntegrationTest :
                                         "${scenario.expectedLocal}${scenario.expectedOffset} = ${scenario.expectedInstant}",
                                     )
                                     if (scenario.sentTimeZone == null) {
-                                        // String overload → date.start only, no time_zone field.
-                                        dateTime("Date Prop", scenario.sentStart)
+                                        // Raw property value → date.start only, no time_zone field.
+                                        // The builder's dateTime() now rejects offset-less datetimes
+                                        // (that guard exists because of what this scenario measures),
+                                        // so the raw escape hatch is used to send it anyway.
+                                        property(
+                                            "Date Prop",
+                                            PagePropertyValue.DateValue(date = DateData(start = scenario.sentStart)),
+                                        )
                                     } else {
                                         dateTimeWithTimeZone("Date Prop", scenario.sentStart, scenario.sentTimeZone)
                                     }

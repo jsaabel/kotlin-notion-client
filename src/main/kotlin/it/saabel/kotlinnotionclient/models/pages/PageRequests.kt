@@ -7,6 +7,7 @@ import it.saabel.kotlinnotionclient.models.base.Parent
 import it.saabel.kotlinnotionclient.models.base.RichText
 import it.saabel.kotlinnotionclient.models.base.SelectOptionColor
 import it.saabel.kotlinnotionclient.models.blocks.BlockRequest
+import it.saabel.kotlinnotionclient.models.dates.NotionDateStrings
 import it.saabel.kotlinnotionclient.models.files.FileUploadReference
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -265,18 +266,30 @@ sealed class PagePropertyValue {
             /**
              * Creates a date value from a date string.
              *
-             * @param dateString The date string in ISO format (YYYY-MM-DD)
+             * @param dateString The date string in ISO format (YYYY-MM-DD), or a datetime
+             *                   string carrying a UTC offset
              * @return DateValue with date
+             * @throws IllegalArgumentException for a datetime string with neither a UTC offset
+             *                                  nor a time_zone — Notion would read it as UTC
              */
-            fun fromDateString(dateString: String): DateValue = DateValue(date = DateData(start = dateString))
+            fun fromDateString(dateString: String): DateValue {
+                NotionDateStrings.validateDateString(dateString, field = "start")
+                return DateValue(date = DateData(start = dateString))
+            }
 
             /**
              * Creates a datetime value from a datetime string.
              *
-             * @param datetimeString The datetime string in ISO format (YYYY-MM-DDTHH:MM:SS or with timezone)
+             * @param datetimeString The datetime string in ISO format, including a UTC offset
+             *                       (e.g. `2026-06-15T14:30:00+02:00` or `...Z`)
              * @return DateValue with datetime
+             * @throws IllegalArgumentException for a datetime string with neither a UTC offset
+             *                                  nor a time_zone — Notion would read it as UTC
              */
-            fun fromDateTimeString(datetimeString: String): DateValue = DateValue(date = DateData(start = datetimeString))
+            fun fromDateTimeString(datetimeString: String): DateValue {
+                NotionDateStrings.validateDateString(datetimeString, field = "start")
+                return DateValue(date = DateData(start = datetimeString))
+            }
 
             /**
              * Creates a date range value.
@@ -284,47 +297,57 @@ sealed class PagePropertyValue {
              * @param startDate The start date string in ISO format (YYYY-MM-DD)
              * @param endDate The end date string in ISO format (YYYY-MM-DD)
              * @return DateValue with date range
+             * @throws IllegalArgumentException for a datetime string with neither a UTC offset
+             *                                  nor a time_zone — Notion would read it as UTC
              */
             fun fromDateRange(
                 startDate: String,
                 endDate: String,
-            ): DateValue = DateValue(date = DateData(start = startDate, end = endDate))
+            ): DateValue {
+                NotionDateStrings.validateDateString(startDate, field = "start")
+                NotionDateStrings.validateDateString(endDate, field = "end")
+                return DateValue(date = DateData(start = startDate, end = endDate))
+            }
 
             /**
              * Creates a datetime range value.
              *
-             * @param startDateTime The start datetime string in ISO format
-             * @param endDateTime The end datetime string in ISO format
+             * @param startDateTime The start datetime string in ISO format, including a UTC offset
+             * @param endDateTime The end datetime string in ISO format, including a UTC offset
              * @return DateValue with datetime range
+             * @throws IllegalArgumentException for a datetime string with neither a UTC offset
+             *                                  nor a time_zone — Notion would read it as UTC
              */
             fun fromDateTimeRange(
                 startDateTime: String,
                 endDateTime: String,
-            ): DateValue = DateValue(date = DateData(start = startDateTime, end = endDateTime))
+            ): DateValue {
+                NotionDateStrings.validateDateString(startDateTime, field = "start")
+                NotionDateStrings.validateDateString(endDateTime, field = "end")
+                return DateValue(date = DateData(start = startDateTime, end = endDateTime))
+            }
 
             /**
-             * Creates a date value with timezone.
+             * Creates a datetime value from a **naive** local datetime string plus a named
+             * time zone, letting Notion resolve the zone's UTC offset at that local date
+             * (DST included). Prefer the typed `dateTime(name, LocalDateTime, TimeZone)`
+             * builder overload, which resolves the offset locally to the same result.
              *
-             * @param dateString The date string in ISO format (YYYY-MM-DD)
-             * @param timeZone The timezone (e.g., "America/Los_Angeles", "UTC")
-             * @return DateValue with date and timezone
-             */
-            fun fromDateWithTimeZone(
-                dateString: String,
-                timeZone: String,
-            ): DateValue = DateValue(date = DateData(start = dateString, timeZone = timeZone))
-
-            /**
-             * Creates a datetime value with timezone.
-             *
-             * @param datetimeString The datetime string in ISO format
-             * @param timeZone The timezone (e.g., "America/Los_Angeles", "UTC")
+             * @param datetimeString The naive local datetime string (e.g. `2026-06-15T14:30:00`,
+             *                       no offset — Notion misinterprets an offset combined with a time_zone)
+             * @param timeZone The IANA zone id (e.g. "America/New_York", "Europe/Oslo")
              * @return DateValue with datetime and timezone
+             * @throws IllegalArgumentException for a date-only or offset-bearing [datetimeString],
+             *                                  or an unknown [timeZone] id
              */
             fun fromDateTimeWithTimeZone(
                 datetimeString: String,
                 timeZone: String,
-            ): DateValue = DateValue(date = DateData(start = datetimeString, timeZone = timeZone))
+            ): DateValue {
+                NotionDateStrings.validateDateString(datetimeString, timeZone = timeZone, field = "start")
+                NotionDateStrings.validateTimeZoneId(timeZone)
+                return DateValue(date = DateData(start = datetimeString, timeZone = timeZone))
+            }
         }
     }
 

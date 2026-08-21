@@ -63,11 +63,11 @@ class DateRangeBuilderTest :
 
             val (startStr, endStr) = builder.build()
 
-            startStr shouldBe "2025-03-15T14:30:00Z"
-            endStr shouldBe "2025-03-15T16:00:00Z"
+            startStr shouldBe "2025-03-15T14:30:00+00:00"
+            endStr shouldBe "2025-03-15T16:00:00+00:00"
         }
 
-        "LocalDateTimeRangeBuilder should build datetime range with custom timezone" {
+        "LocalDateTimeRangeBuilder should preserve the wall clock and attach the zone's offset" {
             val nyTimeZone = TimeZone.of("America/New_York")
             val builder = LocalDateTimeRangeBuilder(nyTimeZone)
             builder.start = LocalDateTime(2025, 3, 15, 14, 30)
@@ -75,10 +75,20 @@ class DateRangeBuilderTest :
 
             val (startStr, endStr) = builder.build()
 
-            // In March, New York is UTC-4 (EDT)
-            // 14:30 EDT = 18:30 UTC
-            startStr shouldContain "2025-03-15T"
-            endStr shouldContain "2025-03-15T"
+            // In March, New York is UTC-4 (EDT); the local digits are preserved.
+            startStr shouldBe "2025-03-15T14:30:00-04:00"
+            endStr shouldBe "2025-03-15T16:00:00-04:00"
+        }
+
+        "LocalDateTimeRangeBuilder resolves DST at each end's own local date" {
+            val builder = LocalDateTimeRangeBuilder(TimeZone.of("Europe/Oslo"))
+            builder.start = LocalDateTime(2026, 10, 24, 22, 0)
+            builder.end = LocalDateTime(2026, 10, 25, 4, 0)
+
+            val (startStr, endStr) = builder.build()
+
+            startStr shouldBe "2026-10-24T22:00:00+02:00"
+            endStr shouldBe "2026-10-25T04:00:00+01:00"
         }
 
         "LocalDateTimeRangeBuilder should build open-ended range" {
@@ -88,7 +98,7 @@ class DateRangeBuilderTest :
 
             val (startStr, endStr) = builder.build()
 
-            startStr shouldBe "2025-03-15T14:30:00Z"
+            startStr shouldBe "2025-03-15T14:30:00+00:00"
             endStr shouldBe null
         }
 

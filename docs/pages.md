@@ -396,6 +396,53 @@ exactly what hides that kind of bug, so use `requireUtcInstant()` wherever a mis
 should be an error. It throws `IllegalArgumentException` naming the offending value and what
 to do about it.
 
+### Writing Date Properties
+
+Writing a datetime states one of two different things, and the argument types say which
+one — mirroring the read-side vocabulary above:
+
+| Statement | Method | Wire value |
+|-----------|--------|-----------|
+| "this wall-clock time, in this zone" | `dateTime(name, LocalDateTime, TimeZone)` | `2026-10-25T13:00:00+01:00` |
+| "this absolute point in time" | `dateTime(name, Instant)` | `2026-10-25T12:00:00Z` |
+
+```kotlin
+val oslo = TimeZone.of("Europe/Oslo")
+
+notion.pages.create {
+    parent.dataSource(dataSourceId)
+    properties {
+        // Wall-clock time: the digits are preserved and the zone's UTC offset at
+        // that value's own local date is attached. DST is resolved per value:
+        dateTime("Doors", LocalDateTime(2026, 10, 24, 13, 0), oslo)   // …13:00:00+02:00
+        dateTime("Curfew", LocalDateTime(2026, 10, 25, 13, 0), oslo)  // …13:00:00+01:00
+
+        // Absolute instant, written as UTC:
+        dateTime("Deployed at", Clock.System.now())
+
+        // Ranges resolve each end at its own local date, so they may span a changeover:
+        dateTimeRange("Night shift", LocalDateTime(2026, 10, 24, 22, 0), LocalDateTime(2026, 10, 25, 4, 0), oslo)
+    }
+}
+```
+
+The `TimeZone` parameter is **required** — a `LocalDateTime` alone does not identify a
+point in time, so there is no default. An ambiguous wall-clock time (the autumn DST
+overlap) resolves to the earlier instant; a nonexistent one (the spring gap) is shifted
+forward by the gap. Both match what Notion itself does when resolving a named zone.
+
+String overloads are validated rather than trusted: a datetime string with neither a UTC
+offset nor a `time_zone` is rejected with `IllegalArgumentException`, because Notion reads
+such values as UTC — silently moving the instant while keeping the wall clock. A
+`time_zone` on a date-only value, and an offset combined with a `time_zone`, are rejected
+for the same fail-fast reason.
+
+```kotlin
+dateTime("Start", "2026-06-15T14:30:00+02:00")                    // ✅ offset-bearing
+dateTimeWithTimeZone("Start", "2026-06-15T14:30:00", "Europe/Oslo") // ✅ naive + zone, Notion resolves it
+dateTime("Start", "2026-06-15T14:30:00")                          // ❌ throws — no offset, no zone
+```
+
 ### Property Type Reference
 
 Common property types you can set when creating/updating pages:

@@ -7,7 +7,66 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### ⚠️ Breaking Changes — the write side is now offset-preserving, zone-explicit and validating
+
+A consumer shipped a bug in which offset-less datetimes written through this library were
+read by Notion as UTC, silently moving every touched event by the local UTC offset while
+still displaying the original wall clock. The write-side date surface now makes that
+mistake impossible to write silently. Migration for each break:
+
+- **`LocalDateTime` + `TimeZone` writes preserve the wall clock and offset instead of
+  converting to a UTC instant.** `dateTime("Start", LocalDateTime(2026, 10, 25, 13, 0),
+  TimeZone.of("Europe/Oslo"))` now sends `2026-10-25T13:00:00+01:00` (previously
+  `2026-10-25T12:00:00Z`). The stored *instant* is the same; the stored offset and digits
+  now match the caller's zone. Applies to `dateTime`, `dateTimeRange` (both forms and the
+  DSL), `dateMention`, and the `LocalDateTime` overloads of the date/timestamp query
+  filters. The offset is resolved at each value's **own** local date, so DST changeovers
+  are handled per value — a range may carry `+02:00` on one end and `+01:00` on the
+  other. Ambiguous local times (autumn overlap) resolve to the earlier instant;
+  nonexistent ones (spring gap) shift forward by the gap — both matching Notion's own
+  resolution of a named `time_zone`, and the IANA tz database via `java.time`.
+  *Migration:* none for "I meant that local time" callers — this is the fix. Callers who
+  deliberately wanted the UTC instant should pass an `Instant`:
+  `dateTime("Start", localDateTime.toInstant(zone))`.
+
+- **The `TimeZone.UTC` defaults are gone; the zone parameter is required.** A
+  `LocalDateTime` carries no zone, so defaulting it to UTC was silently wrong for every
+  caller outside UTC. Affects `dateTime(name, LocalDateTime)`, both `dateTimeRange`
+  forms, `dateMention(LocalDateTime, …)`, and the `LocalDateTime` query filter overloads.
+  *Migration:* state the zone — `dateTime("Start", value, TimeZone.of("Europe/Oslo"))`,
+  or `TimeZone.UTC` if UTC was truly meant.
+
+- **`dateMention(LocalDateTime, …)` parameter order changed** to
+  `dateMention(start, timeZone, end = null)` so the now-required zone sits next to the
+  value. It also now sends an offset-bearing string (`…T14:30:00-04:00`, `time_zone`
+  omitted) instead of the naive string + `time_zone` id — the stored result in Notion is
+  identical, and `dateMention` and `dateTime` now agree for the same input.
+  *Migration:* calls using named arguments are unaffected; positional calls with an `end`
+  swap the last two arguments.
+
+- **Datetime strings are validated.** A string with a time component but neither a UTC
+  offset nor a `time_zone` is rejected with `IllegalArgumentException` — this is exactly
+  the input that caused the consumer bug. Also rejected: a `time_zone` on a date-only
+  value, an offset *combined* with a `time_zone` (Notion strips the offset and re-applies
+  the zone), and an unknown `time_zone` id. Applies to `date`/`dateTime`/`dateRange`/
+  `dateTimeRange`/`verify` string overloads, the `DateValue` factory methods, the
+  `date(name, DateData)` overload, `dateMention` string overloads, and the string date/
+  timestamp query filters (relative values like `"today"` still pass through).
+  *Migration:* append the offset you mean (`…T14:30:00+02:00`), or use the typed
+  `LocalDateTime` + `TimeZone` overloads, or pair the naive string with a zone via
+  `dateTimeWithTimeZone`.
+
+- **`dateWithTimeZone(name, date, timeZone)` is removed** (with its
+  `DateValue.fromDateWithTimeZone` factory). A `time_zone` on a date-only value has no
+  time to interpret and is now rejected everywhere. *Migration:* use `date(name, date)`;
+  if a time was actually intended, use `dateTimeWithTimeZone`.
+
 ### Added
+
+- **`property(name, PagePropertyValue)`** on the page-properties builder: a deliberate,
+  documented escape hatch that sets a raw pre-built value, bypassing validation — for
+  reproducing Notion's raw behaviour (e.g. in tests) without giving up the guard rails
+  everywhere else.
 
 - **Date read accessors now say which time they give you.** Reading a Notion date
   value answers one of three different questions, and the accessor name now states
