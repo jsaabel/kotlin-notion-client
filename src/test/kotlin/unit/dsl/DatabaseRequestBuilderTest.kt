@@ -16,7 +16,9 @@ import it.saabel.kotlinnotionclient.models.base.RichText
 import it.saabel.kotlinnotionclient.models.base.SelectOptionColor
 import it.saabel.kotlinnotionclient.models.databases.CreateDatabaseProperty
 import it.saabel.kotlinnotionclient.models.databases.CreateSelectOption
+import it.saabel.kotlinnotionclient.models.databases.CreateStatusOption
 import it.saabel.kotlinnotionclient.models.databases.RelationConfiguration
+import it.saabel.kotlinnotionclient.models.databases.StatusOptionGroup
 import it.saabel.kotlinnotionclient.models.databases.databaseRequest
 import it.saabel.kotlinnotionclient.models.pages.PageCover
 import io.kotest.matchers.collections.shouldHaveSize as shouldHaveSizeList
@@ -323,6 +325,46 @@ class DatabaseRequestBuilderTest :
                     multiSelectProperty.multiSelect.options shouldHaveSizeList 2
                     multiSelectProperty.multiSelect.options[0] shouldBe CreateSelectOption("Important", SelectOptionColor.RED)
                     multiSelectProperty.multiSelect.options[1] shouldBe CreateSelectOption("Urgent", SelectOptionColor.ORANGE)
+                }
+
+                "status with options assigned to groups" {
+                    val request =
+                        databaseRequest {
+                            parent.page("test-page-id")
+                            title("Test Database")
+                            properties {
+                                status("Stage") {
+                                    option("Backlog", SelectOptionColor.GRAY, group = StatusOptionGroup.TO_DO)
+                                    option("In Review", SelectOptionColor.YELLOW, group = StatusOptionGroup.IN_PROGRESS)
+                                    option("Shipped", SelectOptionColor.GREEN, group = StatusOptionGroup.COMPLETE)
+                                    option("Ungrouped")
+                                }
+                            }
+                        }
+
+                    val statusProperty = request.initialDataSource.properties["Stage"] as CreateDatabaseProperty.Status
+                    statusProperty.status.options shouldHaveSizeList 4
+                    statusProperty.status.options[0] shouldBe
+                        CreateStatusOption("Backlog", SelectOptionColor.GRAY, group = StatusOptionGroup.TO_DO)
+                    statusProperty.status.options[1] shouldBe
+                        CreateStatusOption("In Review", SelectOptionColor.YELLOW, group = StatusOptionGroup.IN_PROGRESS)
+                    statusProperty.status.options[2] shouldBe
+                        CreateStatusOption("Shipped", SelectOptionColor.GREEN, group = StatusOptionGroup.COMPLETE)
+                    statusProperty.status.options[3] shouldBe CreateStatusOption("Ungrouped")
+                }
+
+                "status without options" {
+                    val request =
+                        databaseRequest {
+                            parent.page("test-page-id")
+                            title("Test Database")
+                            properties {
+                                status("Stage")
+                            }
+                        }
+
+                    val statusProperty = request.initialDataSource.properties["Stage"] as CreateDatabaseProperty.Status
+                    statusProperty.status.options shouldHaveSizeList 0
                 }
 
                 "relation with single property" {

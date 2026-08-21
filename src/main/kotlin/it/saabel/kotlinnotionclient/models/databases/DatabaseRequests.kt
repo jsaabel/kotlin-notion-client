@@ -255,11 +255,13 @@ sealed class CreateDatabaseProperty {
      * ("Not started", "In progress", "Done") and groups ("To-do", "In progress", "Complete").
      * Custom initial options can be provided via [StatusConfiguration.options].
      *
-     * Groups are auto-created by Notion and cannot be configured via the API. Only options
-     * (name + color) can be specified at creation time. Use the Notion UI to reorganise options
-     * into groups after creation.
+     * Options can be assigned to one of the predefined groups ("To-do", "In progress",
+     * "Complete") via [CreateStatusOption.group]. Custom groups cannot be created — the three
+     * predefined groups are fixed.
      *
-     * **Note**: Status properties cannot be updated via the API (unlike select/multi-select).
+     * Status properties can also be updated via the API. On update, options with no
+     * [CreateStatusOption.group] keep their current group, and new options default to the
+     * "To-do" group.
      */
     @Serializable
     @SerialName("status")
@@ -342,15 +344,52 @@ data class CreateSelectOption(
 )
 
 /**
- * Configuration for status properties in creation requests.
+ * Option for status properties in creation and update requests.
  *
- * Only options (name + color) can be specified. Groups are auto-created by Notion
- * and cannot be configured via the API.
+ * Unlike select/multi-select options, a status option can be assigned to one of the
+ * predefined groups ("To-do", "In progress", "Complete") via [group]. When [group] is
+ * omitted, existing options keep their current group on update, and new options default
+ * to the "To-do" group.
+ */
+@Serializable
+data class CreateStatusOption(
+    @SerialName("name")
+    val name: String,
+    @SerialName("color")
+    val color: SelectOptionColor = SelectOptionColor.DEFAULT,
+    @SerialName("description")
+    val description: String? = null,
+    @SerialName("group")
+    val group: StatusOptionGroup? = null,
+)
+
+/**
+ * The predefined groups a status option can be assigned to.
+ *
+ * Notion only supports these three groups — custom groups cannot be created via the API.
+ */
+@Serializable
+enum class StatusOptionGroup {
+    @SerialName("To-do")
+    TO_DO,
+
+    @SerialName("In progress")
+    IN_PROGRESS,
+
+    @SerialName("Complete")
+    COMPLETE,
+}
+
+/**
+ * Configuration for status properties in creation and update requests.
+ *
+ * Options (name + color) can be specified, and each option may be assigned to one of the
+ * predefined groups via [CreateStatusOption.group].
  */
 @Serializable
 data class StatusConfiguration(
     @SerialName("options")
-    val options: List<CreateSelectOption> = emptyList(),
+    val options: List<CreateStatusOption> = emptyList(),
 )
 
 /**

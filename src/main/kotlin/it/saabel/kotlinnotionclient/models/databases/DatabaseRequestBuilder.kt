@@ -337,12 +337,11 @@ class DatabasePropertiesBuilder {
      *
      * When no options are specified, Notion creates the default options ("Not started",
      * "In progress", "Done") and groups ("To-do", "In progress", "Complete"). Custom initial
-     * options can be provided via [StatusBuilder.option].
+     * options can be provided via [StatusBuilder.option], each optionally assigned to one of
+     * the predefined groups via its `group` parameter.
      *
-     * Groups are auto-created by Notion and cannot be configured via the API. Only options
-     * (name + color) can be specified at creation time.
-     *
-     * **Note**: Status properties cannot be updated via the API (unlike select/multi-select).
+     * Status properties can also be updated via the API. On update, options with no group
+     * keep their current group, and new options default to the "To-do" group.
      *
      * @param name The property name
      * @param description Optional description (max 280 characters)
@@ -515,12 +514,13 @@ class SelectBuilder {
 /**
  * Builder class for status property configuration.
  *
- * Only options can be specified. Groups are auto-created by Notion and cannot be configured
- * via the API.
+ * Options can be specified and optionally assigned to one of the predefined groups
+ * ("To-do", "In progress", "Complete") via [StatusOptionGroup]. Custom groups cannot be
+ * created — the three predefined groups are fixed.
  */
 @DatabaseRequestDslMarker
 class StatusBuilder {
-    private val options = mutableListOf<CreateSelectOption>()
+    private val options = mutableListOf<CreateStatusOption>()
 
     /**
      * Adds an option to the status property.
@@ -528,13 +528,16 @@ class StatusBuilder {
      * @param name The option name
      * @param color The option color
      * @param description Optional description for the option
+     * @param group Optional predefined group to assign the option to. When omitted, existing
+     *   options keep their current group on update, and new options default to "To-do".
      */
     fun option(
         name: String,
         color: SelectOptionColor = SelectOptionColor.DEFAULT,
         description: String? = null,
+        group: StatusOptionGroup? = null,
     ) {
-        options.add(CreateSelectOption(name = name, color = color, description = description))
+        options.add(CreateStatusOption(name = name, color = color, description = description, group = group))
     }
 
     internal fun build(): StatusConfiguration = StatusConfiguration(options = options.toList())
