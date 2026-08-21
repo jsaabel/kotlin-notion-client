@@ -116,6 +116,23 @@ decision rather than an implementation detail.
   fractional seconds before parsing, so `…T14:30:00.123Z` read back as `14:30:00`.
   Notion returns `.000` for every value it stores, so this is invisible in practice.
 
+### Fixed
+
+- **kotlinx-datetime, kotlinx-serialization and kotlinx-coroutines are now `api`
+  dependencies, so consumers can actually call the typed API.** They were declared as
+  `implementation`, which publishes as Maven `runtime` scope — the classes were on a
+  consumer's runtime classpath but not their compile classpath, so any call into a
+  signature mentioning them failed to compile with `Cannot access class
+  'kotlinx.datetime.LocalDate'. Check your module classpath`, unless the consumer
+  redeclared the dependency themselves. This affected the typed date overloads
+  (`LocalDate`/`LocalDateTime`/`TimeZone` across the page property builders, date range
+  builders, date accessors and query filters), the `JsonElement`/`JsonObject` fields of
+  the view, block and database models, and every `Flow`-returning pagination helper
+  (`*AsFlow` / `*PagedFlow`) — coroutines was not even declared, arriving only
+  transitively through Ktor. No migration needed; consumers who added the dependencies
+  manually as a workaround can drop them. Ktor stays `implementation`, as `HttpClient`
+  is only exposed through internal API.
+
 ### Unchanged, deliberately
 
 `utcInstant` still returns null — rather than throwing — for a value that is absent,
