@@ -4,6 +4,8 @@ package it.saabel.kotlinnotionclient.models.pages
 
 import it.saabel.kotlinnotionclient.models.base.RichText
 import it.saabel.kotlinnotionclient.models.users.User
+import kotlinx.datetime.offsetAt
+import kotlinx.datetime.toInstant
 import kotlinx.datetime.toLocalDateTime
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -399,6 +401,120 @@ data class VerificationData(
 // Convenience accessors for kotlinx-datetime
 // ========================================
 
+/*
+ * Reading a Notion date value answers one of three genuinely different questions.
+ * The accessor names below say which one is being asked, so a call site is readable
+ * without opening this file:
+ *
+ * | Question                                     | Accessor                             |
+ * |----------------------------------------------|--------------------------------------|
+ * | "What does this say?"       (wall-clock)     | [wallClockDateTime]                  |
+ * | "When did this happen?"     (absolute time)  | [utcInstant] / [requireUtcInstant]   |
+ * | "What zone is this value in?" (stored offset)| [storedOffset]                       |
+ *
+ * Notion always returns a numeric offset for time-bearing values and never a named
+ * `time_zone`, so [storedOffset] is the whole of the zone information a read value
+ * carries. Every accessor has an `end…` twin covering the end of a date range.
+ */
+
+// ----------------------------------------
+// Internal parsing of Notion date strings
+// ----------------------------------------
+
+/** Matches the UTC-offset suffix of an ISO datetime: `Z`, `+01`, `+0100` or `+01:00`. */
+private val OFFSET_SUFFIX_REGEX = Regex("""(?:[Zz]|[+-]\d{2}(?::?\d{2})?)$""")
+
+/**
+ * Splits an ISO datetime into its local part and its offset suffix.
+ *
+ * Returns null for a date-only value (no `T`), and an offset of null for a datetime
+ * that carries no offset at all.
+ */
+private fun splitDateTime(raw: String): Pair<String, String?>? {
+    if (!raw.contains('T')) return null
+    val offset = OFFSET_SUFFIX_REGEX.find(raw)?.value ?: return raw to null
+    return raw.dropLast(offset.length) to offset
+}
+
+private fun parseUtcOffset(raw: String): kotlinx.datetime.UtcOffset? {
+    if (raw.equals("Z", ignoreCase = true)) return kotlinx.datetime.UtcOffset.ZERO
+    val sign = if (raw.startsWith('-')) -1 else 1
+    val digits = raw.drop(1).replace(":", "")
+    val hours = digits.take(2).toIntOrNull() ?: return null
+    val minutes =
+        when (digits.length) {
+            2 -> 0
+            4 -> digits.substring(2, 4).toIntOrNull() ?: return null
+            else -> return null
+        }
+    return try {
+        kotlinx.datetime.UtcOffset(hours = sign * hours, minutes = sign * minutes)
+    } catch (e: IllegalArgumentException) {
+        null
+    }
+}
+
+private fun wallClockOf(raw: String?): kotlinx.datetime.LocalDateTime? {
+    val local = raw?.let(::splitDateTime)?.first ?: return null
+    return try {
+        kotlinx.datetime.LocalDateTime.parse(local)
+    } catch (e: IllegalArgumentException) {
+        null
+    }
+}
+
+private fun storedOffsetOf(raw: String?): kotlinx.datetime.UtcOffset? {
+    val (local, offset) = raw?.let(::splitDateTime) ?: return null
+    if (offset == null) return null
+    // Only report an offset for a value whose local part actually parses.
+    wallClockOf(local) ?: return null
+    return parseUtcOffset(offset)
+}
+
+private fun utcInstantOf(raw: String?): Instant? {
+    val local = wallClockOf(raw) ?: return null
+    val offset = storedOffsetOf(raw) ?: return null
+    return local.toInstant(offset)
+}
+
+private fun isDateOnly(raw: String): Boolean =
+    !raw.contains('T') &&
+        try {
+            kotlinx.datetime.LocalDate.parse(raw)
+            true
+        } catch (e: IllegalArgumentException) {
+            false
+        }
+
+/** Explains, in the terms of the caller's own data, why a value has no absolute instant. */
+private fun missingInstantMessage(
+    raw: String?,
+    which: String,
+): String =
+    when {
+        raw == null -> {
+            "Date property has no $which value."
+        }
+
+        isDateOnly(raw) -> {
+            "Date property $which value '$raw' is date-only and has no absolute instant. " +
+                "Use localDateValue for date-only values."
+        }
+
+        wallClockOf(raw) == null -> {
+            "Date property $which value '$raw' is not a valid ISO-8601 date or datetime."
+        }
+
+        else -> {
+            "Date property $which value '$raw' carries no UTC offset, so its absolute instant is unknown. " +
+                "Read wallClockDateTime for the digits as stored, or write the value back with an offset."
+        }
+    }
+
+// ----------------------------------------
+// Start of the value
+// ----------------------------------------
+
 /** Returns the start date as LocalDate, or null if not set or parsing fails. */
 val PageProperty.Date.localDateValue: kotlinx.datetime.LocalDate?
     get() =
@@ -411,52 +527,96 @@ val PageProperty.Date.localDateValue: kotlinx.datetime.LocalDate?
         }
 
 /**
- * Returns the start datetime components as LocalDateTime, ignoring timezone information.
+ * The start value's **wall-clock digits** — what the value says, with its offset ignored.
  *
- * This extracts the date/time components as shown in the ISO string, regardless of timezone:
- * - "2025-03-20T14:30:00Z" → LocalDateTime(2025, 3, 20, 14, 30)
- * - "2025-03-20T14:30:00+01:00" → LocalDateTime(2025, 3, 20, 14, 30)
+ * This is the right accessor for rendering a time to a human who is standing where the
+ * value applies ("the set starts at 13:00"), and the wrong one for comparing two values
+ * or for pushing to a system that stores absolute time — use [utcInstant] for those.
  *
- * **Warning**: This loses timezone context. For timezone-aware conversion, use [toLocalDateTime].
+ * - `"2025-03-20T14:30:00Z"` → `LocalDateTime(2025, 3, 20, 14, 30)`
+ * - `"2025-03-20T14:30:00+01:00"` → `LocalDateTime(2025, 3, 20, 14, 30)`
+ *
+ * Returns null when there is no start value, when it is date-only, or when it does not parse.
  */
-val PageProperty.Date.localDateTimeNaive: kotlinx.datetime.LocalDateTime?
-    get() =
-        date?.start?.let {
-            try {
-                val normalized =
-                    it
-                        .replace(Regex("\\.\\d+"), "") // Remove milliseconds .000
-                        .removeSuffix("Z") // Remove UTC indicator
-                        .replace(Regex("[+-]\\d{2}:\\d{2}$"), "") // Remove timezone offset
-                kotlinx.datetime.LocalDateTime.parse(normalized)
-            } catch (e: IllegalArgumentException) {
-                null
-            }
-        }
-
-/** Returns the start instant as Instant, or null if not set or parsing fails. */
-val PageProperty.Date.instantValue: Instant?
-    get() =
-        date?.start?.let {
-            try {
-                val normalized = it.replace(Regex("\\.\\d+"), "") // TODO: temp fix?
-                Instant.parse(normalized)
-            } catch (e: IllegalArgumentException) {
-                null
-            }
-        }
+val PageProperty.Date.wallClockDateTime: kotlinx.datetime.LocalDateTime?
+    get() = wallClockOf(date?.start)
 
 /**
- * Converts the start datetime to LocalDateTime in the specified timezone.
+ * The start value's **stored UTC offset** — the zone information the value actually carries.
  *
- * This properly handles timezone conversion:
- * - "2025-03-20T14:30:00+01:00" in UTC → LocalDateTime(2025, 3, 20, 13, 30)
- * - "2025-03-20T14:30:00Z" in America/New_York → LocalDateTime(2025, 3, 20, 9, 30)
+ * Notion returns a numeric offset for every time-bearing value and never a named `time_zone`,
+ * so this is the only way to ask "what zone is this value in?". Comparing it against
+ * [offsetIn] is how a caller detects that a value has drifted (for example, that a writer
+ * silently stored local times as UTC).
  *
- * Returns null if the start value is a date-only (no time component) or parsing fails.
+ * - `"2025-03-20T14:30:00+01:00"` → `UtcOffset(hours = 1)`
+ * - `"2025-03-20T14:30:00Z"` → `UtcOffset.ZERO`
+ *
+ * Returns null when there is no start value, when it is date-only, when it carries no offset,
+ * or when it does not parse.
  */
-fun PageProperty.Date.toLocalDateTime(timeZone: kotlinx.datetime.TimeZone): kotlinx.datetime.LocalDateTime? =
-    instantValue?.toLocalDateTime(timeZone)
+val PageProperty.Date.storedOffset: kotlinx.datetime.UtcOffset?
+    get() = storedOffsetOf(date?.start)
+
+/**
+ * The start value as an **absolute instant in UTC** — when this actually happened.
+ *
+ * Computed from the wall-clock digits and the value's own [storedOffset], so it is the right
+ * accessor for comparing values or for pushing to a system that stores UTC.
+ *
+ * Returns null when there is no start value, when it is date-only, when it carries no offset
+ * (an offset-less datetime has no knowable instant), or when it does not parse. Use
+ * [requireUtcInstant] where a missing instant should be an error rather than an absence.
+ */
+val PageProperty.Date.utcInstant: Instant?
+    get() = utcInstantOf(date?.start)
+
+/**
+ * The start value as an absolute instant in UTC, failing loudly instead of returning null.
+ *
+ * @throws IllegalArgumentException if the start value is absent, date-only, offset-less, or
+ *   malformed. The message names the offending value and what to do about it.
+ */
+fun PageProperty.Date.requireUtcInstant(): Instant =
+    utcInstant ?: throw IllegalArgumentException(missingInstantMessage(date?.start, "start"))
+
+/**
+ * The start value rendered as local time **in [timeZone]** — the same instant, different digits.
+ *
+ * - `"2025-03-20T14:30:00+01:00"` in `UTC` → `LocalDateTime(2025, 3, 20, 13, 30)`
+ * - `"2025-03-20T14:30:00Z"` in `America/New_York` → `LocalDateTime(2025, 3, 20, 9, 30)`
+ *
+ * Returns null whenever [utcInstant] does.
+ */
+fun PageProperty.Date.localDateTimeIn(timeZone: kotlinx.datetime.TimeZone): kotlinx.datetime.LocalDateTime? =
+    utcInstant?.toLocalDateTime(timeZone)
+
+/**
+ * The offset [timeZone] would have had at this value's **own wall-clock date and time** — the
+ * offset the value is expected to carry if it was written as local time in that zone.
+ *
+ * Pair it with [storedOffset] to audit a value:
+ * ```kotlin
+ * val zone = TimeZone.of("Europe/Oslo")
+ * if (prop.storedOffset != prop.offsetIn(zone)) {
+ *     // this value is not the Oslo local time it is supposed to be
+ * }
+ * ```
+ *
+ * DST resolution follows kotlinx-datetime: for a wall-clock time that occurs twice the earlier
+ * offset is used, and for one that does not exist the time is shifted forward by the gap.
+ * Returns null when there is no parseable wall-clock start value.
+ */
+fun PageProperty.Date.offsetIn(timeZone: kotlinx.datetime.TimeZone): kotlinx.datetime.UtcOffset? =
+    wallClockDateTime?.let { timeZone.offsetAt(it.toInstant(timeZone)) }
+
+/** Returns the start date/datetime as the raw string Notion returned. */
+val PageProperty.Date.stringValue: String?
+    get() = date?.start
+
+// ----------------------------------------
+// End of the value (date ranges)
+// ----------------------------------------
 
 /** Returns the end date as LocalDate, or null if not set or parsing fails. */
 val PageProperty.Date.endLocalDateValue: kotlinx.datetime.LocalDate?
@@ -470,51 +630,90 @@ val PageProperty.Date.endLocalDateValue: kotlinx.datetime.LocalDate?
         }
 
 /**
- * Returns the end datetime components as LocalDateTime, ignoring timezone information.
- *
- * This extracts the date/time components as shown in the ISO string, regardless of timezone.
- * **Warning**: This loses timezone context. For timezone-aware conversion, use [endToLocalDateTime].
+ * The end value's **wall-clock digits**, with its offset ignored. See [wallClockDateTime].
  */
-val PageProperty.Date.endLocalDateTimeNaive: kotlinx.datetime.LocalDateTime?
-    get() =
-        date?.end?.let {
-            try {
-                val normalized =
-                    it
-                        .replace(Regex("\\.\\d+"), "") // Remove milliseconds .000
-                        .removeSuffix("Z") // Remove UTC indicator
-                        .replace(Regex("[+-]\\d{2}:\\d{2}$"), "") // Remove timezone offset
-                kotlinx.datetime.LocalDateTime.parse(normalized)
-            } catch (e: IllegalArgumentException) {
-                null
-            }
-        }
-
-/** Returns the end instant as Instant, or null if not set or parsing fails. */
-val PageProperty.Date.endInstantValue: Instant?
-    get() =
-        date?.end?.let {
-            try {
-                val normalized = it.replace(Regex("\\.\\d+"), "")
-                Instant.parse(normalized)
-            } catch (e: IllegalArgumentException) {
-                null
-            }
-        }
+val PageProperty.Date.endWallClockDateTime: kotlinx.datetime.LocalDateTime?
+    get() = wallClockOf(date?.end)
 
 /**
- * Converts the end datetime to LocalDateTime in the specified timezone.
- *
- * This properly handles timezone conversion for the range end value.
- * Returns null if the end value is not set, is date-only, or parsing fails.
+ * The end value's **stored UTC offset**. See [storedOffset].
  */
-fun PageProperty.Date.endToLocalDateTime(timeZone: kotlinx.datetime.TimeZone): kotlinx.datetime.LocalDateTime? =
-    endInstantValue?.toLocalDateTime(timeZone)
+val PageProperty.Date.endStoredOffset: kotlinx.datetime.UtcOffset?
+    get() = storedOffsetOf(date?.end)
 
-/** Returns the start date/datetime as a string (for backward compatibility). */
-val PageProperty.Date.stringValue: String?
-    get() = date?.start
+/**
+ * The end value as an **absolute instant in UTC**. See [utcInstant].
+ */
+val PageProperty.Date.endUtcInstant: Instant?
+    get() = utcInstantOf(date?.end)
 
-/** Returns the end date/datetime as a string (for backward compatibility). */
+/**
+ * The end value as an absolute instant in UTC, failing loudly instead of returning null.
+ *
+ * @throws IllegalArgumentException if the end value is absent, date-only, offset-less, or
+ *   malformed. The message names the offending value and what to do about it.
+ */
+fun PageProperty.Date.requireEndUtcInstant(): Instant =
+    endUtcInstant ?: throw IllegalArgumentException(missingInstantMessage(date?.end, "end"))
+
+/**
+ * The end value rendered as local time **in [timeZone]**. See [localDateTimeIn].
+ */
+fun PageProperty.Date.endLocalDateTimeIn(timeZone: kotlinx.datetime.TimeZone): kotlinx.datetime.LocalDateTime? =
+    endUtcInstant?.toLocalDateTime(timeZone)
+
+/**
+ * The offset [timeZone] would have had at the end value's own wall-clock date and time.
+ * See [offsetIn].
+ */
+fun PageProperty.Date.endOffsetIn(timeZone: kotlinx.datetime.TimeZone): kotlinx.datetime.UtcOffset? =
+    endWallClockDateTime?.let { timeZone.offsetAt(it.toInstant(timeZone)) }
+
+/** Returns the end date/datetime as the raw string Notion returned. */
 val PageProperty.Date.endStringValue: String?
     get() = date?.end
+
+// ----------------------------------------
+// Deprecated aliases (behaviour unchanged)
+// ----------------------------------------
+
+@Deprecated(
+    "Renamed: this returns the wall-clock digits as stored, which is now stated by the name.",
+    ReplaceWith("wallClockDateTime"),
+)
+val PageProperty.Date.localDateTimeNaive: kotlinx.datetime.LocalDateTime?
+    get() = wallClockDateTime
+
+@Deprecated(
+    "Renamed: this returns the wall-clock digits as stored, which is now stated by the name.",
+    ReplaceWith("endWallClockDateTime"),
+)
+val PageProperty.Date.endLocalDateTimeNaive: kotlinx.datetime.LocalDateTime?
+    get() = endWallClockDateTime
+
+@Deprecated(
+    "Renamed: this returns the absolute instant in UTC, which is now stated by the name.",
+    ReplaceWith("utcInstant"),
+)
+val PageProperty.Date.instantValue: Instant?
+    get() = utcInstant
+
+@Deprecated(
+    "Renamed: this returns the absolute instant in UTC, which is now stated by the name.",
+    ReplaceWith("endUtcInstant"),
+)
+val PageProperty.Date.endInstantValue: Instant?
+    get() = endUtcInstant
+
+@Deprecated(
+    "Renamed for symmetry with the other date accessors.",
+    ReplaceWith("localDateTimeIn(timeZone)"),
+)
+fun PageProperty.Date.toLocalDateTime(timeZone: kotlinx.datetime.TimeZone): kotlinx.datetime.LocalDateTime? = localDateTimeIn(timeZone)
+
+@Deprecated(
+    "Renamed for symmetry with the other date accessors.",
+    ReplaceWith("endLocalDateTimeIn(timeZone)"),
+)
+fun PageProperty.Date.endToLocalDateTime(timeZone: kotlinx.datetime.TimeZone): kotlinx.datetime.LocalDateTime? =
+    endLocalDateTimeIn(timeZone)

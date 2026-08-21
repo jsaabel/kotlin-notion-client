@@ -33,9 +33,9 @@ import it.saabel.kotlinnotionclient.models.pages.endLocalDateValue
 import it.saabel.kotlinnotionclient.models.pages.getCheckboxProperty
 import it.saabel.kotlinnotionclient.models.pages.getNumberProperty
 import it.saabel.kotlinnotionclient.models.pages.getTitleAsPlainText
-import it.saabel.kotlinnotionclient.models.pages.instantValue
+import it.saabel.kotlinnotionclient.models.pages.localDateTimeIn
 import it.saabel.kotlinnotionclient.models.pages.localDateValue
-import it.saabel.kotlinnotionclient.models.pages.toLocalDateTime
+import it.saabel.kotlinnotionclient.models.pages.utcInstant
 import it.saabel.kotlinnotionclient.validation.ValidationException
 import kotlinx.coroutines.delay
 import kotlinx.datetime.LocalDate
@@ -666,8 +666,8 @@ class DatabaseFeaturesIntegrationTest :
 
                 val retrievedMeeting = notion.pages.retrieve(localDateTimePage.id)
                 val meetingProp = retrievedMeeting.properties["Meeting Time"] as? PageProperty.Date
-                meetingProp?.instantValue shouldBe Instant.parse("2025-03-20T14:30:00Z")
-                meetingProp?.toLocalDateTime(TimeZone.UTC) shouldBe LocalDateTime(2025, 3, 20, 14, 30, 0)
+                meetingProp?.utcInstant shouldBe Instant.parse("2025-03-20T14:30:00Z")
+                meetingProp?.localDateTimeIn(TimeZone.UTC) shouldBe LocalDateTime(2025, 3, 20, 14, 30, 0)
 
                 val retrievedRange = notion.pages.retrieve(dateRangePage.id)
                 val rangeProp = retrievedRange.properties["Event Period"] as? PageProperty.Date

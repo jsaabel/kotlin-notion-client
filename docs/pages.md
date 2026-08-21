@@ -338,6 +338,64 @@ val relations = page.getPlainTextForProperty("Related")    // "3 relation(s)"
 
 **Use when:** Writing tests, debugging, or when you need a quick string representation without caring about the specific type.
 
+### Reading Date Properties
+
+A Notion date value with a time component always carries a numeric UTC offset (Notion
+never returns a named `time_zone`). Reading it answers one of three different questions,
+and the accessor name says which one you are asking:
+
+| Question | Accessor | Returns |
+|----------|----------|---------|
+| "What does this say?" — wall-clock digits | `wallClockDateTime` | `LocalDateTime?` |
+| "When did this actually happen?" — absolute time | `utcInstant` / `requireUtcInstant()` | `Instant?` / `Instant` |
+| "What zone is this value in?" — the stored offset | `storedOffset` | `UtcOffset?` |
+
+```kotlin
+val prop = page.properties["Start"] as PageProperty.Date   // "2026-06-15T14:30:00.000+02:00"
+
+// Render the time to someone standing where the value applies
+prop.wallClockDateTime          // LocalDateTime(2026, 6, 15, 14, 30)
+
+// Push it to a system that stores absolute time
+prop.utcInstant                 // Instant 2026-06-15T12:30:00Z
+prop.requireUtcInstant()        // same, but throws instead of returning null
+
+// Ask what zone the value is stored in
+prop.storedOffset               // UtcOffset(hours = 2)
+
+// Render the same instant in a zone of your choosing
+prop.localDateTimeIn(TimeZone.of("America/New_York"))   // LocalDateTime(2026, 6, 15, 8, 30)
+```
+
+Every accessor has an `end…` twin for the end of a date range: `endWallClockDateTime`,
+`endStoredOffset`, `endUtcInstant`, `requireEndUtcInstant()`, `endLocalDateTimeIn(zone)`.
+Date-only values are read with `localDateValue` / `endLocalDateValue`, and the raw strings
+Notion returned are always available as `stringValue` / `endStringValue`.
+
+#### Auditing a value's offset
+
+`offsetIn(timeZone)` returns the offset that zone would have had at the value's **own**
+wall-clock date and time — DST included. Comparing it with `storedOffset` is how you detect
+a value that has drifted (for example, local times that were written to Notion as UTC):
+
+```kotlin
+val zone = TimeZone.of("Europe/Oslo")
+if (prop.storedOffset != prop.offsetIn(zone)) {
+    println("${prop.stringValue} is not the Oslo local time it should be")
+}
+```
+
+For a wall-clock time that occurs twice (the autumn DST overlap) the earlier offset is used;
+for one that does not exist (the spring gap) the time is shifted forward by the gap.
+
+#### When the nullable accessors return null
+
+`utcInstant` is null when the value is absent, date-only, carries no offset, or does not
+parse. An offset-less datetime genuinely has no knowable instant — but a silent null is
+exactly what hides that kind of bug, so use `requireUtcInstant()` wherever a missing instant
+should be an error. It throws `IllegalArgumentException` naming the offending value and what
+to do about it.
+
 ### Property Type Reference
 
 Common property types you can set when creating/updating pages:
