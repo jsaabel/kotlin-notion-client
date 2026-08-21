@@ -8,10 +8,13 @@ import io.ktor.client.request.patch
 import io.ktor.client.request.setBody
 import io.ktor.client.statement.HttpResponse
 import io.ktor.http.ContentType
+import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentType
 import io.ktor.http.isSuccess
 import it.saabel.kotlinnotionclient.config.NotionConfig
 import it.saabel.kotlinnotionclient.exceptions.NotionException
+import it.saabel.kotlinnotionclient.models.asynctasks.AsyncTask
+import it.saabel.kotlinnotionclient.models.markdown.AsyncMarkdownResult
 import it.saabel.kotlinnotionclient.models.markdown.ContentUpdate
 import it.saabel.kotlinnotionclient.models.markdown.PageMarkdownResponse
 import it.saabel.kotlinnotionclient.models.markdown.ReplaceContentBody
@@ -112,7 +115,10 @@ class MarkdownApi(
     suspend fun updateContent(
         pageId: String,
         request: UpdateContentRequest,
-    ): PageMarkdownResponse = patch(pageId, request)
+    ): PageMarkdownResponse {
+        requireSynchronous(request.allowAsync, "updateContentAsync")
+        return patch(pageId, request)
+    }
 
     /**
      * Updates a page's content using targeted search-and-replace operations.
@@ -173,7 +179,10 @@ class MarkdownApi(
     suspend fun replaceContent(
         pageId: String,
         request: ReplaceContentRequest,
-    ): PageMarkdownResponse = patch(pageId, request)
+    ): PageMarkdownResponse {
+        requireSynchronous(request.allowAsync, "replaceContentAsync")
+        return patch(pageId, request)
+    }
 
     /**
      * Replaces the entire content of a page with new markdown.
@@ -200,6 +209,173 @@ class MarkdownApi(
                     ),
             ),
         )
+
+    /**
+     * Updates a page's content asynchronously using targeted search-and-replace operations.
+     *
+     * Sets `allow_async: true` on the request, opting into background execution for large
+     * writes. The API decides whether to actually run asynchronously:
+     * - HTTP 202: returns [AsyncMarkdownResult.Accepted] with an [AsyncTask] to poll via
+     *   `client.asyncTasks` (e.g. `waitForCompletion(task.id)`)
+     * - HTTP 200: the write completed synchronously and [AsyncMarkdownResult.Completed]
+     *   carries the updated markdown
+     *
+     * @param pageId The ID of the page to update
+     * @param request The update_content request; `allow_async` is forced to `true`
+     * @return The result of the write, either completed or accepted for background execution
+     * @throws NotionException.NetworkError for network-related failures
+     * @throws NotionException.ApiError for API-related errors (4xx, 5xx responses)
+     */
+    suspend fun updateContentAsync(
+        pageId: String,
+        request: UpdateContentRequest,
+    ): AsyncMarkdownResult = patchAsync(pageId, request.copy(allowAsync = true))
+
+    /**
+     * Updates a page's content asynchronously using targeted search-and-replace operations.
+     *
+     * Convenience overload that builds the request from a list of [ContentUpdate] operations.
+     * See [updateContentAsync] for the async semantics.
+     *
+     * @param pageId The ID of the page to update
+     * @param contentUpdates The list of search-and-replace operations (max 100)
+     * @param allowDeletingContent Whether child pages/databases may be deleted. Defaults to false.
+     * @return The result of the write, either completed or accepted for background execution
+     */
+    suspend fun updateContentAsync(
+        pageId: String,
+        contentUpdates: List<ContentUpdate>,
+        allowDeletingContent: Boolean? = null,
+    ): AsyncMarkdownResult =
+        updateContentAsync(
+            pageId,
+            UpdateContentRequest(
+                updateContent =
+                    UpdateContentBody(
+                        contentUpdates = contentUpdates,
+                        allowDeletingContent = allowDeletingContent,
+                    ),
+            ),
+        )
+
+    /**
+     * Updates a page's content asynchronously using a search-and-replace DSL builder.
+     *
+     * See [updateContentAsync] for the async semantics.
+     *
+     * @param pageId The ID of the page to update
+     * @param allowDeletingContent Whether child pages/databases may be deleted. Defaults to false.
+     * @param builder DSL block for adding [ContentUpdate] operations
+     * @return The result of the write, either completed or accepted for background execution
+     */
+    suspend fun updateContentAsync(
+        pageId: String,
+        allowDeletingContent: Boolean? = null,
+        builder: ContentUpdateBuilder.() -> Unit,
+    ): AsyncMarkdownResult =
+        updateContentAsync(
+            pageId,
+            ContentUpdateBuilder().apply(builder).build(allowDeletingContent),
+        )
+
+    /**
+     * Replaces the entire content of a page asynchronously.
+     *
+     * Sets `allow_async: true` on the request, opting into background execution for large
+     * writes. The API decides whether to actually run asynchronously:
+     * - HTTP 202: returns [AsyncMarkdownResult.Accepted] with an [AsyncTask] to poll via
+     *   `client.asyncTasks` (e.g. `waitForCompletion(task.id)`)
+     * - HTTP 200: the write completed synchronously and [AsyncMarkdownResult.Completed]
+     *   carries the updated markdown
+     *
+     * @param pageId The ID of the page to update
+     * @param request The replace_content request; `allow_async` is forced to `true`
+     * @return The result of the write, either completed or accepted for background execution
+     * @throws NotionException.NetworkError for network-related failures
+     * @throws NotionException.ApiError for API-related errors (4xx, 5xx responses)
+     */
+    suspend fun replaceContentAsync(
+        pageId: String,
+        request: ReplaceContentRequest,
+    ): AsyncMarkdownResult = patchAsync(pageId, request.copy(allowAsync = true))
+
+    /**
+     * Replaces the entire content of a page asynchronously.
+     *
+     * Convenience overload that builds the request from a plain string.
+     * See [replaceContentAsync] for the async semantics.
+     *
+     * @param pageId The ID of the page to update
+     * @param newContent The new markdown content for the page
+     * @param allowDeletingContent Whether child pages/databases may be deleted. Defaults to false.
+     * @return The result of the write, either completed or accepted for background execution
+     */
+    suspend fun replaceContentAsync(
+        pageId: String,
+        newContent: String,
+        allowDeletingContent: Boolean? = null,
+    ): AsyncMarkdownResult =
+        replaceContentAsync(
+            pageId,
+            ReplaceContentRequest(
+                replaceContent =
+                    ReplaceContentBody(
+                        newStr = newContent,
+                        allowDeletingContent = allowDeletingContent,
+                    ),
+            ),
+        )
+
+    private fun requireSynchronous(
+        allowAsync: Boolean?,
+        asyncMethodName: String,
+    ) {
+        if (allowAsync == true) {
+            throw NotionException.ValidationError(
+                field = "allow_async",
+                details =
+                    "This method returns the synchronous response shape and cannot handle an async task. " +
+                        "Use MarkdownApi.$asyncMethodName for requests with allow_async = true.",
+            )
+        }
+    }
+
+    private suspend inline fun <reified T : Any> patchAsync(
+        pageId: String,
+        request: T,
+    ): AsyncMarkdownResult =
+        try {
+            val response: HttpResponse =
+                httpClient.patch("${config.baseUrl}/pages/$pageId/markdown") {
+                    contentType(ContentType.Application.Json)
+                    setBody(request)
+                }
+
+            when {
+                response.status == HttpStatusCode.Accepted -> {
+                    AsyncMarkdownResult.Accepted(response.body<AsyncTask>())
+                }
+
+                response.status.isSuccess() -> {
+                    AsyncMarkdownResult.Completed(response.body<PageMarkdownResponse>())
+                }
+
+                else -> {
+                    val errorBody = readErrorBody(response)
+                    throw NotionException.ApiError(
+                        code = response.status.value.toString(),
+                        status = response.status.value,
+                        details = "HTTP ${response.status.value}: ${response.status.description}. Response: $errorBody",
+                    )
+                }
+            }
+        } catch (e: NotionException) {
+            throw e
+        } catch (e: ClientRequestException) {
+            throw clientError(e)
+        } catch (e: Exception) {
+            throw NotionException.NetworkError(e)
+        }
 
     private suspend inline fun <reified T : Any> patch(
         pageId: String,
