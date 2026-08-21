@@ -293,6 +293,33 @@ sealed class CreateDatabaseProperty {
     }
 
     /**
+     * Formula property computing a value from an expression.
+     *
+     * Reference other properties with `prop("Property Name")` — since the Aug 2026 API
+     * update those references are stored exactly as written, and expressions Notion
+     * cannot store fail with a `validation_error` instead of being silently rewritten.
+     *
+     * Construction fails fast (with [IllegalArgumentException]) on expressions that are
+     * structurally broken no matter what they mean: blank expressions, unterminated
+     * string literals, unbalanced brackets, and malformed `prop()` calls. Semantic
+     * validity (unknown functions, type errors, circular references, ...) is not locally
+     * decidable and is left to the API.
+     */
+    @Serializable
+    @SerialName("formula")
+    data class Formula(
+        @SerialName("formula")
+        val formula: FormulaConfiguration,
+        @SerialName("description")
+        val description: String? = null,
+    ) : CreateDatabaseProperty() {
+        init {
+            requirePropertyDescriptionLength(description)
+            FormulaExpressions.validate(formula.expression)
+        }
+    }
+
+    /**
      * Files & media property for file attachments (uploaded or external).
      *
      * The schema config is an empty object; per-row file values are set via

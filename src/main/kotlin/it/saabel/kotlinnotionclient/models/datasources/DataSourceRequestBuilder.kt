@@ -11,6 +11,7 @@ import it.saabel.kotlinnotionclient.models.base.Parent
 import it.saabel.kotlinnotionclient.models.base.RichText
 import it.saabel.kotlinnotionclient.models.databases.CreateDatabaseProperty
 import it.saabel.kotlinnotionclient.models.databases.DatabasePropertiesBuilder
+import it.saabel.kotlinnotionclient.models.databases.FormulaExpressions
 
 /**
  * Builder for creating data source requests (API version 2025-09-03+).
@@ -88,6 +89,11 @@ class CreateDataSourceRequestBuilder {
     fun build(): CreateDataSourceRequest {
         require(databaseIdValue != null) { "Database ID must be specified" }
         require(properties.isNotEmpty()) { "Data source must have at least one property" }
+        // A create request carries the complete schema, so a prop() reference to a
+        // property that is not defined here can never be valid. (Update requests may
+        // reference properties that already exist on the data source, so they are not
+        // checked this way.)
+        FormulaExpressions.validateReferencesExist(properties)
 
         return CreateDataSourceRequest(
             parent = Parent.DatabaseParent(databaseId = databaseIdValue!!),

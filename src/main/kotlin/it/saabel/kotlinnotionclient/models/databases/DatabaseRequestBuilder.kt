@@ -112,6 +112,9 @@ class DatabaseRequestBuilder {
         require(parentValue != null) { "Parent must be specified" }
         require(titleValue != null) { "Title must be specified" }
         require(properties.isNotEmpty()) { "Database must have at least one property" }
+        // A create request carries the complete schema, so a prop() reference to a
+        // property that is not defined here can never be valid.
+        FormulaExpressions.validateReferencesExist(properties)
 
         return CreateDatabaseRequest(
             parent = parentValue!!,
@@ -286,6 +289,37 @@ class DatabasePropertiesBuilder {
         properties[name] =
             CreateDatabaseProperty.Number(
                 number = NumberConfiguration(format = format),
+                description = description,
+            )
+    }
+
+    /**
+     * Adds a formula property to the database.
+     *
+     * Reference other properties with `prop("Property Name")`, e.g.
+     * `formula("Updated price", """if(prop("In stock"), 0, prop("Price"))""")`.
+     * Since the Aug 2026 API update, `prop()` references are stored exactly as written.
+     *
+     * Fails fast with [IllegalArgumentException] if the expression is structurally
+     * broken (blank, unterminated string, unbalanced brackets, malformed `prop()` call).
+     * On **create** requests, `prop()` references to properties that are not defined in
+     * the same schema are also rejected at build time. Whether Notion accepts the
+     * expression semantically is not locally decidable and surfaces as the API's own
+     * `validation_error`.
+     *
+     * @param name The property name
+     * @param expression The formula expression
+     * @param description Optional description (max 280 characters)
+     */
+    fun formula(
+        name: String,
+        expression: String,
+        description: String? = null,
+    ) {
+        FormulaExpressions.validate(expression, propertyName = name)
+        properties[name] =
+            CreateDatabaseProperty.Formula(
+                formula = FormulaConfiguration(expression = expression),
                 description = description,
             )
     }
