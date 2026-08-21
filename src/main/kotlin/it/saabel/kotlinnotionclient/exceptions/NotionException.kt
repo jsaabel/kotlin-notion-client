@@ -78,4 +78,30 @@ sealed class NotionException(
             "Query result limit reached (Notion caps data source query results at 10,000 entries). " +
                 "Collected ${partialResults.size} partial results before truncation.",
         )
+
+    /**
+     * Thrown by windowed iteration (`DataSourcesApi.iterateAllRows` /
+     * `collectAllRows`) when a full truncated window yields no rows that were not
+     * already emitted, meaning the iteration cannot advance past the current key
+     * value. With the `created_time` key this happens when more than 10,000 rows
+     * share a single `created_time` value (Notion rounds it to the nearest minute,
+     * so bulk imports can produce such buckets).
+     *
+     * Rows emitted before the stall have already been delivered through the flow.
+     * To drain such a data source, switch to
+     * [it.saabel.kotlinnotionclient.models.datasources.RowIterationKey.UniqueId],
+     * which is strictly increasing and cannot stall.
+     *
+     * @property keyDescription Human-readable description of the iteration key.
+     * @property boundaryValue The key value the iteration could not advance past.
+     */
+    data class IterationStalled(
+        val keyDescription: String,
+        val boundaryValue: String?,
+    ) : NotionException(
+            "Windowed iteration stalled: a full truncated window at $keyDescription >= " +
+                "\"$boundaryValue\" contained no new rows. More than 10,000 rows likely share " +
+                "this $keyDescription value. Use RowIterationKey.UniqueId with a unique_id " +
+                "property to iterate such data sources.",
+        )
 }

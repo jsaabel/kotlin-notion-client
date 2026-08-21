@@ -19,6 +19,7 @@ import it.saabel.kotlinnotionclient.models.datasources.DataSource
 import it.saabel.kotlinnotionclient.models.datasources.DataSourceQueryBuilder
 import it.saabel.kotlinnotionclient.models.datasources.DataSourceQueryRequest
 import it.saabel.kotlinnotionclient.models.datasources.DataSourceQueryResponse
+import it.saabel.kotlinnotionclient.models.datasources.RowIterationKey
 import it.saabel.kotlinnotionclient.models.datasources.Template
 import it.saabel.kotlinnotionclient.models.datasources.TemplatesResponse
 import it.saabel.kotlinnotionclient.models.datasources.UpdateDataSourceRequest
@@ -31,6 +32,7 @@ import it.saabel.kotlinnotionclient.validation.RequestValidator
 import it.saabel.kotlinnotionclient.validation.ValidationConfig
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.toList
 
 /**
  * API client for Notion Data Sources endpoints (API version 2025-09-03+).
@@ -618,4 +620,115 @@ class DataSourcesApi(
         val request = dataSourceQuery(builder)
         return querySinglePage(dataSourceId, request)
     }
+
+    // ========== Large Data Source Iteration ==========
+
+    /**
+     * Iterates over all rows of a data source, windowing past Notion's 10,000-row
+     * query result cap.
+     *
+     * Plain [query] and [queryAsFlow] throw [NotionException.QueryResultLimitReached]
+     * when the API truncates the result set. This method is the explicit opt-in
+     * alternative: it sorts rows ascending by a monotonic [key], follows the cursor
+     * chain, and whenever the result set is truncated it re-queries from the last seen
+     * key value until the data source is drained. Draining costs one extra query per
+     * 10,000-row window (plus boundary re-reads), which is why it is not the default.
+     *
+     * Rows are emitted ordered by the [key], not by any caller-defined sort — a query
+     * carrying its own `sorts` (or a `startCursor`) is rejected with
+     * [IllegalArgumentException]. A caller-supplied filter is combined with the window
+     * filter via an `and` compound; because Notion limits filter nesting to two levels,
+     * an already two-level-deep caller filter cannot be combined and the API will
+     * reject it.
+     *
+     * Consistency: the iteration is not a snapshot. Rows created, deleted, or edited
+     * while draining may or may not be included. With the default
+     * [RowIterationKey.CreatedTime] key, every row that exists (and keeps matching the
+     * filter) for the whole drain is emitted exactly once; see [RowIterationKey] for
+     * per-key guarantees and limitations.
+     *
+     * Example usage:
+     * ```kotlin
+     * client.dataSources.iterateAllRows("data-source-id") {
+     *     filter { checkbox("Archived").equals(false) }
+     * }.collect { page -> process(page) }
+     *
+     * // Or window on a unique_id property for guaranteed progress:
+     * client.dataSources.iterateAllRows(
+     *     "data-source-id",
+     *     key = RowIterationKey.UniqueId("ID"),
+     * ).collect { page -> process(page) }
+     * ```
+     *
+     * @param dataSourceId The ID of the data source to query
+     * @param request The query request (filters only — no sorts or cursor)
+     * @param key The monotonic key used for windowing (defaults to `created_time`)
+     * @return Flow<Page> that emits every matching row, ordered ascending by [key]
+     * @throws IllegalArgumentException if the request carries sorts or a start cursor
+     * @throws NotionException.IterationStalled if a truncated window yields no new rows
+     *     (more than 10,000 rows sharing one key value); use [RowIterationKey.UniqueId]
+     * @throws NotionException.ValidationError if [RowIterationKey.UniqueId] names a
+     *     property that is missing or empty on an encountered row
+     */
+    fun iterateAllRows(
+        dataSourceId: String,
+        request: DataSourceQueryRequest = DataSourceQueryRequest(),
+        key: RowIterationKey = RowIterationKey.CreatedTime,
+    ): Flow<it.saabel.kotlinnotionclient.models.pages.Page> =
+        DataSourceRowIteration.iterateAllRows(request, key) { pageRequest ->
+            querySinglePage(dataSourceId, pageRequest)
+        }
+
+    /**
+     * Iterates over all rows of a data source using a fluent DSL builder,
+     * windowing past Notion's 10,000-row query result cap.
+     *
+     * See [iterateAllRows] for the windowing semantics and consistency guarantees.
+     *
+     * @param dataSourceId The ID of the data source to query
+     * @param key The monotonic key used for windowing (defaults to `created_time`)
+     * @param builder DSL builder lambda for constructing the query (filters only)
+     * @return Flow<Page> that emits every matching row, ordered ascending by [key]
+     */
+    fun iterateAllRows(
+        dataSourceId: String,
+        key: RowIterationKey = RowIterationKey.CreatedTime,
+        builder: DataSourceQueryBuilder.() -> Unit,
+    ): Flow<it.saabel.kotlinnotionclient.models.pages.Page> = iterateAllRows(dataSourceId, dataSourceQuery(builder), key)
+
+    /**
+     * Collects all rows of a data source into a list, windowing past Notion's
+     * 10,000-row query result cap.
+     *
+     * Convenience wrapper around [iterateAllRows] that loads every row into memory —
+     * for very large data sources prefer the Flow variant and process rows as they
+     * arrive.
+     *
+     * @param dataSourceId The ID of the data source to query
+     * @param request The query request (filters only — no sorts or cursor)
+     * @param key The monotonic key used for windowing (defaults to `created_time`)
+     * @return All matching rows, ordered ascending by [key]
+     */
+    suspend fun collectAllRows(
+        dataSourceId: String,
+        request: DataSourceQueryRequest = DataSourceQueryRequest(),
+        key: RowIterationKey = RowIterationKey.CreatedTime,
+    ): List<it.saabel.kotlinnotionclient.models.pages.Page> = iterateAllRows(dataSourceId, request, key).toList()
+
+    /**
+     * Collects all rows of a data source into a list using a fluent DSL builder,
+     * windowing past Notion's 10,000-row query result cap.
+     *
+     * See [iterateAllRows] for the windowing semantics and consistency guarantees.
+     *
+     * @param dataSourceId The ID of the data source to query
+     * @param key The monotonic key used for windowing (defaults to `created_time`)
+     * @param builder DSL builder lambda for constructing the query (filters only)
+     * @return All matching rows, ordered ascending by [key]
+     */
+    suspend fun collectAllRows(
+        dataSourceId: String,
+        key: RowIterationKey = RowIterationKey.CreatedTime,
+        builder: DataSourceQueryBuilder.() -> Unit,
+    ): List<it.saabel.kotlinnotionclient.models.pages.Page> = collectAllRows(dataSourceId, dataSourceQuery(builder), key)
 }
