@@ -57,8 +57,9 @@ class MarkdownApi(
      * Retrieves a page's content rendered as enhanced Markdown.
      *
      * If the page has more than ~20,000 blocks, the response will be [PageMarkdownResponse.truncated].
-     * The truncated block IDs are available in [PageMarkdownResponse.unknownBlockIds] and can be
-     * submitted as a new page_id to retrieve the remaining content.
+     * The truncated block IDs are available in [PageMarkdownResponse.unknownBlockIds] (capped at 50)
+     * and can be submitted as a new page_id to retrieve the remaining content.
+     * [PageMarkdownResponse.unknownBlockCount] reports the total number of omitted subtree roots.
      *
      * @param pageId The ID of the page (or block) to retrieve
      * @param includeTranscript Include meeting note transcripts. Defaults to false.
