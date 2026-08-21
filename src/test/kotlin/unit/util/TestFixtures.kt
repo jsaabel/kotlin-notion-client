@@ -274,6 +274,23 @@ object TestFixtures {
 
         fun listCustomEmojisAsString() = loadSampleResponseAsString("custom_emojis", "list_custom_emojis")
     }
+
+    // Webhook event payload helpers (samples from the official webhooks reference)
+    object Webhooks {
+        fun pageCreatedAsString() = loadSampleResponseAsString("webhooks", "page_created")
+
+        fun pageContentUpdatedAsString() = loadSampleResponseAsString("webhooks", "page_content_updated")
+
+        fun pagePropertiesUpdatedAsString() = loadSampleResponseAsString("webhooks", "page_properties_updated")
+
+        fun databaseSchemaUpdatedAsString() = loadSampleResponseAsString("webhooks", "database_schema_updated")
+
+        fun dataSourceCreatedAsString() = loadSampleResponseAsString("webhooks", "data_source_created")
+
+        fun commentCreatedAsString() = loadSampleResponseAsString("webhooks", "comment_created")
+
+        fun verificationRequestAsString() = loadSampleResponseAsString("webhooks", "verification_request")
+    }
 }
 
 /**
