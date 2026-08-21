@@ -14,6 +14,7 @@ import io.ktor.client.plugins.logging.LogLevel
 import io.ktor.client.plugins.logging.Logger
 import io.ktor.client.plugins.logging.Logging
 import io.ktor.serialization.kotlinx.json.json
+import it.saabel.kotlinnotionclient.api.AsyncTasksApi
 import it.saabel.kotlinnotionclient.api.BlocksApi
 import it.saabel.kotlinnotionclient.api.CommentsApi
 import it.saabel.kotlinnotionclient.api.CustomEmojisApi
@@ -87,6 +88,7 @@ class NotionClient
         val comments = CommentsApi(httpClient, config)
         val search = SearchApi(httpClient, config)
         val markdown = MarkdownApi(httpClient, config)
+        val asyncTasks = AsyncTasksApi(httpClient, config)
         val fileUploads = FileUploadApi(httpClient, config)
         val customEmojis = CustomEmojisApi(httpClient, config)
         val views = ViewsApi(httpClient, config)

@@ -2,6 +2,7 @@
 
 package it.saabel.kotlinnotionclient.models.markdown
 
+import it.saabel.kotlinnotionclient.models.asynctasks.AsyncTask
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
@@ -73,6 +74,10 @@ data class ReplaceContentBody(
  *
  * Performs targeted search-and-replace operations on the page's markdown content.
  * Prefer this over [ReplaceContentRequest] for partial edits.
+ *
+ * @property allowAsync Opt into asynchronous execution. When `true`, the API may respond
+ *   with HTTP 202 and an async task handle instead of the updated markdown. Use the
+ *   `MarkdownApi.updateContentAsync` methods rather than setting this directly.
  */
 @Serializable
 data class UpdateContentRequest(
@@ -80,6 +85,8 @@ data class UpdateContentRequest(
     val type: String = "update_content",
     @SerialName("update_content")
     val updateContent: UpdateContentBody,
+    @SerialName("allow_async")
+    val allowAsync: Boolean? = null,
 )
 
 /**
@@ -87,6 +94,10 @@ data class UpdateContentRequest(
  *
  * Replaces the entire page content with new markdown.
  * Use [UpdateContentRequest] for more targeted edits.
+ *
+ * @property allowAsync Opt into asynchronous execution. When `true`, the API may respond
+ *   with HTTP 202 and an async task handle instead of the updated markdown. Use the
+ *   `MarkdownApi.replaceContentAsync` methods rather than setting this directly.
  */
 @Serializable
 data class ReplaceContentRequest(
@@ -94,4 +105,30 @@ data class ReplaceContentRequest(
     val type: String = "replace_content",
     @SerialName("replace_content")
     val replaceContent: ReplaceContentBody,
+    @SerialName("allow_async")
+    val allowAsync: Boolean? = null,
 )
+
+/**
+ * Result of an opt-in async markdown page write.
+ *
+ * Even with `allow_async: true`, the API only moves work to the background when it
+ * decides to (HTTP 202); small writes may still complete synchronously (HTTP 200).
+ * This sealed type captures both outcomes.
+ */
+sealed class AsyncMarkdownResult {
+    /**
+     * The write completed synchronously; [response] is the updated page markdown.
+     */
+    data class Completed(
+        val response: PageMarkdownResponse,
+    ) : AsyncMarkdownResult()
+
+    /**
+     * The write was accepted for background execution. Poll [task] via
+     * `client.asyncTasks` (e.g. `waitForCompletion(task.id)`) to obtain the result.
+     */
+    data class Accepted(
+        val task: AsyncTask,
+    ) : AsyncMarkdownResult()
+}
