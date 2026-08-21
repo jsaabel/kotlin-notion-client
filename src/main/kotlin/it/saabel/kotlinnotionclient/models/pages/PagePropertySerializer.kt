@@ -34,6 +34,11 @@ import kotlinx.serialization.json.jsonPrimitive
  * ## Unknown Property Types
  * Any property type not in the list above will be deserialized as [PageProperty.Unknown],
  * with the raw JSON preserved in the `rawContent` field for inspection or manual handling.
+ *
+ * [PageProperty.Unknown] means *this client* does not model the type. It is not the same as
+ * Notion reporting that it could not compute a value: the API's own `"unsupported"` formula and
+ * rollup values are modelled explicitly as [FormulaResult.UnsupportedResult] and
+ * [RollupResult.UnsupportedResult].
  */
 object PagePropertySerializer : KSerializer<PageProperty> {
     override val descriptor: SerialDescriptor = buildClassSerialDescriptor("PageProperty")

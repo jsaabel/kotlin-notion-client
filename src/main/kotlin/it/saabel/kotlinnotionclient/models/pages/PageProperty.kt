@@ -10,6 +10,7 @@ import kotlinx.datetime.toLocalDateTime
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonObject
 import kotlin.time.Instant
 
 /**
@@ -278,14 +279,20 @@ sealed class PageProperty {
     ) : PageProperty()
 
     /**
-     * Represents an unsupported or unknown property type.
+     * This client's fallback for a property type it does not model yet.
      *
-     * This type is used as a fallback when the Notion API returns a property type
-     * that isn't explicitly supported by the client (e.g., "button", "unique_id",
-     * "verification", etc.). This ensures forward compatibility as Notion adds new
-     * property types.
+     * Reaching this variant means *the client* does not understand the property
+     * type — the value itself is fine, and the raw JSON is preserved in
+     * [rawContent] so callers can inspect it or handle it manually. It is produced
+     * whenever the Notion API returns a `type` outside the set the client knows
+     * about, which keeps deserialization working as Notion adds property types.
      *
-     * The raw JSON is preserved so users can inspect it or handle it manually.
+     * Do not confuse this with Notion reporting that it *could not compute* a
+     * value: that is the API's own `"unsupported"` value, modelled as
+     * [FormulaResult.UnsupportedResult] and [RollupResult.UnsupportedResult].
+     * The two call for different fixes — an `Unknown` is a gap in this library
+     * (file an issue), while an `UnsupportedResult` is a limit of the Notion
+     * formula/rollup engine that has to be worked around in the workspace.
      */
     @Serializable
     data class Unknown(
@@ -296,7 +303,11 @@ sealed class PageProperty {
 }
 
 /**
- * Formula result value - matches the structure from the API
+ * Formula result value - matches the structure from the API.
+ *
+ * Notion reports a formula it could not evaluate as [UnsupportedResult]; that is
+ * distinct from [PageProperty.Unknown], which is this client's fallback for
+ * property types it does not model yet.
  */
 @Serializable
 sealed class FormulaResult {
@@ -327,10 +338,34 @@ sealed class FormulaResult {
         @SerialName("type") val type: String,
         @SerialName("date") val date: DateData?,
     ) : FormulaResult()
+
+    /**
+     * Notion could not compute this formula, so it returned no value.
+     *
+     * The API reports `formula.type = "unsupported"` with an empty `unsupported`
+     * object when a formula depends on too many related pages or on too deeply
+     * nested formulas and rollups. This says nothing about this client's support
+     * for the property — the formula is visible in Notion's UI but the API
+     * declines to evaluate it — so it is a workspace-side limit to work around
+     * (simplify the formula, or reduce the number of related pages), not a
+     * missing model. Contrast [PageProperty.Unknown], which *is* a gap here.
+     *
+     * @property unsupported Always an empty object; kept so the value round-trips.
+     */
+    @Serializable
+    @SerialName("unsupported")
+    data class UnsupportedResult(
+        @SerialName("type") val type: String,
+        @SerialName("unsupported") val unsupported: JsonObject = JsonObject(emptyMap()),
+    ) : FormulaResult()
 }
 
 /**
- * Rollup result value - matches the structure from the API
+ * Rollup result value - matches the structure from the API.
+ *
+ * Notion reports a rollup it could not compute as [UnsupportedResult]; that is
+ * distinct from [PageProperty.Unknown], which is this client's fallback for
+ * property types it does not model yet.
  */
 @Serializable
 sealed class RollupResult {
@@ -355,6 +390,26 @@ sealed class RollupResult {
     data class ArrayResult(
         @SerialName("type") val type: String,
         @SerialName("array") val array: List<PageProperty>,
+        @SerialName("function") val function: String,
+    ) : RollupResult()
+
+    /**
+     * Notion could not compute this rollup, so it returned no value.
+     *
+     * The API reports `rollup.type = "unsupported"` with an empty `unsupported`
+     * object when a rollup depends on too many related pages or on too deeply
+     * nested formulas and rollups. The [function] the rollup was configured with
+     * is still reported. This says nothing about this client's support for the
+     * property, so it is a workspace-side limit to work around, not a missing
+     * model. Contrast [PageProperty.Unknown], which *is* a gap here.
+     *
+     * @property unsupported Always an empty object; kept so the value round-trips.
+     */
+    @Serializable
+    @SerialName("unsupported")
+    data class UnsupportedResult(
+        @SerialName("type") val type: String,
+        @SerialName("unsupported") val unsupported: JsonObject = JsonObject(emptyMap()),
         @SerialName("function") val function: String,
     ) : RollupResult()
 }
