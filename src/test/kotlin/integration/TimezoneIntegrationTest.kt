@@ -41,34 +41,38 @@ import kotlin.time.Instant
  *
  * Part 3 — naive datetimes and DST boundaries (scenarios N1-N6):
  *
- * These cover the case that broke a downstream consumer: writing an offset-less
- * datetime with no time_zone field, where the wall-clock time still displayed as
- * sent but the underlying instant had silently moved by the local UTC offset.
+ * Measured against the live API on 2026-08-21; the values below are what Notion
+ * actually returned, not what the documentation implies. These cover the case that
+ * broke a downstream consumer: writing an offset-less datetime with no time_zone
+ * field, where the wall-clock time still displayed as sent but the underlying instant
+ * had silently moved by the local UTC offset.
  *
- * NOT YET CONFIRMED AGAINST THE LIVE API. Every expectation in Part 3 is a stated
- * hypothesis, not a measurement — the block below records what we expect and what a
- * different answer would mean. When the spec is first run with credentials, replace
- * each "expected" line with what Notion actually returned. A failing Part 3 assertion
- * is a finding, not a bug: record it here before touching the expectation.
- *
- * - N1/N2 (naive datetime, no time_zone, June and December): expected to come back as
- *   the same wall-clock time at +00:00, i.e. Notion reads an offset-less datetime as
- *   UTC. This has only ever been *inferred* from the downstream symptom. The pair
- *   discriminates between readings: identical offsets in June and December mean a fixed
- *   zone (UTC or otherwise); differing offsets mean Notion resolves naive input against
- *   a DST-aware zone, which would make every offset-less write workspace-dependent.
- * - N3/N4 (Europe/Oslo either side of the 2026-10-25 autumn transition, sent as naive
- *   local + time_zone — the scenario D path): expected +02:00 before the 03:00 local
- *   changeover and +01:00 after, on the same calendar day. Confirms the named-zone path
- *   resolves per-instant rather than per-day.
- * - N5 (Europe/Oslo 2026-10-25T02:30, which occurs twice): expected to resolve to the
- *   earlier of the two, +02:00 = 00:30Z, matching java.time. The other choice is equally
- *   defensible; the point is that callers cannot express it, so whichever Notion picks is
- *   what the library must document.
- * - N6 (Europe/Oslo 2026-03-29T02:30, which does not exist — the spring gap): expected to
- *   shift forward by the gap to 03:30+02:00 = 01:30Z, again matching java.time. Note that
- *   02:30+01:00 denotes the same instant rendered differently, whereas 02:30+02:00 would be
- *   an hour earlier — so the instant, not the rendering, is the thing to record.
+ * - A naive datetime with no time_zone is read as UTC. "2026-06-15T14:30:00" comes back
+ *   as "2026-06-15T14:30:00.000+00:00", and the December equivalent comes back as
+ *   "…+00:00" too (N1/N2) — the offset does not track the season, so Notion is not
+ *   resolving naive input against a DST-aware workspace zone. This was previously only
+ *   *inferred* from the downstream symptom; it is now measured. Consequence: an
+ *   offset-less write preserves the wall clock and silently reassigns the instant. A
+ *   caller who means 14:30 in Oslo must send an offset or the time_zone field — never a
+ *   bare local datetime.
+ * - Notion always answers with an explicit numeric offset, never "Z". UTC comes back as
+ *   "+00:00", always with a ".000" fraction (N1/N2).
+ * - The named-zone path (the scenario D shape: naive local + time_zone) resolves
+ *   per-instant, not per-day. On 2026-10-25, Europe/Oslo 01:00 returns +02:00 and 04:00
+ *   returns +01:00 — same calendar day, either side of the 03:00 local changeover (N3/N4).
+ * - An ambiguous local time resolves to the EARLIER of its two instants. Europe/Oslo
+ *   2026-10-25T02:30 occurs at both +02:00 (00:30Z) and +01:00 (01:30Z); Notion returns
+ *   "2026-10-25T02:30:00.000+02:00" (N5). Callers cannot express the later one.
+ * - A nonexistent local time is shifted FORWARD by the gap, moving the wall clock rather
+ *   than the offset. Europe/Oslo 2026-03-29T02:30 does not exist; Notion returns
+ *   "2026-03-29T03:30:00.000+02:00" = 01:30Z (N6). Returning 02:30+01:00 would have been
+ *   the same instant rendered differently — Notion does not do that.
+ * - N3-N6 agree exactly with what the IANA tz database (via java.time) makes of the same
+ *   local times, ambiguity and gap resolution included. Nothing observed so far suggests
+ *   Notion's zone resolution diverges from tzdb.
+ * - Nothing in this round contradicted the assumptions the test went in with. A failing
+ *   Part 3 assertion therefore means Notion's behaviour has CHANGED — record the new
+ *   behaviour here before touching the expectation.
  *
  * Prerequisites:
  * - export NOTION_API_TOKEN="secret_..."
@@ -502,9 +506,9 @@ class TimezoneIntegrationTest :
             // ------------------------------------------------------------------
             // 3. Naive datetimes and DST boundaries (Europe/Oslo)
             // ------------------------------------------------------------------
-            // These scenarios are empirical: the expectations below are *hypotheses*
-            // about Notion's behaviour, not established facts. When one fails, the
-            // clue prints what Notion actually returned — record that in the KDoc
+            // These scenarios are empirical: the expectations below were recorded from
+            // the live API on 2026-08-21, not derived from documentation. When one fails,
+            // the clue prints what Notion actually returned — record that in the KDoc
             // above instead of quietly relaxing the assertion.
             "should record how Notion resolves naive datetimes and DST boundaries" {
                 /** Local class describing one send → read-back experiment. */
@@ -515,24 +519,24 @@ class TimezoneIntegrationTest :
                     val sentStart: String,
                     /** Exactly what goes into `date.time_zone` (null = field omitted). */
                     val sentTimeZone: String?,
-                    /** Hypothesised local part of the returned string (first 19 chars). */
+                    /** Recorded local part of the returned string (first 19 chars). */
                     val expectedLocal: String,
-                    /** Hypothesised offset of the returned string, normalised to ±hh:mm. */
+                    /** Recorded offset of the returned string, normalised to ±hh:mm. */
                     val expectedOffset: String,
-                    /** The instant that hypothesis denotes. */
+                    /** The instant that rendering denotes. */
                     val expectedInstant: Instant,
-                    /** Why we expect that, and what a different answer would mean. */
-                    val hypothesis: String,
+                    /** What the live API did, and what a different answer would have meant. */
+                    val finding: String,
                 )
 
                 val scenarios =
                     listOf(
                         // ── N1/N2: the shape that caused the downstream bug ───────
                         // A naive local datetime with no time_zone field at all.
-                        // Two of them, six months apart: if Notion answered with a
+                        // Two of them, six months apart: had Notion answered with a
                         // workspace-local zone rather than UTC, a European workspace
-                        // would return +02:00 here and +01:00 in N2. Same offset for
-                        // both ⇒ a fixed zone; +00:00 for both ⇒ UTC.
+                        // would have returned +02:00 here and +01:00 in N2. Both came
+                        // back +00:00, so naive input is UTC.
                         Scenario(
                             key = "N1",
                             label = "Naive datetime, no time_zone (summer)",
@@ -541,10 +545,11 @@ class TimezoneIntegrationTest :
                             expectedLocal = "2026-06-15T14:30:00",
                             expectedOffset = "+00:00",
                             expectedInstant = Instant.parse("2026-06-15T14:30:00Z"),
-                            hypothesis =
-                                "Assumed (never measured) that Notion reads an offset-less datetime as UTC. " +
-                                    "A different offset here means the value is resolved against some " +
-                                    "workspace/user zone, and every offset-less write is workspace-dependent.",
+                            finding =
+                                "Read as UTC: the wall clock is preserved and the instant is silently " +
+                                    "reassigned. This is exactly what moved a downstream consumer's events. " +
+                                    "A different offset would have meant the value is resolved against some " +
+                                    "workspace/user zone, making every offset-less write workspace-dependent.",
                         ),
                         Scenario(
                             key = "N2",
@@ -554,10 +559,10 @@ class TimezoneIntegrationTest :
                             expectedLocal = "2026-12-15T14:30:00",
                             expectedOffset = "+00:00",
                             expectedInstant = Instant.parse("2026-12-15T14:30:00Z"),
-                            hypothesis =
-                                "Companion to N1 across the DST line. If N1 and N2 come back with " +
-                                    "different offsets, Notion is resolving naive input against a DST-aware " +
-                                    "zone, not treating it as UTC.",
+                            finding =
+                                "Same +00:00 as N1, six months later, so the offset does not track the " +
+                                    "season. Together with N1 this rules out a DST-aware workspace zone: " +
+                                    "naive input is UTC, not workspace-local.",
                         ),
                         // ── N3/N4: either side of the autumn transition ───────────
                         // Europe/Oslo moves +02:00 → +01:00 at 03:00 local on 2026-10-25.
@@ -569,8 +574,8 @@ class TimezoneIntegrationTest :
                             expectedLocal = "2026-10-25T01:00:00",
                             expectedOffset = "+02:00",
                             expectedInstant = Instant.parse("2026-10-24T23:00:00Z"),
-                            hypothesis =
-                                "Unambiguous CEST. Establishes that the named-zone path (scenario D) " +
+                            finding =
+                                "Unambiguous CEST, resolved to +02:00. The named-zone path (scenario D) " +
                                     "picks the summer offset on the summer side of the boundary.",
                         ),
                         Scenario(
@@ -581,9 +586,10 @@ class TimezoneIntegrationTest :
                             expectedLocal = "2026-10-25T04:00:00",
                             expectedOffset = "+01:00",
                             expectedInstant = Instant.parse("2026-10-25T03:00:00Z"),
-                            hypothesis =
-                                "Unambiguous CET, same calendar day as N3. A +02:00 answer here would " +
-                                    "mean Notion resolves the zone per-day rather than per-instant.",
+                            finding =
+                                "Unambiguous CET, resolved to +01:00 on the same calendar day as N3 — so " +
+                                    "the named zone is resolved per-instant, not per-day. A +02:00 answer " +
+                                    "here would have meant per-day resolution.",
                         ),
                         // ── N5: the autumn overlap — 02:30 happens twice ──────────
                         Scenario(
@@ -594,11 +600,11 @@ class TimezoneIntegrationTest :
                             expectedLocal = "2026-10-25T02:30:00",
                             expectedOffset = "+02:00",
                             expectedInstant = Instant.parse("2026-10-25T00:30:00Z"),
-                            hypothesis =
+                            finding =
                                 "02:30 exists twice on this date: once at +02:00 (00:30Z) and once at " +
-                                    "+01:00 (01:30Z). We guess Notion picks the earlier one, which is what " +
-                                    "java.time does. A +01:00 answer is equally legitimate — it just has to " +
-                                    "be written down, because callers cannot express the choice.",
+                                    "+01:00 (01:30Z). Notion picks the earlier one, matching java.time. " +
+                                    "The later one is equally legitimate and callers cannot ask for it, " +
+                                    "which is why the choice has to be written down.",
                         ),
                         // ── N6: the spring gap — 02:30 never happens ──────────────
                         // Europe/Oslo jumps 02:00 → 03:00 local on 2026-03-29.
@@ -610,17 +616,18 @@ class TimezoneIntegrationTest :
                             expectedLocal = "2026-03-29T03:30:00",
                             expectedOffset = "+02:00",
                             expectedInstant = Instant.parse("2026-03-29T01:30:00Z"),
-                            hypothesis =
-                                "02:30 does not exist on this date. We guess Notion shifts forward by the " +
-                                    "gap (java.time's rule) → 03:30+02:00. Note that 02:30+01:00 is the same " +
-                                    "instant rendered differently, while 02:30+02:00 (00:30Z) would be an " +
-                                    "hour earlier — so the instant assertion is the one that matters here.",
+                            finding =
+                                "02:30 does not exist on this date. Notion shifts the wall clock forward " +
+                                    "by the gap (java.time's rule) → 03:30+02:00. It does not return " +
+                                    "02:30+01:00, which would be the same instant rendered differently; " +
+                                    "02:30+02:00 (00:30Z) would have been an hour earlier, so the instant " +
+                                    "assertion is the one that carries the finding here.",
                         ),
                     )
 
                 // ── Write one row per scenario ────────────────────────────────
                 // Same reporting shape as Part 1: a "Sent Value" column next to the
-                // date chip, plus the hypothesis, so sent/expected/received line up.
+                // date chip, plus the recorded value, so sent/expected/received line up.
                 val database =
                     notion.databases.create {
                         parent.page(containerPageId)
@@ -629,7 +636,7 @@ class TimezoneIntegrationTest :
                         properties {
                             title("Scenario")
                             richText("Sent Value")
-                            richText("Expected (hypothesis)")
+                            richText("Expected (recorded)")
                             date("Date Prop")
                         }
                     }
@@ -653,7 +660,7 @@ class TimezoneIntegrationTest :
                                         "start=\"${scenario.sentStart}\", time_zone=${scenario.sentTimeZone ?: "(omitted)"}",
                                     )
                                     richText(
-                                        "Expected (hypothesis)",
+                                        "Expected (recorded)",
                                         "${scenario.expectedLocal}${scenario.expectedOffset} = ${scenario.expectedInstant}",
                                     )
                                     if (scenario.sentTimeZone == null) {
@@ -694,8 +701,8 @@ class TimezoneIntegrationTest :
 
                 /**
                  * What the IANA tz database (via java.time) makes of the same local time,
-                 * for comparison with Notion's answer. For N5/N6 this is also the rule the
-                 * hypotheses assume: earlier offset on an overlap, shift forward on a gap.
+                 * for comparison with Notion's answer. N3-N6 confirmed that the two agree,
+                 * overlap and gap resolution included.
                  */
                 fun ianaReference(scenario: Scenario): String? {
                     val zone = scenario.sentTimeZone?.let { TimeZone.of(it) } ?: return null
@@ -719,9 +726,9 @@ class TimezoneIntegrationTest :
                 notion.blocks.appendChildren(containerPageId) {
                     heading2("Part 3: Naive Datetimes & DST Boundaries")
                     paragraph(
-                        "Empirical scenarios. ❌ does not necessarily mean Notion is wrong — it means " +
-                            "Notion disagrees with the hypothesis in the test, and the real behaviour needs " +
-                            "recording in the test's KDoc.",
+                        "Behaviour recorded against the live API on 2026-08-21. ❌ means Notion no " +
+                            "longer does what the test recorded — the new behaviour needs writing into " +
+                            "the test's KDoc.",
                     )
                     observed.forEach { (scenario, actual) ->
                         paragraph {
@@ -770,9 +777,9 @@ class TimezoneIntegrationTest :
                                 "sent start=\"${scenario.sentStart}\", time_zone=${scenario.sentTimeZone ?: "(omitted)"}; " +
                                 "Notion returned start=\"${actual?.start}\", time_zone=${actual?.timeZone} " +
                                 "(offset ${offsetOf(actual?.start)}, instant ${instantOf(actual?.start) ?: "unparseable"}). " +
-                                "Hypothesis: ${scenario.hypothesis} " +
-                                "If this fails, write the observed behaviour into the KDoc \"Key findings\" block " +
-                                "before changing the expectation.",
+                                "Recorded 2026-08-21: ${scenario.finding} " +
+                                "If this fails, Notion's behaviour has changed — write what it does now into " +
+                                "the KDoc \"Key findings\" block before changing the expectation.",
                         ) {
                             actual shouldNotBe null
                             actual?.start?.take(19) shouldBe scenario.expectedLocal
@@ -784,7 +791,7 @@ class TimezoneIntegrationTest :
                     }
                 }
 
-                println("✅ Naive datetime & DST boundary scenarios matched the recorded expectations")
+                println("✅ Naive datetime & DST boundary scenarios matched the recorded behaviour")
             }
         }
     })
