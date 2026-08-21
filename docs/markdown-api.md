@@ -31,7 +31,8 @@ suspend fun replaceContent(pageId: String, request: ReplaceContentRequest): Page
 | `id` | `String` | The page ID |
 | `markdown` | `String` | The page content as markdown text |
 | `truncated` | `Boolean` | `true` if the page exceeded ~20,000 blocks |
-| `unknownBlockIds` | `List<String>` | Block IDs that could not be represented in markdown |
+| `unknownBlockIds` | `List<String>` | Up to 50 root IDs of the omitted subtrees |
+| `unknownBlockCount` | `Int` | Total number of omitted subtree roots (may exceed `unknownBlockIds.size`) |
 
 ## Examples
 
