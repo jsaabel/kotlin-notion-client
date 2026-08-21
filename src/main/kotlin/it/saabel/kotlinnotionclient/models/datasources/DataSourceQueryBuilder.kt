@@ -61,6 +61,7 @@ class DataSourceQueryBuilder {
     private var sorts: MutableList<DataSourceSort> = mutableListOf()
     private var startCursor: String? = null
     private var pageSize: Int? = null
+    private var isArchived: Boolean? = null
 
     /**
      * Sets the filter for the query using a DSL builder.
@@ -109,6 +110,20 @@ class DataSourceQueryBuilder {
     }
 
     /**
+     * Restricts the query to archived (or explicitly non-archived) rows.
+     *
+     * Notion returns either archived or non-archived pages, never both. Omitting this
+     * call leaves `is_archived` out of the request, which returns non-archived pages.
+     *
+     * @param value `true` to return archived pages, `false` to explicitly request the
+     *   non-archived set.
+     */
+    fun isArchived(value: Boolean = true): DataSourceQueryBuilder {
+        this.isArchived = value
+        return this
+    }
+
+    /**
      * Builds the final query request.
      */
     fun build(): DataSourceQueryRequest =
@@ -117,6 +132,7 @@ class DataSourceQueryBuilder {
             sorts = if (sorts.isEmpty()) null else sorts.toList(),
             startCursor = startCursor,
             pageSize = pageSize,
+            isArchived = isArchived,
         )
 }
 

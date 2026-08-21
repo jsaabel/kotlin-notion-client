@@ -15,6 +15,11 @@ import kotlinx.serialization.Serializable
  *
  * Database queries allow filtering, sorting, and paginating through database entries.
  * The query endpoint returns pages that match the specified criteria.
+ *
+ * @property isArchived When `true`, the query returns archived pages instead of the default
+ *   non-archived set. When `null` (the default) the parameter is omitted and Notion returns
+ *   only non-archived pages. Archived and non-archived pages cannot be returned in the same
+ *   query.
  */
 @Serializable
 data class DataSourceQueryRequest(
@@ -26,6 +31,8 @@ data class DataSourceQueryRequest(
     val startCursor: String? = null,
     @SerialName("page_size")
     val pageSize: Int? = null,
+    @SerialName("is_archived")
+    val isArchived: Boolean? = null,
 )
 
 /**
