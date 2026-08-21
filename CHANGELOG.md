@@ -61,6 +61,80 @@ mistake impossible to write silently. Migration for each break:
   time to interpret and is now rejected everywhere. *Migration:* use `date(name, date)`;
   if a time was actually intended, use `dateTimeWithTimeZone`.
 
+### August 2026 API catch-up (issues #32–#42)
+
+Eleven changelog-driven issues landed together, bringing the client up to date with Notion's
+2026 API changes. Three carry source-breaking changes, listed first.
+
+#### ⚠️ Breaking
+
+- **`FormulaResult` and `RollupResult` gained an `UnsupportedResult` subclass** (#36). An
+  exhaustive `when` over either sealed class with no `else` branch no longer compiles.
+  *This fixes a latent crash:* Notion returns `type: "unsupported"` for formulas and rollups
+  that depend on too many related pages, and the missing subclass previously failed
+  deserialization of the **entire page** with `JsonDecodingException`. Runtime behaviour for
+  input that already worked is unchanged.
+- **`StatusConfiguration.options` now takes `List<CreateStatusOption>`** instead of
+  `List<CreateSelectOption>` (#39). Source-breaking only for callers constructing the model
+  directly; DSL users (`status { option(...) }`) are unaffected. The dedicated type exists so
+  `group` cannot be set on select/multi-select options, which the API rejects.
+- **`DatabaseProperty.Formula.formula` is now `FormulaConfiguration`**, not `JsonObject` (#42).
+  Source-breaking for consumers reading the raw object; use `.expression` instead.
+
+#### Added
+
+- **Async task polling and async markdown writes** (#38). New `client.asyncTasks` with
+  `retrieve`, `waitForCompletion` (mirroring `EnhancedFileUploadApi.waitForFileReady`, but
+  honouring the server's `poll_after_seconds` hint when it is longer) and `pollAsFlow`. New
+  `replaceContentAsync`/`updateContentAsync` return a sealed `AsyncMarkdownResult`, since the
+  API only *may* go async. Errors surface as `AsyncTaskException`.
+- **Resumable iteration past the 10,000-row pagination ceiling** (#40). Opt-in
+  `dataSources.iterateAllRows(...)` (`Flow<Page>`) and `collectAllRows(...)` drain a large data
+  source by windowing on a monotonic key — `RowIterationKey.CreatedTime` by default, or
+  `UniqueId` for guaranteed progress. Plain `query` still throws `QueryResultLimitReached`.
+  The drain is **not a snapshot**: rows created, deleted, or edited mid-drain may be missed or
+  included, and a single `created_time` bucket holding over 10,000 rows raises
+  `IterationStalled` rather than looping. See the KDoc for the full guarantees.
+- **Webhook signature verification and typed event models** (#41). `verifyWebhookSignature(...)`
+  computes HMAC-SHA256 over the **raw** body and compares with `MessageDigest.isEqual`; it
+  accepts only `ByteArray`/`String`, so a re-serialized model — which silently breaks the HMAC —
+  cannot be passed by accident. Typed `WebhookEvent` models with an `UNKNOWN` event-type
+  fallback, plus a worked Ktor receiver in `docs/webhooks.md`. Note the scheme has no replay
+  protection: Notion sends no timestamp header.
+- **Formula properties can now be written** (#42). `CreateDatabaseProperty.Formula` and a
+  `formula(name, expression, description)` DSL method — previously formulas could not be created
+  through this client at all. Expressions are validated at the call site for blank input,
+  unterminated string literals, unbalanced brackets, malformed `prop()` calls, and (on create)
+  `prop()` references to properties absent from the schema being written. Semantic validity —
+  function names, arity, types, cycles — is not locally decidable and is left to the API's
+  `validation_error`.
+- **Status options can be assigned to groups** on create and update (#39), via `group` on
+  `StatusBuilder.option(...)`. An omitted `group` preserves the option's current group on
+  update; new options default to "To-do".
+- **`is_archived` on data source query and `filter.in_trash` on search** (#33), reaching trashed
+  and archived rows for the first time, with `isArchived()`/`inTrash()` DSL surface.
+- **`filter_properties` on page create, update and retrieve** (#34), emitted as repeated query
+  parameters. Property IDs are percent-decoded before transmission, so the schema shape
+  (`%7DVpb`) and the view-response shape (`}Vpb`) produce identical requests.
+- **`unknownBlockCount` on `PageMarkdownResponse`** (#35). `unknownBlockIds` is capped at 50 by
+  the API, so its size is not a substitute for the count on a heavily truncated page.
+
+#### Fixed
+
+- **HTTP 529 Service Overload is now retried** (#32), on the same `Retry-After`-honouring path as
+  429 rather than falling through to the caller as a bare `ApiError`.
+- **Uncomputable formula and rollup values no longer break page deserialization** (#36) — see the
+  breaking-changes note above.
+
+#### Changed
+
+- Generated record links and documentation examples use `app.notion.com` (#37). Parsing remains
+  tolerant of legacy `notion.so` URLs, pinned by tests. No production code constructed or parsed
+  record URLs, so this is a documentation and forward-guard change.
+- Corrected stale KDoc claiming status groups cannot be configured via the API and that status
+  properties cannot be updated (#39) — both lapsed with the June 2026 changelog.
+
+
 ### Added
 
 - **`property(name, PagePropertyValue)`** on the page-properties builder: a deliberate,
