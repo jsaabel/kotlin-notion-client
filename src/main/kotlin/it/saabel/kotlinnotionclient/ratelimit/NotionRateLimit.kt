@@ -42,11 +42,13 @@ class NotionRateLimitConfig {
  * - Classifies failures by *type*, never by string-matching `error.message`: the plugin has the
  *   response object in scope, so it inspects [io.ktor.http.HttpStatusCode] and exception classes
  *   directly.
- * - On a `429`, honours the `Retry-After` header (seconds) when present: waits exactly that long
- *   plus a 1s rounding-safety margin, then retries. This is Notion's published 429 contract. The
- *   header-driven delay deliberately does **not** stack with the exponential schedule. Falls back to
- *   exponential backoff with jitter when a `429` arrives without `Retry-After` (defence-in-depth —
- *   per the docs this shouldn't happen).
+ * - On a `429` (rate limited) or `529` (service overloaded), honours the `Retry-After` header
+ *   (seconds) when present: waits exactly that long plus a 1s rounding-safety margin, then retries.
+ *   This is Notion's published contract for both statuses — `529` ships the same header, so it takes
+ *   the header-driven path rather than exponential backoff. The header-driven delay deliberately
+ *   does **not** stack with the exponential schedule. Falls back to exponential backoff with jitter
+ *   when either status arrives without `Retry-After` (defence-in-depth — per the docs this
+ *   shouldn't happen).
  * - Retries `502 / 503 / 504` (transient gateway/availability failures) on the exponential backoff
  *   schedule. `500` is deliberately **not** retried — it typically signals a non-transient
  *   server-side fault rather than a blip.
@@ -94,8 +96,8 @@ val NotionRateLimit =
             return minOf(jittered, config.retryMaxDelay)
         }
 
-        // 429 delay: Retry-After is load-bearing (Notion's published contract) — wait exactly that
-        // long plus a 1s rounding-safety margin, replacing (not stacking with) the exponential
+        // 429/529 delay: Retry-After is load-bearing (Notion's published contract) — wait exactly
+        // that long plus a 1s rounding-safety margin, replacing (not stacking with) the exponential
         // schedule. Falls back to exponential backoff only when the header is absent.
         fun retryAfterDelay(
             call: HttpClientCall,
@@ -139,13 +141,14 @@ val NotionRateLimit =
                 val status = call.response.status.value
                 val retriesRemaining = attemptNumber < config.maxRetries
 
-                // Typed classifier: decide the retry delay from the status code alone. 429 takes the
-                // Retry-After path; 502/503/504 take exponential backoff; everything else (other 4xx,
-                // 500, success) is terminal. `retriesRemaining` guards the wasted-delay case: once
-                // retries are exhausted the failed call is returned immediately with no extra sleep.
+                // Typed classifier: decide the retry delay from the status code alone. 429/529 take
+                // the Retry-After path; 502/503/504 take exponential backoff; everything else (other
+                // 4xx, 500, success) is terminal. `retriesRemaining` guards the wasted-delay case:
+                // once retries are exhausted the failed call is returned immediately with no extra
+                // sleep.
                 val delayDuration =
                     when {
-                        status == 429 && retriesRemaining -> retryAfterDelay(call, attemptNumber)
+                        status in RETRY_AFTER_STATUSES && retriesRemaining -> retryAfterDelay(call, attemptNumber)
                         status in RETRYABLE_SERVER_STATUSES && retriesRemaining -> exponentialBackoff(attemptNumber)
                         else -> null
                     }
@@ -161,6 +164,14 @@ val NotionRateLimit =
             result
         }
     }
+
+/**
+ * Statuses whose retry delay is driven by the `Retry-After` header rather than the exponential
+ * schedule. `429` (rate limited) is Notion's published throttling contract; `529` (service
+ * overloaded) was added by Notion in July 2026 and ships the same header, so it belongs on the same
+ * path — see the [Notion changelog](https://developers.notion.com/page/changelog).
+ */
+private val RETRY_AFTER_STATUSES = setOf(429, 529)
 
 /**
  * Server-side statuses worth retrying on the exponential schedule. `500` is deliberately excluded:
