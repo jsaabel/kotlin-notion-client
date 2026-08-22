@@ -74,6 +74,13 @@ Eleven changelog-driven issues landed together, bringing the client up to date w
   that depend on too many related pages, and the missing subclass previously failed
   deserialization of the **entire page** with `JsonDecodingException`. Runtime behaviour for
   input that already worked is unchanged.
+- **`RollupResult` gained an `IncompleteResult` subclass, and both `FormulaResult` and
+  `RollupResult` gained an `Unknown` fallback subclass** (#57). Same effect on an exhaustive
+  `when`: another arm is now required (or an `else`). `IncompleteResult` fixes the same crash
+  class as #36 for Notion's documented `rollup.type: "incomplete"` value (a rollup still being
+  computed); `Unknown` closes the class of bug rather than one instance — any future
+  `formula.type`/`rollup.type` Notion adds now degrades to `Unknown` (raw JSON preserved)
+  instead of failing page deserialization, mirroring `PageProperty.Unknown`.
 - **`StatusConfiguration.options` now takes `List<CreateStatusOption>`** instead of
   `List<CreateSelectOption>` (#39). Source-breaking only for callers constructing the model
   directly; DSL users (`status { option(...) }`) are unaffected. The dedicated type exists so

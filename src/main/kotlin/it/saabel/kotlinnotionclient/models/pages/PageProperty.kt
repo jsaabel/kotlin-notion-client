@@ -306,10 +306,10 @@ sealed class PageProperty {
  * Formula result value - matches the structure from the API.
  *
  * Notion reports a formula it could not evaluate as [UnsupportedResult]; that is
- * distinct from [PageProperty.Unknown], which is this client's fallback for
- * property types it does not model yet.
+ * distinct from [Unknown], which is this client's fallback for result types it
+ * does not model yet (mirroring [PageProperty.Unknown] one level up).
  */
-@Serializable
+@Serializable(with = FormulaResultSerializer::class)
 sealed class FormulaResult {
     @Serializable
     @SerialName("string")
@@ -358,16 +358,32 @@ sealed class FormulaResult {
         @SerialName("type") val type: String,
         @SerialName("unsupported") val unsupported: JsonObject = JsonObject(emptyMap()),
     ) : FormulaResult()
+
+    /**
+     * This client's fallback for a formula result type it does not model yet.
+     *
+     * Mirrors [PageProperty.Unknown] one level down: reaching this variant means
+     * *this client* does not understand the `formula.type` Notion sent, not that
+     * Notion failed to compute the value (that is [UnsupportedResult]). The raw
+     * JSON is preserved in [rawContent] so callers can inspect it or handle it
+     * manually, and deserialization keeps working as Notion adds formula result
+     * types.
+     */
+    @Serializable
+    data class Unknown(
+        @SerialName("type") val type: String,
+        val rawContent: JsonElement,
+    ) : FormulaResult()
 }
 
 /**
  * Rollup result value - matches the structure from the API.
  *
  * Notion reports a rollup it could not compute as [UnsupportedResult]; that is
- * distinct from [PageProperty.Unknown], which is this client's fallback for
- * property types it does not model yet.
+ * distinct from [Unknown], which is this client's fallback for result types it
+ * does not model yet (mirroring [PageProperty.Unknown] one level up).
  */
-@Serializable
+@Serializable(with = RollupResultSerializer::class)
 sealed class RollupResult {
     @Serializable
     @SerialName("number")
@@ -411,6 +427,46 @@ sealed class RollupResult {
         @SerialName("type") val type: String,
         @SerialName("unsupported") val unsupported: JsonObject = JsonObject(emptyMap()),
         @SerialName("function") val function: String,
+    ) : RollupResult()
+
+    /**
+     * Notion has not finished computing this rollup yet.
+     *
+     * The API documents `rollup.type = "incomplete"` alongside `"unsupported"` as
+     * one of the possible rollup value types, returned while a rollup over a large
+     * or slow-to-resolve relation is still being calculated in the background. As
+     * with [UnsupportedResult], this says nothing about this client's support for
+     * the property — retrying the request later is expected to return a computed
+     * value — so it is not a missing model. Contrast [PageProperty.Unknown], which
+     * *is* a gap here.
+     *
+     * No official sample response covers this value; the fixture used to test it
+     * is hand-crafted from the documented shape (see `RollupIncompleteTest`).
+     *
+     * @property incomplete Always an empty object; kept so the value round-trips.
+     */
+    @Serializable
+    @SerialName("incomplete")
+    data class IncompleteResult(
+        @SerialName("type") val type: String,
+        @SerialName("incomplete") val incomplete: JsonObject = JsonObject(emptyMap()),
+        @SerialName("function") val function: String,
+    ) : RollupResult()
+
+    /**
+     * This client's fallback for a rollup result type it does not model yet.
+     *
+     * Mirrors [PageProperty.Unknown] one level down: reaching this variant means
+     * *this client* does not understand the `rollup.type` Notion sent, not that
+     * Notion failed to compute the value (that is [UnsupportedResult]). The raw
+     * JSON is preserved in [rawContent] so callers can inspect it or handle it
+     * manually, and deserialization keeps working as Notion adds rollup result
+     * types.
+     */
+    @Serializable
+    data class Unknown(
+        @SerialName("type") val type: String,
+        val rawContent: JsonElement,
     ) : RollupResult()
 }
 
