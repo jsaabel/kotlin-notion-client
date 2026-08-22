@@ -275,18 +275,20 @@ class CreatePageRequestBuilder {
         /**
          * Sets a Notion-hosted file icon from its expiring URL.
          *
-         * This emits the *read* shape (`type: "file"`), which Notion does not accept on write —
-         * see the Page object reference, where icon is documented as accepting only `external`
-         * or `file_upload`. Kept for source compatibility only.
+         * This emits the *read* shape (`type: "file"`), which Notion rejects on write. Verified
+         * live: the request fails with HTTP 400 `validation_error`, naming `emoji`, `external`,
+         * `custom_emoji`, `file_upload` and `icon` as the shapes it will accept. Kept for source
+         * compatibility only — there is no input for which this call succeeds.
          *
          * @param url The uploaded file URL
          * @param expiryTime Optional expiry time
          */
         @Deprecated(
             message =
-                "Notion accepts only `external` and `file_upload` icons on write; `type: \"file\"` is the " +
-                    "read shape (a Notion-hosted expiring URL) and cannot be written back. Use external(url) " +
-                    "for a publicly hosted file, or upload(id) for a file sent through the File Upload API.",
+                "Verified live: a `type: \"file\"` icon is rejected with HTTP 400 validation_error — it is " +
+                    "the read shape (a Notion-hosted expiring URL) and can never be written back. Notion " +
+                    "accepts emoji, external, custom_emoji, file_upload and icon. Use external(url) for a " +
+                    "publicly hosted file, or upload(id) for a file sent through the File Upload API.",
             replaceWith = ReplaceWith("external(url)"),
         )
         fun file(
@@ -302,6 +304,10 @@ class CreatePageRequestBuilder {
          *
          * The upload must already have reached [FileUploadStatus.UPLOADED]; attach it within its
          * one-hour expiry window or the upload is archived.
+         *
+         * Note the write/read asymmetry, verified live: the icon is *written* as `file_upload`
+         * and *reads back* as `Icon.File` — a time-limited signed S3 URL. Round-tripping an icon
+         * therefore means re-uploading or switching to `external`, not echoing back what was read.
          *
          * @param fileUploadId The ID of the uploaded file
          */
@@ -350,18 +356,20 @@ class CreatePageRequestBuilder {
         /**
          * Sets a Notion-hosted file cover from its expiring URL.
          *
-         * This emits the *read* shape (`type: "file"`), which Notion does not accept on write —
-         * see the Page object reference, where cover is documented as accepting only `external`
-         * or `file_upload`. Kept for source compatibility only.
+         * This emits the *read* shape (`type: "file"`), which Notion rejects on write. Verified
+         * live: the request fails with HTTP 400 `validation_error`, naming `emoji`, `external`,
+         * `custom_emoji`, `file_upload` and `icon` as the shapes it will accept. Kept for source
+         * compatibility only — there is no input for which this call succeeds.
          *
          * @param url The uploaded file URL
          * @param expiryTime Optional expiry time
          */
         @Deprecated(
             message =
-                "Notion accepts only `external` and `file_upload` covers on write; `type: \"file\"` is the " +
-                    "read shape (a Notion-hosted expiring URL) and cannot be written back. Use external(url) " +
-                    "for a publicly hosted file, or upload(id) for a file sent through the File Upload API.",
+                "Verified live: a `type: \"file\"` cover is rejected with HTTP 400 validation_error — it is " +
+                    "the read shape (a Notion-hosted expiring URL) and can never be written back. Notion " +
+                    "accepts emoji, external, custom_emoji, file_upload and icon. Use external(url) for a " +
+                    "publicly hosted file, or upload(id) for a file sent through the File Upload API.",
             replaceWith = ReplaceWith("external(url)"),
         )
         fun file(
@@ -377,6 +385,11 @@ class CreatePageRequestBuilder {
          *
          * The upload must already have reached [FileUploadStatus.UPLOADED]; attach it within its
          * one-hour expiry window or the upload is archived.
+         *
+         * Note the write/read asymmetry, verified live: the cover is *written* as `file_upload`
+         * and *reads back* as `PageCover.File` — a time-limited signed S3 URL. Round-tripping a
+         * cover therefore means re-uploading or switching to `external`, not echoing back what
+         * was read.
          *
          * @param fileUploadId The ID of the uploaded file
          */

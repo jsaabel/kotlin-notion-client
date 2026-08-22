@@ -1407,6 +1407,10 @@ data class EmbedContent(
     val fileUpload: FileUploadReference? = null,
     @SerialName("file")
     val file: FileReference? = null,
+    // Undocumented on the embed reference, but verified live: a written caption is echoed
+    // back on the created block, with the same rich-text shape every other caption uses.
+    @SerialName("caption")
+    val caption: List<RichText> = emptyList(),
 )
 
 /**

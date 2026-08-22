@@ -148,9 +148,10 @@ class UpdateDataSourceRequestBuilder {
 
         @Deprecated(
             message =
-                "Notion accepts only `external` and `file_upload` icons on write; `type: \"file\"` is the " +
-                    "read shape (a Notion-hosted expiring URL) and cannot be written back. Use external(url) " +
-                    "for a publicly hosted file, or upload(id) for a file sent through the File Upload API.",
+                "Verified live: a `type: \"file\"` icon is rejected with HTTP 400 validation_error — it is " +
+                    "the read shape (a Notion-hosted expiring URL) and can never be written back. Notion " +
+                    "accepts emoji, external, custom_emoji, file_upload and icon. Use external(url) for a " +
+                    "publicly hosted file, or upload(id) for a file sent through the File Upload API.",
             replaceWith = ReplaceWith("external(url)"),
         )
         fun file(
@@ -166,6 +167,10 @@ class UpdateDataSourceRequestBuilder {
          *
          * The upload must already have reached [FileUploadStatus.UPLOADED]; attach it within its
          * one-hour expiry window or the upload is archived.
+         *
+         * Note the write/read asymmetry, verified live: the icon is *written* as `file_upload`
+         * and *reads back* as `Icon.File` — a time-limited signed S3 URL. Round-tripping an icon
+         * therefore means re-uploading or switching to `external`, not echoing back what was read.
          *
          * @param fileUploadId The ID of the uploaded file
          */
