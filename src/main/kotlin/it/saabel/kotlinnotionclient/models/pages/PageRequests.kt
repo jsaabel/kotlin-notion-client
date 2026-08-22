@@ -21,6 +21,14 @@ import kotlinx.serialization.Serializable
  *
  * Note: When using templates, the children parameter is prohibited.
  * Template application occurs asynchronously.
+ *
+ * @property markdown Page content as enhanced Markdown, converted to blocks server-side.
+ *   Mutually exclusive with [children] and [template].
+ * @property allowAsync Opt into asynchronous execution. Per the Jun 29 2026 Notion changelog
+ *   this is **only valid together with [markdown]**; when `true`, the API may respond with
+ *   HTTP 202 and an async task handle instead of the created page. Use the
+ *   `PagesApi.createAsync` methods rather than setting this directly — `PagesApi.create`
+ *   returns the synchronous response shape and rejects a request carrying it.
  */
 @Serializable
 data class CreatePageRequest(
@@ -40,6 +48,8 @@ data class CreatePageRequest(
     val template: PageTemplate? = null,
     @SerialName("position")
     val position: PagePosition? = null,
+    @SerialName("allow_async")
+    val allowAsync: Boolean? = null,
 )
 
 /**
