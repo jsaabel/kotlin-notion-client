@@ -7,6 +7,7 @@ import io.ktor.client.statement.HttpResponse
 import io.ktor.http.isSuccess
 import it.saabel.kotlinnotionclient.config.NotionConfig
 import it.saabel.kotlinnotionclient.exceptions.NotionException
+import it.saabel.kotlinnotionclient.exceptions.toNotionApiError
 import it.saabel.kotlinnotionclient.models.base.CustomEmojiList
 import it.saabel.kotlinnotionclient.models.base.CustomEmojiObject
 import it.saabel.kotlinnotionclient.utils.Pagination
@@ -60,18 +61,7 @@ class CustomEmojisApi(
             if (response.status.isSuccess()) {
                 response.body<CustomEmojiList>()
             } else {
-                val errorBody =
-                    try {
-                        response.body<String>()
-                    } catch (e: Exception) {
-                        "Could not read error response body"
-                    }
-
-                throw NotionException.ApiError(
-                    code = response.status.value.toString(),
-                    status = response.status.value,
-                    details = "HTTP ${response.status.value}: ${response.status.description}. Response: $errorBody",
-                )
+                throw response.toNotionApiError()
             }
         } catch (e: NotionException) {
             throw e

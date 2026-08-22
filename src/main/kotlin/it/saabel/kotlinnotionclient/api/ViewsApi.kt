@@ -15,6 +15,7 @@ import io.ktor.http.contentType
 import io.ktor.http.isSuccess
 import it.saabel.kotlinnotionclient.config.NotionConfig
 import it.saabel.kotlinnotionclient.exceptions.NotionException
+import it.saabel.kotlinnotionclient.exceptions.toNotionApiError
 import it.saabel.kotlinnotionclient.models.views.CreateViewQueryRequest
 import it.saabel.kotlinnotionclient.models.views.CreateViewRequest
 import it.saabel.kotlinnotionclient.models.views.CreateViewRequestBuilder
@@ -100,7 +101,7 @@ class ViewsApi(
             if (response.status.isSuccess()) {
                 response.body<View>()
             } else {
-                throw response.toApiError()
+                throw response.toNotionApiError()
             }
         } catch (e: NotionException) {
             throw e
@@ -123,7 +124,7 @@ class ViewsApi(
             if (response.status.isSuccess()) {
                 response.body<View>()
             } else {
-                throw response.toApiError()
+                throw response.toNotionApiError()
             }
         } catch (e: NotionException) {
             throw e
@@ -175,7 +176,7 @@ class ViewsApi(
             if (response.status.isSuccess()) {
                 response.body<View>()
             } else {
-                throw response.toApiError()
+                throw response.toNotionApiError()
             }
         } catch (e: NotionException) {
             throw e
@@ -199,7 +200,7 @@ class ViewsApi(
             if (response.status.isSuccess()) {
                 response.body<PartialView>()
             } else {
-                throw response.toApiError()
+                throw response.toNotionApiError()
             }
         } catch (e: NotionException) {
             throw e
@@ -247,7 +248,7 @@ class ViewsApi(
             if (response.status.isSuccess()) {
                 response.body<ViewList>()
             } else {
-                throw response.toApiError()
+                throw response.toNotionApiError()
             }
         } catch (e: NotionException) {
             throw e
@@ -324,7 +325,7 @@ class ViewsApi(
             if (response.status.isSuccess()) {
                 response.body<ViewQuery>()
             } else {
-                throw response.toApiError()
+                throw response.toNotionApiError()
             }
         } catch (e: NotionException) {
             throw e
@@ -362,7 +363,7 @@ class ViewsApi(
             if (response.status.isSuccess()) {
                 response.body<ViewQueryResults>()
             } else {
-                throw response.toApiError()
+                throw response.toNotionApiError()
             }
         } catch (e: NotionException) {
             throw e
@@ -390,27 +391,11 @@ class ViewsApi(
             if (response.status.isSuccess()) {
                 response.body<DeletedViewQuery>()
             } else {
-                throw response.toApiError()
+                throw response.toNotionApiError()
             }
         } catch (e: NotionException) {
             throw e
         } catch (e: Exception) {
             throw NotionException.NetworkError(e)
         }
-
-    // ========== Internal helpers ==========
-
-    private suspend fun HttpResponse.toApiError(): NotionException.ApiError {
-        val errorBody =
-            try {
-                body<String>()
-            } catch (e: Exception) {
-                "Could not read error response body"
-            }
-        return NotionException.ApiError(
-            code = status.value.toString(),
-            status = status.value,
-            details = "HTTP ${status.value}: ${status.description}. Response: $errorBody",
-        )
-    }
 }

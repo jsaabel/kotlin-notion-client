@@ -8,6 +8,7 @@ import io.ktor.client.statement.HttpResponse
 import io.ktor.http.isSuccess
 import it.saabel.kotlinnotionclient.config.NotionConfig
 import it.saabel.kotlinnotionclient.exceptions.NotionException
+import it.saabel.kotlinnotionclient.exceptions.toNotionApiError
 import it.saabel.kotlinnotionclient.models.asynctasks.AsyncTask
 import it.saabel.kotlinnotionclient.models.asynctasks.AsyncTaskException
 import it.saabel.kotlinnotionclient.models.asynctasks.AsyncTaskStatus
@@ -57,12 +58,7 @@ class AsyncTasksApi(
             if (response.status.isSuccess()) {
                 response.body<AsyncTask>()
             } else {
-                val errorBody = readErrorBody(response)
-                throw NotionException.ApiError(
-                    code = response.status.value.toString(),
-                    status = response.status.value,
-                    details = "HTTP ${response.status.value}: ${response.status.description}. Response: $errorBody",
-                )
+                throw response.toNotionApiError()
             }
         } catch (e: NotionException) {
             throw e
@@ -154,26 +150,5 @@ class AsyncTasksApi(
         checkIntervalMs: Long,
     ): Long = maxOf(checkIntervalMs, (task.pollAfterSeconds ?: 0) * 1_000L)
 
-    private suspend fun readErrorBody(response: HttpResponse): String =
-        try {
-            response.body<String>()
-        } catch (e: Exception) {
-            "Could not read error response body"
-        }
-
-    private suspend fun clientError(e: ClientRequestException): NotionException.ApiError {
-        val errorBody =
-            try {
-                e.response.body<String>()
-            } catch (ex: Exception) {
-                "Could not read error response body"
-            }
-        return NotionException.ApiError(
-            code =
-                e.response.status.value
-                    .toString(),
-            status = e.response.status.value,
-            details = "HTTP ${e.response.status.value}: ${e.response.status.description}. Response: $errorBody",
-        )
-    }
+    private suspend fun clientError(e: ClientRequestException): NotionException = e.response.toNotionApiError()
 }

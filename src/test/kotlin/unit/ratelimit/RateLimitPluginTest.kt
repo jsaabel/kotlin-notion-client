@@ -144,4 +144,52 @@ class RateLimitPluginTest :
 
             client.close()
         }
+
+        test("plugin stops retrying once maxRetries is exhausted and surfaces 529 as ServiceOverloadedError") {
+            val counter = AtomicInteger(0)
+            val client =
+                HttpClient(
+                    MockEngine { _ ->
+                        counter.incrementAndGet()
+                        respond(
+                            content = """{"object":"error","status":529,"code":"service_unavailable","message":"overloaded"}""",
+                            status = HttpStatusCode(529, "Service Overloaded"),
+                            headers =
+                                headersOf(
+                                    HttpHeaders.ContentType to listOf(ContentType.Application.Json.toString()),
+                                    HttpHeaders.RetryAfter to listOf("7"),
+                                ),
+                        )
+                    },
+                ) {
+                    install(ContentNegotiation) {
+                        json(Json { ignoreUnknownKeys = true })
+                    }
+                    install(NotionRateLimit) {
+                        rateLimitConfig =
+                            RateLimitConfig(
+                                // 0 retries so the exhausted-retries case fires on the very first
+                                // attempt, keeping the test fast without needing to fake time.
+                                maxRetries = 0,
+                                retryBaseDelay = 1.milliseconds,
+                                retryMaxDelay = 5.milliseconds,
+                                jitterFactor = 0.0,
+                            )
+                    }
+                }
+            val fileUploadApi = FileUploadApi(client, config)
+
+            val thrown =
+                runCatching {
+                    fileUploadApi.createFileUpload(
+                        CreateFileUploadRequest(filename = "test.txt", contentType = "text/plain"),
+                    )
+                }.exceptionOrNull()
+
+            counter.get() shouldBe 1
+            thrown.shouldBeInstanceOf<NotionException.ServiceOverloadedError>()
+            thrown.retryAfterSeconds shouldBe 7
+
+            client.close()
+        }
     })
