@@ -116,22 +116,34 @@ val comment = notion.comments.create {
 
 ### Comment with File Attachments
 
-```kotlin
-// First upload a file
-val uploadResult = notion.enhancedFileUploads.uploadFile(
-    filename = "report.pdf",
-    data = fileBytes
-)
+The `create` overload that takes attachments uploads them first and merges them into the request,
+so the whole thing is one call:
 
-// Then create comment with attachment
+```kotlin
+val comment = notion.comments.create(File("report.pdf")) {
+    parent.page("page-id")
+    richText {
+        text("Here's the report you requested!")
+    }
+}
+```
+
+The comment DSL is a non-suspend lambda, so it cannot upload from inside the builder. If you
+already have an upload, attach it by object or by id:
+
+```kotlin
+val upload = notion.enhancedFileUploads.uploadFile(File("report.pdf")).getOrThrow()
+
 val comment = notion.comments.create {
     parent.page("page-id")
     richText {
         text("Here's the report you requested!")
     }
-    attachment(uploadResult.uploadId)
+    attachment(upload)
 }
 ```
+
+See [File uploads](file-uploads.md) for the full set of upload-and-attach helpers.
 
 ### Multiple Attachments
 
