@@ -205,8 +205,8 @@ val tasksDb = notion.databases.create {
 `update` changes only what the block names; everything else is left alone.
 
 > The snippets in this section are pinned by unit tests against the official
-> `patch_update_a_database.json` sample; only the parent move and the icon round trip have a live
-> spec (`DatabaseParentMoveIntegrationTest`), and it has not been run on this branch.
+> `patch_update_a_database.json` sample. The parent move and the icon replacement additionally
+> have a live spec, `DatabaseParentMoveIntegrationTest`.
 
 ```kotlin
 val updated = notion.databases.update("database-id") {
@@ -228,15 +228,19 @@ notion.databases.update("database-id") {
 `parent.block(id)` and `parent.workspace()` are available too; the migration guide documents
 moving to a page, and (for public integrations) to the workspace level as a private page.
 
-**Remove an icon or cover** — this sends an explicit JSON `null`, which is how Notion removes
-them:
+**Gotcha — a container icon can be replaced but not removed.** Unlike the page endpoint, which
+documents `"icon": null` as the removal instruction, `PATCH /v1/databases` rejects it. Verified
+live:
 
-```kotlin
-notion.databases.update("database-id") {
-    icon.remove()
-    cover.remove()
-}
 ```
+HTTP 400 validation_error: body failed validation:
+body.icon should be an object or `undefined`, instead was `null`.
+```
+
+So there is no `icon.remove()` / `cover.remove()` on this builder — the affordance is not offered
+rather than offered and broken. Set a different icon instead. Whether the *data source* endpoint
+differs, and whether a container **cover** can be cleared even though its icon cannot, are open;
+`DatabaseAttributeProbeIntegrationTest` answers both in one run.
 
 **Set an icon or cover from a local file** — the upload happens when the request is sent:
 

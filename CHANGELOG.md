@@ -37,10 +37,21 @@ Notion added in that same API version — had no client-side path at all.
 - **Moving a database is now possible.** `parent.page(id)`, `parent.block(id)` and
   `parent.workspace()` on the update builder relocate an existing database.
 
-- **`icon.remove()` / `cover.remove()` work here too**, sending the explicit JSON `null` Notion
-  removes on, via the sentinels introduced with the previous entry. `icon.upload(File(…))` and
-  `cover.upload(File(…))` resolve through the same pending-upload pass as every other attachment
-  surface.
+- **`icon.upload(File(…))` and `cover.upload(File(…))` resolve** through the same pending-upload
+  pass as every other attachment surface.
+
+- **No `icon.remove()` / `cover.remove()` on this surface**, and that is a finding rather than an
+  omission. The page endpoint documents `"icon": null` as the removal instruction; the database
+  endpoint rejects it — verified live:
+
+  ```
+  HTTP 400 validation_error: body failed validation:
+  body.icon should be an object or `undefined`, instead was `null`.
+  ```
+
+  A container icon or cover can be replaced but not cleared. The removal sentinels from the
+  previous entry encode correctly; this endpoint simply does not accept what they encode, so the
+  affordance is left off rather than shipped broken.
 
 - **Setting a cover on an inline database fails fast.** Notion does not support the combination,
   so a request that sets `cover` alongside `is_inline = true` throws `IllegalArgumentException`
@@ -51,11 +62,11 @@ Notion added in that same API version — had no client-side path at all.
   attribute like any other; the payload it sends is unchanged. `update(id) { restore() }` brings
   a database back.
 
-Not changed: `UpdateDataSourceRequestBuilder` still has no `cover` builder. Whether
-`PATCH /v1/data_sources` accepts one is undecided — the migration guide lists `cover` as
-database-level only, but that same list omits `icon`, which a data source demonstrably does
-carry, so it is not authority here. Settling it needs a live request; a comment in the builder
-records the open question.
+Still open, and unchanged here: whether `PATCH /v1/data_sources` accepts a `cover` (so
+`UpdateDataSourceRequestBuilder` could gain one), whether a container **cover** can be cleared
+even though its icon cannot, and whether a *data source* icon can be cleared — the last being the
+one that matters in the UI, which renders the data source. `DatabaseAttributeProbeIntegrationTest`
+answers all three in one run and maps each outcome to a follow-up; IDEAS.md #11 tracks them.
 
 
 ### ⚠️ Breaking Changes — the write side is now offset-preserving, zone-explicit and validating

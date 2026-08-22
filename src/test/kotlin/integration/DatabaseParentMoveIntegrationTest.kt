@@ -6,7 +6,6 @@ import io.kotest.matchers.shouldBe
 import it.saabel.kotlinnotionclient.NotionClient
 import it.saabel.kotlinnotionclient.config.NotionConfig
 import it.saabel.kotlinnotionclient.models.base.Icon
-import it.saabel.kotlinnotionclient.models.base.Parent
 
 /**
  * Live check of the one genuinely new capability in `databases.update`: moving a database to a
@@ -36,6 +35,10 @@ class DatabaseParentMoveIntegrationTest :
             val rootPageId = System.getenv("NOTION_TEST_PAGE_ID")
             val notion = NotionClient.create(NotionConfig(apiToken = token))
 
+            // Notion accepts ids with or without hyphens and always answers with them, so a
+            // parent read back never string-equals an id copied from an env var or a URL.
+            fun String?.asId(): String? = this?.replace("-", "")
+
             "moves a database to a different parent page" {
                 val destination =
                     notion.pages.create {
@@ -50,7 +53,7 @@ class DatabaseParentMoveIntegrationTest :
                         properties { title("Name") }
                     }
 
-                database.parent shouldBe Parent.PageParent(pageId = rootPageId)
+                database.parent.id.asId() shouldBe rootPageId.asId()
 
                 val moved =
                     notion.databases.update(database.id) {
@@ -58,12 +61,12 @@ class DatabaseParentMoveIntegrationTest :
                         title("Parent move — after")
                     }
 
-                moved.parent shouldBe Parent.PageParent(pageId = destination.id)
+                moved.parent.id.asId() shouldBe destination.id.asId()
                 moved.title.first().plainText shouldBe "Parent move — after"
 
                 // Confirm the move persisted rather than only being echoed by the PATCH response.
                 val reread = notion.databases.retrieve(database.id)
-                reread.parent shouldBe Parent.PageParent(pageId = destination.id)
+                reread.parent.id.asId() shouldBe destination.id.asId()
 
                 if (shouldCleanupAfterTest()) {
                     notion.databases.trash(database.id)
@@ -74,20 +77,23 @@ class DatabaseParentMoveIntegrationTest :
                 }
             }
 
-            "sets and then removes a container icon" {
+            "replaces a container icon" {
+                // Replacing is the whole capability here: `PATCH /v1/databases` rejects
+                // `"icon": null`, so a container icon cannot be cleared once set. See
+                // DatabaseAttributeProbeIntegrationTest and UpdateDatabaseRequestBuilder's KDoc.
                 val database =
                     notion.databases.create {
                         parent.page(rootPageId)
-                        title("Container icon round trip")
+                        title("Container icon replace")
                         properties { title("Name") }
                     }
 
-                val withIcon = notion.databases.update(database.id) { icon.emoji("📊") }
-                withIcon.icon shouldBe Icon.Emoji(emoji = "📊")
+                val withEmoji = notion.databases.update(database.id) { icon.emoji("📊") }
+                withEmoji.icon shouldBe Icon.Emoji(emoji = "📊")
 
-                val removed = notion.databases.update(database.id) { icon.remove() }
-                removed.icon shouldBe null
-                notion.databases.retrieve(database.id).icon shouldBe null
+                val replaced = notion.databases.update(database.id) { icon.emoji("✅") }
+                replaced.icon shouldBe Icon.Emoji(emoji = "✅")
+                notion.databases.retrieve(database.id).icon shouldBe Icon.Emoji(emoji = "✅")
 
                 if (shouldCleanupAfterTest()) notion.databases.trash(database.id)
             }

@@ -2,7 +2,6 @@ package unit.api
 
 import io.kotest.core.annotation.Tags
 import io.kotest.core.spec.style.DescribeSpec
-import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.mock.MockEngine
@@ -90,17 +89,6 @@ class DatabasesUpdateApiTest :
                 body["parent"]!!.jsonObject["page_id"]!!.jsonPrimitive.content shouldBe "new-parent-page-id"
                 body["icon"]!!.jsonObject["emoji"]!!.jsonPrimitive.content shouldBe "📊"
                 body["is_inline"]!!.jsonPrimitive.content shouldBe "true"
-            }
-
-            it("carries an icon removal to the wire as an explicit null") {
-                val recorded = mutableListOf<Pair<io.ktor.client.request.HttpRequestData, JsonObject>>()
-                val api = DatabasesApi(recordingClient(recorded), NotionConfig(apiToken = "test-token"))
-
-                api.update(databaseId) { icon.remove() }
-
-                val body = recorded.single().second
-                body.keys shouldBe setOf("icon")
-                body["icon"].shouldNotBeNull().toString() shouldBe "null"
             }
 
             it("accepts a prebuilt request as well as the DSL") {

@@ -146,8 +146,8 @@ class DocumentedSnippetsTest :
                 updateDatabaseRequest {
                     parent { page("new-parent-page-id") }
                     icon { emoji("📊") }
-                    cover { remove() }
-                }.cover shouldBe PageCover.Removed
+                    cover { external("https://example.com/cover.png") }
+                }.icon shouldBe Icon.Emoji(emoji = "📊")
             }
         }
 

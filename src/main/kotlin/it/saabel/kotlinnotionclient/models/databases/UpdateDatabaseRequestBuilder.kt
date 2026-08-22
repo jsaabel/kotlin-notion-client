@@ -38,9 +38,22 @@ import java.nio.file.Path
  *
  * **Important notes**:
  * - Only what the block names is sent; everything else on the database is left alone.
- * - `icon.remove()` and `cover.remove()` send an explicit JSON `null`, which is how Notion
- *   removes them — see `docs/adr/0002-explicit-null-payloads.md`.
  * - Setting a cover on an inline database is rejected by [build] rather than by the API.
+ * - **There is no `icon.remove()` / `cover.remove()` here.** Unlike the page endpoint, which
+ *   documents `"icon": null` as the removal instruction, `PATCH /v1/databases` rejects it —
+ *   verified live on 2026-08-22:
+ *
+ *   ```
+ *   HTTP 400 validation_error: body failed validation:
+ *   body.icon should be an object or `undefined`, instead was `null`.
+ *   ```
+ *
+ *   "an object or `undefined`" leaves no room for a removal: the container icon and cover can be
+ *   replaced but not cleared. The sentinels from
+ *   `docs/adr/0002-explicit-null-payloads.md` still exist and still encode correctly — the
+ *   endpoint simply does not accept what they encode, so the affordance is not offered rather
+ *   than offered and broken. `DatabaseAttributeProbeIntegrationTest` re-checks this, and whether
+ *   the data source endpoint differs.
  */
 @UpdateDatabaseRequestDslMarker
 class UpdateDatabaseRequestBuilder {
@@ -161,12 +174,10 @@ class UpdateDatabaseRequestBuilder {
         // "cover is not supported when is_inline is true" —
         // reference/notion-api/upgrading_to_2025_09_03/upgrade_guide.md. Only a request that
         // says both things is decidable here: a cover with no `is_inline` may be landing on a
-        // full-page database, and that is the API's call, not ours. Removing a cover stays
-        // legal — an inline database simply has none.
-        require(!(isInlineValue == true && coverValue != null && coverValue != PageCover.Removed)) {
+        // full-page database, and that is the API's call, not ours.
+        require(!(isInlineValue == true && coverValue != null)) {
             "Notion does not support a cover on an inline database: this request sets both " +
-                "cover and is_inline = true. Drop the cover, use cover.remove(), or set " +
-                "inline(false)."
+                "cover and is_inline = true. Drop the cover, or set inline(false)."
         }
 
         return UpdateDatabaseRequest(
@@ -337,21 +348,6 @@ class UpdateDatabaseRequestBuilder {
         ) {
             this@UpdateDatabaseRequestBuilder.iconValue = Icon.NativeIcon(NativeIconObject(name = name, color = color))
         }
-
-        /**
-         * Removes the database icon.
-         *
-         * Notion removes an icon when the request carries `"icon": null`, so the request records
-         * [Icon.Removed] — a sentinel that serializes to exactly that. A plain Kotlin `null` would
-         * be dropped from the payload and the database would keep its icon; see
-         * `docs/adr/0002-explicit-null-payloads.md`.
-         *
-         * This clears the *container's* icon. The initial data source carries its own copy — the
-         * one Notion's UI renders — so removing an icon everywhere it shows means clearing both.
-         */
-        fun remove() {
-            this@UpdateDatabaseRequestBuilder.iconValue = Icon.Removed
-        }
     }
 
     /**
@@ -452,18 +448,6 @@ class UpdateDatabaseRequestBuilder {
             options: FileUploadOptions = FileUploadOptions(),
         ) {
             upload(path.asFileSource(), options)
-        }
-
-        /**
-         * Removes the database cover.
-         *
-         * Notion removes a cover when the request carries `"cover": null`, so the request records
-         * [PageCover.Removed] — a sentinel that serializes to exactly that. A plain Kotlin `null`
-         * would be dropped from the payload and the database would keep its cover; see
-         * `docs/adr/0002-explicit-null-payloads.md`.
-         */
-        fun remove() {
-            this@UpdateDatabaseRequestBuilder.coverValue = PageCover.Removed
         }
     }
 }

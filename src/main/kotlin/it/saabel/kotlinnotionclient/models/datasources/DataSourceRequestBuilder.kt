@@ -183,7 +183,9 @@ class UpdateDataSourceRequestBuilder {
     // point. The DataSource *response* model has a `cover` field, which says a data source can
     // hold one, not that PATCH /v1/data_sources accepts one. Settling it needs a live request,
     // and no credentials were available on this branch; adding an untested field would trade a
-    // visible asymmetry for a silent 400. Tracked in the PR for issue #82.
+    // visible asymmetry for a silent 400. `DataSourceCoverProbeIntegrationTest` is that request,
+    // and its KDoc says what each of the three outcomes means for this comment. Tracked as
+    // IDEAS.md #11, raised by issue #82.
     val icon = IconBuilder()
 
     /**

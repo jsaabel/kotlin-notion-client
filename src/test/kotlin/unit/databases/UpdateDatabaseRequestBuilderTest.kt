@@ -113,14 +113,6 @@ class UpdateDatabaseRequestBuilderTest :
                 encode(updateDatabaseRequest { trash() }) shouldBe """{"in_trash":true}"""
             }
 
-            it("sends icon.remove() as an explicit null") {
-                encode(updateDatabaseRequest { icon.remove() }) shouldBe """{"icon":null}"""
-            }
-
-            it("sends cover.remove() as an explicit null") {
-                encode(updateDatabaseRequest { cover.remove() }) shouldBe """{"cover":null}"""
-            }
-
             it("carries a parent move as the typed parent shape") {
                 encode(updateDatabaseRequest { parent.page("page-id") }) shouldBe
                     """{"parent":{"page_id":"page-id","type":"page_id"}}"""
@@ -147,17 +139,6 @@ class UpdateDatabaseRequestBuilderTest :
                         inline(true)
                     }
                 }
-            }
-
-            it("allows removing a cover while going inline") {
-                val request =
-                    updateDatabaseRequest {
-                        inline(true)
-                        cover.remove()
-                    }
-
-                request.cover shouldBe PageCover.Removed
-                request.isInline shouldBe true
             }
 
             it("allows a cover when the request says nothing about inline") {

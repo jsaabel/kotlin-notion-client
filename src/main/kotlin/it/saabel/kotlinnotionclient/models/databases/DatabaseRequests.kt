@@ -63,15 +63,21 @@ data class InitialDataSource(
  * own; setting one does not set the other.
  *
  * Every field is optional and a `null` field is omitted from the payload, so a request touches
- * only what it names. Removing an icon or cover is therefore *not* a Kotlin `null` — it is
- * [Icon.Removed]/[PageCover.Removed], which serialize to an explicit JSON `null`. See
- * `docs/adr/0002-explicit-null-payloads.md`.
+ * only what it names.
+ *
+ * Unlike a page update, an icon or cover here can be **replaced but not removed**. Verified live
+ * on 2026-08-22: `PATCH /v1/databases` answers `"icon": null` with
+ * `HTTP 400 validation_error — body.icon should be an object or `undefined`, instead was `null``.
+ * The [Icon.Removed]/[PageCover.Removed] sentinels of
+ * `docs/adr/0002-explicit-null-payloads.md` encode correctly but are not accepted here, so
+ * [UpdateDatabaseRequestBuilder] does not offer a `remove()` on this surface. Setting one of them
+ * on this model by hand produces that 400.
  *
  * @property parent Moves the database to a different parent. New in the 2025-09-03 API.
  * @property title The container title
- * @property icon The container icon, or [Icon.Removed] to remove it
- * @property cover The container cover, or [PageCover.Removed] to remove it. Notion does not
- *   support a cover on an inline database.
+ * @property icon The container icon. Cannot be cleared — see above.
+ * @property cover The container cover. Cannot be cleared, and Notion does not support one on an
+ *   inline database.
  * @property isInline Whether the database renders inline in its parent page
  * @property inTrash Whether the database is in the trash
  */
