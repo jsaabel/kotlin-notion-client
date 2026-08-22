@@ -3,10 +3,12 @@
 A modern, type-safe Kotlin client for the Notion API with comprehensive DSL support and coroutine-based operations.
 
 > **⚠️ AI-Assisted Development Notice**
-> This library was developed with significant assistance from Claude Code (AI). While it includes comprehensive testing (860+ unit tests) and validation against official Notion API samples, please be aware of potential issues:
+> This library is developed primarily by AI agents (Claude Code) under human direction. While it includes comprehensive testing (1,200+ unit tests), validation against official Notion API samples, and live-API integration passes, please be aware of potential issues:
 > - Documentation examples may not perfectly match implementation
 > - Edge cases may exist that weren't covered in testing
 > - Some API patterns may have inconsistencies
+>
+> We are deliberately open about this — including when it bites: several fixes in the upcoming 0.6.0 release correct bugs that earlier AI-assisted releases introduced (see [CHANGELOG.md](CHANGELOG.md)).
 >
 > **Please report any issues you encounter!** Your feedback is invaluable for improving the library.
 > See the [Development Context](#development-context) section for full transparency about the development process.
@@ -263,6 +265,8 @@ This project was developed using **Claude Code** (Anthropic's CLI for Claude) as
 - Extensive use of official Notion API samples for validation
 - Transparent development process documented in [journal/](journal/)
 
+Since the 0.6.0 cycle, whole releases are carried out by orchestrated agent runs: features and fixes are specced as GitHub issues, implemented one agent per issue, merged via reviewed PRs onto a shared release branch, and finished with a dedicated live-API verification pass against a real workspace. The paper trail — issues, agent reports (`FOLLOWUPS.md`), and architecture decision records (`docs/adr/`) — is kept in the open, including the cases where a fix corrects a bug an earlier AI-assisted release shipped.
+
 The development journals are intentionally kept in the repository for transparency and educational value for others exploring LLM-assisted development workflows.
 
 ## Project Status
@@ -273,7 +277,7 @@ This library covers virtually all aspects of the Notion API (2026-03-11 version)
 - Review the test coverage for your specific use cases
 - Test thoroughly with your Notion workspace
 - Be aware that the API version support is fixed to 2026-03-11
-- **Date/time properties with timezones**: While the library provides comprehensive support for `kotlinx-datetime` types with explicit timezone handling (including timezone-aware conversions via `toLocalDateTime(timeZone)`), this area may benefit from additional real-world validation, particularly around timezone edge cases and complex datetime scenarios
+- **Date/time properties with timezones**: The write side is offset-preserving, zone-explicit and validating since 0.6.0 (a response to a real-world bug where offset-less writes were silently stored as UTC), and the read accessors (`wallClockDateTime`, `utcInstant`, `storedOffset`, `localDateTimeIn(timeZone)`) name the question they answer — but timezone handling remains an area worth testing against your own workload
 
 ## Contributing
 
