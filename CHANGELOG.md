@@ -239,6 +239,51 @@ Eleven changelog-driven issues landed together, bringing the client up to date w
 
 ### Added
 
+- **One-call upload-and-attach helpers (#69).** Attaching a file used to cost a four-step
+  dance — create a file upload, send the bytes, wait for it to be ready, then reference its
+  id. New suspend helpers do all four:
+
+  ```kotlin
+  notion.blocks.appendImage(pageId, File("diagram.png"), caption = "Architecture")
+  notion.blocks.appendFile(pageId, Paths.get("report.pdf"))
+  notion.blocks.appendHtml(pageId, htmlString)          // uploads .html, attaches as embed
+  notion.pages.setIcon(pageId, File("logo.png"))
+  notion.pages.setCover(pageId, File("hero.png"))
+  notion.pages.attachFiles(pageId, "Attachments", File("a.pdf"), File("b.pdf"))
+  notion.comments.create(File("trace.txt")) { parent.pageId(pageId); content { text("…") } }
+  ```
+
+  Each takes a `File`, `Path` or `FileSource`, delegates the upload half to
+  `EnhancedFileUploadApi` (no upload logic is duplicated), and **throws** like the rest of the
+  client rather than returning a `FileUploadResult` the caller has to unwrap.
+  `attachFiles` is additive by default — it reads the page first so entries already in the
+  property survive the write — with `replace = true` for the overwrite.
+  They live on the API that owns the target (`blocks`/`pages`/`comments`) rather than behind a
+  separate `notion.attachments` facade, so they surface in completion right next to
+  `appendChildren` and `update`.
+
+- **`FileUploadResult.getOrThrow()`** bridges the enhanced upload API's sealed result to the
+  throwing contract every other API uses:
+  `notion.enhancedFileUploads.uploadFile(file).getOrThrow()`. `FileUploadResult` stays the
+  advanced-path return type — nothing about the existing surface changed.
+
+- **`File`/`Path`/`ByteArray.asFileSource()`** extensions, so anything can be handed to the
+  upload and attach APIs without naming a `FileSource` subclass.
+
+- **Icons and covers can finally be set from an upload (#69).** `Icon.FileUpload` and
+  `PageCover.FileUpload` existed as models but were unreachable from every DSL — there was no
+  `upload(...)` setter and no `icon(Icon)` escape hatch, so the only workaround was to bypass
+  the builders entirely. All four `IconBuilder`s (page create, page update, database, data
+  source) and all three `CoverBuilder`s now expose `upload(fileUploadId)` and
+  `upload(fileUpload)`.
+
+- **`FileUpload`-typed overloads everywhere an upload is attached (#69).** The upload APIs hand
+  back a `FileUpload`; every attach site used to take a bare id `String`. Added to
+  `imageFromUpload`/`videoFromUpload`/`audioFromUpload`/`fileFromUpload`/`pdfFromUpload`/
+  `embedFromUpload`, `FilesBuilder.upload`, `CreateCommentRequestBuilder.attachment`, and the
+  new icon/cover `upload`. The file-block and files-property overloads default the display name
+  to the upload's own filename.
+
 - **HTML blocks via embed + file upload** (Jul 3 2026 Notion changelog):
   `EmbedRequestContent` now accepts a `fileUpload` reference as an alternative to `url`
   (exactly one required), with a new `PageContentBuilder.embedFromUpload(fileUploadId)`
@@ -306,6 +351,14 @@ Eleven changelog-driven issues landed together, bringing the client up to date w
 
 ### Deprecated
 
+- **`icon.file(url, expiryTime)` and `cover.file(url, expiryTime)` on every request builder
+  (#69).** These emit `type: "file"` — the *read* shape, a Notion-hosted expiring URL — while
+  the [Page object reference](https://developers.notion.com/reference/page) documents icon and
+  cover as accepting only `external` or `file_upload` on write. Use `external(url)` for a
+  publicly hosted file, or the new `upload(...)` for one sent through the File Upload API.
+  Warning-level only; behaviour is unchanged. `FileAttachIntegrationTest` records what the live
+  API actually does with such a write.
+
 No behaviour changed — each deprecated accessor delegates to its replacement, so
 existing code still compiles and still returns exactly what it returned before.
 
@@ -362,6 +415,13 @@ decision rather than an implementation detail.
   Notion returns `.000` for every value it stores, so this is invisible in practice.
 
 ### Unchanged, deliberately
+
+**Embed blocks still have no `caption` (#69).** The reference documents only `url` for embeds,
+and the issue made adding one conditional on live verification. No workspace credentials were
+available in the environment this work was done in, so shipping an unverified field on a public
+builder would have been a guess. `FileAttachIntegrationTest` carries a probe that sends an embed
+caption as raw JSON and prints Notion's answer; if it is accepted, add `caption` to
+`EmbedRequestContent`, to `embed`/`embedFromUpload`, and to `EmbedContent` on the read side.
 
 `utcInstant` still returns null — rather than throwing — for a value that is absent,
 date-only, offset-less or malformed. Notion returns an offset for every time-bearing
