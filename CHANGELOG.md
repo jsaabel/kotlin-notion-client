@@ -239,6 +239,13 @@ Eleven changelog-driven issues landed together, bringing the client up to date w
 
 ### Added
 
+- **Embed blocks take a caption (#69).** Undocumented — the embed reference lists only `url` —
+  but verified live: Notion accepts a caption on an embed and echoes it back on the created
+  block. Added to `EmbedRequestContent`, to `EmbedContent` on the read side, and to
+  `embed(url, caption)`, `embedFromUpload(id, caption)` and `BlocksApi.appendHtml(..., caption)`.
+  This closes the last of the three findings issue #69 flagged as needing live adjudication;
+  the answers now live as assertions in `FileAttachIntegrationTest` rather than as probes.
+
 - **One-call upload-and-attach helpers (#69).** Attaching a file used to cost a four-step
   dance — create a file upload, send the bytes, wait for it to be ready, then reference its
   id. New suspend helpers do all four:
@@ -275,7 +282,10 @@ Eleven changelog-driven issues landed together, bringing the client up to date w
   `upload(...)` setter and no `icon(Icon)` escape hatch, so the only workaround was to bypass
   the builders entirely. All four `IconBuilder`s (page create, page update, database, data
   source) and all three `CoverBuilder`s now expose `upload(fileUploadId)` and
-  `upload(fileUpload)`.
+  `upload(fileUpload)`. Verified live, and worth knowing: an icon or cover is *written* as
+  `file_upload` but *reads back* as `Icon.File` / `PageCover.File` — a signed S3 URL with about
+  an hour of life. Copying appearance between pages means re-uploading or switching to
+  `external`, not echoing back what was read.
 
 - **`FileUpload`-typed overloads everywhere an upload is attached (#69).** The upload APIs hand
   back a `FileUpload`; every attach site used to take a bare id `String`. Added to
@@ -354,10 +364,12 @@ Eleven changelog-driven issues landed together, bringing the client up to date w
 - **`icon.file(url, expiryTime)` and `cover.file(url, expiryTime)` on every request builder
   (#69).** These emit `type: "file"` — the *read* shape, a Notion-hosted expiring URL — while
   the [Page object reference](https://developers.notion.com/reference/page) documents icon and
-  cover as accepting only `external` or `file_upload` on write. Use `external(url)` for a
-  publicly hosted file, or the new `upload(...)` for one sent through the File Upload API.
-  Warning-level only; behaviour is unchanged. `FileAttachIntegrationTest` records what the live
-  API actually does with such a write.
+  cover as accepting only `external` or `file_upload` on write. Verified live: the request fails
+  with HTTP 400 `validation_error`, naming `emoji`, `external`, `custom_emoji`, `file_upload`
+  and `icon` as the accepted set — there is no input for which these calls succeed. Use
+  `external(url)` for a publicly hosted file, or the new `upload(...)` for one sent through the
+  File Upload API. Left at warning level rather than `DeprecationLevel.ERROR` so the merge does
+  not break compilation for existing callers; escalating is a one-line change if preferred.
 
 No behaviour changed — each deprecated accessor delegates to its replacement, so
 existing code still compiles and still returns exactly what it returned before.
@@ -432,13 +444,6 @@ decision rather than an implementation detail.
   is only exposed through internal API.
 
 ### Unchanged, deliberately
-
-**Embed blocks still have no `caption` (#69).** The reference documents only `url` for embeds,
-and the issue made adding one conditional on live verification. No workspace credentials were
-available in the environment this work was done in, so shipping an unverified field on a public
-builder would have been a guess. `FileAttachIntegrationTest` carries a probe that sends an embed
-caption as raw JSON and prints Notion's answer; if it is accepted, add `caption` to
-`EmbedRequestContent`, to `embed`/`embedFromUpload`, and to `EmbedContent` on the read side.
 
 `utcInstant` still returns null — rather than throwing — for a value that is absent,
 date-only, offset-less or malformed. Notion returns an offset for every time-bearing

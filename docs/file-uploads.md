@@ -60,6 +60,17 @@ something else — `.html` is appended unless the name already ends in `.html` o
 Notion decides how to render the embed from the file's extension. There are `File`, `Path` and
 `FileSource` overloads too, for HTML you already have on disk.
 
+Embeds take a caption, including HTML blocks. This is undocumented — the embed reference lists
+only `url` — but verified live: Notion accepts the caption and echoes it back on the created
+block.
+
+```kotlin
+notion.blocks.appendHtml(pageId, html, caption = "Generated nightly")
+notion.blocks.appendChildren(pageId) {
+    embed("https://example.com", caption = "Upstream docs")
+}
+```
+
 ### Attaching to a files property
 
 `attachFiles` is additive by default. Notion's files property is written whole — there is no
@@ -164,9 +175,16 @@ notion.pages.create {
 | Comments | `attachment(...)` |
 
 > **Icons and covers accept only `external` and `file_upload` on write.** `icon.file(url)` and
-> `cover.file(url)` emit `type: "file"` — the *read* shape, a Notion-hosted expiring URL — which
-> Notion does not accept when writing. Both are deprecated: use `external(url)` for a publicly
-> hosted file, or `upload(...)` for one sent through the File Upload API.
+> `cover.file(url)` emit `type: "file"` — the *read* shape, a Notion-hosted expiring URL. Verified
+> live: Notion rejects it with HTTP 400 `validation_error`, naming `emoji`, `external`,
+> `custom_emoji`, `file_upload` and `icon` as the shapes it will accept. Both are deprecated;
+> there is no input for which they succeed. Use `external(url)` for a publicly hosted file, or
+> `upload(...)` for one sent through the File Upload API.
+
+> **Written as `file_upload`, read back as `file`.** An uploaded icon or cover comes back from
+> the API as `Icon.File` / `PageCover.File` — a signed S3 URL with roughly an hour of life. That
+> asymmetry matters when copying appearance between pages: you cannot echo back what you read,
+> you have to re-upload or switch to `external`.
 
 ---
 

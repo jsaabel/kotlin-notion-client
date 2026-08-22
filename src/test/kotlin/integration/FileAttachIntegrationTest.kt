@@ -1,43 +1,36 @@
 package integration
 
+import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.annotation.Tags
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.string.shouldContain
 import io.kotest.matchers.types.shouldBeInstanceOf
-import io.ktor.client.HttpClient
-import io.ktor.client.engine.cio.CIO
-import io.ktor.client.request.header
-import io.ktor.client.request.patch
-import io.ktor.client.request.setBody
-import io.ktor.client.statement.bodyAsText
-import io.ktor.http.ContentType
-import io.ktor.http.contentType
 import it.saabel.kotlinnotionclient.NotionClient
 import it.saabel.kotlinnotionclient.config.NotionConfig
+import it.saabel.kotlinnotionclient.exceptions.NotionException
 import it.saabel.kotlinnotionclient.models.base.Icon
 import it.saabel.kotlinnotionclient.models.blocks.Block
 import it.saabel.kotlinnotionclient.models.pages.PageCover
 import it.saabel.kotlinnotionclient.utils.asFileSource
 
 /**
- * Live-API adjudication for the three findings in issue #69 that the reference documentation
- * cannot settle, plus a smoke test of the one-call helpers against a real workspace.
+ * Live-API regression tests for the three findings in issue #69 that the reference documentation
+ * could not settle, plus a smoke test of the one-call helpers against a real workspace.
  *
- * Three questions this test exists to answer:
- * 1. **Does `icon`/`cover` accept `type: "file_upload"` on write?** The models existed but were
- *    unreachable from every DSL, so nothing had ever sent one.
- * 2. **What does Notion do with a `type: "file"` icon on a write?** The Page object reference
- *    says icon accepts only `external` or `file_upload`, which is why `icon.file(url)` is now
- *    deprecated — this test records what the API actually does with it.
- * 3. **Does an embed accept a `caption`?** `EmbedRequestContent` deliberately still has no
- *    caption field: the reference documents only `url` for embeds, and adding an unverified
- *    field to a public builder is worse than leaving the gap open. The probe below sends a
- *    caption as raw JSON instead, so the answer can be had without shipping the field first.
- *    If Notion accepts it, add `caption` to `EmbedRequestContent`, to `embed`/`embedFromUpload`,
- *    and to `EmbedContent` on the read side.
+ * All three were adjudicated on 2026-08-22 (API version 2026-03-11); this file now guards the
+ * answers rather than asking the questions:
+ * 1. **`icon`/`cover` accept `type: "file_upload"` on write** — and read back as `Icon.File` /
+ *    `PageCover.File`, a time-limited signed S3 URL. The write shape and the read shape differ.
+ * 2. **A `type: "file"` icon is rejected on write** with HTTP 400 `validation_error`, which
+ *    names `emoji`, `external`, `custom_emoji`, `file_upload` and `icon` as the accepted set.
+ *    That is why `icon.file(url)` / `cover.file(url)` are deprecated.
+ * 3. **An embed accepts a `caption`** — undocumented, but written and echoed back with the same
+ *    rich-text shape every other caption uses. `EmbedRequestContent`, `EmbedContent` and the
+ *    `embed`/`embedFromUpload` builders carry it now.
  *
- * A failure here is a finding, not necessarily a bug. Run with:
+ * A failure here is a finding: it means the live API moved away from one of the above. Run with:
  * `./gradlew integrationTest --tests "*FileAttachIntegrationTest"`
  */
 @Tags("Integration", "RequiresApi")
@@ -82,39 +75,34 @@ class FileAttachIntegrationTest :
                 notion.close()
             }
 
-            "setIcon writes an uploaded file as the page icon" {
+            "setIcon writes an uploaded file as the page icon, which reads back as Icon.File" {
                 val page = notion.pages.setIcon(containerPageId, pngBytes.asFileSource("icon.png"))
 
-                println("🔎 FINDING: icon after setIcon = ${page.icon}")
-                // Notion resolves a written file_upload icon into its read shape on the way back,
-                // so accept either — what matters is that the write was accepted and stuck.
-                (page.icon is Icon.File || page.icon is Icon.FileUpload) shouldBe true
+                // Written as file_upload, read back as the Notion-hosted read shape.
+                val icon = page.icon.shouldBeInstanceOf<Icon.File>()
+                icon.file.url shouldContain "icon.png"
+                icon.file.expiryTime.shouldNotBeNull()
             }
 
-            "setCover writes an uploaded file as the page cover" {
+            "setCover writes an uploaded file as the page cover, which reads back as PageCover.File" {
                 val page = notion.pages.setCover(containerPageId, pngBytes.asFileSource("cover.png"))
 
-                println("🔎 FINDING: cover after setCover = ${page.cover}")
-                (page.cover is PageCover.File || page.cover is PageCover.FileUpload) shouldBe true
+                val cover = page.cover.shouldBeInstanceOf<PageCover.File>()
+                cover.file.url shouldContain "cover.png"
             }
 
-            "a type:\"file\" icon on write is rejected or ignored" {
-                // The deprecated icon.file(url) path. The Page object reference says icon accepts
-                // only external or file_upload on write; this records what actually happens.
-                val outcome =
-                    runCatching {
+            "a type:\"file\" icon is rejected on write, which is why icon.file is deprecated" {
+                val error =
+                    shouldThrow<NotionException.ApiError> {
                         @Suppress("DEPRECATION")
                         notion.pages.update(containerPageId) {
                             icon.file("https://www.notion.so/images/favicon.ico")
                         }
                     }
 
-                outcome.fold(
-                    onSuccess = { println("🔎 FINDING: type:\"file\" icon ACCEPTED on write — icon is now ${it.icon}") },
-                    onFailure = { println("🔎 FINDING: type:\"file\" icon REJECTED on write — ${it.message}") },
-                )
-                // Either outcome is information, not a failure — the deprecation stands on the
-                // documented contract regardless.
+                error.message shouldContain "validation_error"
+                // The 400 enumerates what icon does accept — no `file` among them.
+                error.message shouldContain "body.icon.file_upload should be defined"
             }
 
             "appendHtml turns a raw HTML string into an HTML block in one call" {
@@ -143,40 +131,33 @@ class FileAttachIntegrationTest :
                 file.results.single().shouldBeInstanceOf<Block.File>()
             }
 
-            "PROBE: does an embed block accept a caption?" {
-                // Sent as raw JSON on purpose: EmbedRequestContent has no caption field yet, and
-                // this probe is what decides whether it should get one.
-                val raw = HttpClient(CIO)
-                val body =
-                    """
-                    {
-                      "children": [
-                        {
-                          "object": "block",
-                          "type": "embed",
-                          "embed": {
-                            "url": "https://example.com",
-                            "caption": [{ "type": "text", "text": { "content": "probe caption" } }]
-                          }
-                        }
-                      ]
-                    }
-                    """.trimIndent()
-
+            "an embed block accepts a caption and echoes it back" {
+                // Undocumented — the embed reference lists only `url` — but accepted, and the
+                // reason EmbedRequestContent/EmbedContent carry a caption at all.
                 val response =
-                    raw.patch("https://api.notion.com/v1/blocks/$containerPageId/children") {
-                        header("Authorization", "Bearer $token")
-                        header("Notion-Version", NotionConfig(apiToken = token).apiVersion)
-                        contentType(ContentType.Application.Json)
-                        setBody(body)
+                    notion.blocks.appendChildren(containerPageId) {
+                        embed("https://example.com", caption = "captioned embed")
                     }
-                val text = response.bodyAsText()
-                raw.close()
 
-                println("🔎 FINDING: embed caption probe -> HTTP ${response.status.value}")
-                println("🔎 FINDING: embed caption probe body -> ${text.take(1200)}")
-                // No assertion: the printed response is the finding. A 200 whose echoed block
-                // carries the caption means EmbedRequestContent should gain the field.
+                val block = response.results.single().shouldBeInstanceOf<Block.Embed>()
+                block.embed.caption
+                    .single()
+                    .plainText shouldBe "captioned embed"
+            }
+
+            "appendHtml carries a caption onto the HTML block" {
+                val response =
+                    notion.blocks.appendHtml(
+                        containerPageId,
+                        "<p>captioned html</p>",
+                        filename = "captioned",
+                        caption = "generated nightly",
+                    )
+
+                val block = response.results.single().shouldBeInstanceOf<Block.Embed>()
+                block.embed.caption
+                    .single()
+                    .plainText shouldBe "generated nightly"
             }
         }
     })
