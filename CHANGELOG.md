@@ -7,6 +7,57 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### `databases.update` — the container attributes are reachable at last
+
+`DatabasesApi` had `retrieve`, `create` and `trash` and no `update`, so the attributes the
+2025-09-03 database *container* owns were unreachable once the database existed: an icon set at
+create time could never be changed, and moving a database to a different parent — a capability
+Notion added in that same API version — had no client-side path at all.
+
+- **New: `databases.update(id, request)` and `databases.update(id) { … }`**, carrying the
+  container's half of the 2025-09-03 split: `parent`, `title`, `icon`, `cover`, `is_inline` and
+  `in_trash`. The schema, the description and a data source's own title stay on
+  `dataSources.update`; `title`, `icon` and `in_trash` exist on both because the container and
+  each data source carry their own.
+
+  ```kotlin
+  notion.databases.update(databaseId) {
+      title("Q3 Planning")
+      icon.emoji("📊")
+      parent.page(newParentId)
+      inline(true)
+  }
+  ```
+
+- **New: `UpdateDatabaseRequest` and `UpdateDatabaseRequestBuilder`**, mirroring the page update
+  pair — same nested-builder layout, both the `icon.emoji(…)` receiver form and the
+  `icon { emoji(…) }` lambda form, and `updateDatabaseRequest { … }` as the standalone entry
+  point.
+
+- **Moving a database is now possible.** `parent.page(id)`, `parent.block(id)` and
+  `parent.workspace()` on the update builder relocate an existing database.
+
+- **`icon.remove()` / `cover.remove()` work here too**, sending the explicit JSON `null` Notion
+  removes on, via the sentinels introduced with the previous entry. `icon.upload(File(…))` and
+  `cover.upload(File(…))` resolve through the same pending-upload pass as every other attachment
+  surface.
+
+- **Setting a cover on an inline database fails fast.** Notion does not support the combination,
+  so a request that sets `cover` alongside `is_inline = true` throws `IllegalArgumentException`
+  at build time instead of returning a 400. `cover.remove()` alongside `inline(true)` stays
+  legal.
+
+- **`databases.trash(id)` is now a wrapper over the update path.** `in_trash` is a container
+  attribute like any other; the payload it sends is unchanged. `update(id) { restore() }` brings
+  a database back.
+
+Not changed: `UpdateDataSourceRequestBuilder` still has no `cover` builder. Whether
+`PATCH /v1/data_sources` accepts one is undecided — the migration guide lists `cover` as
+database-level only, but that same list omits `icon`, which a data source demonstrably does
+carry, so it is not authority here. Settling it needs a live request; a comment in the builder
+records the open question.
+
+
 ### ⚠️ Breaking Changes — the write side is now offset-preserving, zone-explicit and validating
 
 A consumer shipped a bug in which offset-less datetimes written through this library were

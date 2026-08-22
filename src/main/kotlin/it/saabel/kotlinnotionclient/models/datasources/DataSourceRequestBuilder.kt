@@ -177,6 +177,13 @@ class UpdateDataSourceRequestBuilder {
     private var inTrashValue: Boolean? = null
     private val properties = mutableMapOf<String, CreateDatabaseProperty>()
 
+    // No cover builder here, deliberately. The 2025-09-03 migration guide lists `cover` as a
+    // database-container attribute only (see UpdateDatabaseRequest) — but that same list omits
+    // `icon`, which a data source demonstrably does carry, so the guide is not authority on this
+    // point. The DataSource *response* model has a `cover` field, which says a data source can
+    // hold one, not that PATCH /v1/data_sources accepts one. Settling it needs a live request,
+    // and no credentials were available on this branch; adding an untested field would trade a
+    // visible asymmetry for a silent 400. Tracked in the PR for issue #82.
     val icon = IconBuilder()
 
     /**

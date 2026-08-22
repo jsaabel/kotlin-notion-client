@@ -7,6 +7,7 @@ import it.saabel.kotlinnotionclient.models.base.Icon
 import it.saabel.kotlinnotionclient.models.base.Parent
 import it.saabel.kotlinnotionclient.models.comments.createCommentRequest
 import it.saabel.kotlinnotionclient.models.databases.databaseRequest
+import it.saabel.kotlinnotionclient.models.databases.updateDatabaseRequest
 import it.saabel.kotlinnotionclient.models.datasources.createDataSourceRequest
 import it.saabel.kotlinnotionclient.models.pages.PageCover
 import it.saabel.kotlinnotionclient.models.pages.PagePosition
@@ -70,6 +71,13 @@ class DocumentedSnippetsTest :
                     title("Projects Data Source")
                     properties { title("Project Name") }
                 }.parent shouldBe Parent.DatabaseParent(databaseId = "existing-database-id")
+
+                updateDatabaseRequest {
+                    title("Q3 Planning")
+                    icon.emoji("📊")
+                    parent.page("new-parent-page-id")
+                    inline(true)
+                }.parent shouldBe Parent.PageParent(pageId = "new-parent-page-id")
             }
         }
 
@@ -134,6 +142,12 @@ class DocumentedSnippetsTest :
                     title("Projects")
                     properties { title("Project Name") }
                 }.parent shouldBe Parent.DatabaseParent(databaseId = "existing-database-id")
+
+                updateDatabaseRequest {
+                    parent { page("new-parent-page-id") }
+                    icon { emoji("📊") }
+                    cover { remove() }
+                }.cover shouldBe PageCover.Removed
             }
         }
 

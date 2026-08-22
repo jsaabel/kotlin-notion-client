@@ -44,6 +44,12 @@ suspend fun listTemplates(
 ): List<Template>
 ```
 
+**What `update` does not reach**: `parent`, `is_inline` and `cover` belong to the database
+*container*, not to a data source — change those with
+[`databases.update()`](databases.md#update-a-database-container). `title`, `icon` and `in_trash`
+exist on both, independently: setting a data source's icon does not touch the container's, and
+vice versa. Notion's UI renders the data source, so the icon a reader sees is this one.
+
 ## Examples
 
 ### Retrieve a Data Source

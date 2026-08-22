@@ -13,11 +13,13 @@ import io.ktor.http.isSuccess
 import it.saabel.kotlinnotionclient.config.NotionConfig
 import it.saabel.kotlinnotionclient.exceptions.NotionException
 import it.saabel.kotlinnotionclient.exceptions.toNotionApiError
-import it.saabel.kotlinnotionclient.models.databases.ArchiveDatabaseRequest
 import it.saabel.kotlinnotionclient.models.databases.CreateDatabaseRequest
 import it.saabel.kotlinnotionclient.models.databases.Database
 import it.saabel.kotlinnotionclient.models.databases.DatabaseRequestBuilder
+import it.saabel.kotlinnotionclient.models.databases.UpdateDatabaseRequest
+import it.saabel.kotlinnotionclient.models.databases.UpdateDatabaseRequestBuilder
 import it.saabel.kotlinnotionclient.models.databases.databaseRequest
+import it.saabel.kotlinnotionclient.models.databases.updateDatabaseRequest
 import it.saabel.kotlinnotionclient.models.datasources.UpdateDataSourceRequest
 import it.saabel.kotlinnotionclient.validation.RequestValidator
 import it.saabel.kotlinnotionclient.validation.ValidationConfig
@@ -143,25 +145,39 @@ class DatabasesApi(
     }
 
     /**
-     * Moves a database to trash by setting its in_trash property to true.
+     * Updates a database container's title, icon, cover, parent, inline rendering or trash state.
      *
-     * Notion doesn't support permanent deletion - databases are moved to trash instead.
-     * Databases in trash are no longer accessible through the UI but can still
-     * be retrieved via the API.
+     * These are the attributes the *container* owns; under the 2025-09-03 API no other endpoint
+     * can reach them. The schema, the description and a data source's own title live on the data
+     * source instead — see [DataSourcesApi.update].
      *
-     * @param databaseId The ID of the database to trash
-     * @return Database object representing the trashed database
+     * Only what the request names is changed. Removing an icon or cover is expressed with
+     * `icon.remove()` / `cover.remove()`, which send an explicit JSON `null`.
+     *
+     * A `parent` **moves** the database — new in the 2025-09-03 API.
+     *
+     * Any local file recorded by `icon.upload(File(...))` or `cover.upload(File(...))` is
+     * uploaded here, before the request is validated and sent.
+     *
+     * @param databaseId The ID of the database to update
+     * @param request The container attributes to change
+     * @return Database object representing the updated database
      * @throws NotionException.NetworkError for network-related failures
      * @throws NotionException.ApiError for API-related errors (4xx, 5xx responses)
      * @throws NotionException.AuthenticationError for authentication failures
+     * @throws ValidationException if validation fails for non-fixable violations
      */
-    suspend fun trash(databaseId: String): Database =
-        try {
-            val request = ArchiveDatabaseRequest(inTrash = true)
+    suspend fun update(
+        databaseId: String,
+        request: UpdateDatabaseRequest,
+    ): Database {
+        val finalRequest = validator.validateOrFix(uploads.resolvePendingUploads(request))
+
+        return try {
             val response: HttpResponse =
                 httpClient.patch("${config.baseUrl}/databases/$databaseId") {
                     contentType(ContentType.Application.Json)
-                    setBody(request)
+                    setBody(finalRequest)
                 }
 
             if (response.status.isSuccess()) {
@@ -174,4 +190,49 @@ class DatabasesApi(
         } catch (e: Exception) {
             throw NotionException.NetworkError(e)
         }
+    }
+
+    /**
+     * Updates a database container using a fluent DSL builder.
+     *
+     * ```kotlin
+     * notion.databases.update(databaseId) {
+     *     title("Q3 Planning")
+     *     icon.emoji("📊")
+     *     parent.page(newParentId)
+     * }
+     * ```
+     *
+     * @param databaseId The ID of the database to update
+     * @param builder DSL builder lambda for constructing the update request
+     * @return Database object representing the updated database
+     * @throws NotionException.NetworkError for network-related failures
+     * @throws NotionException.ApiError for API-related errors (4xx, 5xx responses)
+     * @throws NotionException.AuthenticationError for authentication failures
+     * @throws ValidationException if validation fails for non-fixable violations
+     * @throws IllegalArgumentException if the request sets a cover on an inline database
+     */
+    suspend fun update(
+        databaseId: String,
+        builder: UpdateDatabaseRequestBuilder.() -> Unit,
+    ): Database = update(databaseId, updateDatabaseRequest(builder))
+
+    /**
+     * Moves a database to trash by setting its in_trash property to true.
+     *
+     * Notion doesn't support permanent deletion - databases are moved to trash instead.
+     * Databases in trash are no longer accessible through the UI but can still
+     * be retrieved via the API.
+     *
+     * `in_trash` is one of the container attributes [update] carries, so this is a convenience
+     * wrapper over it rather than a second PATCH path. Use `update(id) { trash(false) }` (or
+     * `restore()`) to bring a database back.
+     *
+     * @param databaseId The ID of the database to trash
+     * @return Database object representing the trashed database
+     * @throws NotionException.NetworkError for network-related failures
+     * @throws NotionException.ApiError for API-related errors (4xx, 5xx responses)
+     * @throws NotionException.AuthenticationError for authentication failures
+     */
+    suspend fun trash(databaseId: String): Database = update(databaseId, UpdateDatabaseRequest(inTrash = true))
 }

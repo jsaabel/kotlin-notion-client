@@ -19,7 +19,7 @@ This is the most important concept to understand:
 
 | API | Purpose | What it does |
 |-----|---------|--------------|
-| **DatabasesApi** | Container management | Create database containers, retrieve metadata, archive |
+| **DatabasesApi** | Container management | Create database containers, retrieve metadata, update container attributes (title, icon, cover, parent, inline), archive |
 | **DataSourcesApi** | Data & schema | Query pages, update schema (add/modify properties), create additional tables |
 | **PagesApi** | Row operations | Create/update/retrieve individual rows (pages) |
 
@@ -32,13 +32,25 @@ suspend fun retrieve(databaseId: String): Database
 // Create a new database with initial data source
 suspend fun create(block: DatabaseRequestBuilder.() -> Unit): Database
 
+// Update the container's title, icon, cover, parent, inline rendering or trash state
+suspend fun update(databaseId: String, block: UpdateDatabaseRequestBuilder.() -> Unit): Database
+
 // Move a database to trash
 suspend fun trash(databaseId: String): Database
 ```
 
-**Note**: There is NO `databases.update()` or `databases.query()` in the 2026-03-11 API.
+**Note**: There is NO `databases.query()` in the 2026-03-11 API, and `databases.update()` reaches
+only the *container's* attributes.
 - To update schema → use `dataSources.update()`
 - To query data → use `dataSources.query()`
+
+The two update endpoints own disjoint halves of what used to be one object:
+
+| Attribute | Endpoint |
+|-----------|----------|
+| `parent`, `is_inline`, `cover` | `databases.update()` |
+| `properties` (schema), `description` | `dataSources.update()` |
+| `title`, `icon`, `in_trash` | **both** — the container and each data source carry their own |
 
 ## Examples
 
@@ -188,6 +200,78 @@ val tasksDb = notion.databases.create {
 }
 ```
 
+### Update a Database Container
+
+`update` changes only what the block names; everything else is left alone.
+
+> The snippets in this section are pinned by unit tests against the official
+> `patch_update_a_database.json` sample; only the parent move and the icon round trip have a live
+> spec (`DatabaseParentMoveIntegrationTest`), and it has not been run on this branch.
+
+```kotlin
+val updated = notion.databases.update("database-id") {
+    title("Q3 Planning")
+    icon.emoji("📊")
+    inline(true)
+}
+```
+
+**Move a database to a different parent** — new in the 2025-09-03 API, and the only way to
+relocate a database from the client:
+
+```kotlin
+notion.databases.update("database-id") {
+    parent.page("new-parent-page-id")
+}
+```
+
+`parent.block(id)` and `parent.workspace()` are available too; the migration guide documents
+moving to a page, and (for public integrations) to the workspace level as a private page.
+
+**Remove an icon or cover** — this sends an explicit JSON `null`, which is how Notion removes
+them:
+
+```kotlin
+notion.databases.update("database-id") {
+    icon.remove()
+    cover.remove()
+}
+```
+
+**Set an icon or cover from a local file** — the upload happens when the request is sent:
+
+```kotlin
+notion.databases.update("database-id") {
+    icon.upload(File("logo.png"))
+}
+```
+
+**Restore from trash** — `in_trash` is a container attribute like any other:
+
+```kotlin
+notion.databases.update("database-id") { restore() }
+```
+
+**Gotcha — an inline database cannot have a cover.** Notion does not support the combination, so
+a request that sets both fails at build time rather than with a 400:
+
+```kotlin
+notion.databases.update("database-id") {
+    inline(true)
+    cover.external("https://example.com/cover.png")   // ❌ IllegalArgumentException
+}
+```
+
+**Gotcha — the icon you see in the UI is the data source's.** In the 2025-09-03 model, Notion
+renders the data source, not the container, so changing a container icon alone may look like
+nothing happened. Change both to change what a reader sees:
+
+```kotlin
+val database = notion.databases.retrieve("database-id")
+notion.databases.update(database.id) { icon.emoji("📊") }
+notion.dataSources.update(database.dataSources.first().id) { icon.emoji("📊") }
+```
+
 ### Trash a Database
 
 ```kotlin
@@ -197,6 +281,10 @@ println("Database in trash: ${trashed.inTrash}")
 ```
 
 **Note**: Notion doesn't support permanent deletion. Databases moved to trash are hidden from the UI but remain accessible via the API. The `in_trash` field reflects this status (introduced in API version `2026-03-11`).
+
+`trash()` is a convenience wrapper over `update(id) { trash() }` — `in_trash` is one of the
+container attributes the update endpoint carries. Use `update(id) { restore() }` to bring a
+database back.
 
 ## Common Patterns
 
@@ -382,6 +470,7 @@ Supported formats: `"number"`, `"number_with_commas"`, `"percent"`, `"dollar"`, 
 ❌ **Add properties** - Use `dataSources.update()` instead
 ❌ **Remove properties** - Use `dataSources.update()` instead
 ❌ **Create pages** - Use `pages.create()` instead
+❌ **Set a database description** - It belongs to the data source; use `dataSources.update()`
 
 ## Best Practices
 
@@ -392,6 +481,7 @@ Supported formats: `"number"`, `"number_with_commas"`, `"percent"`, `"dollar"`, 
 5. **Use appropriate property types** - Match Notion property types to your data (e.g., `select` for status, `people` for assignments)
 6. **Consider relations early** - If you need to link databases, plan the relation structure upfront
 7. **Trash instead of delete** - Notion doesn't support permanent deletion; use `trash()` to move a database to trash
+8. **Change an icon in both places** - The UI renders the data source's icon, so `databases.update()` alone may look like a no-op
 
 ## Gotchas and Tips
 
