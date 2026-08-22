@@ -346,10 +346,19 @@ sealed class DatabaseProperty {
         @SerialName("description")
         val description: String? = null,
         @SerialName("rollup")
-        val rollup: JsonObject,
+        val rollup: RollupConfiguration,
     ) : DatabaseProperty() {
         @SerialName("type")
         override val type: String = "rollup"
+
+        /** How the rolled-up values are aggregated. */
+        val function: RollupFunction get() = rollup.function
+
+        /** The relation property this rollup walks, preferring its readable name. */
+        val relationReference: String? get() = rollup.relationReference
+
+        /** The property read on the related rows, preferring its readable name. */
+        val rollupReference: String? get() = rollup.rollupReference
     }
 
     @Serializable

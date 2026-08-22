@@ -112,9 +112,10 @@ class DatabaseRequestBuilder {
         require(parentValue != null) { "Parent must be specified" }
         require(titleValue != null) { "Title must be specified" }
         require(properties.isNotEmpty()) { "Database must have at least one property" }
-        // A create request carries the complete schema, so a prop() reference to a
-        // property that is not defined here can never be valid.
+        // A create request carries the complete schema, so a prop() reference (or a rollup
+        // relation reference) to a property that is not defined here can never be valid.
         FormulaExpressions.validateReferencesExist(properties)
+        RollupConfigurations.validateReferencesExist(properties)
 
         return CreateDatabaseRequest(
             parent = parentValue!!,
@@ -490,6 +491,82 @@ class DatabasePropertiesBuilder {
         properties[name] =
             CreateDatabaseProperty.Relation(
                 relation = builder.build(),
+                description = description,
+            )
+    }
+
+    /**
+     * Adds a rollup property to the database.
+     *
+     * A rollup walks a relation property and aggregates one property of the rows it
+     * reaches. Reference the relation and the rolled-up property by name (readable) or by
+     * id (rename-proof) — at least one of each pair is required:
+     * ```kotlin
+     * relation("Tasks", tasksDatabaseId, tasksDataSourceId)
+     * rollup("Total hours", relationPropertyName = "Tasks", rollupPropertyName = "Hours", function = RollupFunction.SUM)
+     * ```
+     *
+     * Fails fast with [IllegalArgumentException] if either reference is missing or blank,
+     * or if [function] is the read-only [RollupFunction.UNKNOWN] fallback. On **create**
+     * requests, a `relationPropertyName` that is not a relation property defined in the
+     * same schema is also rejected at build time. Whether Notion accepts the combination
+     * (is the function applicable to the target property's type?) surfaces as the API's
+     * own `validation_error`.
+     *
+     * @param name The property name
+     * @param function The aggregation applied to the collected values
+     * @param relationPropertyName Name of the relation property to walk
+     * @param rollupPropertyName Name of the property read on the related rows
+     * @param relationPropertyId Id of the relation property, as an alternative to its name
+     * @param rollupPropertyId Id of the rolled-up property, as an alternative to its name
+     * @param description Optional description (max 280 characters)
+     */
+    @Suppress("LongParameterList")
+    fun rollup(
+        name: String,
+        function: RollupFunction,
+        relationPropertyName: String? = null,
+        rollupPropertyName: String? = null,
+        relationPropertyId: String? = null,
+        rollupPropertyId: String? = null,
+        description: String? = null,
+    ) {
+        val configuration =
+            RollupConfiguration(
+                function = function,
+                relationPropertyName = relationPropertyName,
+                relationPropertyId = relationPropertyId,
+                rollupPropertyName = rollupPropertyName,
+                rollupPropertyId = rollupPropertyId,
+            )
+        RollupConfigurations.validate(configuration, propertyName = name)
+        properties[name] =
+            CreateDatabaseProperty.Rollup(
+                rollup = configuration,
+                description = description,
+            )
+    }
+
+    /**
+     * Adds a rollup property to the database from a prepared [RollupConfiguration].
+     *
+     * Useful when copying a rollup read off an existing schema
+     * (`DatabaseProperty.Rollup.rollup`) into a new one. See the other [rollup] overload
+     * for the validation performed.
+     *
+     * @param name The property name
+     * @param configuration The rollup configuration
+     * @param description Optional description (max 280 characters)
+     */
+    fun rollup(
+        name: String,
+        configuration: RollupConfiguration,
+        description: String? = null,
+    ) {
+        RollupConfigurations.validate(configuration, propertyName = name)
+        properties[name] =
+            CreateDatabaseProperty.Rollup(
+                rollup = configuration,
                 description = description,
             )
     }
