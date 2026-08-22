@@ -33,8 +33,11 @@ data class SearchRequest(
  *
  * @property value The type to filter by: "page" or "data_source". Null when the filter only
  *   narrows by trash status.
- * @property property The property to filter on (currently only "object" is supported). Should be
- *   null whenever [value] is null.
+ * @property property The property to filter on (currently only "object" is supported). Must be
+ *   null whenever [value] is null — defaults to `null` so a bare `SearchFilter(inTrash = true)`
+ *   doesn't emit a spurious `"property":"object"` alongside `in_trash`. Set it (or use
+ *   [SearchRequestBuilder.filterPages] / [SearchRequestBuilder.filterDataSources], which set both
+ *   fields together) only when [value] is also set.
  * @property inTrash When `true`, search returns trashed pages and data sources instead of the
  *   default non-trashed set. Null omits the option.
  */
@@ -43,10 +46,19 @@ data class SearchFilter(
     @SerialName("value")
     val value: String? = null, // "page" or "data_source"
     @SerialName("property")
-    val property: String? = "object",
+    val property: String? = null,
     @SerialName("in_trash")
     val inTrash: Boolean? = null,
-)
+) {
+    init {
+        require(property == null || value != null) {
+            "SearchFilter.property ('$property') must be null when value is null"
+        }
+        require(property == null || property == "object") {
+            "SearchFilter.property must be \"object\" (the only value the API currently supports), got '$property'"
+        }
+    }
+}
 
 /**
  * Sort criteria for search results.
