@@ -4,6 +4,7 @@ package it.saabel.kotlinnotionclient.models.comments
 
 import it.saabel.kotlinnotionclient.models.base.Parent
 import it.saabel.kotlinnotionclient.models.base.RichText
+import it.saabel.kotlinnotionclient.models.files.FileUpload
 import it.saabel.kotlinnotionclient.models.richtext.RichTextBuilder
 
 /**
@@ -198,6 +199,15 @@ class CreateCommentRequestBuilder {
         }
         currentAttachments.add(CommentAttachmentRequest(fileUploadId = fileUploadId))
         attachmentsValue = currentAttachments
+    }
+
+    /**
+     * Adds a single file attachment to the comment.
+     *
+     * @param fileUpload The upload returned by the File Upload API
+     */
+    fun attachment(fileUpload: FileUpload) {
+        attachment(fileUpload.id)
     }
 
     /**
