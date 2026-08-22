@@ -77,6 +77,16 @@ object NotionApiLimits {
     }
 
     /**
+     * Limits on query-string parameters (as opposed to request-body fields, which
+     * [it.saabel.kotlinnotionclient.validation.RequestValidator] covers).
+     */
+    object Query {
+        /** Maximum number of `filter_properties` IDs accepted per request (pages retrieve, data
+         * source query). Notion returns a 400 beyond this — validated client-side to fail fast. */
+        const val MAX_FILTER_PROPERTIES = 100
+    }
+
+    /**
      * Error response information for size limit violations.
      */
     object SizeLimitError {

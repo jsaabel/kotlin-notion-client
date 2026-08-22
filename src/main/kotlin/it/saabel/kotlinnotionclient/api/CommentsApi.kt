@@ -14,6 +14,7 @@ import io.ktor.http.isSuccess
 import it.saabel.kotlinnotionclient.config.NotionApiLimits
 import it.saabel.kotlinnotionclient.config.NotionConfig
 import it.saabel.kotlinnotionclient.exceptions.NotionException
+import it.saabel.kotlinnotionclient.exceptions.toNotionApiError
 import it.saabel.kotlinnotionclient.models.comments.Comment
 import it.saabel.kotlinnotionclient.models.comments.CommentList
 import it.saabel.kotlinnotionclient.models.comments.CreateCommentRequest
@@ -150,18 +151,7 @@ class CommentsApi(
             if (response.status.isSuccess()) {
                 response.body<CommentList>()
             } else {
-                val errorBody =
-                    try {
-                        response.body<String>()
-                    } catch (e: Exception) {
-                        "Could not read error response body"
-                    }
-
-                throw NotionException.ApiError(
-                    code = response.status.value.toString(),
-                    status = response.status.value,
-                    details = "HTTP ${response.status.value}: ${response.status.description}. Response: $errorBody",
-                )
+                throw response.toNotionApiError()
             }
         } catch (e: NotionException) {
             throw e // Re-throw our own exceptions
@@ -208,18 +198,7 @@ class CommentsApi(
             if (response.status.isSuccess()) {
                 response.body<Comment>()
             } else {
-                val errorBody =
-                    try {
-                        response.body<String>()
-                    } catch (e: Exception) {
-                        "Could not read error response body"
-                    }
-
-                throw NotionException.ApiError(
-                    code = response.status.value.toString(),
-                    status = response.status.value,
-                    details = "HTTP ${response.status.value}: ${response.status.description}. Response: $errorBody",
-                )
+                throw response.toNotionApiError()
             }
         } catch (e: IllegalArgumentException) {
             throw e // Re-throw validation errors as-is
@@ -320,18 +299,7 @@ class CommentsApi(
             if (response.status.isSuccess()) {
                 response.body<Comment>()
             } else {
-                val errorBody =
-                    try {
-                        response.body<String>()
-                    } catch (e: Exception) {
-                        "Could not read error response body"
-                    }
-
-                throw NotionException.ApiError(
-                    code = response.status.value.toString(),
-                    status = response.status.value,
-                    details = "HTTP ${response.status.value}: ${response.status.description}. Response: $errorBody",
-                )
+                throw response.toNotionApiError()
             }
         } catch (e: IllegalArgumentException) {
             throw e // Re-throw validation errors as-is
@@ -403,18 +371,7 @@ class CommentsApi(
             if (response.status.isSuccess()) {
                 response.body<Comment>()
             } else {
-                val errorBody =
-                    try {
-                        response.body<String>()
-                    } catch (e: Exception) {
-                        "Could not read error response body"
-                    }
-
-                throw NotionException.ApiError(
-                    code = response.status.value.toString(),
-                    status = response.status.value,
-                    details = "HTTP ${response.status.value}: ${response.status.description}. Response: $errorBody",
-                )
+                throw response.toNotionApiError()
             }
         } catch (e: IllegalArgumentException) {
             throw e // Re-throw validation errors as-is

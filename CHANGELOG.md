@@ -87,6 +87,13 @@ Eleven changelog-driven issues landed together, bringing the client up to date w
   `group` cannot be set on select/multi-select options, which the API rejects.
 - **`DatabaseProperty.Formula.formula` is now `FormulaConfiguration`**, not `JsonObject` (#42).
   Source-breaking for consumers reading the raw object; use `.expression` instead.
+- **`SearchFilter.property` now defaults to `null`, not `"object"`** (#58). A hand-written
+  `SearchFilter(inTrash = true)` bypassing `SearchRequestBuilder` previously emitted a spurious
+  `"property":"object"` alongside `in_trash` — `property` is now omitted unless a non-null `value`
+  is also set, and an `init` block rejects the invalid combination
+  (`property` set with `value` null, or `property` set to anything but `"object"`) with
+  `IllegalArgumentException`. `SearchRequestBuilder`/`searchRequest { }` callers are unaffected —
+  the builder already set both fields together.
 
 #### Added
 
@@ -125,6 +132,17 @@ Eleven changelog-driven issues landed together, bringing the client up to date w
   (`%7DVpb`) and the view-response shape (`}Vpb`) produce identical requests.
 - **`unknownBlockCount` on `PageMarkdownResponse`** (#35). `unknownBlockIds` is capped at 50 by
   the API, so its size is not a substitute for the count on a heavily truncated page.
+- **`NotionException.ServiceOverloadedError`** (#58), a dedicated exception for a `529` that
+  exhausts `NotionRateLimit`'s retries, carrying `retryAfterSeconds` from the final attempt's
+  `Retry-After` header. Previously surfaced as a generic `ApiError` with `status = 529`.
+- **`filter_properties` and `is_archived` on data source query** (#58) —
+  `dataSources.query`/`queryAsFlow`/`queryFirstPage` gained a `filterProperties: List<String>?`
+  parameter (mirroring `PagesApi`, #34) and an `isArchived: Boolean` convenience overload
+  (mirroring `SearchApi.search(query: String)`). `filter_properties` is validated client-side
+  against the API's documented 100-ID cap, on both this endpoint and pages
+  create/update/retrieve (previously unvalidated).
+- **`SearchApi.search(query: String, inTrash: Boolean)`**, a trash-filtered convenience overload
+  mirroring `search(query: String)` (#58).
 
 #### Fixed
 
@@ -132,6 +150,11 @@ Eleven changelog-driven issues landed together, bringing the client up to date w
   429 rather than falling through to the caller as a bare `ApiError`.
 - **Uncomputable formula and rollup values no longer break page deserialization** (#36) — see the
   breaking-changes note above.
+- **`DatabaseProperty.id` now comes back percent-decoded from a `DataSource`'s schema** (#58,
+  closes `IDEAS.md` #5) — previously only `PagesApi`'s `filter_properties` had a local workaround
+  for the encoded shape (e.g. `%7DVpb` instead of `}Vpb`); the fix now lives at the deserialization
+  source, and that workaround was promoted into a shared `PropertyIds.decode` util instead of
+  removed, so a caller passing an ID copied from a raw pre-fix response still works.
 
 #### Changed
 
@@ -140,6 +163,11 @@ Eleven changelog-driven issues landed together, bringing the client up to date w
   record URLs, so this is a documentation and forward-guard change.
 - Corrected stale KDoc claiming status groups cannot be configured via the API and that status
   properties cannot be updated (#39) — both lapsed with the June 2026 changelog.
+- `docs/error-handling.md`'s Rate Limiting section resynced against the current
+  `RateLimitConfig`/`NotionRateLimit` shape (#58) — it previously documented a `strategy`/
+  `baseDelayMs`/`maxDelayMs`/`respectRetryAfter` API and `CONSERVATIVE`/`BALANCED`/`AGGRESSIVE`
+  presets that no longer exist, and never stated which statuses are retried. Now documents the
+  429/529/502/503/504 retry matrix and the new `ServiceOverloadedError`.
 
 
 ### Added

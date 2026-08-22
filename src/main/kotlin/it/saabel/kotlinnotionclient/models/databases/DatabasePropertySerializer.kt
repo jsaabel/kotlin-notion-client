@@ -1,5 +1,6 @@
 package it.saabel.kotlinnotionclient.models.databases
 
+import it.saabel.kotlinnotionclient.utils.PropertyIds
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.descriptors.SerialDescriptor
@@ -7,6 +8,8 @@ import kotlinx.serialization.descriptors.buildClassSerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 import kotlinx.serialization.json.JsonDecoder
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 
@@ -16,6 +19,10 @@ import kotlinx.serialization.json.jsonPrimitive
  * This serializer handles polymorphic deserialization based on the "type" discriminator field,
  * with a fallback to [DatabaseProperty.Unknown] for unrecognized property types (e.g., "button").
  * This ensures forward compatibility as Notion adds new property types.
+ *
+ * It also normalises the `id` field to its decoded form (Notion returns data source schema
+ * property IDs percent-encoded, e.g. `%7DVpb`, while every other response shape — page
+ * properties, view filter/sort payloads — uses the decoded form, e.g. `}Vpb`). See [PropertyIds].
  */
 object DatabasePropertySerializer : KSerializer<DatabaseProperty> {
     override val descriptor: SerialDescriptor = buildClassSerialDescriptor("DatabaseProperty")
@@ -23,15 +30,26 @@ object DatabasePropertySerializer : KSerializer<DatabaseProperty> {
     override fun deserialize(decoder: Decoder): DatabaseProperty {
         require(decoder is JsonDecoder) { "DatabasePropertySerializer can only deserialize JSON" }
 
-        val element = decoder.decodeJsonElement()
-        val jsonObject = element.jsonObject
+        val rawElement = decoder.decodeJsonElement()
+        val rawObject = rawElement.jsonObject
 
         val type =
-            jsonObject["type"]?.jsonPrimitive?.content
+            rawObject["type"]?.jsonPrimitive?.content
                 ?: throw SerializationException("Missing 'type' field in DatabaseProperty JSON")
 
-        val id = jsonObject["id"]?.jsonPrimitive?.content ?: ""
-        val name = jsonObject["name"]?.jsonPrimitive?.content ?: ""
+        val rawId = rawObject["id"]?.jsonPrimitive?.content
+        val id = rawId?.let { PropertyIds.decode(it) } ?: ""
+        val name = rawObject["name"]?.jsonPrimitive?.content ?: ""
+
+        // Re-emit the object with the normalised id so every concrete DatabaseProperty variant
+        // (decoded below via its own @Serializable data class) ends up with a decoded id, not
+        // just the Unknown fallback branch that reads id/name directly off the raw JSON.
+        val element =
+            if (rawId != null && rawId != id) {
+                JsonObject(rawObject.toMutableMap().apply { this["id"] = JsonPrimitive(id) })
+            } else {
+                rawElement
+            }
 
         return when (type) {
             "title" -> {

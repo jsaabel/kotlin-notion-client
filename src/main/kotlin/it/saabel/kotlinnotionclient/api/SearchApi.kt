@@ -7,6 +7,7 @@ import io.ktor.client.request.setBody
 import io.ktor.http.ContentType
 import io.ktor.http.contentType
 import it.saabel.kotlinnotionclient.config.NotionConfig
+import it.saabel.kotlinnotionclient.models.search.SearchFilter
 import it.saabel.kotlinnotionclient.models.search.SearchRequest
 import it.saabel.kotlinnotionclient.models.search.SearchResponse
 import it.saabel.kotlinnotionclient.utils.Pagination
@@ -84,6 +85,22 @@ class SearchApi(
      * @return SearchResponse containing matching results
      */
     suspend fun search(query: String): SearchResponse = search(SearchRequest(query = query))
+
+    /**
+     * Searches with a simple text query, restricted to trashed (or explicitly non-trashed) results.
+     *
+     * Convenience method mirroring [search] for the common case of also filtering by trash status.
+     * Notion returns either trashed or non-trashed objects, never both.
+     *
+     * @param query The text to search for
+     * @param inTrash `true` to search trashed pages and data sources, `false` to explicitly
+     *   search the non-trashed set
+     * @return SearchResponse containing matching results
+     */
+    suspend fun search(
+        query: String,
+        inTrash: Boolean,
+    ): SearchResponse = search(SearchRequest(query = query, filter = SearchFilter(inTrash = inTrash)))
 
     // ========== Pagination Helper Methods ==========
 

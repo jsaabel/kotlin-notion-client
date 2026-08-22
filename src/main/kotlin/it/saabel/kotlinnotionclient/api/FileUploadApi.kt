@@ -19,6 +19,7 @@ import io.ktor.http.headers
 import io.ktor.http.isSuccess
 import it.saabel.kotlinnotionclient.config.NotionConfig
 import it.saabel.kotlinnotionclient.exceptions.NotionException
+import it.saabel.kotlinnotionclient.exceptions.toNotionApiError
 import it.saabel.kotlinnotionclient.models.files.CreateFileUploadRequest
 import it.saabel.kotlinnotionclient.models.files.CreateFileUploadRequestBuilder
 import it.saabel.kotlinnotionclient.models.files.FileUpload
@@ -63,17 +64,7 @@ class FileUploadApi(
         return if (response.status.isSuccess()) {
             response.body<FileUpload>()
         } else {
-            val errorBody =
-                try {
-                    response.body<String>()
-                } catch (e: Exception) {
-                    "Could not read error response body"
-                }
-            throw NotionException.ApiError(
-                code = response.status.value.toString(),
-                status = response.status.value,
-                details = errorBody,
-            )
+            throw response.toNotionApiError()
         }
     }
 
@@ -171,17 +162,7 @@ class FileUploadApi(
         return if (response.status.isSuccess()) {
             response.body<FileUpload>()
         } else {
-            val errorBody =
-                try {
-                    response.body<String>()
-                } catch (e: Exception) {
-                    "Could not read error response body"
-                }
-            throw NotionException.ApiError(
-                code = response.status.value.toString(),
-                status = response.status.value,
-                details = errorBody,
-            )
+            throw response.toNotionApiError()
         }
     }
 
@@ -242,17 +223,7 @@ class FileUploadApi(
         return if (response.status.isSuccess()) {
             response.body<FileUpload>()
         } else {
-            val errorBody =
-                try {
-                    response.body<String>()
-                } catch (e: Exception) {
-                    "Could not read error response body"
-                }
-            throw NotionException.ApiError(
-                code = response.status.value.toString(),
-                status = response.status.value,
-                details = errorBody,
-            )
+            throw response.toNotionApiError()
         }
     }
 
@@ -277,17 +248,7 @@ class FileUploadApi(
         return if (response.status.isSuccess()) {
             response.body<FileUpload>()
         } else {
-            val errorBody =
-                try {
-                    response.body<String>()
-                } catch (e: Exception) {
-                    "Could not read error response body"
-                }
-            throw NotionException.ApiError(
-                code = response.status.value.toString(),
-                status = response.status.value,
-                details = errorBody,
-            )
+            throw response.toNotionApiError()
         }
     }
 
@@ -318,17 +279,7 @@ class FileUploadApi(
         return if (response.status.isSuccess()) {
             response.body<FileUploadList>()
         } else {
-            val errorBody =
-                try {
-                    response.body<String>()
-                } catch (e: Exception) {
-                    "Could not read error response body"
-                }
-            throw NotionException.ApiError(
-                code = response.status.value.toString(),
-                status = response.status.value,
-                details = errorBody,
-            )
+            throw response.toNotionApiError()
         }
     }
 

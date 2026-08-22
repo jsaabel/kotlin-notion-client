@@ -42,7 +42,9 @@ class DatabasePropertyUnknownTypeTest :
 
             val unknown = prop.shouldBeInstanceOf<DatabaseProperty.Unknown>()
             unknown.type shouldBe "button"
-            unknown.id shouldBe "A%5E%3Bf"
+            // DatabasePropertySerializer normalises schema property IDs to their decoded form
+            // (see PropertyIds) — the raw "A%5E%3Bf" comes back decoded as "A^;f".
+            unknown.id shouldBe "A^;f"
             unknown.name shouldBe "Create schedule"
         }
 

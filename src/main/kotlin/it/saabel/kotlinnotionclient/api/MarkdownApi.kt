@@ -13,6 +13,7 @@ import io.ktor.http.contentType
 import io.ktor.http.isSuccess
 import it.saabel.kotlinnotionclient.config.NotionConfig
 import it.saabel.kotlinnotionclient.exceptions.NotionException
+import it.saabel.kotlinnotionclient.exceptions.toNotionApiError
 import it.saabel.kotlinnotionclient.models.asynctasks.AsyncTask
 import it.saabel.kotlinnotionclient.models.markdown.AsyncMarkdownResult
 import it.saabel.kotlinnotionclient.models.markdown.ContentUpdate
@@ -85,12 +86,7 @@ class MarkdownApi(
             if (response.status.isSuccess()) {
                 response.body<PageMarkdownResponse>()
             } else {
-                val errorBody = readErrorBody(response)
-                throw NotionException.ApiError(
-                    code = response.status.value.toString(),
-                    status = response.status.value,
-                    details = "HTTP ${response.status.value}: ${response.status.description}. Response: $errorBody",
-                )
+                throw response.toNotionApiError()
             }
         } catch (e: NotionException) {
             throw e
@@ -361,12 +357,7 @@ class MarkdownApi(
                 }
 
                 else -> {
-                    val errorBody = readErrorBody(response)
-                    throw NotionException.ApiError(
-                        code = response.status.value.toString(),
-                        status = response.status.value,
-                        details = "HTTP ${response.status.value}: ${response.status.description}. Response: $errorBody",
-                    )
+                    throw response.toNotionApiError()
                 }
             }
         } catch (e: NotionException) {
@@ -391,12 +382,7 @@ class MarkdownApi(
             if (response.status.isSuccess()) {
                 response.body<PageMarkdownResponse>()
             } else {
-                val errorBody = readErrorBody(response)
-                throw NotionException.ApiError(
-                    code = response.status.value.toString(),
-                    status = response.status.value,
-                    details = "HTTP ${response.status.value}: ${response.status.description}. Response: $errorBody",
-                )
+                throw response.toNotionApiError()
             }
         } catch (e: NotionException) {
             throw e
@@ -406,28 +392,7 @@ class MarkdownApi(
             throw NotionException.NetworkError(e)
         }
 
-    private suspend fun readErrorBody(response: HttpResponse): String =
-        try {
-            response.body<String>()
-        } catch (e: Exception) {
-            "Could not read error response body"
-        }
-
-    private suspend fun clientError(e: ClientRequestException): NotionException.ApiError {
-        val errorBody =
-            try {
-                e.response.body<String>()
-            } catch (ex: Exception) {
-                "Could not read error response body"
-            }
-        return NotionException.ApiError(
-            code =
-                e.response.status.value
-                    .toString(),
-            status = e.response.status.value,
-            details = "HTTP ${e.response.status.value}: ${e.response.status.description}. Response: $errorBody",
-        )
-    }
+    private suspend fun clientError(e: ClientRequestException): NotionException = e.response.toNotionApiError()
 }
 
 /**
