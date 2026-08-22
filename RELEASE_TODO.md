@@ -1,187 +1,103 @@
-# v0.5.0 Minor Release — Remaining Steps
+# v0.6.0 Release — Remaining Steps
 
-**Prepared**: 2026-05-31
-**Status at handoff**: `main` carries all v0.5.0 changes (§3, §5, §6a, §6b,
-§7, §8, §9, §10) plus the Java 21 toolchain bump and the dependency refresh.
-Docs are drafted. Needs commit hygiene, tag, GitHub Release, and Maven Central
-publication.
+**Prepared**: 2026-08-22
+**Status**: All feature work is merged into `claude/kotlin-notion-orchestrate-9ztk5a`
+(1,233 unit tests green). Release PR #79 targets `main`. The consolidated changelog is in
+`CHANGELOG.md` `[Unreleased]`; the concise release-notes draft is `RELEASE_NOTES.md`.
 
----
-
-## What changed
-
-See `CHANGELOG.md` `[0.5.0]`. Highlights:
-
-- New `Parent.AgentParent` variant for the `agent_id` parent type.
-- `QueryResultLimitReached` exception + `RequestStatus` model for Notion's new
-  10k pagination ceiling.
-- Comments update / delete GA.
-- Multi-value `equals` / `contains` on select / status / multi_select filters.
-- Rate-limiting overhaul — every request flows through a single Ktor
-  Send-phase plugin combining a continuous-refill token bucket (default 3
-  req/s sustained, 20-request burst) with a typed retry classifier covering
-  `429` (honouring `Retry-After`), `502` / `503` / `504`, and network errors.
-  `SearchApi` and `FileUploadApi` are covered for the first time, and the
-  parallel upload-retry config has been removed in favour of one
-  `RateLimitConfig`.
-- `FileObject.FileUpload` variant + `FilesBuilder` DSL for attaching
-  freshly-uploaded files.
-- `List<RichText>?.toHtml()` rich-text → HTML renderer.
-- Integer-aware number plain-text rendering.
-- **Breaking**: JVM toolchain + bytecode target bumped to Java 21.
+**Strategy**: publish a `0.6.0-SNAPSHOT` first and battle-test it in
+**festival-scripts** (a heavy consumer of this library) to catch blatant issues —
+especially around the breaking date/DSL changes — before the proper public `0.6.0`.
 
 ---
 
-## Step 0 — Pre-flight
+## Step 0 — Land the release branch
 
-- `./gradlew formatKotlin` clean.
-- `./gradlew test -Dkotest.tags.include="Unit"` green.
-- Spot-check a handful of integration tests for the largest changes
-  (truncated queries, multi-value filters, file uploads). Do **not** run the
-  full integration suite blind.
-- Bump `gradle.properties` from `0.5.0-SNAPSHOT` to:
-  ```
-  version=0.5.0
-  ```
-- Confirm README install snippets and notebook footer already read `0.5.0`
-  (done during release-docs prep).
-- Confirm the test-count claim in README's AI-assistance notice still matches
-  the latest run (currently 860+).
+- [ ] Walk the open decisions in issue #62 (design ratifications). None block the
+      snapshot; the webhook/docs items can land as follow-ups.
+- [ ] Review and merge PR #79 (`claude/kotlin-notion-orchestrate-9ztk5a` → `main`).
+- [ ] Decide PR #43 (`chore/dependency-refresh-and-backlog`): its diff **predates and
+      would revert** the `api`-scope dependency fix from #44, and its CHANGELOG edits
+      conflict with the consolidation. Recommendation: close it as superseded and redo
+      the version bumps (kotest 6.2.4, coroutines 1.11.0, ktor 3.5.2, logback 1.6.3,
+      kotlinter 5.7.0, maven-publish 0.37.0, ben-manes plugin id) freshly on `main`
+      after the merge.
 
----
+## Step 1 — Branch housekeeping
 
-## Step 1 — Commit, tag, and push
+Remote branch deletion is blocked from the agent environment (push credentials are
+scoped per-branch), so run this locally. Every branch below is verified merged — via a
+merged PR into the release branch or `main` — or superseded with its content confirmed
+present on `main`:
 
 ```bash
-git add CHANGELOG.md README.md RELEASE_TODO.md gradle.properties
-git commit -m "chore(release): prepare v0.5.0"
-
-git tag v0.5.0
-git push origin main --tags
+git push origin --delete \
+  claude/issue-32-retry-529 claude/issue-33-trash-archive-queries \
+  claude/issue-34-filter-properties claude/issue-35-unknown-block-count \
+  claude/issue-36-unsupported-value claude/issue-37-app-notion-domain \
+  claude/issue-38-async-tasks claude/issue-39-status-groups \
+  claude/issue-40-large-iteration claude/issue-41-webhook-verification \
+  claude/issue-42-formula-expressions claude/kotlin-notion-issue-56-k0talr \
+  claude/issue-57-rollup-incomplete claude/issue-58-polish-batch \
+  claude/issue-59-sibling-surfaces claude/issue-60-reference-refresh \
+  claude/kotlin-notion-client-68-08xxap claude/kotlin-notion-issue-69-m7txdo \
+  claude/kotlin-notion-issue-70-mku5i7 claude/issue-75-z4e28s claude/issue-76-gmfav9 \
+  claude/friendly-heisenberg-p6j441 claude/kotlin-notion-client-81-tk3033 \
+  claude/kotlin-notion-issue-82-l390xp claude/kotlin-notion-followups-triage-vam3ys \
+  claude/kotlin-notion-client-deps-8qe77j claude/kotlin-notion-client-26-hlnwp1 \
+  claude/kotlin-notion-issue-27-i0j2by claude/kotlin-notion-client-28-iwc8bz \
+  claude/gallant-einstein-FfiyI claude/serene-lamport-1twK3 \
+  claude/vigilant-brahmagupta-QokTn claude/tender-wright-upK4L \
+  claude/dazzling-ramanujan-JCzOJ claude/sharp-gauss-hDzBo \
+  claude/practical-johnson-IVWJr claude/brave-ptolemy-iRwoq \
+  claude/loving-faraday-5dRpO claude/kind-hopper-9OR8v \
+  claude/beautiful-brown-C6i2u claude/upbeat-tesla-alqIf claude/epic-ritchie-qrlw8 \
+  feature/v0.4
 ```
 
----
+Kept: `main`, `claude/kotlin-notion-orchestrate-9ztk5a` (delete after #79 merges),
+`chore/dependency-refresh-and-backlog` (until the PR #43 decision above).
 
-## Step 2 — Create the GitHub Release
+## Step 2 — Snapshot into festival-scripts
 
-```bash
-gh release create v0.5.0 \
-  --title "v0.5.0 — Notion API 2026-04-17 → 2026-05-15 catch-up" \
-  --notes "$(cat <<'NOTES'
-## Highlights
+`gradle.properties` already reads `version=0.6.0-SNAPSHOT`.
 
-- **Rate-limiting overhaul** — outbound requests now flow through a
-  proactive token-bucket throttle (default 3 req/s sustained, 20-request
-  burst) and a unified retry classifier covering `429` (honouring
-  `Retry-After`), retryable `5xx` (`502` / `503` / `504`), and network
-  errors. `SearchApi` and `FileUploadApi` are covered for the first
-  time; the parallel upload-retry config has been removed.
-- **Multi-value filters** — `equals("a","b")` / `contains("a","b")` on
-  select, status, and multi_select properties.
-- **Files & media upload variant** — attach a freshly-uploaded file to a
-  Files & media page property via `FileObject.upload(id, name?)` or the
-  new `files { upload(...) }` DSL.
-- **Comments update / delete** — `CommentsApi.update()` and
-  `CommentsApi.delete()` now generally available.
-- **Rich text → HTML** — `List<RichText>?.toHtml()` for rendering
-  rich-text arrays to safe HTML (annotations, links, paragraph splitting,
-  escape).
-- **Truncated-query exception** — `QueryResultLimitReached` surfaces
-  partial results when Notion's new 10,000-row pagination ceiling is hit.
-- **Integer-aware number rendering** — `getPlainTextForProperty()` drops
-  the trailing `.0` for whole numbers across Number / Formula / Rollup.
-- **`agent_id` parent type** — `Parent.AgentParent` round-trips Notion's
-  new agent-page parent shape.
+- [ ] From `main` after the merge: `./gradlew publishToMavenLocal`
+      (or publish the snapshot to Central's snapshot repository if preferred).
+- [ ] In festival-scripts, depend on `it.saabel:kotlin-notion-client:0.6.0-SNAPSHOT`
+      (with `mavenLocal()` first in `repositories` if using the local publish).
+- [ ] Migration hot-spots to exercise there, in order of risk:
+      1. **Date writes** — every `dateTime`/`dateTimeRange`/`dateMention` call now needs
+         an explicit `TimeZone`; naive datetime strings throw.
+      2. Exhaustive `when`s over `FormulaResult`/`RollupResult`/`Icon`/`PageCover`/
+         `FileUploadStatus`/`FileUploadError` — new variants.
+      3. Any code that called `icon.remove()`/`cover.remove()` or cleared properties —
+         these now take effect.
+      4. `FileUpload.filename`/`contentType` nullability.
+- [ ] Feed anything broken back as issues; fix on `main` before tagging.
 
-## Breaking changes
+## Step 3 — Finalize the release
 
-- **JVM toolchain → Java 21** (was 17).
-- **`RateLimitConfig` trimmed** — `RateLimitStrategy` + presets,
-  `respectRetryAfter`, and `baseDelayMs` / `maxDelayMs` (replaced by
-  `retryBaseDelay` / `retryMaxDelay` as `kotlin.time.Duration`) are gone.
-  `RateLimitConfig.BALANCED` → `RateLimitConfig()`.
-- **Unified retry pipeline for uploads** — `FileUploadOptions.retryConfig`,
-  `models.files.RetryConfig`, and `EnhancedFileUploadApi.withRetry` are
-  removed. Configure retries once via `NotionConfig.rateLimitConfig`.
-- **Truncated queries now throw** — `DataSourcesApi.query()` /
-  `queryAsFlow()` throw `NotionException.QueryResultLimitReached` instead
-  of returning a silently-truncated list. The exception carries
-  `partialResults`, `nextCursor`, and `requestStatus` so callers can
-  resume.
+Follow the proven v0.5.0 flow (see git history of this file for the long form):
 
-## Installation
+- [ ] `./gradlew formatKotlin` clean; `./gradlew test` green; spot-check the highest-risk
+      integration tests individually (dates, uploads, drain) — not the full live suite.
+- [ ] Set `version=0.6.0` in `gradle.properties`; move `CHANGELOG.md` `[Unreleased]` to
+      `[0.6.0] - <date>`; final-read `RELEASE_NOTES.md` and update the README install
+      snippets and notebook footers to `0.6.0`.
+- [ ] Commit `chore(release): prepare v0.6.0`, tag `v0.6.0`, push `main --tags`.
+- [ ] `gh release create v0.6.0` with the body taken from `RELEASE_NOTES.md`.
+- [ ] `./gradlew publishToMavenLocal` (verify `.asc` signatures) →
+      `./gradlew publishAllPublicationsToMavenCentralRepository` → publish in the
+      Central Portal → verify on repo1.maven.org.
 
-\`\`\`kotlin
-dependencies {
-    implementation("it.saabel:kotlin-notion-client:0.5.0")
-}
-\`\`\`
+## Step 4 — Post-release housekeeping
 
-Full changelog: https://github.com/jsaabel/kotlin-notion-client/blob/main/CHANGELOG.md
-NOTES
-)"
-```
-
----
-
-## Step 3 — Pull on the publishing machine
-
-```bash
-git pull
-git checkout v0.5.0
-git log --oneline -3   # confirm you're at the release commit
-```
-
----
-
-## Step 4 — Verify signing still works locally
-
-```bash
-./gradlew publishToMavenLocal
-ls ~/.m2/repository/it/saabel/kotlin-notion-client/0.5.0/*.asc
-```
-
----
-
-## Step 5 — Publish to Maven Central
-
-```bash
-./gradlew publishAllPublicationsToMavenCentralRepository
-```
-
----
-
-## Step 6 — Publish in the Maven Central Portal
-
-1. Go to **https://central.sonatype.com/**
-2. Sign in → **Deployments**
-3. Find `it.saabel:kotlin-notion-client:0.5.0`
-4. Review artifacts (jar, sources, javadoc, pom, .asc files)
-5. Click **Publish**
-
----
-
-## Step 7 — Verify
-
-Wait ~10–30 minutes, then:
-
-```bash
-open https://repo1.maven.org/maven2/it/saabel/kotlin-notion-client/0.5.0/
-```
-
----
-
-## Step 8 — Post-release housekeeping
-
-1. **Bump version for next cycle** in `gradle.properties`:
-   ```
-   version=0.6.0-SNAPSHOT
-   ```
-2. **Commit**: `chore: bump version to 0.6.0-SNAPSHOT`
-3. Review `IDEAS.md` — mark any shipped ideas as `done` (likely candidates:
-   integer-aware number rendering, rich text → HTML).
-4. Delete `_next_release_docs/` — temporary working folder; its lifespan
-   ended with this release.
-5. Archive the per-task journals (`_task_*.md`) by removing the leading
-   underscore once their parent plan is closed out, so they show up in the
-   regular journal index.
+- [ ] Bump `gradle.properties` to `0.7.0-SNAPSHOT`; commit
+      `chore: bump version to 0.7.0-SNAPSHOT`.
+- [ ] Delete `claude/kotlin-notion-orchestrate-9ztk5a` and, per the #43 decision,
+      `chore/dependency-refresh-and-backlog`.
+- [ ] Delete `RELEASE_NOTES.md` (its content lives on in the GitHub Release) or park the
+      next draft in its place.
+- [ ] Re-triage what remains open: #62 items that didn't get ratified, `IDEAS.md`
+      rows 4, 7, 9, 10.

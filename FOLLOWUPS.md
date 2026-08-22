@@ -1,10 +1,16 @@
 # Follow-ups from the orchestrated issue run
 
+> **Run complete (2026-08-22).** Every item below is `done`, `filed` (all filed items
+> live in #62, the only issue from the run still open) or `wont-do`. Issues #32–#42,
+> #56–#61, #68–#70, #75/#76 and #82 are closed; the work ships to `main` via release
+> PR #79. This file stays in the repo as the archival record of what the agents
+> flagged, what was verified, and what was decided.
+
 Collected from implementing-agent reports on issues #32–#42, landed on the shared
 feature branch `claude/kotlin-notion-orchestrate-9ztk5a`. Every entry is something
 an agent **noticed and deliberately did not fix** because it fell outside the scope
-of its issue. Nothing here has been independently verified — each item is recorded
-as the agent reported it.
+of its issue. Items were recorded as claims and adjudicated during the run — see the
+status column for the outcome of each.
 
 Status: `open` · `filed` (issue created) · `done` · `wont-do`
 
@@ -73,6 +79,7 @@ Suggested order: #56 → #61 last (it adjudicates the others' claims); #57, #58,
 
 ## Notes
 
-- Issues #32–#42 are **not** auto-closed by their PRs: the PRs target this shared
-  feature branch rather than `main`, so `Closes #NN` does not fire. They stay open
-  until the shared branch lands on `main`.
+- Issues #32–#42 were **not** auto-closed by their PRs (the PRs targeted the shared
+  feature branch rather than `main`, so `Closes #NN` never fired). They were closed
+  manually on 2026-08-22 during release cleanup, each with a comment linking its
+  landing PR.
