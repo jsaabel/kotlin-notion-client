@@ -82,7 +82,7 @@ sealed class PageCover {
     }
 
     /**
-     * A local file recorded by `cover { upload(File(…)) }`, still waiting to be uploaded.
+     * A local file recorded by `cover.upload(File(…))`, still waiting to be uploaded.
      *
      * The client uploads it and swaps in the equivalent [FileUpload] before the request that
      * carries it is serialized — see `docs/adr/0001-deferred-file-upload-resolution.md`.
@@ -109,7 +109,7 @@ internal object PageCoverPendingUploadSerializer : PendingUploadRefusingSerializ
     filename = { it.source.filename },
     remedy =
         "pass the request through a NotionClient method (pages.create, pages.update, " +
-            "databases.create), or upload first and use cover { upload(id) }",
+            "databases.create), or upload first and use cover.upload(id)",
 )
 
 /**

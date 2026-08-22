@@ -78,9 +78,33 @@ class CreatePageRequestBuilder {
     val parent = ParentBuilder()
 
     /**
+     * Configures the parent in a lambda, as an alternative to the `parent.xxx()` receiver form.
+     *
+     * Both forms drive the same builder and are last-call-wins; see
+     * [docs/dsl-conventions.md](https://github.com/jsaabel/kotlin-notion-client/blob/main/docs/dsl-conventions.md).
+     *
+     * @param block Configuration block applied to the parent builder
+     */
+    fun parent(block: ParentBuilder.() -> Unit) {
+        parent.block()
+    }
+
+    /**
      * Builder for icon configuration.
      */
     val icon = IconBuilder()
+
+    /**
+     * Configures the icon in a lambda, as an alternative to the `icon.xxx()` receiver form.
+     *
+     * Both forms drive the same builder and are last-call-wins; see
+     * [docs/dsl-conventions.md](https://github.com/jsaabel/kotlin-notion-client/blob/main/docs/dsl-conventions.md).
+     *
+     * @param block Configuration block applied to the icon builder
+     */
+    fun icon(block: IconBuilder.() -> Unit) {
+        icon.block()
+    }
 
     /**
      * Builder for cover configuration.
@@ -88,14 +112,50 @@ class CreatePageRequestBuilder {
     val cover = CoverBuilder()
 
     /**
+     * Configures the cover in a lambda, as an alternative to the `cover.xxx()` receiver form.
+     *
+     * Both forms drive the same builder and are last-call-wins; see
+     * [docs/dsl-conventions.md](https://github.com/jsaabel/kotlin-notion-client/blob/main/docs/dsl-conventions.md).
+     *
+     * @param block Configuration block applied to the cover builder
+     */
+    fun cover(block: CoverBuilder.() -> Unit) {
+        cover.block()
+    }
+
+    /**
      * Builder for template configuration.
      */
     val template = TemplateBuilder()
 
     /**
+     * Configures the template in a lambda, as an alternative to the `template.xxx()` receiver form.
+     *
+     * Both forms drive the same builder and are last-call-wins; see
+     * [docs/dsl-conventions.md](https://github.com/jsaabel/kotlin-notion-client/blob/main/docs/dsl-conventions.md).
+     *
+     * @param block Configuration block applied to the template builder
+     */
+    fun template(block: TemplateBuilder.() -> Unit) {
+        template.block()
+    }
+
+    /**
      * Builder for position configuration.
      */
     val position = PositionBuilder()
+
+    /**
+     * Configures the position in a lambda, as an alternative to the `position.xxx()` receiver form.
+     *
+     * Both forms drive the same builder and are last-call-wins; see
+     * [docs/dsl-conventions.md](https://github.com/jsaabel/kotlin-notion-client/blob/main/docs/dsl-conventions.md).
+     *
+     * @param block Configuration block applied to the position builder
+     */
+    fun position(block: PositionBuilder.() -> Unit) {
+        position.block()
+    }
 
     /**
      * Sets the page title.
@@ -338,7 +398,7 @@ class CreatePageRequestBuilder {
          * `docs/adr/0001-deferred-file-upload-resolution.md`.
          *
          * ```kotlin
-         * icon { upload(File("logo.png")) }
+         * icon.upload(File("logo.png"))
          * ```
          *
          * @param source the file to upload
@@ -457,7 +517,7 @@ class CreatePageRequestBuilder {
          * `docs/adr/0001-deferred-file-upload-resolution.md`.
          *
          * ```kotlin
-         * cover { upload(File("logo.png")) }
+         * cover.upload(File("logo.png"))
          * ```
          *
          * @param source the file to upload

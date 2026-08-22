@@ -347,7 +347,7 @@ class UploadAndAttachTest :
 
                 try {
                     CommentsApi(client, config).create(listOf(byteArrayOf(1).asFileSource("trace.txt"))) {
-                        parent.pageId("page-id")
+                        parent.page("page-id")
                         content { text("see attached") }
                     }
                 } finally {
@@ -368,7 +368,7 @@ class UploadAndAttachTest :
                         CommentsApi(client, config).create(
                             List(4) { byteArrayOf(1).asFileSource("f$it.txt") },
                         ) {
-                            parent.pageId("page-id")
+                            parent.page("page-id")
                             content { text("too many") }
                         }
                     }

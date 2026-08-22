@@ -52,8 +52,9 @@ println("View: ${view.name} (${view.type})")
 
 ```kotlin
 val view = notion.views.create {
-    database("data-source-id")  // or dashboard("dashboard-id")
-    type("table")
+    dataSourceId("data-source-id")     // the data source this view reads
+    parent.database("database-id")     // or parent.dashboard("dashboard-view-id")
+    type(ViewType.TABLE)
     name("My Table View")
 }
 ```
@@ -62,8 +63,9 @@ val view = notion.views.create {
 
 ```kotlin
 val view = notion.views.create {
-    database("data-source-id")
-    type("table")
+    dataSourceId("data-source-id")
+    parent.database("database-id")
+    type(ViewType.TABLE)
     name("Compact Table")
     // Show only specific properties (by property ID):
     showProperties("prop-id-1", "prop-id-2")
@@ -78,8 +80,9 @@ Full control via the `ViewConfiguration` sealed class:
 
 ```kotlin
 val view = notion.views.create {
-    database("data-source-id")
-    type("gallery")
+    dataSourceId("data-source-id")
+    parent.database("database-id")
+    type(ViewType.GALLERY)
     name("Gallery View")
     configuration(ViewConfiguration.Gallery(
         coverType = CoverType.PAGE_COVER,

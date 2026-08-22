@@ -21,7 +21,7 @@ annotation class ViewRequestDslMarker
  *     dataSourceId("ds-id")
  *     name("My Board")
  *     type(ViewType.BOARD)
- *     database("db-id")
+ *     parent.database("db-id")
  * }
  * ```
  *
@@ -31,7 +31,7 @@ annotation class ViewRequestDslMarker
  *     dataSourceId("ds-id")
  *     name("Tasks")
  *     type(ViewType.TABLE)
- *     database("db-id")
+ *     parent.database("db-id")
  *     configuration(ViewConfiguration.Table(frozenColumnIndex = 1))
  * }
  * ```
@@ -42,7 +42,7 @@ annotation class ViewRequestDslMarker
  *     dataSourceId("ds-id")
  *     name("Kanban")
  *     type(ViewType.BOARD)
- *     database("db-id")
+ *     parent.database("db-id")
  *     showProperties("prop-id-1", "prop-id-2")
  *     hideProperties("prop-id-3")
  * }
@@ -91,11 +91,89 @@ class CreateViewRequestBuilder {
     }
 
     /**
+     * Builder for parent configuration.
+     *
+     * A view hangs off exactly one of: an existing database, a dashboard view, or a
+     * database created for it. Note that this is separate from [dataSourceId], which
+     * names the data source the view *reads from* rather than what it hangs off.
+     */
+    val parent = ParentBuilder()
+
+    /**
+     * Configures the parent in a lambda, as an alternative to the `parent.xxx()` receiver form.
+     *
+     * Both forms drive the same builder and are last-call-wins; see
+     * [docs/dsl-conventions.md](https://github.com/jsaabel/kotlin-notion-client/blob/main/docs/dsl-conventions.md).
+     *
+     * @param block Configuration block applied to the parent builder
+     */
+    fun parent(block: ParentBuilder.() -> Unit) {
+        parent.block()
+    }
+
+    /**
+     * Builder for parent configuration — what this view hangs off.
+     *
+     * Exactly one of [database], [dashboard] or [newDatabase] must be called.
+     */
+    @ViewRequestDslMarker
+    inner class ParentBuilder {
+        /**
+         * Creates a new view tab on an existing database.
+         *
+         * @param databaseId The database UUID
+         * @param position Optional tab-bar position for the new view
+         */
+        fun database(
+            databaseId: String,
+            position: ViewPosition? = null,
+        ) {
+            this@CreateViewRequestBuilder.databaseIdValue = databaseId
+            this@CreateViewRequestBuilder.positionValue = position
+        }
+
+        /**
+         * Creates this view as a widget inside a dashboard view.
+         *
+         * @param viewId The dashboard view UUID
+         * @param placement Optional widget placement within the dashboard
+         */
+        fun dashboard(
+            viewId: String,
+            placement: WidgetPlacement? = null,
+        ) {
+            this@CreateViewRequestBuilder.viewIdValue = viewId
+            this@CreateViewRequestBuilder.placementValue = placement
+        }
+
+        /**
+         * Creates a new linked database on a page and attaches this view to it.
+         *
+         * @param pageId The parent page UUID where the database will be created
+         * @param afterBlockId Optional block UUID — places the database after this block
+         */
+        fun newDatabase(
+            pageId: String,
+            afterBlockId: String? = null,
+        ) {
+            this@CreateViewRequestBuilder.createDatabaseValue =
+                CreateDatabaseForView(
+                    parent = PageIdParent(pageId = pageId),
+                    position = afterBlockId?.let { AfterBlockPosition(blockId = it) },
+                )
+        }
+    }
+
+    /**
      * Creates a new view tab on an existing database.
      *
      * @param id The database UUID
      * @param position Optional tab-bar position for the new view
      */
+    @Deprecated(
+        message = "Parents are addressed through the parent builder in every DSL; use parent.database(id, position).",
+        replaceWith = ReplaceWith("parent.database(id, position)"),
+    )
     fun database(
         id: String,
         position: ViewPosition? = null,
@@ -110,6 +188,10 @@ class CreateViewRequestBuilder {
      * @param id The dashboard view UUID
      * @param placement Optional widget placement within the dashboard
      */
+    @Deprecated(
+        message = "Parents are addressed through the parent builder in every DSL; use parent.dashboard(id, placement).",
+        replaceWith = ReplaceWith("parent.dashboard(id, placement)"),
+    )
     fun dashboard(
         id: String,
         placement: WidgetPlacement? = null,
@@ -146,6 +228,10 @@ class CreateViewRequestBuilder {
      * @param pageId The parent page UUID where the database will be created
      * @param afterBlockId Optional block UUID — places the database after this block
      */
+    @Deprecated(
+        message = "Parents are addressed through the parent builder in every DSL; use parent.newDatabase(pageId, afterBlockId).",
+        replaceWith = ReplaceWith("parent.newDatabase(pageId, afterBlockId)"),
+    )
     fun createDatabase(
         pageId: String,
         afterBlockId: String? = null,
@@ -165,7 +251,7 @@ class CreateViewRequestBuilder {
 
         val parentCount = listOfNotNull(databaseIdValue, viewIdValue, createDatabaseValue).size
         require(parentCount == 1) {
-            "Exactly one of database(), dashboard(), or createDatabase() must be called (got $parentCount)"
+            "Exactly one of parent.database(), parent.dashboard(), or parent.newDatabase() must be called (got $parentCount)"
         }
 
         val configuration =

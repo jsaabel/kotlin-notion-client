@@ -240,7 +240,7 @@ class FormulaPropertyTest :
         "Should reject create data source requests whose formulas reference undefined properties" {
             shouldThrow<IllegalArgumentException> {
                 createDataSourceRequest {
-                    databaseId("db-id")
+                    parent.database("db-id")
                     properties {
                         title("Name")
                         formula("Total", """prop("Missing") + 1""")

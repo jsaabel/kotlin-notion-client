@@ -189,7 +189,7 @@ class DataSourcesExamples :
                 println("\n📖 Running Example 4: Create a data source")
                 val dataSource =
                     notion.dataSources.create {
-                        databaseId(testDatabaseId!!)
+                        parent.database(testDatabaseId!!)
                         title("Projects") // Name of the new table
 
                         properties {
