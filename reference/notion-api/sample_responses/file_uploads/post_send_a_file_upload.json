@@ -5,7 +5,7 @@
   "last_edited_time": "2025-03-15T20:57:00.000Z",
   "expiry_time": "2025-03-15T21:53:00.000Z",
   "upload_url": null,
-  "archived": false,
+  "in_trash": false,
   "status": "uploaded",
   "filename": "test.txt",
   "content_type": "text/plain",

@@ -175,6 +175,11 @@ class FileUploadApi(
      * that an omitted part content-type produces (which Notion rejects as a mismatch for any
      * non-text file).
      *
+     * [FileUpload.contentType] is nullable — it stays null for a single-part upload created
+     * without one, in which case Notion infers the type at this step. Passing it through
+     * unchanged is therefore correct in both cases; use the `fileUploadId` overload to state a
+     * content type explicitly.
+     *
      * ```kotlin
      * val upload = notion.fileUploads.createFileUpload(
      *     CreateFileUploadRequest(filename = "config.json", contentType = "application/json"),

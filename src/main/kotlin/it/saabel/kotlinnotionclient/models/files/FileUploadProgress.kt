@@ -131,6 +131,23 @@ sealed class FileUploadError : Exception {
         val reason: String,
     ) : FileUploadError("Upload cancelled: $reason")
 
+    /**
+     * The upload reached a terminal state it can never leave — [FileUploadStatus.EXPIRED] or
+     * [FileUploadStatus.FAILED] — so waiting any longer is pointless and the upload cannot be
+     * attached to anything. A new upload must be created.
+     *
+     * @property importError For a failed [FileUploadMode.EXTERNAL_URL] import, the reason Notion
+     * gave. This is the only place the API reports why an import failed.
+     */
+    data class UploadUnusableError(
+        val uploadId: String,
+        val status: FileUploadStatus,
+        val importError: FileImportError? = null,
+    ) : FileUploadError(
+            "File upload $uploadId is ${status.wireValue} and can no longer be used" +
+                (importError?.let { ": [${it.code}] ${it.message}" } ?: ""),
+        )
+
     data class UnknownError(
         val originalError: Throwable,
     ) : FileUploadError("Unknown upload error", originalError)

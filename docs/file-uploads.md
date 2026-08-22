@@ -316,20 +316,20 @@ if (uploadResult is FileUploadResult.Success) {
                 text("Technical Architecture")
             }
         }
-        children {
+        content {
             // Reference the uploaded file
-            image {
-                file {
-                    uploadedFile(uploadResult.fileUpload.id)
-                }
-                caption {
-                    text("System architecture diagram")
-                }
-            }
+            imageFromUpload(
+                uploadResult.fileUpload.id,
+                caption = "System architecture diagram",
+            )
         }
     }
 }
 ```
+
+The same `…FromUpload(fileUploadId, caption)` shape is available for the other media blocks —
+`videoFromUpload`, `audioFromUpload`, `fileFromUpload` and `pdfFromUpload` — plus
+`embedFromUpload(fileUploadId)`, which takes no caption.
 
 ## File Size and Type Limits
 

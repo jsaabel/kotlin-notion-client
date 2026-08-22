@@ -1,0 +1,22 @@
+{
+  "object": "file_upload",
+  "id": "9c6e2b47-8f31-4d05-b7a2-c04e91f8d3b6",
+  "created_time": "2025-03-15T20:53:00.000Z",
+  "created_by": {
+    "id": "c1e5b3a7-9d24-4f68-b0aa-2c8e4f7d1b93",
+    "type": "bot"
+  },
+  "last_edited_time": "2025-03-15T20:53:00.000Z",
+  "in_trash": false,
+  "expiry_time": "2025-03-15T21:53:00.000Z",
+  "status": "pending",
+  "filename": null,
+  "content_type": null,
+  "content_length": null,
+  "upload_url": "https://api.notion.com/v1/file_uploads/9c6e2b47-8f31-4d05-b7a2-c04e91f8d3b6/send",
+  "complete_url": "https://api.notion.com/v1/file_uploads/9c6e2b47-8f31-4d05-b7a2-c04e91f8d3b6/complete",
+  "number_of_parts": {
+    "total": 5,
+    "sent": 0
+  }
+}
