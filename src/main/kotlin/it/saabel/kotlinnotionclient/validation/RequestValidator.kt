@@ -6,6 +6,7 @@ import it.saabel.kotlinnotionclient.models.base.RichText
 import it.saabel.kotlinnotionclient.models.blocks.BlockRequest
 import it.saabel.kotlinnotionclient.models.blocks.childrenOf
 import it.saabel.kotlinnotionclient.models.databases.CreateDatabaseRequest
+import it.saabel.kotlinnotionclient.models.databases.UpdateDatabaseRequest
 import it.saabel.kotlinnotionclient.models.pages.CreatePageRequest
 import it.saabel.kotlinnotionclient.models.pages.FileObject
 import it.saabel.kotlinnotionclient.models.pages.PageCover
@@ -96,6 +97,22 @@ class RequestValidator(
         return ValidationResult(violations)
     }
 
+    /**
+     * Validates a database container update request.
+     */
+    fun validateDatabaseUpdateRequest(request: UpdateDatabaseRequest): ValidationResult {
+        val violations = mutableListOf<ValidationViolation>()
+
+        request.title?.let { title ->
+            violations.addAll(validateRichTextArray("title", title))
+        }
+
+        violations.addAll(validateNoPendingUpload(request.icon))
+        violations.addAll(validateNoPendingUpload(request.cover))
+
+        return ValidationResult(violations)
+    }
+
     // =============================================================================
     // SIMPLIFIED VALIDATION API - Single method to validate and fix if needed
     // =============================================================================
@@ -148,6 +165,24 @@ class RequestValidator(
 
         return handleViolations(request, violations) { req, textViolations ->
             fixDatabaseTextViolations(req, textViolations)
+        }
+    }
+
+    /**
+     * Validates a database container update request and automatically fixes text violations if
+     * configured.
+     *
+     * @param request The database update request to validate
+     * @return A valid request (potentially with auto-fixed text content)
+     * @throws ValidationException if validation fails for non-fixable violations
+     */
+    fun validateOrFix(request: UpdateDatabaseRequest): UpdateDatabaseRequest {
+        val violations = validateDatabaseUpdateRequest(request)
+
+        if (violations.isValid) return request
+
+        return handleViolations(request, violations) { req, textViolations ->
+            fixDatabaseUpdateTextViolations(req, textViolations)
         }
     }
 
@@ -372,7 +407,7 @@ class RequestValidator(
                 unresolvedPendingUpload(
                     field = "icon",
                     filename = icon.source.filename,
-                    remedy = "Pass this request to pages.create, pages.update, databases.create or dataSources.update",
+                    remedy = "Pass this request to pages.create, pages.update, databases.create, databases.update or dataSources.update",
                 ),
             )
         } else {
@@ -386,7 +421,7 @@ class RequestValidator(
                 unresolvedPendingUpload(
                     field = "cover",
                     filename = cover.source.filename,
-                    remedy = "Pass this request to pages.create, pages.update or databases.create",
+                    remedy = "Pass this request to pages.create, pages.update, databases.create or databases.update",
                 ),
             )
         } else {
@@ -789,6 +824,24 @@ class RequestValidator(
         }
 
         return fixedRequest
+    }
+
+    /**
+     * Fixes text violations in a database container update request.
+     *
+     * The only rich text a container update carries is its title.
+     */
+    private fun fixDatabaseUpdateTextViolations(
+        request: UpdateDatabaseRequest,
+        textViolations: List<ValidationViolation>,
+    ): UpdateDatabaseRequest {
+        val title = request.title ?: return request
+
+        return if (textViolations.any { it.field.startsWith("title[") }) {
+            request.copy(title = fixRichTextArray(title))
+        } else {
+            request
+        }
     }
 
     /**

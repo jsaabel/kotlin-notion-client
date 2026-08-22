@@ -44,6 +44,25 @@ suspend fun listTemplates(
 ): List<Template>
 ```
 
+**What `update` does not reach**: `parent`, `is_inline` and `cover` belong to the database
+*container*, not to a data source — change those with
+[`databases.update()`](databases.md#update-a-database-container). A `cover` sent here is refused
+in as many words: `The `cover` property is not supported for data sources. Use the Update Database
+API instead.` `title`, `icon` and `in_trash` exist on both, independently: setting a data source's
+icon does not touch the container's, and vice versa.
+
+**Removing an icon**: this is the surface that can. Notion's UI renders the data source, so the
+icon a reader sees is this one — and it is the only one that can be cleared at all, since
+`PATCH /v1/databases` rejects `"icon": null` while `PATCH /v1/data_sources` accepts it (both
+verified live; the matrix is pinned by `IconCoverSupportIntegrationTest`).
+
+```kotlin
+notion.dataSources.update("data-source-id") { icon.remove() }
+```
+
+Note that `databases.create { icon.… }` propagates the icon to the initial data source, so a
+database created with an icon has one in both places.
+
 ## Examples
 
 ### Retrieve a Data Source

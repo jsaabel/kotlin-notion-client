@@ -66,6 +66,7 @@ The accessor is named after the **object**, never after its id — `page(id)`, n
 | --- | --- |
 | `pages.create` | `parent.page(id)` · `parent.dataSource(id)` · `parent.block(id)` · `parent.workspace()` |
 | `databases.create` | `parent.page(id)` · `parent.block(id)` · `parent.workspace()` |
+| `databases.update` | `parent.page(id)` · `parent.block(id)` · `parent.workspace()` — **moves** the database |
 | `comments.create` | `parent.page(id)` · `parent.block(id)` |
 | `dataSources.create` | `parent.database(id)` |
 | `views.create` | `parent.database(id, position)` · `parent.dashboard(id, placement)` · `parent.newDatabase(pageId, afterBlockId)` |

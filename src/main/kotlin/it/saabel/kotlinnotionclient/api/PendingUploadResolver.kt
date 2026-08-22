@@ -15,6 +15,7 @@ import it.saabel.kotlinnotionclient.models.blocks.withChildren
 import it.saabel.kotlinnotionclient.models.comments.CommentAttachmentRequest
 import it.saabel.kotlinnotionclient.models.comments.CreateCommentRequest
 import it.saabel.kotlinnotionclient.models.databases.CreateDatabaseRequest
+import it.saabel.kotlinnotionclient.models.databases.UpdateDatabaseRequest
 import it.saabel.kotlinnotionclient.models.datasources.UpdateDataSourceRequest
 import it.saabel.kotlinnotionclient.models.files.FileUploadOptions
 import it.saabel.kotlinnotionclient.models.files.FileUploadReference
@@ -226,6 +227,16 @@ internal suspend fun EnhancedFileUploadApi.resolvePendingUploads(request: Update
 
 /** Uploads the pending icon and cover of a database create. See [resolvePendingUploads]. */
 internal suspend fun EnhancedFileUploadApi.resolvePendingUploads(request: CreateDatabaseRequest): CreateDatabaseRequest {
+    val pending = collectPendingFiles(request.icon) + collectPendingFiles(request.cover)
+    if (pending.isEmpty()) return request
+
+    val ids = uploadAll(pending).iterator()
+
+    return request.copy(icon = substitute(request.icon, ids), cover = substitute(request.cover, ids))
+}
+
+/** Uploads the pending icon and cover of a database update. See [resolvePendingUploads]. */
+internal suspend fun EnhancedFileUploadApi.resolvePendingUploads(request: UpdateDatabaseRequest): UpdateDatabaseRequest {
     val pending = collectPendingFiles(request.icon) + collectPendingFiles(request.cover)
     if (pending.isEmpty()) return request
 

@@ -47,10 +47,65 @@ data class InitialDataSource(
 )
 
 /**
+ * Request model for updating a database container (API version 2025-09-03+).
+ *
+ * Under 2025-09-03 the database container and its data sources own disjoint halves of what
+ * used to be one object, and each half is reachable only through its own endpoint. This
+ * request carries the container's half — see
+ * `reference/notion-api/upgrading_to_2025_09_03/upgrade_guide.md`:
+ *
+ * > Continue to use the Update Database API for attributes that apply to the database:
+ * > `parent`, `title`, `is_inline`, `icon`, `cover`, `in_trash`
+ *
+ * The other half — `properties` (the schema), `description`, and a data source's own `title`,
+ * `icon` and `in_trash` — goes through [UpdateDataSourceRequest][it.saabel.kotlinnotionclient.models.datasources.UpdateDataSourceRequest].
+ * `title` and `in_trash` appear on both because the container and each data source carry their
+ * own; setting one does not set the other.
+ *
+ * Every field is optional and a `null` field is omitted from the payload, so a request touches
+ * only what it names.
+ *
+ * Unlike a page update, an icon or cover here can be **replaced but not removed**. Verified live
+ * on 2026-08-22: `PATCH /v1/databases` answers `"icon": null` with
+ * `HTTP 400 validation_error — body.icon should be an object or `undefined`, instead was `null``.
+ * The [Icon.Removed]/[PageCover.Removed] sentinels of
+ * `docs/adr/0002-explicit-null-payloads.md` encode correctly but are not accepted here, so
+ * [UpdateDatabaseRequestBuilder] does not offer a `remove()` on this surface. Setting one of them
+ * on this model by hand produces that 400.
+ *
+ * @property parent Moves the database to a different parent. New in the 2025-09-03 API.
+ * @property title The container title
+ * @property icon The container icon. Cannot be cleared — see above.
+ * @property cover The container cover. Cannot be cleared, and Notion does not support one on an
+ *   inline database.
+ * @property isInline Whether the database renders inline in its parent page
+ * @property inTrash Whether the database is in the trash
+ */
+@Serializable
+data class UpdateDatabaseRequest(
+    @SerialName("parent")
+    val parent: Parent? = null,
+    @SerialName("title")
+    val title: List<RichText>? = null,
+    @SerialName("icon")
+    val icon: Icon? = null,
+    @SerialName("cover")
+    val cover: PageCover? = null,
+    @SerialName("is_inline")
+    val isInline: Boolean? = null,
+    @SerialName("in_trash")
+    val inTrash: Boolean? = null,
+)
+
+/**
  * Request model for archiving a database.
  *
  * Notion doesn't support true deletion - objects are moved to trash instead.
  * In the 2025-09-03 API, databases use "in_trash" field (not "archived").
+ *
+ * `in_trash` is one of the container attributes [UpdateDatabaseRequest] carries, and
+ * [it.saabel.kotlinnotionclient.api.DatabasesApi.trash] now goes through that instead. This
+ * narrower shape is kept because it shipped as public API and encodes to the same payload.
  */
 @Serializable
 data class ArchiveDatabaseRequest(
