@@ -141,6 +141,9 @@ enum class ViolationType(
 
     /** Payload approaching size limits (warning) */
     PAYLOAD_NEAR_LIMIT(isError = false, isWarning = true),
+
+    /** A block still carries a local file that was never uploaded */
+    UNRESOLVED_PENDING_UPLOAD(isError = true),
 }
 
 /**

@@ -48,6 +48,10 @@ suspend fun delete(blockId: String): Block
 - **File** - File attachments
 - **PDF** - PDF documents
 
+Each media block takes an external URL, an already-uploaded file id (`imageFromUpload(id)`), or a
+local file the client uploads for you — see
+[Attaching local files](#attaching-local-files).
+
 ### Layout
 - **Divider** - Horizontal separator
 - **Table** - Structured tabular data
@@ -431,6 +435,27 @@ notion.blocks.appendChildren(pageId) {
     )
 }
 ```
+
+### Attaching local files
+
+The media builders take a `File`, a `Path` or a `FileSource` as well as a URL, and `html` takes
+markup as a string. The file is not uploaded while the builder runs — builder lambdas are
+synchronous — but by the suspending call that consumes the blocks, just before it sends them:
+
+```kotlin
+notion.blocks.appendChildren(pageId) {
+    heading2("Results")
+    image(File("chart.png"), caption = "Q3")
+    pdf(Paths.get("appendix.pdf"))
+    html("<h1>Weekly report</h1>")
+}
+```
+
+This works the same in `pages.create { content { … } }` — which is where it earns its keep, since
+a page create is a single request that has to carry every attachment — and in `blocks.update`.
+Uploads run concurrently and the first failure aborts the whole call before anything is sent. See
+[File uploads](file-uploads.md#local-files-inside-the-content-dsl) for the full picture, including
+what happens to uploads that had already completed when another one failed.
 
 ### Pagination Handling
 
