@@ -11,17 +11,22 @@ import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import io.ktor.client.statement.HttpResponse
 import io.ktor.http.ContentType
+import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentType
 import io.ktor.http.isSuccess
 import it.saabel.kotlinnotionclient.config.NotionConfig
 import it.saabel.kotlinnotionclient.exceptions.NotionException
 import it.saabel.kotlinnotionclient.exceptions.toNotionApiError
+import it.saabel.kotlinnotionclient.models.asynctasks.AsyncTask
+import it.saabel.kotlinnotionclient.models.base.Parent
+import it.saabel.kotlinnotionclient.models.pages.AsyncPageCreateResult
 import it.saabel.kotlinnotionclient.models.pages.CreatePageRequest
 import it.saabel.kotlinnotionclient.models.pages.CreatePageRequestBuilder
 import it.saabel.kotlinnotionclient.models.pages.MovePageParent
 import it.saabel.kotlinnotionclient.models.pages.MovePageRequest
 import it.saabel.kotlinnotionclient.models.pages.Page
 import it.saabel.kotlinnotionclient.models.pages.PagePropertyItemResponse
+import it.saabel.kotlinnotionclient.models.pages.PagePropertyValue
 import it.saabel.kotlinnotionclient.models.pages.PropertyItem
 import it.saabel.kotlinnotionclient.models.pages.TrashPageRequest
 import it.saabel.kotlinnotionclient.models.pages.UpdatePageRequest
@@ -135,6 +140,7 @@ class PagesApi(
         request: CreatePageRequest,
         filterProperties: List<String>? = null,
     ): Page {
+        requireSynchronous(request.allowAsync)
         validateFilterPropertiesLimit(filterProperties)
         val finalRequest = validator.validateOrFix(request)
 
@@ -158,6 +164,158 @@ class PagesApi(
             throw e.response.toNotionApiError()
         } catch (e: Exception) {
             throw NotionException.NetworkError(e)
+        }
+    }
+
+    /**
+     * Creates a new page whose content is supplied as enhanced Markdown.
+     *
+     * Convenience wrapper over [create] for the common markdown case — the API converts
+     * the markdown string into blocks server-side. The first `# h1` heading becomes the
+     * page title when no [title] is given.
+     *
+     * Requires the integration to have **insert content** capability on [parent].
+     * `markdown` is mutually exclusive with block children and with templates.
+     *
+     * For large markdown bodies that may exceed an HTTP client's timeout budget, prefer
+     * [createFromMarkdownAsync].
+     *
+     * @param parent The parent the page is created under (page or data source)
+     * @param markdown The enhanced Markdown content (use `\n` for line breaks)
+     * @param title Optional page title; when omitted Notion derives it from the markdown
+     * @param filterProperties Optional list of property IDs to restrict the properties returned
+     * @return Page object representing the created page
+     * @throws NotionException.NetworkError for network-related failures
+     * @throws NotionException.ApiError for API-related errors (4xx, 5xx responses)
+     */
+    suspend fun createFromMarkdown(
+        parent: Parent,
+        markdown: String,
+        title: String? = null,
+        filterProperties: List<String>? = null,
+    ): Page = create(markdownRequest(parent, markdown, title), filterProperties)
+
+    /**
+     * Creates a page from Markdown, opting into asynchronous execution.
+     *
+     * Sets `allow_async: true` on the request. Per the Jun 29 2026 Notion changelog this is
+     * accepted on `POST /v1/pages` **only when a `markdown` body is supplied**. As on the
+     * markdown write endpoint, opting in does not force background execution — the API
+     * decides, and a 202 cannot be provoked:
+     * - HTTP 202: [AsyncPageCreateResult.Accepted] with an [AsyncTask] to poll via
+     *   `client.asyncTasks` (e.g. `waitForCompletion(task.id)`)
+     * - HTTP 200: the page was created synchronously and [AsyncPageCreateResult.Completed]
+     *   carries the [Page]
+     *
+     * @param parent The parent the page is created under (page or data source)
+     * @param markdown The enhanced Markdown content (use `\n` for line breaks)
+     * @param title Optional page title; when omitted Notion derives it from the markdown
+     * @return The result of the create, either completed or accepted for background execution
+     */
+    suspend fun createFromMarkdownAsync(
+        parent: Parent,
+        markdown: String,
+        title: String? = null,
+    ): AsyncPageCreateResult = createAsync(markdownRequest(parent, markdown, title))
+
+    /**
+     * Creates a page asynchronously from an explicit request.
+     *
+     * `allow_async` is forced to `true` on [request]. See [createFromMarkdownAsync] for the
+     * async semantics.
+     *
+     * @param request The page creation request; must carry a `markdown` body
+     * @param filterProperties Optional list of property IDs to restrict the properties returned
+     *   when the API answers synchronously
+     * @return The result of the create, either completed or accepted for background execution
+     * @throws NotionException.ValidationError if [request] carries no `markdown` body —
+     *   `allow_async` is only supported for markdown page creates
+     * @throws NotionException.NetworkError for network-related failures
+     * @throws NotionException.ApiError for API-related errors (4xx, 5xx responses)
+     */
+    suspend fun createAsync(
+        request: CreatePageRequest,
+        filterProperties: List<String>? = null,
+    ): AsyncPageCreateResult {
+        if (request.markdown == null) {
+            throw NotionException.ValidationError(
+                field = "allow_async",
+                details =
+                    "Asynchronous page creation is only supported when the request supplies a " +
+                        "markdown body. Set markdown(...) on the request, or use PagesApi.create " +
+                        "for a synchronous create.",
+            )
+        }
+        validateFilterPropertiesLimit(filterProperties)
+        val finalRequest = validator.validateOrFix(request).copy(allowAsync = true)
+
+        return try {
+            val response: HttpResponse =
+                httpClient.post("${config.baseUrl}/pages") {
+                    contentType(ContentType.Application.Json)
+                    filterProperties(filterProperties)
+                    setBody(finalRequest)
+                }
+
+            when {
+                response.status == HttpStatusCode.Accepted -> {
+                    AsyncPageCreateResult.Accepted(response.body<AsyncTask>())
+                }
+
+                response.status.isSuccess() -> {
+                    AsyncPageCreateResult.Completed(response.body<Page>())
+                }
+
+                else -> {
+                    throw response.toNotionApiError()
+                }
+            }
+        } catch (e: NotionException) {
+            throw e // Re-throw our own exceptions
+        } catch (e: ClientRequestException) {
+            throw e.response.toNotionApiError()
+        } catch (e: Exception) {
+            throw NotionException.NetworkError(e)
+        }
+    }
+
+    /**
+     * Creates a page asynchronously using the fluent DSL builder.
+     *
+     * See [createFromMarkdownAsync] for the async semantics. The built request must call
+     * `markdown(...)`.
+     *
+     * @param filterProperties Optional list of property IDs to restrict the properties returned
+     *   when the API answers synchronously
+     * @param builder DSL builder lambda for constructing the page request
+     * @return The result of the create, either completed or accepted for background execution
+     */
+    suspend fun createAsync(
+        filterProperties: List<String>? = null,
+        builder: CreatePageRequestBuilder.() -> Unit,
+    ): AsyncPageCreateResult = createAsync(createPageRequest(builder), filterProperties)
+
+    private fun markdownRequest(
+        parent: Parent,
+        markdown: String,
+        title: String?,
+    ): CreatePageRequest =
+        CreatePageRequest(
+            parent = parent,
+            properties =
+                title?.let { mapOf("title" to PagePropertyValue.TitleValue.fromPlainText(it)) }
+                    ?: emptyMap(),
+            markdown = markdown,
+        )
+
+    private fun requireSynchronous(allowAsync: Boolean?) {
+        if (allowAsync == true) {
+            throw NotionException.ValidationError(
+                field = "allow_async",
+                details =
+                    "This method returns the synchronous response shape and cannot handle an async task. " +
+                        "Use PagesApi.createAsync for requests with allow_async = true.",
+            )
         }
     }
 

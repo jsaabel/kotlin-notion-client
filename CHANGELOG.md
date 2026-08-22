@@ -87,6 +87,11 @@ Eleven changelog-driven issues landed together, bringing the client up to date w
   `group` cannot be set on select/multi-select options, which the API rejects.
 - **`DatabaseProperty.Formula.formula` is now `FormulaConfiguration`**, not `JsonObject` (#42).
   Source-breaking for consumers reading the raw object; use `.expression` instead.
+- **`DatabaseProperty.Rollup.rollup` is now `RollupConfiguration`**, not `JsonObject` (#59).
+  Source-breaking for consumers reading the raw object; use `.function`,
+  `.relationPropertyName`/`.relationPropertyId` and `.rollupPropertyName`/`.rollupPropertyId`
+  (or the `.relationReference`/`.rollupReference` shorthands on the property) instead. Same shape
+  of change as the `Formula.formula` break above.
 - **`SearchFilter.property` now defaults to `null`, not `"object"`** (#58). A hand-written
   `SearchFilter(inTrash = true)` bypassing `SearchRequestBuilder` previously emitted a spurious
   `"property":"object"` alongside `in_trash` — `property` is now omitted unless a non-null `value`
@@ -143,6 +148,37 @@ Eleven changelog-driven issues landed together, bringing the client up to date w
   create/update/retrieve (previously unvalidated).
 - **`SearchApi.search(query: String, inTrash: Boolean)`**, a trash-filtered convenience overload
   mirroring `search(query: String)` (#58).
+- **Pages can be created from Markdown, synchronously or asynchronously** (#59). The Jun 29 2026
+  changelog enabled `allow_async` on `POST /v1/pages` when a `markdown` body is supplied;
+  `CreatePageRequest` already carried `markdown` but `PagesApi` exposed no markdown-shaped call and
+  no async path. New `createFromMarkdown(parent, markdown, title)`, plus
+  `createFromMarkdownAsync(...)`/`createAsync(request)`/`createAsync { }` returning a sealed
+  `AsyncPageCreateResult` (`Accepted(task)` on 202, `Completed(page)` on 200) — a 202 cannot be
+  forced, the API decides, exactly as with `AsyncMarkdownResult` (#38). `create` now rejects
+  `allowAsync = true` and `createAsync` rejects a request with no `markdown` body. `AsyncTask`
+  gained `pageResultOrNull()`, and both result accessors now check the payload's `object` field,
+  because Notion documents the succeeded-task result shape only for the markdown PATCH operation.
+- **`views.iterateAllRows(...)`/`collectAllRows(...)` drain every row behind a view** past the
+  10,000-row cap (#59). A view query *cannot* be windowed the way #40 windows a data source —
+  `POST /v1/views/{id}/queries` accepts nothing but `page_size` and paginating a cached query takes
+  no filter — so, following Notion's own guidance, the drain resolves the view to its
+  `data_source_id` and re-runs the windowed data source query with the view's `filter`. The view's
+  `sorts` are replaced by the ascending iteration-key sort, `quick_filters` and group/sub-item
+  scoping are not replicated (a view relying on them yields *more* rows here than it displays), and
+  full `Page` objects are emitted rather than the `{object, id}` references a view query returns.
+  #40's limitations carry over: not a snapshot, boundary re-reads de-duplicated by id, and a view
+  filter already two levels deep cannot be `and`-wrapped. A view with no `data_source_id` (a
+  dashboard) raises `ValidationError`. The internal engine is now `WindowedRowIteration`, shared by
+  both surfaces.
+- **Rollup properties are now typed and can be written** (#59). `RollupConfiguration` replaces the
+  untyped `JsonObject` on both the read and write side (see the breaking note above), `RollupFunction`
+  covers all 24 documented functions with an `UNKNOWN` read-side fallback so a newly added function
+  cannot break deserializing a whole data source, and `CreateDatabaseProperty.Rollup` plus `rollup(...)`
+  DSL overloads make rollups creatable for the first time. Validation stays at construction time per
+  the #31/#42 precedent rather than moving into `RequestValidator`: missing or blank relation /
+  rolled-up references and the `UNKNOWN` sentinel fail at the call site, and **create** requests —
+  which carry the complete schema — additionally reject a rollup naming a relation that is absent or
+  is not a relation property. Update requests carry a partial schema and are deliberately not checked.
 
 #### Fixed
 

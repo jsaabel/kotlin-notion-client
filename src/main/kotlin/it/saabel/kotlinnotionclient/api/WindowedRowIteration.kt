@@ -17,7 +17,7 @@ import kotlinx.coroutines.flow.flow
 import kotlin.time.Instant
 
 /**
- * Windowed iteration over data sources larger than Notion's 10,000-row query cap.
+ * Windowed iteration over row sets larger than Notion's 10,000-row query cap.
  *
  * Strategy: sort rows ascending by a monotonic key ([RowIterationKey]) and follow the
  * normal cursor chain. When the API reports a truncated result set
@@ -26,8 +26,13 @@ import kotlin.time.Instant
  *
  * Each window's filter and sort are fixed when the window opens; cursors within a
  * window always refer to the same query.
+ *
+ * The engine is parameterised by the page-fetching function, so the same drain serves
+ * both `DataSourcesApi.iterateAllRows` and `ViewsApi.iterateAllRows` — the latter
+ * resolves the view to its data source and base filter first, because the view query
+ * endpoint itself accepts nothing but `page_size` and therefore cannot be windowed.
  */
-internal object DataSourceRowIteration {
+internal object WindowedRowIteration {
     /**
      * Safety valve against a misbehaving API: a single window is capped at 10,000
      * rows server-side, i.e. at most 100 pages of 100 — allow generous slack.
