@@ -205,6 +205,45 @@ class PagePropertyUniqueIdTest :
             taskId.formattedId shouldBe "TASK-456"
         }
 
+        "Should handle null number during ID backfill" {
+            // Observed live (issue #61): while Notion backfills IDs after a unique_id
+            // property is added to an existing data source, rows carry
+            // {"prefix": null, "number": null}.
+            val pageJson =
+                """
+                {
+                  "object": "page",
+                  "id": "test-page-id",
+                  "created_time": "2025-01-01T00:00:00.000Z",
+                  "last_edited_time": "2025-01-01T00:00:00.000Z",
+                  "archived": false,
+                  "in_trash": false,
+                  "parent": {
+                    "type": "workspace",
+                    "workspace": true
+                  },
+                  "properties": {
+                    "ID": {
+                      "id": "unique-id-prop",
+                      "type": "unique_id",
+                      "unique_id": {
+                        "prefix": null,
+                        "number": null
+                      }
+                    }
+                  },
+                  "url": "https://www.notion.so/test-page-id"
+                }
+                """.trimIndent()
+
+            val page = json.decodeFromString<Page>(pageJson)
+
+            val uniqueId = page.properties["ID"].shouldBeInstanceOf<PageProperty.UniqueId>()
+            uniqueId.uniqueId shouldNotBe null
+            uniqueId.uniqueId!!.number shouldBe null
+            uniqueId.formattedId shouldBe null
+        }
+
         "Should handle null unique_id value" {
             val pageJson =
                 """
