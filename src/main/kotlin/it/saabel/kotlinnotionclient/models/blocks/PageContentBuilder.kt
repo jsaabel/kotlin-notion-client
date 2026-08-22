@@ -10,10 +10,16 @@ import it.saabel.kotlinnotionclient.models.base.NativeIconObject
 import it.saabel.kotlinnotionclient.models.base.NotionFile
 import it.saabel.kotlinnotionclient.models.base.RichText
 import it.saabel.kotlinnotionclient.models.files.FileUpload
+import it.saabel.kotlinnotionclient.models.files.FileUploadOptions
 import it.saabel.kotlinnotionclient.models.files.FileUploadReference
 import it.saabel.kotlinnotionclient.models.requests.RequestBuilders
 import it.saabel.kotlinnotionclient.models.richtext.RichTextBuilder
 import it.saabel.kotlinnotionclient.models.richtext.richText
+import it.saabel.kotlinnotionclient.utils.FileSource
+import it.saabel.kotlinnotionclient.utils.asFileSource
+import it.saabel.kotlinnotionclient.utils.withHtmlExtension
+import java.io.File
+import java.nio.file.Path
 
 /**
  * DSL builder for creating page content with blocks.
@@ -264,6 +270,11 @@ class PageContentBuilder {
                     if (block.tab.children.isNullOrEmpty()) {
                         errors.add("Tab blocks must have at least one pane")
                     }
+                }
+
+                is BlockRequest.PendingUpload -> {
+                    // Nothing to check locally — the file is uploaded, and the block it becomes
+                    // is built, by the client when the content is sent.
                 }
             }
         }
@@ -1366,6 +1377,304 @@ class PageContentBuilder {
         fileUpload: FileUpload,
         caption: String? = null,
     ): PageContentBuilder = pdfFromUpload(fileUpload.id, caption)
+
+    // ---------------------------------------------------------------------
+    // Deferred local-file overloads
+    //
+    // Builder lambdas are synchronous, so these record the file as a
+    // BlockRequest.PendingUpload sentinel instead of uploading it; the
+    // suspending API layer resolves the sentinels before sending.
+    // See docs/adr/0001-deferred-file-upload-resolution.md.
+    // ---------------------------------------------------------------------
+
+    /**
+     * Adds an image block from a local file, uploaded when the content is sent.
+     *
+     * The file is not read here: the builder records it and the client uploads it — and
+     * substitutes the resulting file-upload reference — inside the suspending call that
+     * consumes these blocks ([pages.create][it.saabel.kotlinnotionclient.api.PagesApi.create],
+     * [blocks.appendChildren][it.saabel.kotlinnotionclient.api.BlocksApi.appendChildren],
+     * [blocks.update][it.saabel.kotlinnotionclient.api.BlocksApi.update]).
+     *
+     * All of a call's uploads run before its request is sent, and the first failure aborts the
+     * whole call, so nothing partial reaches the page. Uploads that had already finished are
+     * left to expire on their own — Notion has no delete-upload endpoint, and an unattached
+     * upload expires an hour after it was created.
+     *
+     * @param source The file to upload
+     * @param caption Optional caption text
+     * @param options Upload options — content type override, progress callback, validation
+     * @return This builder for chaining
+     */
+    fun image(
+        source: FileSource,
+        caption: String? = null,
+        options: FileUploadOptions = FileUploadOptions(),
+    ): PageContentBuilder =
+        addBlock(
+            BlockRequest.PendingUpload(
+                kind = PendingUploadKind.IMAGE,
+                source = source,
+                caption = caption?.let { listOf(RequestBuilders.createSimpleRichText(it)) } ?: emptyList(),
+                options = options,
+            ),
+        )
+
+    /** Adds an image block from a local file, uploaded when the content is sent. See [image]. */
+    fun image(
+        file: File,
+        caption: String? = null,
+        options: FileUploadOptions = FileUploadOptions(),
+    ): PageContentBuilder = image(file.asFileSource(), caption, options)
+
+    /** Adds an image block from the file at [path], uploaded when the content is sent. See [image]. */
+    fun image(
+        path: Path,
+        caption: String? = null,
+        options: FileUploadOptions = FileUploadOptions(),
+    ): PageContentBuilder = image(path.asFileSource(), caption, options)
+
+    /**
+     * Adds a video block from a local file, uploaded when the content is sent.
+     *
+     * The file is not read here: the builder records it and the client uploads it — and
+     * substitutes the resulting file-upload reference — inside the suspending call that
+     * consumes these blocks ([pages.create][it.saabel.kotlinnotionclient.api.PagesApi.create],
+     * [blocks.appendChildren][it.saabel.kotlinnotionclient.api.BlocksApi.appendChildren],
+     * [blocks.update][it.saabel.kotlinnotionclient.api.BlocksApi.update]).
+     *
+     * All of a call's uploads run before its request is sent, and the first failure aborts the
+     * whole call, so nothing partial reaches the page. Uploads that had already finished are
+     * left to expire on their own — Notion has no delete-upload endpoint, and an unattached
+     * upload expires an hour after it was created.
+     *
+     * @param source The file to upload
+     * @param caption Optional caption text
+     * @param options Upload options — content type override, progress callback, validation
+     * @return This builder for chaining
+     */
+    fun video(
+        source: FileSource,
+        caption: String? = null,
+        options: FileUploadOptions = FileUploadOptions(),
+    ): PageContentBuilder =
+        addBlock(
+            BlockRequest.PendingUpload(
+                kind = PendingUploadKind.VIDEO,
+                source = source,
+                caption = caption?.let { listOf(RequestBuilders.createSimpleRichText(it)) } ?: emptyList(),
+                options = options,
+            ),
+        )
+
+    /** Adds a video block from a local file, uploaded when the content is sent. See [video]. */
+    fun video(
+        file: File,
+        caption: String? = null,
+        options: FileUploadOptions = FileUploadOptions(),
+    ): PageContentBuilder = video(file.asFileSource(), caption, options)
+
+    /** Adds a video block from the file at [path], uploaded when the content is sent. See [video]. */
+    fun video(
+        path: Path,
+        caption: String? = null,
+        options: FileUploadOptions = FileUploadOptions(),
+    ): PageContentBuilder = video(path.asFileSource(), caption, options)
+
+    /**
+     * Adds an audio block from a local file, uploaded when the content is sent.
+     *
+     * The file is not read here: the builder records it and the client uploads it — and
+     * substitutes the resulting file-upload reference — inside the suspending call that
+     * consumes these blocks ([pages.create][it.saabel.kotlinnotionclient.api.PagesApi.create],
+     * [blocks.appendChildren][it.saabel.kotlinnotionclient.api.BlocksApi.appendChildren],
+     * [blocks.update][it.saabel.kotlinnotionclient.api.BlocksApi.update]).
+     *
+     * All of a call's uploads run before its request is sent, and the first failure aborts the
+     * whole call, so nothing partial reaches the page. Uploads that had already finished are
+     * left to expire on their own — Notion has no delete-upload endpoint, and an unattached
+     * upload expires an hour after it was created.
+     *
+     * @param source The file to upload
+     * @param caption Optional caption text
+     * @param options Upload options — content type override, progress callback, validation
+     * @return This builder for chaining
+     */
+    fun audio(
+        source: FileSource,
+        caption: String? = null,
+        options: FileUploadOptions = FileUploadOptions(),
+    ): PageContentBuilder =
+        addBlock(
+            BlockRequest.PendingUpload(
+                kind = PendingUploadKind.AUDIO,
+                source = source,
+                caption = caption?.let { listOf(RequestBuilders.createSimpleRichText(it)) } ?: emptyList(),
+                options = options,
+            ),
+        )
+
+    /** Adds an audio block from a local file, uploaded when the content is sent. See [audio]. */
+    fun audio(
+        file: File,
+        caption: String? = null,
+        options: FileUploadOptions = FileUploadOptions(),
+    ): PageContentBuilder = audio(file.asFileSource(), caption, options)
+
+    /** Adds an audio block from the file at [path], uploaded when the content is sent. See [audio]. */
+    fun audio(
+        path: Path,
+        caption: String? = null,
+        options: FileUploadOptions = FileUploadOptions(),
+    ): PageContentBuilder = audio(path.asFileSource(), caption, options)
+
+    /**
+     * Adds a PDF block from a local file, uploaded when the content is sent.
+     *
+     * The file is not read here: the builder records it and the client uploads it — and
+     * substitutes the resulting file-upload reference — inside the suspending call that
+     * consumes these blocks ([pages.create][it.saabel.kotlinnotionclient.api.PagesApi.create],
+     * [blocks.appendChildren][it.saabel.kotlinnotionclient.api.BlocksApi.appendChildren],
+     * [blocks.update][it.saabel.kotlinnotionclient.api.BlocksApi.update]).
+     *
+     * All of a call's uploads run before its request is sent, and the first failure aborts the
+     * whole call, so nothing partial reaches the page. Uploads that had already finished are
+     * left to expire on their own — Notion has no delete-upload endpoint, and an unattached
+     * upload expires an hour after it was created.
+     *
+     * @param source The file to upload
+     * @param caption Optional caption text
+     * @param options Upload options — content type override, progress callback, validation
+     * @return This builder for chaining
+     */
+    fun pdf(
+        source: FileSource,
+        caption: String? = null,
+        options: FileUploadOptions = FileUploadOptions(),
+    ): PageContentBuilder =
+        addBlock(
+            BlockRequest.PendingUpload(
+                kind = PendingUploadKind.PDF,
+                source = source,
+                caption = caption?.let { listOf(RequestBuilders.createSimpleRichText(it)) } ?: emptyList(),
+                options = options,
+            ),
+        )
+
+    /** Adds a PDF block from a local file, uploaded when the content is sent. See [pdf]. */
+    fun pdf(
+        file: File,
+        caption: String? = null,
+        options: FileUploadOptions = FileUploadOptions(),
+    ): PageContentBuilder = pdf(file.asFileSource(), caption, options)
+
+    /** Adds a PDF block from the file at [path], uploaded when the content is sent. See [pdf]. */
+    fun pdf(
+        path: Path,
+        caption: String? = null,
+        options: FileUploadOptions = FileUploadOptions(),
+    ): PageContentBuilder = pdf(path.asFileSource(), caption, options)
+
+    /**
+     * Adds a file block from a local file, uploaded when the content is sent.
+     *
+     * See [image] for how deferred uploads are resolved and what happens when one fails.
+     *
+     * @param source The file to upload
+     * @param name Display name for the block; defaults to the source's own filename
+     * @param caption Optional caption text
+     * @param options Upload options — content type override, progress callback, validation
+     * @return This builder for chaining
+     */
+    fun file(
+        source: FileSource,
+        name: String? = null,
+        caption: String? = null,
+        options: FileUploadOptions = FileUploadOptions(),
+    ): PageContentBuilder =
+        addBlock(
+            BlockRequest.PendingUpload(
+                kind = PendingUploadKind.FILE,
+                source = source,
+                caption = caption?.let { listOf(RequestBuilders.createSimpleRichText(it)) } ?: emptyList(),
+                name = name ?: source.filename,
+                options = options,
+            ),
+        )
+
+    /** Adds a file block from a local file, uploaded when the content is sent. See [file]. */
+    fun file(
+        file: File,
+        name: String? = null,
+        caption: String? = null,
+        options: FileUploadOptions = FileUploadOptions(),
+    ): PageContentBuilder = file(file.asFileSource(), name, caption, options)
+
+    /** Adds a file block from the file at [path], uploaded when the content is sent. See [file]. */
+    fun file(
+        path: Path,
+        name: String? = null,
+        caption: String? = null,
+        options: FileUploadOptions = FileUploadOptions(),
+    ): PageContentBuilder = file(path.asFileSource(), name, caption, options)
+
+    /**
+     * Adds an HTML block rendering [html], uploaded when the content is sent.
+     *
+     * Notion renders an uploaded `.html` file as an HTML block (Jul 3 2026 changelog), so this
+     * uploads the markup under an `.html` name and emits an embed block. See [image] for how
+     * deferred uploads are resolved and what happens when one fails.
+     *
+     * @param html The HTML document or fragment to upload
+     * @param filename Name for the uploaded file; `.html` is appended unless the name already
+     *   ends in `.html` or `.htm`, because Notion decides how to render the embed from the
+     *   file's extension
+     * @param caption Optional caption text
+     * @param options Upload options — content type override, progress callback, validation
+     * @return This builder for chaining
+     */
+    fun html(
+        html: String,
+        filename: String = "embed.html",
+        caption: String? = null,
+        options: FileUploadOptions = FileUploadOptions(),
+    ): PageContentBuilder = html(html.toByteArray().asFileSource(filename.withHtmlExtension()), caption, options)
+
+    /**
+     * Adds an HTML block from an `.html` file, uploaded when the content is sent. See [html].
+     *
+     * @param source The `.html` file to upload
+     * @param caption Optional caption text
+     * @param options Upload options — content type override, progress callback, validation
+     * @return This builder for chaining
+     */
+    fun html(
+        source: FileSource,
+        caption: String? = null,
+        options: FileUploadOptions = FileUploadOptions(),
+    ): PageContentBuilder =
+        addBlock(
+            BlockRequest.PendingUpload(
+                kind = PendingUploadKind.HTML,
+                source = source,
+                caption = caption?.let { listOf(RequestBuilders.createSimpleRichText(it)) } ?: emptyList(),
+                options = options,
+            ),
+        )
+
+    /** Adds an HTML block from the `.html` file [file], uploaded when the content is sent. See [html]. */
+    fun html(
+        file: File,
+        caption: String? = null,
+        options: FileUploadOptions = FileUploadOptions(),
+    ): PageContentBuilder = html(file.asFileSource(), caption, options)
+
+    /** Adds an HTML block from the `.html` file at [path], uploaded when the content is sent. See [html]. */
+    fun html(
+        path: Path,
+        caption: String? = null,
+        options: FileUploadOptions = FileUploadOptions(),
+    ): PageContentBuilder = html(path.asFileSource(), caption, options)
 
     /**
      * Adds a divider block.

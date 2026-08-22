@@ -3,6 +3,7 @@ package it.saabel.kotlinnotionclient.validation
 import it.saabel.kotlinnotionclient.config.NotionApiLimits
 import it.saabel.kotlinnotionclient.models.base.RichText
 import it.saabel.kotlinnotionclient.models.blocks.BlockRequest
+import it.saabel.kotlinnotionclient.models.blocks.childrenOf
 import it.saabel.kotlinnotionclient.models.databases.CreateDatabaseRequest
 import it.saabel.kotlinnotionclient.models.pages.CreatePageRequest
 import it.saabel.kotlinnotionclient.models.pages.PagePropertyValue
@@ -390,7 +391,40 @@ class RequestValidator(
             violations.addAll(validateRichTextArray("$fieldName.$subField", richTexts))
         }
 
+        violations.addAll(validateNoPendingUploads(fieldName, block))
+
         return violations
+    }
+
+    /**
+     * Reports any [BlockRequest.PendingUpload] left in [block] or its nested children.
+     *
+     * Every API entry point that accepts blocks resolves sentinels — uploading the file and
+     * substituting the reference — before validating, so this should never fire. It is here as
+     * defence in depth: a future path that forgets to resolve fails with a readable violation
+     * rather than a serialization error deep in the send pipeline.
+     */
+    private fun validateNoPendingUploads(
+        fieldName: String,
+        block: BlockRequest,
+    ): List<ValidationViolation> {
+        if (block is BlockRequest.PendingUpload) {
+            return listOf(
+                ValidationViolation(
+                    field = fieldName,
+                    violationType = ViolationType.UNRESOLVED_PENDING_UPLOAD,
+                    message =
+                        "Block still carries a file pending upload (${block.source.filename}); " +
+                            "send it through a NotionClient method, or upload first and use " +
+                            "the *FromUpload builder for an already-uploaded id",
+                    currentValue = block.source.filename,
+                    suggestedAction = "Pass these blocks to pages.create, blocks.appendChildren or blocks.update",
+                ),
+            )
+        }
+
+        val children = childrenOf(block) ?: return emptyList()
+        return children.flatMapIndexed { index, child -> validateNoPendingUploads("$fieldName[$index]", child) }
     }
 
     /**
@@ -535,6 +569,10 @@ class RequestValidator(
 
             is BlockRequest.Tab -> {
                 // Tab blocks don't have rich text content directly — content lives in paragraph children
+            }
+
+            is BlockRequest.PendingUpload -> {
+                // The caption is carried on the sentinel and validated once it becomes a real block
             }
         }
 

@@ -148,7 +148,7 @@ class PagesApi(
     ): Page {
         requireSynchronous(request.allowAsync)
         validateFilterPropertiesLimit(filterProperties)
-        val finalRequest = validator.validateOrFix(request)
+        val finalRequest = validator.validateOrFix(resolvePendingUploads(request))
 
         return try {
             val response: HttpResponse =
@@ -253,7 +253,7 @@ class PagesApi(
             )
         }
         validateFilterPropertiesLimit(filterProperties)
-        val finalRequest = validator.validateOrFix(request).copy(allowAsync = true)
+        val finalRequest = validator.validateOrFix(resolvePendingUploads(request)).copy(allowAsync = true)
 
         return try {
             val response: HttpResponse =
@@ -313,6 +313,21 @@ class PagesApi(
                     ?: emptyMap(),
             markdown = markdown,
         )
+
+    /**
+     * Uploads any local files the content builder recorded and returns [request] carrying the
+     * resulting `file_upload` blocks.
+     *
+     * Runs before validation, because the validator reasons about the blocks that get sent and
+     * a pending-upload sentinel is not one of them. Requests without local files are returned
+     * untouched. The walk itself lives in `PendingUploadResolver.kt`; see
+     * `docs/adr/0001-deferred-file-upload-resolution.md` for why sentinels exist at all.
+     */
+    private suspend fun resolvePendingUploads(request: CreatePageRequest): CreatePageRequest {
+        val children = request.children ?: return request
+        val resolved = uploads.resolvePendingUploads(children)
+        return if (resolved === children) request else request.copy(children = resolved)
+    }
 
     private fun requireSynchronous(allowAsync: Boolean?) {
         if (allowAsync == true) {

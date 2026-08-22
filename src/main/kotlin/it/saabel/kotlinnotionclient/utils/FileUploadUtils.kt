@@ -387,3 +387,13 @@ fun Path.asFileSource(): FileSource = FileSource.FromPath(this)
  * its extension, so `"report.pdf"` and `"report"` are not interchangeable.
  */
 fun ByteArray.asFileSource(filename: String): FileSource = FileSource.FromByteArray(filename, this)
+
+/**
+ * Returns this filename with an `.html` extension, unless it already ends in `.html` or `.htm`.
+ *
+ * Notion picks an embed's renderer from the uploaded file's extension, so an HTML payload saved
+ * under any other name silently becomes a plain file attachment. Shared by the HTML
+ * upload-and-attach helpers and the HTML builder overloads.
+ */
+internal fun String.withHtmlExtension(): String =
+    if (endsWith(".html", ignoreCase = true) || endsWith(".htm", ignoreCase = true)) this else "$this.html"

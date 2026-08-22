@@ -1,6 +1,6 @@
 # ADR 0001: Deferred file uploads resolve as pending-upload sentinels in the request tree
 
-- **Status:** proposed
+- **Status:** accepted
 - **Date:** 2026-08-22
 - **Issue:** [#70](https://github.com/jsaabel/kotlin-notion-client/issues/70) (third of the #68/#69/#70 file-upload convenience series)
 
