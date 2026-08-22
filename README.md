@@ -59,7 +59,7 @@ val page = notion.pages.retrieve("page-id")
 
 // Create a page in a data source
 val newPage = notion.pages.create {
-    parent { dataSourceId("data-source-id") }
+    parent.dataSource("data-source-id")
     properties {
         title("Name") { text("My Project") }
         select("Status") { name("In Progress") }

@@ -217,7 +217,7 @@ class RollupPropertyTest :
 
             val request =
                 createDataSourceRequest {
-                    databaseId("db-id")
+                    parent.database("db-id")
                     properties {
                         title("Name")
                         relation("Tasks", "target-db-id", "target-ds-id")
@@ -255,7 +255,7 @@ class RollupPropertyTest :
             val exception =
                 shouldThrow<IllegalArgumentException> {
                     createDataSourceRequest {
-                        databaseId("db-id")
+                        parent.database("db-id")
                         properties {
                             title("Name")
                             richText("Tasks")

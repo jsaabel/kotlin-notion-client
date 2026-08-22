@@ -96,7 +96,7 @@ You can add additional tables (data sources) to an existing database:
 
 ```kotlin
 val dataSource = notion.dataSources.create {
-    databaseId("existing-database-id")
+    parent.database("existing-database-id")
     title("Projects") // Name of the new table
 
     properties {
@@ -313,7 +313,7 @@ When you create or retrieve a database, you can access its data sources:
 ```kotlin
 // After creating a database
 val database = notion.databases.create {
-    parent { pageId("parent-page-id") }
+    parent.page("parent-page-id")
     title("My Database")
     // ... properties in initialDataSource
 }

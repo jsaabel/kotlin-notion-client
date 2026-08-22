@@ -206,7 +206,7 @@ class UploadAttachBuilderTest :
             it("accepts the FileUpload object itself") {
                 val request =
                     createCommentRequest {
-                        parent.pageId("page-id")
+                        parent.page("page-id")
                         content { text("see attached") }
                         attachment(upload)
                     }

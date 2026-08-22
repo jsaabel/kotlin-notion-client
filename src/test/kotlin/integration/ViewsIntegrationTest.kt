@@ -166,7 +166,7 @@ class ViewsIntegrationTest :
                             dataSourceId(dataSourceId)
                             name("Integration Test View")
                             type(ViewType.TABLE)
-                            database(databaseId)
+                            parent.database(databaseId)
                         }
                     createdView.shouldNotBeNull()
                     createdView.name shouldBe "Integration Test View"
@@ -370,7 +370,7 @@ class ViewsIntegrationTest :
                             dataSourceId(dataSourceId)
                             name("Task Table")
                             type(ViewType.TABLE)
-                            database(databaseId)
+                            parent.database(databaseId)
                             showProperties(id("Name"), id("Status"), id("Priority"), id("Due Date"))
                             hideProperties(
                                 id("Start Date"),
@@ -398,7 +398,7 @@ class ViewsIntegrationTest :
                             dataSourceId(dataSourceId)
                             name("Priority Gallery")
                             type(ViewType.GALLERY)
-                            database(databaseId)
+                            parent.database(databaseId)
                             showProperties(id("Name"), id("Priority"))
                             hideProperties(
                                 id("Status"),
@@ -423,7 +423,7 @@ class ViewsIntegrationTest :
                             dataSourceId(dataSourceId)
                             name("Progress List")
                             type(ViewType.LIST)
-                            database(databaseId)
+                            parent.database(databaseId)
                             showProperties(id("Name"), id("Completed"), id("Effort"))
                             hideProperties(
                                 id("Status"),
@@ -637,7 +637,7 @@ class ViewsIntegrationTest :
                             dataSourceId(dataSourceId)
                             name("Typed Table")
                             type(ViewType.TABLE)
-                            database(databaseId)
+                            parent.database(databaseId)
                             configuration(ViewConfiguration.Table(wrapCells = true, frozenColumnIndex = 1))
                         }
                     tableView.type shouldBe ViewType.TABLE
@@ -666,7 +666,7 @@ class ViewsIntegrationTest :
                             dataSourceId(dataSourceId)
                             name("Typed Gallery")
                             type(ViewType.GALLERY)
-                            database(databaseId)
+                            parent.database(databaseId)
                             configuration(
                                 ViewConfiguration.Gallery(
                                     cover = CoverConfig(type = CoverType.PAGE_COVER),
@@ -700,7 +700,7 @@ class ViewsIntegrationTest :
                             dataSourceId(dataSourceId)
                             name("Typed Calendar")
                             type(ViewType.CALENDAR)
-                            database(databaseId)
+                            parent.database(databaseId)
                             configuration(
                                 ViewConfiguration.Calendar(
                                     datePropertyId = dueDateId,
@@ -737,7 +737,7 @@ class ViewsIntegrationTest :
                             dataSourceId(dataSourceId)
                             name("Typed Board")
                             type(ViewType.BOARD)
-                            database(databaseId)
+                            parent.database(databaseId)
                             configuration(
                                 ViewConfiguration.Board(
                                     groupBy =
@@ -781,7 +781,7 @@ class ViewsIntegrationTest :
                             dataSourceId(dataSourceId)
                             name("Typed Timeline")
                             type(ViewType.TIMELINE)
-                            database(databaseId)
+                            parent.database(databaseId)
                             configuration(
                                 ViewConfiguration.Timeline(
                                     datePropertyId = dueDateId,

@@ -265,7 +265,7 @@ Creating a page with rich text in the title:
 
 ```kotlin
 val page = notion.pages.create {
-    parent { dataSourceId("data-source-id") }
+    parent.dataSource("data-source-id")
 
     properties {
         title("Name") {
@@ -291,28 +291,23 @@ Adding formatted content to a page:
 ```kotlin
 notion.blocks.append("page-id") {
     paragraph {
-        richText {
-            text("This paragraph has ")
-            bold("bold")
-            text(", ")
-            italic("italic")
-            text(", and ")
-            code("code")
-            text(" formatting. ")
-            link("https://example.com", "Click here")
-            text(" for more info.")
-        }
+        text("This paragraph has ")
+        bold("bold")
+        text(", ")
+        italic("italic")
+        text(", and ")
+        code("code")
+        text(" formatting. ")
+        link("https://example.com", "Click here")
+        text(" for more info.")
     }
 
-    callout {
-        icon { emoji = "⚠️" }
-        richText {
-            colored("Warning: ", Color.ORANGE)
-            text("Please review ")
-            pageMention("page-id-123")
-            text(" by ")
-            dateMention(LocalDate(2025, 10, 20))
-        }
+    callout(emoji = "⚠️") {
+        colored("Warning: ", Color.ORANGE)
+        text("Please review ")
+        pageMention("page-id-123")
+        text(" by ")
+        dateMention(LocalDate(2025, 10, 20))
     }
 }
 ```

@@ -136,7 +136,7 @@ try {
 ```kotlin
 val page = runBlocking {
     notion.pages.create {
-        parent { databaseId(dbId) }
+        parent.dataSource(dataSourceId)
         properties {
             title("Name") {
                 text("Demo Page")

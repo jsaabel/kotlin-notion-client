@@ -222,15 +222,15 @@ The Comments DSL provides several method variations for consistency with other A
 
 ### Parent Configuration
 
-```kotlin
-// These are equivalent:
-parent.pageId("page-id")
-parent.page("page-id")
+Parents are addressed the same way in every DSL — `parent.<object>(id)`:
 
-// These are equivalent:
-parent.blockId("block-id") 
+```kotlin
+parent.page("page-id")
 parent.block("block-id")
 ```
+
+`parent.pageId(id)` and `parent.blockId(id)` are deprecated aliases for the same
+calls, kept for source compatibility. See [DSL conventions](dsl-conventions.md).
 
 ### Content Configuration
 

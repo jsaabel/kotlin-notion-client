@@ -100,7 +100,7 @@ pages.results.forEach { page ->
 ```kotlin
 val newPage = notion.pages.create {
     // Parent is the data source (table), not the database
-    parent { dataSourceId("data-source-id") }
+    parent.dataSource("data-source-id")
 
     properties {
         title("Name") {

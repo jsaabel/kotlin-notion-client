@@ -227,9 +227,7 @@ class CommentsApi(
      * ## Basic Usage:
      * ```kotlin
      * val comment = client.comments.create {
-     *     parent {
-     *         pageId("12345678-1234-1234-1234-123456789abc")
-     *     }
+     *     parent.page("12345678-1234-1234-1234-123456789abc")
      *     content {
      *         text("This is a comment with ")
      *         bold("formatted text")
@@ -241,9 +239,7 @@ class CommentsApi(
      * ## Advanced Usage:
      * ```kotlin
      * val comment = client.comments.create {
-     *     parent {
-     *         blockId("87654321-4321-4321-4321-210987654321")
-     *     }
+     *     parent.block("87654321-4321-4321-4321-210987654321")
      *     content {
      *         text("Replying to discussion with ")
      *         italic("styled text")
@@ -462,7 +458,7 @@ class CommentsApi(
      *
      * ```kotlin
      * notion.comments.create(listOf(File("trace.txt").asFileSource())) {
-     *     parent { pageId(pageId) }
+     *     parent.page(pageId)
      *     content { text("Stack trace attached") }
      * }
      * ```

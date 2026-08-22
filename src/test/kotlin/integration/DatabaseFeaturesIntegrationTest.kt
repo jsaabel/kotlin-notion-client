@@ -193,7 +193,7 @@ class DatabaseFeaturesIntegrationTest :
 
                 val secondDs =
                     notion.dataSources.create {
-                        databaseId(database.id)
+                        parent.database(database.id)
                         title("Projects Data Source")
                         properties {
                             title("Project Name")

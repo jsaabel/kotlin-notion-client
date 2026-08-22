@@ -69,7 +69,7 @@ class PagesFlowPaginationIntegrationTest :
                     println("\n🗄️ Creating data source with relation property...")
                     val sourceDataSource =
                         client.dataSources.create {
-                            databaseId(database.id)
+                            parent.database(database.id)
                             title("Source Data Source")
                             properties {
                                 title("Task Name")
@@ -225,7 +225,7 @@ class PagesFlowPaginationIntegrationTest :
                     // Create data source with relation
                     val sourceDataSource =
                         client.dataSources.create {
-                            databaseId(database.id)
+                            parent.database(database.id)
                             title("Source")
                             properties {
                                 title("Name")

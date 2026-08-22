@@ -383,7 +383,7 @@ class ViewsApiTest :
                         dataSourceId("ds-123")
                         name("My Table")
                         type(ViewType.TABLE)
-                        database("db-456")
+                        parent.database("db-456")
                     }
 
                 request.dataSourceId shouldBe "ds-123"
@@ -394,13 +394,13 @@ class ViewsApiTest :
                 request.createDatabase.shouldBeNull()
             }
 
-            test("createViewRequest DSL with dashboard() sets viewId") {
+            test("createViewRequest DSL with parent.dashboard() sets viewId") {
                 val request =
                     createViewRequest {
                         dataSourceId("ds-123")
                         name("Revenue Chart")
                         type(ViewType.CHART)
-                        dashboard("dash-view-id")
+                        parent.dashboard("dash-view-id")
                     }
 
                 request.viewId shouldBe "dash-view-id"
@@ -408,13 +408,13 @@ class ViewsApiTest :
                 request.createDatabase.shouldBeNull()
             }
 
-            test("createViewRequest DSL with createDatabase() sets createDatabase") {
+            test("createViewRequest DSL with parent.newDatabase() sets createDatabase") {
                 val request =
                     createViewRequest {
                         dataSourceId("ds-123")
                         name("Tasks")
                         type(ViewType.TABLE)
-                        createDatabase(pageId = "page-abc")
+                        parent.newDatabase(pageId = "page-abc")
                     }
 
                 val createDb = request.createDatabase.shouldNotBeNull()
@@ -424,13 +424,13 @@ class ViewsApiTest :
                 request.viewId.shouldBeNull()
             }
 
-            test("createViewRequest DSL with createDatabase() and afterBlockId") {
+            test("createViewRequest DSL with parent.newDatabase() and afterBlockId") {
                 val request =
                     createViewRequest {
                         dataSourceId("ds-123")
                         name("Tasks")
                         type(ViewType.TABLE)
-                        createDatabase(pageId = "page-abc", afterBlockId = "block-xyz")
+                        parent.newDatabase(pageId = "page-abc", afterBlockId = "block-xyz")
                     }
 
                 val position =
@@ -456,7 +456,7 @@ class ViewsApiTest :
                     createViewRequest {
                         name("Test")
                         type(ViewType.TABLE)
-                        database("db-id")
+                        parent.database("db-id")
                     }
                 }
             }
@@ -488,7 +488,7 @@ class ViewsApiTest :
                         dataSourceId("248104cd-477e-80af-bc30-000bd28de8f9")
                         name("DSL View")
                         type(ViewType.TABLE)
-                        database("248104cd-477e-80fd-b757-e945d38000bd")
+                        parent.database("248104cd-477e-80fd-b757-e945d38000bd")
                     }
 
                 view.shouldBeInstanceOf<View>()
@@ -608,7 +608,7 @@ class ViewsApiTest :
                         dataSourceId("ds-1")
                         name("My Table")
                         type(ViewType.TABLE)
-                        database("db-1")
+                        parent.database("db-1")
                         configuration(ViewConfiguration.Table(wrapCells = true, frozenColumnIndex = 1))
                     }
 
@@ -623,7 +623,7 @@ class ViewsApiTest :
                         dataSourceId("ds-1")
                         name("My Table")
                         type(ViewType.TABLE)
-                        database("db-1")
+                        parent.database("db-1")
                         showProperties("p1", "p2")
                         hideProperties("p3")
                     }
@@ -640,7 +640,7 @@ class ViewsApiTest :
                         dataSourceId("ds-1")
                         name("My Gallery")
                         type(ViewType.GALLERY)
-                        database("db-1")
+                        parent.database("db-1")
                         showProperties("p1")
                     }
 
@@ -653,7 +653,7 @@ class ViewsApiTest :
                         dataSourceId("ds-1")
                         name("My Form")
                         type(ViewType.FORM)
-                        database("db-1")
+                        parent.database("db-1")
                         showProperties("p1")
                     }
                 }
