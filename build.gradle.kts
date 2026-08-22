@@ -39,7 +39,25 @@ dependencies {
 }
 
 tasks.test {
+    description = "Runs unit tests only (fast, mocked responses, excludes tests requiring the live API)."
     useJUnitPlatform()
+    systemProperty("kotest.tags.exclude", "RequiresApi")
+}
+
+val integrationTest by tasks.registering(Test::class) {
+    description = "Runs integration tests only (requires NOTION_API_TOKEN and NOTION_TEST_PAGE_ID)."
+    group = "verification"
+    useJUnitPlatform()
+    systemProperty("kotest.tags.include", "RequiresApi")
+    testClassesDirs = sourceSets.test.get().output.classesDirs
+    classpath = sourceSets.test.get().runtimeClasspath
+    shouldRunAfter(tasks.test)
+}
+
+tasks.register("testAll") {
+    description = "Runs both unit and integration tests."
+    group = "verification"
+    dependsOn(tasks.test, integrationTest)
 }
 
 fun isNonStable(version: String): Boolean {

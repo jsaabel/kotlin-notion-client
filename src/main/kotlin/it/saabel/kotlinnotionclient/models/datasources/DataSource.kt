@@ -34,7 +34,7 @@ data class DataSource(
     @SerialName("title")
     val title: List<RichText>,
     @SerialName("description")
-    val description: List<RichText>,
+    val description: List<RichText> = emptyList(),
     @SerialName("icon")
     val icon: Icon? = null,
     @SerialName("cover")
