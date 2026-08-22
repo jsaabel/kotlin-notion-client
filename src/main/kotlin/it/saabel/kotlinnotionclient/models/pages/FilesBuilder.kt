@@ -2,6 +2,8 @@
 
 package it.saabel.kotlinnotionclient.models.pages
 
+import it.saabel.kotlinnotionclient.models.files.FileUpload
+
 /**
  * DSL marker for the files builder to prevent accidental nesting of outer-scope
  * builders (e.g. [PagePropertiesBuilder]) inside a `files { ... }` block.
@@ -46,6 +48,19 @@ class FilesBuilder {
         name: String? = null,
     ) {
         files.add(FileObject.upload(id, name))
+    }
+
+    /**
+     * Attaches a freshly-uploaded file from the upload object itself.
+     *
+     * @param fileUpload the upload returned by the File Upload API
+     * @param name optional display name; defaults to the upload's own filename
+     */
+    fun upload(
+        fileUpload: FileUpload,
+        name: String? = null,
+    ) {
+        files.add(FileObject.upload(fileUpload.id, name ?: fileUpload.filename))
     }
 
     /**

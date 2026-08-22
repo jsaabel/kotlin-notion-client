@@ -3,6 +3,7 @@
 package it.saabel.kotlinnotionclient.models.datasources
 
 import it.saabel.kotlinnotionclient.models.base.ExternalFile
+import it.saabel.kotlinnotionclient.models.base.FileUploadReference
 import it.saabel.kotlinnotionclient.models.base.Icon
 import it.saabel.kotlinnotionclient.models.base.NativeIconColor
 import it.saabel.kotlinnotionclient.models.base.NativeIconObject
@@ -13,6 +14,8 @@ import it.saabel.kotlinnotionclient.models.databases.CreateDatabaseProperty
 import it.saabel.kotlinnotionclient.models.databases.DatabasePropertiesBuilder
 import it.saabel.kotlinnotionclient.models.databases.FormulaExpressions
 import it.saabel.kotlinnotionclient.models.databases.RollupConfigurations
+import it.saabel.kotlinnotionclient.models.files.FileUpload
+import it.saabel.kotlinnotionclient.models.files.FileUploadStatus
 
 /**
  * Builder for creating data source requests (API version 2025-09-03+).
@@ -143,12 +146,41 @@ class UpdateDataSourceRequestBuilder {
             this@UpdateDataSourceRequestBuilder.iconValue = Icon.External(external = ExternalFile(url = url))
         }
 
+        @Deprecated(
+            message =
+                "Notion accepts only `external` and `file_upload` icons on write; `type: \"file\"` is the " +
+                    "read shape (a Notion-hosted expiring URL) and cannot be written back. Use external(url) " +
+                    "for a publicly hosted file, or upload(id) for a file sent through the File Upload API.",
+            replaceWith = ReplaceWith("external(url)"),
+        )
         fun file(
             url: String,
             expiryTime: String? = null,
         ) {
             this@UpdateDataSourceRequestBuilder.iconValue =
                 Icon.File(file = NotionFile(url = url, expiryTime = expiryTime))
+        }
+
+        /**
+         * Sets an icon from a file uploaded via the File Upload API.
+         *
+         * The upload must already have reached [FileUploadStatus.UPLOADED]; attach it within its
+         * one-hour expiry window or the upload is archived.
+         *
+         * @param fileUploadId The ID of the uploaded file
+         */
+        fun upload(fileUploadId: String) {
+            this@UpdateDataSourceRequestBuilder.iconValue =
+                Icon.FileUpload(fileUpload = FileUploadReference(id = fileUploadId))
+        }
+
+        /**
+         * Sets an icon from a file uploaded via the File Upload API.
+         *
+         * @param fileUpload The upload returned by the File Upload API
+         */
+        fun upload(fileUpload: FileUpload) {
+            upload(fileUpload.id)
         }
 
         fun native(
