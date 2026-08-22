@@ -199,8 +199,8 @@ class PageContentBuilder {
                 }
 
                 is BlockRequest.Embed -> {
-                    // Embeds need a URL
-                    if (block.embed.url.isBlank()) {
+                    // Embeds need a URL or a file upload (exactly one, enforced at construction)
+                    if (block.embed.url?.isBlank() == true) {
                         errors.add("Embed blocks must have a URL")
                     }
                 }
@@ -1395,6 +1395,22 @@ class PageContentBuilder {
         addBlock(
             BlockRequest.Embed(
                 embed = EmbedRequestContent(url = url),
+            ),
+        )
+
+    /**
+     * Adds an embed block from a file upload.
+     *
+     * Attaching an uploaded `.html` file this way creates an HTML block
+     * (Jul 3 2026 changelog).
+     *
+     * @param fileUploadId The ID of the uploaded file
+     * @return This builder for chaining
+     */
+    fun embedFromUpload(fileUploadId: String): PageContentBuilder =
+        addBlock(
+            BlockRequest.Embed(
+                embed = EmbedRequestContent(fileUpload = FileUploadReference(id = fileUploadId)),
             ),
         )
 

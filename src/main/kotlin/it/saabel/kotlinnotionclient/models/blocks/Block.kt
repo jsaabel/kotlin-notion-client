@@ -8,6 +8,7 @@ import it.saabel.kotlinnotionclient.models.base.Icon
 import it.saabel.kotlinnotionclient.models.base.NotionObject
 import it.saabel.kotlinnotionclient.models.base.Parent
 import it.saabel.kotlinnotionclient.models.base.RichText
+import it.saabel.kotlinnotionclient.models.files.FileUploadReference
 import it.saabel.kotlinnotionclient.models.users.User
 import it.saabel.kotlinnotionclient.utils.PaginatedResponse
 import kotlinx.serialization.SerialName
@@ -1397,8 +1398,15 @@ data class LinkPreviewContent(
  */
 @Serializable
 data class EmbedContent(
+    // Nullable defensively. Observed live: an embed created from an uploaded .html file
+    // (Jul 3 2026 changelog) reads back with [url] set to a time-limited signed S3 URL
+    // (~1h expiry) and file/fileUpload null — re-retrieve the block when it expires.
     @SerialName("url")
-    val url: String,
+    val url: String? = null,
+    @SerialName("file_upload")
+    val fileUpload: FileUploadReference? = null,
+    @SerialName("file")
+    val file: FileReference? = null,
 )
 
 /**
