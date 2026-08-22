@@ -13,7 +13,7 @@ logback = "1.6.3"
 slf4j = "2.0.18"
 
 [plugins]
-ben-manes-versions = { id = "com.github.ben-manes.versions", version.ref = "ben-manes-versions" }
+ben-manes-versions = { id = "io.github.ben-manes.versions", version.ref = "ben-manes-versions" }
 dokka = { id = "org.jetbrains.dokka", version.ref = "dokka" }
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
