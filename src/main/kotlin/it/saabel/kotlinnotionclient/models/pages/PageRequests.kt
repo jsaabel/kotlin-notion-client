@@ -464,12 +464,19 @@ data class PageReference(
     val id: String,
 )
 
+/**
+ * The value of a `unique_id` page property.
+ *
+ * [number] is nullable: while Notion is still backfilling IDs after a unique ID property
+ * is added to an existing data source, rows can carry `{"prefix": null, "number": null}`
+ * (observed live against an 11k-row data source mid-backfill).
+ */
 @Serializable
 data class UniqueIdValue(
     @SerialName("prefix")
     val prefix: String?,
     @SerialName("number")
-    val number: Int,
+    val number: Int? = null,
 )
 
 @Serializable

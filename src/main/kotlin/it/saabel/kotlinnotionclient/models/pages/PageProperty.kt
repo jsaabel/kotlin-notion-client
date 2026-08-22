@@ -120,16 +120,13 @@ sealed class PageProperty {
     ) : PageProperty() {
         /**
          * Returns the formatted unique ID string (e.g., "TEST-123" or "123" if no prefix).
-         * Returns null if the unique_id value is not set.
+         * Returns null if the unique_id value is not set (including while Notion is still
+         * backfilling IDs after the property was added).
          */
         val formattedId: String?
             get() =
-                uniqueId?.let {
-                    if (it.prefix != null) {
-                        "${it.prefix}-${it.number}"
-                    } else {
-                        it.number.toString()
-                    }
+                uniqueId?.number?.let { number ->
+                    uniqueId.prefix?.let { "$it-$number" } ?: number.toString()
                 }
     }
 

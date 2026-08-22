@@ -40,6 +40,13 @@ sealed interface RowIterationKey {
      * progress. This is the most robust key, but requires the data source to have
      * a unique ID property.
      *
+     * Limitation (observed live): when the unique ID property was recently added to
+     * an existing data source, Notion backfills IDs asynchronously and rows still
+     * awaiting theirs carry a `null` number. Such rows are **silently excluded** by
+     * the `greater_than` window filter (and sort last within the first window), so a
+     * drain during backfill undercounts without any error. Drain only once the ID
+     * column is fully populated, or use [CreatedTime].
+     *
      * @property propertyName The name of the `unique_id` property (e.g. "ID").
      */
     data class UniqueId(
