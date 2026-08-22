@@ -79,8 +79,9 @@ class DatabaseParentMoveIntegrationTest :
 
             "replaces a container icon" {
                 // Replacing is the whole capability here: `PATCH /v1/databases` rejects
-                // `"icon": null`, so a container icon cannot be cleared once set. See
-                // DatabaseAttributeProbeIntegrationTest and UpdateDatabaseRequestBuilder's KDoc.
+                // `"icon": null`, so a container icon cannot be cleared once set. To clear the
+                // icon a reader sees, clear the data source's — see IconCoverSupportIntegrationTest
+                // for the full matrix.
                 val database =
                     notion.databases.create {
                         parent.page(rootPageId)

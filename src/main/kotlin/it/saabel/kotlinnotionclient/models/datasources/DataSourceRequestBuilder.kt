@@ -177,15 +177,14 @@ class UpdateDataSourceRequestBuilder {
     private var inTrashValue: Boolean? = null
     private val properties = mutableMapOf<String, CreateDatabaseProperty>()
 
-    // No cover builder here, deliberately. The 2025-09-03 migration guide lists `cover` as a
-    // database-container attribute only (see UpdateDatabaseRequest) — but that same list omits
-    // `icon`, which a data source demonstrably does carry, so the guide is not authority on this
-    // point. The DataSource *response* model has a `cover` field, which says a data source can
-    // hold one, not that PATCH /v1/data_sources accepts one. Settling it needs a live request,
-    // and no credentials were available on this branch; adding an untested field would trade a
-    // visible asymmetry for a silent 400. `DataSourceCoverProbeIntegrationTest` is that request,
-    // and its KDoc says what each of the three outcomes means for this comment. Tracked as
-    // IDEAS.md #11, raised by issue #82.
+    // No cover builder here, and the asymmetry with `icon` is the API's, not ours. Verified live
+    // on 2026-08-22 — PATCH /v1/data_sources with a `cover` answers:
+    //
+    //   HTTP 400 validation_error: The `cover` property is not supported for data sources.
+    //   Use the Update Database API instead.
+    //
+    // The DataSource *response* model carries a `cover` field, so a data source can hold one; it
+    // just cannot be set here. Pinned by IconCoverSupportIntegrationTest.
     val icon = IconBuilder()
 
     /**
@@ -295,6 +294,26 @@ class UpdateDataSourceRequestBuilder {
         ) {
             this@UpdateDataSourceRequestBuilder.iconValue =
                 Icon.NativeIcon(NativeIconObject(name = name, color = color))
+        }
+
+        /**
+         * Removes the data source icon.
+         *
+         * **This is the one that clears the icon a reader sees.** Notion's UI renders the data
+         * source, not the database container, so this is how an icon is removed in practice — and
+         * the container's cannot be cleared at all: `PATCH /v1/databases` rejects `"icon": null`
+         * while `PATCH /v1/data_sources` accepts it. Both verified live on 2026-08-22; see
+         * `IconCoverSupportIntegrationTest`, which pins the asymmetry.
+         *
+         * The request records [Icon.Removed], a sentinel that serializes to an explicit JSON
+         * `null`. A plain Kotlin `null` would be dropped from the payload and the data source
+         * would keep its icon; see `docs/adr/0002-explicit-null-payloads.md`.
+         *
+         * Note that `databases.create { icon.… }` propagates the icon to the initial data source,
+         * so a database created with an icon has one in both places.
+         */
+        fun remove() {
+            this@UpdateDataSourceRequestBuilder.iconValue = Icon.Removed
         }
     }
 

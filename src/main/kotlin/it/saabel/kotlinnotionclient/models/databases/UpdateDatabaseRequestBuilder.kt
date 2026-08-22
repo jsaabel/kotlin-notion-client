@@ -48,12 +48,15 @@ import java.nio.file.Path
  *   body.icon should be an object or `undefined`, instead was `null`.
  *   ```
  *
- *   "an object or `undefined`" leaves no room for a removal: the container icon and cover can be
- *   replaced but not cleared. The sentinels from
+ *   `cover` is refused the same way. "an object or `undefined`" leaves no room for a removal: the
+ *   container's icon and cover can be replaced but not cleared. The sentinels from
  *   `docs/adr/0002-explicit-null-payloads.md` still exist and still encode correctly — the
  *   endpoint simply does not accept what they encode, so the affordance is not offered rather
- *   than offered and broken. `DatabaseAttributeProbeIntegrationTest` re-checks this, and whether
- *   the data source endpoint differs.
+ *   than offered and broken.
+ *
+ *   To clear the icon a *reader* sees, clear the data source's:
+ *   `dataSources.update(id) { icon.remove() }`. `PATCH /v1/data_sources` does accept the null,
+ *   and the UI renders the data source. `IconCoverSupportIntegrationTest` pins the whole matrix.
  */
 @UpdateDatabaseRequestDslMarker
 class UpdateDatabaseRequestBuilder {

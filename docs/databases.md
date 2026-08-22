@@ -228,9 +228,9 @@ notion.databases.update("database-id") {
 `parent.block(id)` and `parent.workspace()` are available too; the migration guide documents
 moving to a page, and (for public integrations) to the workspace level as a private page.
 
-**Gotcha — a container icon can be replaced but not removed.** Unlike the page endpoint, which
-documents `"icon": null` as the removal instruction, `PATCH /v1/databases` rejects it. Verified
-live:
+**Gotcha — a container icon or cover can be replaced but not removed.** Unlike the page endpoint,
+which documents `"icon": null` as the removal instruction, `PATCH /v1/databases` rejects it, and
+rejects the same for `cover`. Verified live:
 
 ```
 HTTP 400 validation_error: body failed validation:
@@ -238,9 +238,17 @@ body.icon should be an object or `undefined`, instead was `null`.
 ```
 
 So there is no `icon.remove()` / `cover.remove()` on this builder — the affordance is not offered
-rather than offered and broken. Set a different icon instead. Whether the *data source* endpoint
-differs, and whether a container **cover** can be cleared even though its icon cannot, are open;
-`DatabaseAttributeProbeIntegrationTest` answers both in one run.
+rather than offered and broken. Set a different one instead.
+
+**To actually remove the icon a reader sees, clear the data source's**, which the UI renders and
+which *does* accept a removal:
+
+```kotlin
+notion.dataSources.update(database.dataSources.first().id) { icon.remove() }
+```
+
+The full support matrix — which endpoint accepts which attribute, and in which direction — is
+pinned by `IconCoverSupportIntegrationTest`.
 
 **Set an icon or cover from a local file** — the upload happens when the request is sent:
 

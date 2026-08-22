@@ -42,7 +42,7 @@ Notion added in that same API version — had no client-side path at all.
 
 - **No `icon.remove()` / `cover.remove()` on this surface**, and that is a finding rather than an
   omission. The page endpoint documents `"icon": null` as the removal instruction; the database
-  endpoint rejects it — verified live:
+  endpoint rejects it, for both attributes — verified live:
 
   ```
   HTTP 400 validation_error: body failed validation:
@@ -53,6 +53,24 @@ Notion added in that same API version — had no client-side path at all.
   previous entry encode correctly; this endpoint simply does not accept what they encode, so the
   affordance is left off rather than shipped broken.
 
+- **New: `dataSources.update(id) { icon.remove() }`** — the removal that *does* work, and the one
+  that matters. `PATCH /v1/data_sources` accepts `"icon": null`, and Notion's UI renders the data
+  source, so this is how the icon a reader sees is cleared. Verified live.
+
+- **`UpdateDataSourceRequestBuilder` still has no cover builder**, now for a quotable reason
+  rather than an unresolved one — `PATCH /v1/data_sources` answers a `cover` with
+  `The `cover` property is not supported for data sources. Use the Update Database API instead.`
+
+The four answers are asymmetric enough to be worth stating as a matrix, and
+`IconCoverSupportIntegrationTest` asserts every cell of it:
+
+| Endpoint | Attribute | Set | Clear |
+| --- | --- | --- | --- |
+| `PATCH /v1/databases` | `icon` | yes | no |
+| `PATCH /v1/databases` | `cover` | yes | no |
+| `PATCH /v1/data_sources` | `icon` | yes | **yes** |
+| `PATCH /v1/data_sources` | `cover` | no | — |
+
 - **Setting a cover on an inline database fails fast.** Notion does not support the combination,
   so a request that sets `cover` alongside `is_inline = true` throws `IllegalArgumentException`
   at build time instead of returning a 400. `cover.remove()` alongside `inline(true)` stays
@@ -62,11 +80,9 @@ Notion added in that same API version — had no client-side path at all.
   attribute like any other; the payload it sends is unchanged. `update(id) { restore() }` brings
   a database back.
 
-Still open, and unchanged here: whether `PATCH /v1/data_sources` accepts a `cover` (so
-`UpdateDataSourceRequestBuilder` could gain one), whether a container **cover** can be cleared
-even though its icon cannot, and whether a *data source* icon can be cleared — the last being the
-one that matters in the UI, which renders the data source. `DatabaseAttributeProbeIntegrationTest`
-answers all three in one run and maps each outcome to a follow-up; IDEAS.md #11 tracks them.
+Nothing left open on this: the matrix above was established against the live API, and the one
+question the issue raised — the missing data source cover builder — turned out to have an explicit
+answer from the endpoint itself.
 
 
 ### ⚠️ Breaking Changes — the write side is now offset-preserving, zone-explicit and validating
