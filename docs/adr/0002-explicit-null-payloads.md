@@ -12,24 +12,33 @@ one nullable field per optional input, and a PATCH must carry only the fields it
 `null` field means "this request does not touch that", and dropping it is exactly correct.
 
 But two DSL affordances mean the opposite by `null`, and the serializer cannot tell the two
-apart:
+apart. Both were confirmed against the live API on 2026-08-22, and they failed *differently*:
 
-- **`icon.remove()` / `cover.remove()`.** Notion removes an icon or cover when the request
-  carries `"icon": null` — `reference/notion-api/documentation/endpoints/Update_Page_2025.md`
-  is explicit ("Set to `null` to remove"). Both builders set the backing field to `null`, so
-  `updatePageRequest { icon.remove() }` encoded to `{}` — an empty PATCH. The call compiled,
-  ran, returned successfully and did nothing.
-- **Clearing a property value.** Seven `PagePropertiesBuilder` setters document "null for
+- **`icon.remove()` / `cover.remove()` were silent no-ops.** Notion removes an icon or cover
+  when the request carries `"icon": null` —
+  `reference/notion-api/documentation/endpoints/Update_Page_2025.md` is explicit ("Set to
+  `null` to remove"). Both builders set the backing field to `null`, so
+  `updatePageRequest { icon.remove() }` encoded to `{}` — an empty PATCH, which Notion accepts
+  and does nothing with. The call compiled, ran, returned a `Page` and changed nothing.
+- **Clearing a property value threw.** Seven `PagePropertiesBuilder` setters document "null for
   empty" and construct a value object whose payload field is `null`: `select`, `status`,
   `date`, `dateTime`, `number`, `url`, `email`, `phoneNumber`. Notion clears a property when it
   receives `{"Status":{"select":null}}`; the encoder emitted `{"Status":{"type":"select"}}` —
-  the discriminator survived, the instruction did not.
+  the discriminator survived, the instruction did not. Notion **rejects** that shape with HTTP
+  400 `validation_error`, listing every payload key it would have accepted
+  ("`body.properties.Stage.select should be defined, instead was undefined`"), and leaves the
+  property at its previous value. This half was a loud failure, not silent data loss — no
+  caller can have been depending on it.
+
+The two failure modes are worth keeping straight, because they justify the fix differently: one
+is a change the caller cannot see not happening, the other is a call that never worked at all.
 
 Neither was visible to the test suite, and that is the more interesting half of the finding.
 `UpdatePageRequestBuilderTest` asserted `request.icon shouldBe null` after `icon.remove()` —
 byte-identical to the assertion for a request that never mentioned the icon. Every affected
-path had a **passing model-level test**. The bug lives entirely between the model and the wire,
-so only an assertion on encoded bytes can see it.
+path had a **passing model-level test**, including the ones whose live call would have thrown.
+The bug lives entirely between the model and the wire, so only an assertion on encoded bytes
+can see it.
 
 List-valued properties (`multi_select`, `people`, `relation`, `files`) are unaffected: they
 clear with `[]`, which is not a null.
@@ -83,13 +92,15 @@ serializer, rather than reshaping every model around it.
   classes it constrains, and a reader of `SelectValue` sees a nullable field with no hint that
   its null is load-bearing.
 - **Leaving it and documenting that removal needs a raw request.** Rejected — the affordances
-  already exist in the DSL and appear to work.
+  already exist in the DSL, and half of them appear to work while the other half fails with an
+  API error naming no cause the caller can act on.
 
 ## Consequences
 
-- **Behaviour change, not a new feature.** `icon.remove()`, `cover.remove()` and the seven
-  clearing setters start doing what they always said they did. Code that called them and
-  worked around them doing nothing will now see the removal happen.
+- **Behaviour change for removal, a plain fix for clearing.** `icon.remove()` and
+  `cover.remove()` start changing data where they previously changed nothing, so a caller who
+  worked around them being no-ops will now see the removal happen. The clearing setters
+  previously earned an HTTP 400, so nothing can have depended on them.
 - `Icon` and `PageCover` gain a variant. Both are sealed and public, so an exhaustive `when`
   over them in user code stops compiling. In this repo nothing matched exhaustively —
   `RequestValidator` and `PendingUploadResolver` both test `is …PendingUpload` and are
@@ -98,4 +109,6 @@ serializer, rather than reshaping every model around it.
   decoded response, and `RemovalSentinelSerializer.deserialize` throws if one is ever asked for.
 - **Serialization-level tests are now the standard for payload-shape claims.** Model-level
   assertions demonstrably cannot see this class of bug;
-  `ExplicitNullPayloadSerializationTest` asserts on the encoded string for every affected path.
+  `ExplicitNullPayloadSerializationTest` asserts on the encoded string for every affected path,
+  and `ExplicitNullPayloadIntegrationTest` pins both the fixed behaviour and the 400 that the
+  old payload shape earns.

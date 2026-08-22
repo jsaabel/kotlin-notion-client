@@ -63,25 +63,31 @@ mistake impossible to write silently. Migration for each break:
 
 ### ⚠️ Behaviour change — icon/cover removal and property clearing now reach the wire (#80)
 
-Two DSL affordances compiled, ran, returned successfully and did nothing. Both now do what
-they always said they did, so calls that were silently no-ops start changing data.
+Two DSL affordances lost the `null` that carried their intent, because the client encodes with
+`explicitNulls = false` and the serializer cannot tell "this request does not touch that field"
+from "this request clears that field". Verified live, they failed differently — one silently,
+one loudly:
 
 - **`icon.remove()` and `cover.remove()` remove the icon and cover.** Notion removes them when
   the request carries `"icon": null`; both builders set the field to Kotlin `null`, which the
-  client's `explicitNulls = false` encoder drops — `updatePageRequest { icon.remove() }`
-  encoded to `{}`, an empty PATCH. They now record `Icon.Removed` / `PageCover.Removed`,
-  write-only sentinels that serialize to an explicit `null`.
-  *Migration:* none to call sites. Code that reads a built request and expected `icon == null`
-  after `remove()` should compare against `Icon.Removed`; a request that never mentions the
-  icon still has `icon == null`.
+  encoder drops — `updatePageRequest { icon.remove() }` encoded to `{}`, an empty PATCH that
+  Notion accepts and ignores. The call returned a `Page` and changed nothing. Both now record
+  `Icon.Removed` / `PageCover.Removed`, write-only sentinels that serialize to an explicit
+  `null`.
+  *Migration:* none to call sites, but this is the behaviour change — code that called
+  `remove()` and relied on it doing nothing will now see the icon or cover actually disappear.
+  Code that reads a *built* request and expected `icon == null` after `remove()` should compare
+  against `Icon.Removed`; a request that never mentions the icon still has `icon == null`.
 
-- **Clearing a property value now sends the payload key.** `select`, `status`, `date`,
-  `dateTime`, `number`, `url`, `email` and `phoneNumber` all document "null for empty" and
-  built a value whose payload field was `null`; the encoder emitted `{"type":"select"}` — the
-  discriminator without the instruction. They now encode as `{"type":"select","select":null}`,
-  which is what Notion clears on. List-valued properties (`multi_select`, `people`,
-  `relation`, `files`) were never affected — they clear with `[]`.
-  *Migration:* none.
+- **Clearing a property value now sends the payload key, and no longer fails.** `select`,
+  `status`, `date`, `dateTime`, `number`, `url`, `email` and `phoneNumber` all document "null
+  for empty" and built a value whose payload field was `null`; the encoder emitted
+  `{"type":"select"}` — the discriminator without the instruction. Notion rejects that shape
+  with **HTTP 400 `validation_error`** and leaves the property untouched, so
+  `select("Status", null)` threw rather than clearing anything. It now encodes as
+  `{"type":"select","select":null}`, which is what Notion clears on. List-valued properties
+  (`multi_select`, `people`, `relation`, `files`) were never affected — they clear with `[]`.
+  *Migration:* none — these calls previously could not succeed.
 
 - **`Icon` and `PageCover` each gained a variant** (`Removed`). Both are sealed and public, so
   an exhaustive `when` over either needs a new branch. The sentinels are write-only: a removed

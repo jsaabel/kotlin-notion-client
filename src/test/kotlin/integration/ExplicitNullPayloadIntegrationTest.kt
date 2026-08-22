@@ -4,6 +4,7 @@ import io.kotest.core.annotation.Tags
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.string.shouldContain
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.cio.CIO
 import io.ktor.client.request.header
@@ -21,16 +22,17 @@ import kotlinx.coroutines.delay
 /**
  * Live confirmation for the payloads where JSON `null` is the instruction (issue #80).
  *
- * Two DSL affordances used to compile, run, return successfully and do nothing, because
- * `explicitNulls = false` dropped the very `null` that carried the intent. The unit suite pins the
- * encoded bytes; this pins what Notion does with them:
+ * Two DSL affordances used to lose the `null` that carried their intent, because
+ * `explicitNulls = false` dropped it. The unit suite pins the encoded bytes; this pins what
+ * Notion does with them:
  *
  * 1. `icon.remove()` — set an icon, remove it, re-retrieve, assert it is gone.
  * 2. `select(name, null)` — set a select option, clear it, re-retrieve, assert it is empty.
  *
- * Both also record what Notion does with the *old* payload shape (the key dropped entirely), the
- * question left open in the issue: rejected outright, or accepted and ignored. That answer is
- * printed rather than asserted — it is a finding about the API, not a contract of this client.
+ * The second also pins what Notion does with the *old* payload shape (the key dropped entirely),
+ * the question left open in the issue: **rejected outright**, HTTP 400 `validation_error`, with
+ * the property left untouched. So the two halves of #80 failed differently — icon/cover removal
+ * encoded to `{}` and was accepted as a no-op, while clearing a property threw.
  *
  * Prerequisites: NOTION_API_TOKEN, NOTION_TEST_PAGE_ID, NOTION_RUN_INTEGRATION_TESTS=true
  * (or a `.env` file — see .env.example).
@@ -146,9 +148,11 @@ class ExplicitNullPayloadIntegrationTest :
                 println("  ✅ select, url and number cleared — the null payload reached the API")
 
                 // What the *old* payload did: the discriminator with the key dropped. Sent raw,
-                // because no client API can build that shape any more. Recorded, not asserted —
-                // it is a finding about the API, and the answer #80 could not get without
-                // credentials.
+                // because no client API can build that shape any more. Verified 2026-08-22: the
+                // API rejects it outright with 400 validation_error, listing every payload key it
+                // would have accepted ("body.properties.Stage.select should be defined, instead
+                // was `undefined`"), and the property keeps its previous value. So clearing a
+                // property never silently lost data the way icon/cover removal did — it threw.
                 notion.pages.update(page.id) { properties { select("Stage", "Doing") } }
                 delay(500)
                 val raw = rawPatch(token, "pages/${page.id}", """{"properties":{"Stage":{"type":"select"}}}""")
@@ -156,6 +160,10 @@ class ExplicitNullPayloadIntegrationTest :
                 val afterRaw = (notion.pages.retrieve(page.id).properties["Stage"] as PageProperty.Select).select?.name
                 println("🔎 FINDING: PATCH {\"Stage\":{\"type\":\"select\"}} -> HTTP ${raw.first}: ${raw.second}")
                 println("🔎 FINDING: Stage after that PATCH -> $afterRaw (was \"Doing\")")
+
+                raw.first shouldBe 400
+                raw.second shouldContain "body.properties.Stage.select should be defined"
+                afterRaw shouldBe "Doing"
             }
         }
     })
@@ -163,7 +171,7 @@ class ExplicitNullPayloadIntegrationTest :
 /**
  * Sends a hand-written body to the Notion API, bypassing the client's models.
  *
- * Only for recording what the API does with a payload the client can no longer produce.
+ * Only for pinning what the API does with a payload the client can no longer produce.
  *
  * @return the HTTP status code and the response body
  */
