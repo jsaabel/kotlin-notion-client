@@ -111,8 +111,11 @@ class UpdatePageRequestBuilderTest :
                     cover.remove()
                 }
 
-            request.icon shouldBe null
-            request.cover shouldBe null
+            // The removal sentinels, not null: a null field would be dropped from the payload and
+            // the page would keep its icon and cover. UpdatePageRequestSerializationTest asserts
+            // the encoded JSON.
+            request.icon shouldBe Icon.Removed
+            request.cover shouldBe PageCover.Removed
             request.properties shouldBe null
             request.inTrash shouldBe null
         }

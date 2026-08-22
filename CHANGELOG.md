@@ -61,6 +61,37 @@ mistake impossible to write silently. Migration for each break:
   time to interpret and is now rejected everywhere. *Migration:* use `date(name, date)`;
   if a time was actually intended, use `dateTimeWithTimeZone`.
 
+### ⚠️ Behaviour change — icon/cover removal and property clearing now reach the wire (#80)
+
+Two DSL affordances compiled, ran, returned successfully and did nothing. Both now do what
+they always said they did, so calls that were silently no-ops start changing data.
+
+- **`icon.remove()` and `cover.remove()` remove the icon and cover.** Notion removes them when
+  the request carries `"icon": null`; both builders set the field to Kotlin `null`, which the
+  client's `explicitNulls = false` encoder drops — `updatePageRequest { icon.remove() }`
+  encoded to `{}`, an empty PATCH. They now record `Icon.Removed` / `PageCover.Removed`,
+  write-only sentinels that serialize to an explicit `null`.
+  *Migration:* none to call sites. Code that reads a built request and expected `icon == null`
+  after `remove()` should compare against `Icon.Removed`; a request that never mentions the
+  icon still has `icon == null`.
+
+- **Clearing a property value now sends the payload key.** `select`, `status`, `date`,
+  `dateTime`, `number`, `url`, `email` and `phoneNumber` all document "null for empty" and
+  built a value whose payload field was `null`; the encoder emitted `{"type":"select"}` — the
+  discriminator without the instruction. They now encode as `{"type":"select","select":null}`,
+  which is what Notion clears on. List-valued properties (`multi_select`, `people`,
+  `relation`, `files`) were never affected — they clear with `[]`.
+  *Migration:* none.
+
+- **`Icon` and `PageCover` each gained a variant** (`Removed`). Both are sealed and public, so
+  an exhaustive `when` over either needs a new branch. The sentinels are write-only: a removed
+  icon reads back as `null` and never decodes to `Removed`.
+
+The mechanism, the rejected alternative of flipping `explicitNulls`, and why model-level tests
+could not see any of this are recorded in
+[ADR 0002](docs/adr/0002-explicit-null-payloads.md). The client's JSON configuration now lives
+in `serialization/NotionJson` so tests can assert on the exact bytes a request produces.
+
 ### ⚠️ Breaking Changes — `FileUpload` now matches the documented shape (#68)
 
 Three model-layer bugs meant valid, documented API responses failed to deserialize. Fixing

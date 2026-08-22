@@ -161,7 +161,7 @@ sealed class PagePropertyValue {
     /**
      * Number property value for numeric values.
      */
-    @Serializable
+    @Serializable(with = NumberValueSerializer::class)
     @SerialName("number")
     data class NumberValue(
         @SerialName("number")
@@ -181,7 +181,7 @@ sealed class PagePropertyValue {
     /**
      * URL property value for web links.
      */
-    @Serializable
+    @Serializable(with = UrlValueSerializer::class)
     @SerialName("url")
     data class UrlValue(
         @SerialName("url")
@@ -191,7 +191,7 @@ sealed class PagePropertyValue {
     /**
      * Email property value for email addresses.
      */
-    @Serializable
+    @Serializable(with = EmailValueSerializer::class)
     @SerialName("email")
     data class EmailValue(
         @SerialName("email")
@@ -201,7 +201,7 @@ sealed class PagePropertyValue {
     /**
      * Phone number property value.
      */
-    @Serializable
+    @Serializable(with = PhoneNumberValueSerializer::class)
     @SerialName("phone_number")
     data class PhoneNumberValue(
         @SerialName("phone_number")
@@ -211,7 +211,7 @@ sealed class PagePropertyValue {
     /**
      * Select property value for single-choice dropdown.
      */
-    @Serializable
+    @Serializable(with = SelectValueSerializer::class)
     @SerialName("select")
     data class SelectValue(
         @SerialName("select")
@@ -259,7 +259,7 @@ sealed class PagePropertyValue {
     /**
      * Status property value for status workflows.
      */
-    @Serializable
+    @Serializable(with = StatusValueSerializer::class)
     @SerialName("status")
     data class StatusValue(
         @SerialName("status")
@@ -269,7 +269,7 @@ sealed class PagePropertyValue {
     /**
      * Date property value for date or date range values.
      */
-    @Serializable
+    @Serializable(with = DateValueSerializer::class)
     @SerialName("date")
     data class DateValue(
         @SerialName("date")

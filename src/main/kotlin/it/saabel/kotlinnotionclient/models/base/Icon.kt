@@ -2,6 +2,7 @@ package it.saabel.kotlinnotionclient.models.base
 
 import it.saabel.kotlinnotionclient.models.files.FileUploadOptions
 import it.saabel.kotlinnotionclient.models.files.PendingUploadRefusingSerializer
+import it.saabel.kotlinnotionclient.serialization.RemovalSentinelSerializer
 import it.saabel.kotlinnotionclient.utils.FileSource
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -21,6 +22,7 @@ import kotlinx.serialization.Serializable
  *     is Icon.File -> println("File URL: ${page.icon.file.url}")
  *     is Icon.FileUpload -> println("Upload ID: ${page.icon.fileUpload.id}")
  *     is Icon.NativeIcon -> println("Native icon: ${page.icon.icon.name}")
+ *     Icon.Removed -> println("Icon removal (requests only)")
  *     null -> println("No icon")
  * }
  * ```
@@ -114,6 +116,23 @@ sealed class Icon {
     }
 
     /**
+     * Write-only sentinel that removes the icon.
+     *
+     * Notion removes an icon when the request carries `"icon": null` — see
+     * `reference/notion-api/documentation/endpoints/Update_Page_2025.md`. A Kotlin `null` cannot
+     * express that: the client encodes with `explicitNulls = false`, so a null field is dropped
+     * and the PATCH says nothing about the icon at all. This sentinel is a non-null value whose
+     * serializer writes the `null` explicitly. See `docs/adr/0002-explicit-null-payloads.md`.
+     *
+     * Set it with `icon.remove()`; it is never produced by decoding, since a removed icon reads
+     * back as `null`.
+     */
+    @Serializable(with = IconRemovedSerializer::class)
+    data object Removed : Icon() {
+        override val type: String = "removed"
+    }
+
+    /**
      * A native Notion icon (built-in icon library with optional color).
      *
      * Valid colors: "gray" (default), "lightgray", "brown", "yellow", "orange",
@@ -141,3 +160,8 @@ internal object IconPendingUploadSerializer : PendingUploadRefusingSerializer<Ic
         "pass the request through a NotionClient method (pages.create, pages.update, " +
             "databases.create, dataSources.update), or upload first and use icon { upload(id) }",
 )
+
+/**
+ * Serializer for [Icon.Removed] that emits JSON `null`. See [RemovalSentinelSerializer].
+ */
+internal object IconRemovedSerializer : RemovalSentinelSerializer<Icon.Removed>(serialName = "icon_removed")
