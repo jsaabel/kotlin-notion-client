@@ -174,6 +174,19 @@ class UploadAndAttachTest :
                 append shouldContain sampleUploadId
             }
 
+            test("appendHtml carries a caption onto the embed block") {
+                val recorded = mutableListOf<Pair<String, String>>()
+                val client = engine(recorded) { TestFixtures.Blocks.appendBlockChildrenAsString() }
+
+                try {
+                    BlocksApi(client, config).appendHtml("page-id", "<p>hi</p>", caption = "generated nightly")
+                } finally {
+                    client.close()
+                }
+
+                recorded.single { it.first.contains("/children") }.second shouldContain "generated nightly"
+            }
+
             test("appendHtml appends the .html extension to a caller-supplied name") {
                 val recorded = mutableListOf<Pair<String, String>>()
                 val client = engine(recorded) { TestFixtures.Blocks.appendBlockChildrenAsString() }

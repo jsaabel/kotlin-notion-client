@@ -1452,12 +1452,21 @@ class PageContentBuilder {
      * Adds an embed block.
      *
      * @param url The URL to embed
+     * @param caption Optional caption text. Undocumented on the embed reference, but verified
+     *   live: Notion accepts it and echoes it back on the created block.
      * @return This builder for chaining
      */
-    fun embed(url: String): PageContentBuilder =
+    fun embed(
+        url: String,
+        caption: String? = null,
+    ): PageContentBuilder =
         addBlock(
             BlockRequest.Embed(
-                embed = EmbedRequestContent(url = url),
+                embed =
+                    EmbedRequestContent(
+                        url = url,
+                        caption = caption?.let { listOf(RequestBuilders.createSimpleRichText(it)) } ?: emptyList(),
+                    ),
             ),
         )
 
@@ -1468,12 +1477,20 @@ class PageContentBuilder {
      * (Jul 3 2026 changelog).
      *
      * @param fileUploadId The ID of the uploaded file
+     * @param caption Optional caption text
      * @return This builder for chaining
      */
-    fun embedFromUpload(fileUploadId: String): PageContentBuilder =
+    fun embedFromUpload(
+        fileUploadId: String,
+        caption: String? = null,
+    ): PageContentBuilder =
         addBlock(
             BlockRequest.Embed(
-                embed = EmbedRequestContent(fileUpload = FileUploadReference(id = fileUploadId)),
+                embed =
+                    EmbedRequestContent(
+                        fileUpload = FileUploadReference(id = fileUploadId),
+                        caption = caption?.let { listOf(RequestBuilders.createSimpleRichText(it)) } ?: emptyList(),
+                    ),
             ),
         )
 
@@ -1484,9 +1501,13 @@ class PageContentBuilder {
      * (Jul 3 2026 changelog).
      *
      * @param fileUpload The upload returned by the File Upload API
+     * @param caption Optional caption text
      * @return This builder for chaining
      */
-    fun embedFromUpload(fileUpload: FileUpload): PageContentBuilder = embedFromUpload(fileUpload.id)
+    fun embedFromUpload(
+        fileUpload: FileUpload,
+        caption: String? = null,
+    ): PageContentBuilder = embedFromUpload(fileUpload.id, caption)
 
     /**
      * Adds a child page block.

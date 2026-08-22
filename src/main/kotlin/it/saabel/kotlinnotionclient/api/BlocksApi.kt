@@ -667,6 +667,7 @@ class BlocksApi(
      * @param filename Name for the uploaded file; `.html` is appended unless the name already
      *   ends in `.html` or `.htm`, because Notion decides how to render the embed from the
      *   file's extension
+     * @param caption Optional caption text
      * @param position Optional insertion position; appends at the end when omitted
      * @param options Upload options — content type override, progress callback, validation
      * @return BlockList containing the created block
@@ -677,12 +678,14 @@ class BlocksApi(
         blockId: String,
         html: String,
         filename: String = "embed.html",
+        caption: String? = null,
         position: BlockAppendPosition? = null,
         options: FileUploadOptions = FileUploadOptions(),
     ): BlockList =
         appendHtml(
             blockId = blockId,
             source = html.toByteArray().asFileSource(filename.withHtmlExtension()),
+            caption = caption,
             position = position,
             options = options,
         )
@@ -692,6 +695,7 @@ class BlocksApi(
      *
      * @param blockId The ID of the parent block or page
      * @param source The `.html` file to upload
+     * @param caption Optional caption text
      * @param position Optional insertion position; appends at the end when omitted
      * @param options Upload options — content type override, progress callback, validation
      * @return BlockList containing the created block
@@ -699,28 +703,31 @@ class BlocksApi(
     suspend fun appendHtml(
         blockId: String,
         source: FileSource,
+        caption: String? = null,
         position: BlockAppendPosition? = null,
         options: FileUploadOptions = FileUploadOptions(),
     ): BlockList {
         val upload = uploads.uploadAndAwait(source, options)
-        return appendChildren(blockId, position) { embedFromUpload(upload) }
+        return appendChildren(blockId, position) { embedFromUpload(upload, caption) }
     }
 
     /** Uploads the HTML file [file] and appends it as an HTML block. See [appendHtml]. */
     suspend fun appendHtml(
         blockId: String,
         file: File,
+        caption: String? = null,
         position: BlockAppendPosition? = null,
         options: FileUploadOptions = FileUploadOptions(),
-    ): BlockList = appendHtml(blockId, file.asFileSource(), position, options)
+    ): BlockList = appendHtml(blockId, file.asFileSource(), caption, position, options)
 
     /** Uploads the HTML file at [path] and appends it as an HTML block. See [appendHtml]. */
     suspend fun appendHtml(
         blockId: String,
         path: Path,
+        caption: String? = null,
         position: BlockAppendPosition? = null,
         options: FileUploadOptions = FileUploadOptions(),
-    ): BlockList = appendHtml(blockId, path.asFileSource(), position, options)
+    ): BlockList = appendHtml(blockId, path.asFileSource(), caption, position, options)
 }
 
 /**

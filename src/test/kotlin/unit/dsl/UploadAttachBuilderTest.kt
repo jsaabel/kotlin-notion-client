@@ -2,6 +2,7 @@ package unit.dsl
 
 import io.kotest.core.annotation.Tags
 import io.kotest.core.spec.style.DescribeSpec
+import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
@@ -148,6 +149,30 @@ class UploadAttachBuilderTest :
                 (blocks[2] as BlockRequest.Audio).audio.fileUpload shouldBe FileUploadReference(id = uploadId)
                 (blocks[3] as BlockRequest.PDF).pdf.fileUpload shouldBe FileUploadReference(id = uploadId)
                 (blocks[4] as BlockRequest.Embed).embed.fileUpload shouldBe FileUploadReference(id = uploadId)
+            }
+
+            it("carries a caption on an embed built from a url") {
+                val block = pageContent { embed("https://example.com", caption = "captioned") }.single() as BlockRequest.Embed
+
+                block.embed.url shouldBe "https://example.com"
+                block.embed.caption
+                    .single()
+                    .plainText shouldBe "captioned"
+            }
+
+            it("carries a caption on an embed built from an upload") {
+                val block = pageContent { embedFromUpload(upload, caption = "html block") }.single() as BlockRequest.Embed
+
+                block.embed.fileUpload shouldBe FileUploadReference(id = uploadId)
+                block.embed.caption
+                    .single()
+                    .plainText shouldBe "html block"
+            }
+
+            it("omits the embed caption entirely when none is given") {
+                val block = pageContent { embed("https://example.com") }.single() as BlockRequest.Embed
+
+                block.embed.caption.shouldBeEmpty()
             }
 
             it("defaults a file block's display name to the upload's own filename") {

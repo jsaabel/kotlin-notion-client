@@ -676,6 +676,10 @@ data class BookmarkRequestContent(
  * uploaded `.html` file via [fileUpload] creates an HTML block (Jul 3 2026 changelog);
  * the exact REST shape is inferred from the changelog — the reference page documents
  * only the `url` form.
+ *
+ * [caption] is likewise undocumented — the reference lists only `url` for embeds — but was
+ * verified live: a `PATCH /v1/blocks/{id}/children` carrying an embed caption returns 200 and
+ * echoes the caption back on the created block.
  */
 @Serializable
 data class EmbedRequestContent(
@@ -683,6 +687,8 @@ data class EmbedRequestContent(
     val url: String? = null,
     @SerialName("file_upload")
     val fileUpload: FileUploadReference? = null,
+    @SerialName("caption")
+    val caption: List<RichText> = emptyList(),
 ) {
     init {
         require((url != null) != (fileUpload != null)) {
