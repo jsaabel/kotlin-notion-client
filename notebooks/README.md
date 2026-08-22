@@ -16,7 +16,7 @@ export NOTION_TEST_DATABASE_ID="87654321-4321-4321-4321-cba987654321"
 
 ### Notion Integration Setup
 
-1. Create an integration at [https://www.notion.so/my-integrations](https://www.notion.so/my-integrations)
+1. Create an integration at [https://www.notion.com/my-integrations](https://www.notion.com/my-integrations)
 2. Copy the "Internal Integration Token"
 3. Create test page(s) and database(s) in your Notion workspace
 4. Share them with your integration (Share → Invite → select your integration)

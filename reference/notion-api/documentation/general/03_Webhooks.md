@@ -23,7 +23,7 @@ Webhooks let your integration receive **real-time updates** from Notion. Wheneve
 
 To receive webhook events, create a subscription in your integration settings:
 
-- Visit your [integration settings](https://www.notion.so/my-integrations).
+- Visit your [integration settings](https://www.notion.com/my-integrations).
 - Create or select an existing integration.
 - Go to the **Webhooks** tab and click **+ Create a subscription**.
 - Enter your public **Webhook URL** (must use HTTPS and be publicly accessible).
