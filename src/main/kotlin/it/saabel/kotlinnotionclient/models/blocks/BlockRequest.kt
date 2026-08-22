@@ -671,12 +671,25 @@ data class BookmarkRequestContent(
 
 /**
  * Content for embed block requests.
+ *
+ * Either [url] (the classic external embed) or [fileUpload] must be set. Attaching an
+ * uploaded `.html` file via [fileUpload] creates an HTML block (Jul 3 2026 changelog);
+ * the exact REST shape is inferred from the changelog — the reference page documents
+ * only the `url` form.
  */
 @Serializable
 data class EmbedRequestContent(
     @SerialName("url")
-    val url: String,
-)
+    val url: String? = null,
+    @SerialName("file_upload")
+    val fileUpload: FileUploadReference? = null,
+) {
+    init {
+        require((url != null) != (fileUpload != null)) {
+            "Embed content requires exactly one of url or fileUpload"
+        }
+    }
+}
 
 /**
  * Content for child_page block requests.
