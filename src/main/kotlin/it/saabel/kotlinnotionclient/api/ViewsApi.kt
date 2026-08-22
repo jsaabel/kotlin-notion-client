@@ -16,6 +16,9 @@ import io.ktor.http.isSuccess
 import it.saabel.kotlinnotionclient.config.NotionConfig
 import it.saabel.kotlinnotionclient.exceptions.NotionException
 import it.saabel.kotlinnotionclient.exceptions.toNotionApiError
+import it.saabel.kotlinnotionclient.models.datasources.DataSourceQueryRequest
+import it.saabel.kotlinnotionclient.models.datasources.RowIterationKey
+import it.saabel.kotlinnotionclient.models.pages.Page
 import it.saabel.kotlinnotionclient.models.views.CreateViewQueryRequest
 import it.saabel.kotlinnotionclient.models.views.CreateViewRequest
 import it.saabel.kotlinnotionclient.models.views.CreateViewRequestBuilder
@@ -32,6 +35,9 @@ import it.saabel.kotlinnotionclient.models.views.createViewRequest
 import it.saabel.kotlinnotionclient.models.views.updateViewRequest
 import it.saabel.kotlinnotionclient.utils.Pagination
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.emitAll
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.toList
 
 /**
  * API client for Notion Views endpoints.
@@ -49,6 +55,10 @@ import kotlinx.coroutines.flow.Flow
  * - POST   /v1/views/{view_id}/queries            — create a view query (execute + cache)
  * - GET    /v1/views/{view_id}/queries/{query_id} — get cached query results
  * - DELETE /v1/views/{view_id}/queries/{query_id} — delete a cached query
+ *
+ * A view query is capped at 10,000 rows and cannot be windowed (the endpoint takes only
+ * `page_size`). To read every row behind a view, use [iterateAllRows], which drains the
+ * view's underlying data source with the view's filter.
  */
 class ViewsApi(
     private val httpClient: HttpClient,
@@ -398,4 +408,106 @@ class ViewsApi(
         } catch (e: Exception) {
             throw NotionException.NetworkError(e)
         }
+
+    // ========== Large View Iteration ==========
+
+    /**
+     * Iterates over every row behind a view, windowing past Notion's 10,000-row cap.
+     *
+     * ## Why this does not use the view query endpoint
+     *
+     * A view query caches an *already capped* result set: `POST /v1/views/{id}/queries`
+     * accepts nothing but `page_size`, and paginating a cached query accepts no filter,
+     * so there is no way to re-open a view query past its own boundary. Notion's own
+     * guidance is explicit — "the same 10,000-result limit applies to view queries, but
+     * you can't window them […] to read every row behind a view, query its underlying
+     * data source […] pass the view's filter into the windowed data source query so you
+     * keep the same row set."
+     *
+     * That is exactly what this method does: it retrieves the view once, then drains
+     * `View.dataSourceId` with `View.filter` as the base filter using the same windowed
+     * engine as [DataSourcesApi.iterateAllRows].
+     *
+     * ## What carries over from the view, and what does not
+     *
+     * - **`filter` — applied.** Read once when iteration starts; later edits to the view
+     *   are not picked up.
+     * - **`sorts` — not applied.** The drain imposes its own ascending sort on [key];
+     *   that is what makes windowing possible. Rows arrive ordered by the key, not in
+     *   the view's order. Sort locally if the view's order matters.
+     * - **`quick_filters` — not applied.** They are stored as untyped JSON with no
+     *   documented query-filter equivalent, so they cannot be translated faithfully.
+     *   A view relying on them yields **more** rows here than the view shows.
+     * - **Grouping and sub-item scoping** (`configuration.group_by`, `subtasks`) — not
+     *   applied. These shape presentation and sub-item inclusion in the UI, not the
+     *   data-source row set.
+     * - **Full [Page] objects** are emitted, not the `{object, id}` references a view
+     *   query returns.
+     *
+     * ## Limitations inherited from the data source drain
+     *
+     * The iteration is **not a snapshot**: rows created, deleted, or edited mid-drain may
+     * be missed or included, and rows crossing a window boundary can be re-read (they are
+     * de-duplicated by id within a boundary bucket). Because Notion limits filter nesting
+     * to two levels and the view's filter is combined with the window filter via an `and`
+     * compound, a view whose filter is already two levels deep cannot be windowed — the
+     * API rejects the combined filter. See [DataSourcesApi.iterateAllRows] and
+     * [RowIterationKey] for the per-key guarantees.
+     *
+     * Example:
+     * ```kotlin
+     * client.views.iterateAllRows("view-id").collect { page -> process(page) }
+     * ```
+     *
+     * @param viewId The UUID of the view to drain
+     * @param key The monotonic key used for windowing (defaults to `created_time`)
+     * @return Flow<Page> emitting every row matching the view's filter, ordered ascending by [key]
+     * @throws NotionException.ValidationError if the view has no `data_source_id`
+     *   (e.g. a dashboard view), so there is no row set to drain
+     * @throws NotionException.IterationStalled if a truncated window yields no new rows
+     * @throws NotionException.ApiError for API-level errors
+     * @throws NotionException.NetworkError for network failures
+     */
+    fun iterateAllRows(
+        viewId: String,
+        key: RowIterationKey = RowIterationKey.CreatedTime,
+    ): Flow<Page> =
+        flow {
+            val view = retrieve(viewId)
+            val dataSourceId =
+                view.dataSourceId
+                    ?: throw NotionException.ValidationError(
+                        field = "data_source_id",
+                        details =
+                            "View $viewId has no data_source_id, so it has no row set to drain. " +
+                                "Dashboard views aggregate other views and cannot be iterated.",
+                    )
+            emitAll(
+                dataSources.iterateAllRows(
+                    dataSourceId = dataSourceId,
+                    request = DataSourceQueryRequest(filter = view.filter),
+                    key = key,
+                ),
+            )
+        }
+
+    /**
+     * Collects every row behind a view into a list, windowing past Notion's 10,000-row cap.
+     *
+     * Convenience wrapper around [iterateAllRows] that loads every row into memory — for
+     * very large views prefer the Flow variant and process rows as they arrive. See
+     * [iterateAllRows] for which parts of the view configuration carry over and for the
+     * consistency guarantees.
+     *
+     * @param viewId The UUID of the view to drain
+     * @param key The monotonic key used for windowing (defaults to `created_time`)
+     * @return All rows matching the view's filter, ordered ascending by [key]
+     */
+    suspend fun collectAllRows(
+        viewId: String,
+        key: RowIterationKey = RowIterationKey.CreatedTime,
+    ): List<Page> = iterateAllRows(viewId, key).toList()
+
+    /** Data source access used by [iterateAllRows]; views cannot be windowed directly. */
+    private val dataSources by lazy { DataSourcesApi(httpClient, config) }
 }

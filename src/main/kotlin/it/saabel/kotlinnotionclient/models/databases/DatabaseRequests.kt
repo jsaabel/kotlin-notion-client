@@ -320,6 +320,35 @@ sealed class CreateDatabaseProperty {
     }
 
     /**
+     * Rollup property aggregating a property of the rows reached through a relation.
+     *
+     * Name the relation to walk and the property to read on the related rows — by name
+     * (readable) or by id (rename-proof) — plus the [RollupFunction] to apply:
+     * ```kotlin
+     * rollup("Total hours", relationPropertyName = "Tasks", rollupPropertyName = "Hours", function = RollupFunction.SUM)
+     * ```
+     *
+     * Construction fails fast (with [IllegalArgumentException]) when the configuration is
+     * structurally incomplete: no relation reference, no rolled-up property reference, or
+     * the read-only [RollupFunction.UNKNOWN] sentinel. Whether Notion accepts the
+     * combination (does the relation exist, is the function applicable to the target
+     * property's type) is left to the API's `validation_error`.
+     */
+    @Serializable
+    @SerialName("rollup")
+    data class Rollup(
+        @SerialName("rollup")
+        val rollup: RollupConfiguration,
+        @SerialName("description")
+        val description: String? = null,
+    ) : CreateDatabaseProperty() {
+        init {
+            requirePropertyDescriptionLength(description)
+            RollupConfigurations.validate(rollup)
+        }
+    }
+
+    /**
      * Files & media property for file attachments (uploaded or external).
      *
      * The schema config is an empty object; per-row file values are set via

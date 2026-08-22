@@ -3,10 +3,13 @@
 package it.saabel.kotlinnotionclient.models.asynctasks
 
 import it.saabel.kotlinnotionclient.models.markdown.PageMarkdownResponse
+import it.saabel.kotlinnotionclient.models.pages.Page
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.contentOrNull
 
 /**
  * An asynchronous task handle returned by async-capable Notion endpoints.
@@ -26,7 +29,8 @@ import kotlinx.serialization.json.JsonObject
  * @property operation Details about the operation the task is executing
  * @property result Raw result payload, present when [status] is [AsyncTaskStatus.SUCCEEDED].
  *   The shape depends on the originating operation — for markdown page writes use
- *   [markdownResultOrNull] to decode it.
+ *   [markdownResultOrNull] to decode it, and for async page creates try
+ *   [pageResultOrNull] as well (that result shape is undocumented).
  * @property error Error details, present when [status] is [AsyncTaskStatus.FAILED]
  */
 @Serializable
@@ -58,10 +62,35 @@ data class AsyncTask(
      * Decodes [result] as a [PageMarkdownResponse], the result type produced by
      * async markdown page writes.
      *
-     * @return The decoded result, or `null` if the task has no result (yet)
+     * @return The decoded result, or `null` if the task has no result (yet) or the
+     *   result is not a `page_markdown` object
      */
     fun markdownResultOrNull(): PageMarkdownResponse? =
-        result?.let { resultJson.decodeFromJsonElement(PageMarkdownResponse.serializer(), it) }
+        decodeResult("page_markdown") { resultJson.decodeFromJsonElement(PageMarkdownResponse.serializer(), it) }
+
+    /**
+     * Decodes [result] as a [Page].
+     *
+     * Notion documents the succeeded-task `result` payload only for the markdown update
+     * operation (a `page_markdown` object). An async page create (`POST /v1/pages` with a
+     * `markdown` body and `allow_async: true`) has no documented result shape, so callers
+     * should try both this accessor and [markdownResultOrNull]; each returns `null` unless
+     * the payload's `object` field actually matches.
+     *
+     * @return The decoded page, or `null` if the task has no result (yet) or the result
+     *   is not a `page` object
+     */
+    fun pageResultOrNull(): Page? = decodeResult("page") { resultJson.decodeFromJsonElement(Page.serializer(), it) }
+
+    private fun <T> decodeResult(
+        objectType: String,
+        decode: (JsonObject) -> T,
+    ): T? {
+        val payload = result ?: return null
+        val actual = (payload["object"] as? JsonPrimitive)?.contentOrNull
+        // Older/undocumented payloads may omit `object`; attempt the decode in that case.
+        return if (actual == null || actual == objectType) decode(payload) else null
+    }
 }
 
 private val resultJson =

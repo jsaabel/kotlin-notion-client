@@ -12,6 +12,7 @@ import it.saabel.kotlinnotionclient.models.base.RichText
 import it.saabel.kotlinnotionclient.models.databases.CreateDatabaseProperty
 import it.saabel.kotlinnotionclient.models.databases.DatabasePropertiesBuilder
 import it.saabel.kotlinnotionclient.models.databases.FormulaExpressions
+import it.saabel.kotlinnotionclient.models.databases.RollupConfigurations
 
 /**
  * Builder for creating data source requests (API version 2025-09-03+).
@@ -94,6 +95,7 @@ class CreateDataSourceRequestBuilder {
         // reference properties that already exist on the data source, so they are not
         // checked this way.)
         FormulaExpressions.validateReferencesExist(properties)
+        RollupConfigurations.validateReferencesExist(properties)
 
         return CreateDataSourceRequest(
             parent = Parent.DatabaseParent(databaseId = databaseIdValue!!),

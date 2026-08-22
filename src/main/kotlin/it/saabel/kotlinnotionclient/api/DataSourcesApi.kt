@@ -704,7 +704,7 @@ class DataSourcesApi(
         request: DataSourceQueryRequest = DataSourceQueryRequest(),
         key: RowIterationKey = RowIterationKey.CreatedTime,
     ): Flow<it.saabel.kotlinnotionclient.models.pages.Page> =
-        DataSourceRowIteration.iterateAllRows(request, key) { pageRequest ->
+        WindowedRowIteration.iterateAllRows(request, key) { pageRequest ->
             querySinglePage(dataSourceId, pageRequest)
         }
 

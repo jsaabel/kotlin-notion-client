@@ -2,7 +2,8 @@ package it.saabel.kotlinnotionclient.models.datasources
 
 /**
  * The monotonic key used by [it.saabel.kotlinnotionclient.api.DataSourcesApi.iterateAllRows]
- * to window past Notion's 10,000-row query result cap.
+ * and [it.saabel.kotlinnotionclient.api.ViewsApi.iterateAllRows] to window past Notion's
+ * 10,000-row query result cap.
  *
  * The iteration sorts rows ascending by this key and, whenever the API truncates the
  * result set (`request_status.type == "incomplete"`), re-queries from the last seen
