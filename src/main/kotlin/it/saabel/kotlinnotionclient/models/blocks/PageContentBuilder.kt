@@ -9,6 +9,7 @@ import it.saabel.kotlinnotionclient.models.base.NativeIconColor
 import it.saabel.kotlinnotionclient.models.base.NativeIconObject
 import it.saabel.kotlinnotionclient.models.base.NotionFile
 import it.saabel.kotlinnotionclient.models.base.RichText
+import it.saabel.kotlinnotionclient.models.files.FileUpload
 import it.saabel.kotlinnotionclient.models.files.FileUploadReference
 import it.saabel.kotlinnotionclient.models.requests.RequestBuilders
 import it.saabel.kotlinnotionclient.models.richtext.RichTextBuilder
@@ -1123,6 +1124,18 @@ class PageContentBuilder {
         )
 
     /**
+     * Adds an image block from a file upload.
+     *
+     * @param fileUpload The upload returned by the File Upload API
+     * @param caption Optional caption text
+     * @return This builder for chaining
+     */
+    fun imageFromUpload(
+        fileUpload: FileUpload,
+        caption: String? = null,
+    ): PageContentBuilder = imageFromUpload(fileUpload.id, caption)
+
+    /**
      * Adds a video block from an external URL.
      *
      * @param url The external video URL
@@ -1167,6 +1180,18 @@ class PageContentBuilder {
         )
 
     /**
+     * Adds a video block from a file upload.
+     *
+     * @param fileUpload The upload returned by the File Upload API
+     * @param caption Optional caption text
+     * @return This builder for chaining
+     */
+    fun videoFromUpload(
+        fileUpload: FileUpload,
+        caption: String? = null,
+    ): PageContentBuilder = videoFromUpload(fileUpload.id, caption)
+
+    /**
      * Adds an audio block from an external URL.
      *
      * @param url The external audio URL
@@ -1209,6 +1234,18 @@ class PageContentBuilder {
                     ),
             ),
         )
+
+    /**
+     * Adds an audio block from a file upload.
+     *
+     * @param fileUpload The upload returned by the File Upload API
+     * @param caption Optional caption text
+     * @return This builder for chaining
+     */
+    fun audioFromUpload(
+        fileUpload: FileUpload,
+        caption: String? = null,
+    ): PageContentBuilder = audioFromUpload(fileUpload.id, caption)
 
     /**
      * Adds a file block from an external URL.
@@ -1261,6 +1298,20 @@ class PageContentBuilder {
         )
 
     /**
+     * Adds a file block from a file upload.
+     *
+     * @param fileUpload The upload returned by the File Upload API
+     * @param name Optional file name; defaults to the upload's own filename
+     * @param caption Optional caption text
+     * @return This builder for chaining
+     */
+    fun fileFromUpload(
+        fileUpload: FileUpload,
+        name: String? = null,
+        caption: String? = null,
+    ): PageContentBuilder = fileFromUpload(fileUpload.id, name ?: fileUpload.filename, caption)
+
+    /**
      * Adds a PDF block from an external URL.
      *
      * @param url The external PDF URL
@@ -1303,6 +1354,18 @@ class PageContentBuilder {
                     ),
             ),
         )
+
+    /**
+     * Adds a PDF block from a file upload.
+     *
+     * @param fileUpload The upload returned by the File Upload API
+     * @param caption Optional caption text
+     * @return This builder for chaining
+     */
+    fun pdfFromUpload(
+        fileUpload: FileUpload,
+        caption: String? = null,
+    ): PageContentBuilder = pdfFromUpload(fileUpload.id, caption)
 
     /**
      * Adds a divider block.
@@ -1413,6 +1476,17 @@ class PageContentBuilder {
                 embed = EmbedRequestContent(fileUpload = FileUploadReference(id = fileUploadId)),
             ),
         )
+
+    /**
+     * Adds an embed block from a file upload.
+     *
+     * Attaching an uploaded `.html` file this way creates an HTML block
+     * (Jul 3 2026 changelog).
+     *
+     * @param fileUpload The upload returned by the File Upload API
+     * @return This builder for chaining
+     */
+    fun embedFromUpload(fileUpload: FileUpload): PageContentBuilder = embedFromUpload(fileUpload.id)
 
     /**
      * Adds a child page block.

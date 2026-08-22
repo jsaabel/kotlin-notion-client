@@ -3,10 +3,13 @@
 package it.saabel.kotlinnotionclient.models.pages
 
 import it.saabel.kotlinnotionclient.models.base.ExternalFile
+import it.saabel.kotlinnotionclient.models.base.FileUploadReference
 import it.saabel.kotlinnotionclient.models.base.Icon
 import it.saabel.kotlinnotionclient.models.base.NativeIconColor
 import it.saabel.kotlinnotionclient.models.base.NativeIconObject
 import it.saabel.kotlinnotionclient.models.base.NotionFile
+import it.saabel.kotlinnotionclient.models.files.FileUpload
+import it.saabel.kotlinnotionclient.models.files.FileUploadStatus
 
 /**
  * Builder class for updating page requests with a fluent DSL.
@@ -162,17 +165,50 @@ class UpdatePageRequestBuilder {
         }
 
         /**
-         * Sets an uploaded file icon.
+         * Sets a Notion-hosted file icon from its expiring URL.
+         *
+         * This emits the *read* shape (`type: "file"`), which Notion does not accept on write —
+         * see the Page object reference, where icon is documented as accepting only `external`
+         * or `file_upload`. Kept for source compatibility only.
          *
          * @param url The uploaded file URL
          * @param expiryTime Optional expiry time
          */
+        @Deprecated(
+            message =
+                "Notion accepts only `external` and `file_upload` icons on write; `type: \"file\"` is the " +
+                    "read shape (a Notion-hosted expiring URL) and cannot be written back. Use external(url) " +
+                    "for a publicly hosted file, or upload(id) for a file sent through the File Upload API.",
+            replaceWith = ReplaceWith("external(url)"),
+        )
         fun file(
             url: String,
             expiryTime: String? = null,
         ) {
             this@UpdatePageRequestBuilder.iconValue =
                 Icon.File(file = NotionFile(url = url, expiryTime = expiryTime))
+        }
+
+        /**
+         * Sets an icon from a file uploaded via the File Upload API.
+         *
+         * The upload must already have reached [FileUploadStatus.UPLOADED]; attach it within its
+         * one-hour expiry window or the upload is archived.
+         *
+         * @param fileUploadId The ID of the uploaded file
+         */
+        fun upload(fileUploadId: String) {
+            this@UpdatePageRequestBuilder.iconValue =
+                Icon.FileUpload(fileUpload = FileUploadReference(id = fileUploadId))
+        }
+
+        /**
+         * Sets an icon from a file uploaded via the File Upload API.
+         *
+         * @param fileUpload The upload returned by the File Upload API
+         */
+        fun upload(fileUpload: FileUpload) {
+            upload(fileUpload.id)
         }
 
         /**
@@ -214,17 +250,50 @@ class UpdatePageRequestBuilder {
         }
 
         /**
-         * Sets an uploaded file cover.
+         * Sets a Notion-hosted file cover from its expiring URL.
+         *
+         * This emits the *read* shape (`type: "file"`), which Notion does not accept on write —
+         * see the Page object reference, where cover is documented as accepting only `external`
+         * or `file_upload`. Kept for source compatibility only.
          *
          * @param url The uploaded file URL
          * @param expiryTime Optional expiry time
          */
+        @Deprecated(
+            message =
+                "Notion accepts only `external` and `file_upload` covers on write; `type: \"file\"` is the " +
+                    "read shape (a Notion-hosted expiring URL) and cannot be written back. Use external(url) " +
+                    "for a publicly hosted file, or upload(id) for a file sent through the File Upload API.",
+            replaceWith = ReplaceWith("external(url)"),
+        )
         fun file(
             url: String,
             expiryTime: String? = null,
         ) {
             this@UpdatePageRequestBuilder.coverValue =
                 PageCover.File(file = NotionFile(url = url, expiryTime = expiryTime))
+        }
+
+        /**
+         * Sets a cover from a file uploaded via the File Upload API.
+         *
+         * The upload must already have reached [FileUploadStatus.UPLOADED]; attach it within its
+         * one-hour expiry window or the upload is archived.
+         *
+         * @param fileUploadId The ID of the uploaded file
+         */
+        fun upload(fileUploadId: String) {
+            this@UpdatePageRequestBuilder.coverValue =
+                PageCover.FileUpload(fileUpload = FileUploadReference(id = fileUploadId))
+        }
+
+        /**
+         * Sets a cover from a file uploaded via the File Upload API.
+         *
+         * @param fileUpload The upload returned by the File Upload API
+         */
+        fun upload(fileUpload: FileUpload) {
+            upload(fileUpload.id)
         }
 
         /**
