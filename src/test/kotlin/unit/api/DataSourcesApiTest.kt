@@ -10,6 +10,7 @@ import io.ktor.http.HttpStatusCode
 import it.saabel.kotlinnotionclient.api.DataSourcesApi
 import it.saabel.kotlinnotionclient.config.NotionConfig
 import it.saabel.kotlinnotionclient.exceptions.NotionException
+import it.saabel.kotlinnotionclient.models.datasources.DataSource
 import it.saabel.kotlinnotionclient.models.datasources.Template
 import it.saabel.kotlinnotionclient.models.datasources.TemplatesResponse
 import unit.util.TestFixtures
@@ -58,6 +59,17 @@ class DataSourcesApiTest :
                 taskTemplate.id shouldBe "abcdef12-3456-7890-abcd-ef1234567890"
                 taskTemplate.name shouldBe "Task Template"
                 taskTemplate.isDefault shouldBe false
+            }
+        }
+
+        context("DataSource model deserialization") {
+            test("should decode the retrieve data source fixture despite a missing description key") {
+                // The official sample has no top-level "description" key; DataSource.description
+                // defaults to emptyList() so decoding doesn't throw MissingFieldException.
+                val dataSource = TestFixtures.DataSources.retrieveDataSource().decode<DataSource>()
+
+                dataSource.id shouldBe "bc1211ca-e3f1-4939-ae34-5260b16f627c"
+                dataSource.description shouldBe emptyList()
             }
         }
 
