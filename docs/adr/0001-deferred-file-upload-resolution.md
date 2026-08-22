@@ -141,8 +141,15 @@ at compile time while making any un-resolved serialization path fail loudly.
 
 ## Scope and staging
 
-The mechanism is designed for all four surfaces. Implementation lands in two stages so each
-PR stays reviewable: **(1)** the resolver plus the content-block surface — the core of #70 —
-and **(2)** the remaining surfaces (files property, icon/cover at create time, comment DSL
-attachments), which reuse the stage-1 machinery and pay off the deferral note in
-`CommentsApi`.
+The mechanism is designed for all four surfaces. Implementation landed in two stages so each
+PR stayed reviewable: **(1)** the resolver plus the content-block surface — the core of #70,
+delivered in [#75](https://github.com/jsaabel/kotlin-notion-client/issues/75) — and **(2)** the
+remaining surfaces (files property, icon/cover at create time, comment DSL attachments), which
+reuse the stage-1 machinery and pay off the deferral note in `CommentsApi`, delivered in
+[#76](https://github.com/jsaabel/kotlin-notion-client/issues/76).
+
+Stage 2 widened resolution from a block list to a whole request: a page create pools the
+sentinels from its properties, icon, cover and children into one upload pass, in that order, so
+the failure boundary is the request rather than the surface. The comment surface needed
+`CommentAttachmentRequest` to become a sealed hierarchy to hold its pending variant; the
+resolved variant keeps the same JSON and the same construction and read syntax.

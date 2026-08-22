@@ -43,6 +43,9 @@ class DatabasesApi(
 ) {
     private val validator = RequestValidator(validationConfig)
 
+    /** Resolves the pending-upload sentinels an icon or cover builder may have recorded. */
+    private val uploads by lazy { EnhancedFileUploadApi(httpClient, config) }
+
     /**
      * Retrieves a database object using the ID specified (API version 2025-09-03+).
      *
@@ -100,7 +103,7 @@ class DatabasesApi(
      * @throws ValidationException if validation fails for non-fixable violations
      */
     suspend fun create(request: CreateDatabaseRequest): Database {
-        val finalRequest = validator.validateOrFix(request)
+        val finalRequest = validator.validateOrFix(uploads.resolvePendingUploads(request))
 
         return try {
             val response: HttpResponse =

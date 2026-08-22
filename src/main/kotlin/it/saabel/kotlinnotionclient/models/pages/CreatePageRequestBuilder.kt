@@ -13,7 +13,12 @@ import it.saabel.kotlinnotionclient.models.blocks.BlockRequest
 import it.saabel.kotlinnotionclient.models.blocks.PageContentBuilder
 import it.saabel.kotlinnotionclient.models.blocks.pageContent
 import it.saabel.kotlinnotionclient.models.files.FileUpload
+import it.saabel.kotlinnotionclient.models.files.FileUploadOptions
 import it.saabel.kotlinnotionclient.models.files.FileUploadStatus
+import it.saabel.kotlinnotionclient.utils.FileSource
+import it.saabel.kotlinnotionclient.utils.asFileSource
+import java.io.File
+import java.nio.file.Path
 
 /**
  * Builder class for creating page requests with a fluent DSL.
@@ -326,6 +331,43 @@ class CreatePageRequestBuilder {
         }
 
         /**
+         * Sets an icon from a local file, uploading it when the request is sent.
+         *
+         * Nothing is uploaded while this builder runs: the file is recorded as
+         * [Icon.PendingUpload] and resolved by the client before the request goes out. See
+         * `docs/adr/0001-deferred-file-upload-resolution.md`.
+         *
+         * ```kotlin
+         * icon { upload(File("logo.png")) }
+         * ```
+         *
+         * @param source the file to upload
+         * @param options upload options — content type override, progress callback, validation
+         */
+        fun upload(
+            source: FileSource,
+            options: FileUploadOptions = FileUploadOptions(),
+        ) {
+            this@CreatePageRequestBuilder.iconValue = Icon.PendingUpload(source = source, options = options)
+        }
+
+        /** Sets an icon from a local file, uploading it when the request is sent. See [upload]. */
+        fun upload(
+            file: File,
+            options: FileUploadOptions = FileUploadOptions(),
+        ) {
+            upload(file.asFileSource(), options)
+        }
+
+        /** Sets an icon from a local file, uploading it when the request is sent. See [upload]. */
+        fun upload(
+            path: Path,
+            options: FileUploadOptions = FileUploadOptions(),
+        ) {
+            upload(path.asFileSource(), options)
+        }
+
+        /**
          * Sets a native Notion icon.
          *
          * @param name The icon name (e.g. "pizza")
@@ -405,6 +447,43 @@ class CreatePageRequestBuilder {
          */
         fun upload(fileUpload: FileUpload) {
             upload(fileUpload.id)
+        }
+
+        /**
+         * Sets a cover from a local file, uploading it when the request is sent.
+         *
+         * Nothing is uploaded while this builder runs: the file is recorded as
+         * [PageCover.PendingUpload] and resolved by the client before the request goes out. See
+         * `docs/adr/0001-deferred-file-upload-resolution.md`.
+         *
+         * ```kotlin
+         * cover { upload(File("logo.png")) }
+         * ```
+         *
+         * @param source the file to upload
+         * @param options upload options — content type override, progress callback, validation
+         */
+        fun upload(
+            source: FileSource,
+            options: FileUploadOptions = FileUploadOptions(),
+        ) {
+            this@CreatePageRequestBuilder.coverValue = PageCover.PendingUpload(source = source, options = options)
+        }
+
+        /** Sets a cover from a local file, uploading it when the request is sent. See [upload]. */
+        fun upload(
+            file: File,
+            options: FileUploadOptions = FileUploadOptions(),
+        ) {
+            upload(file.asFileSource(), options)
+        }
+
+        /** Sets a cover from a local file, uploading it when the request is sent. See [upload]. */
+        fun upload(
+            path: Path,
+            options: FileUploadOptions = FileUploadOptions(),
+        ) {
+            upload(path.asFileSource(), options)
         }
     }
 

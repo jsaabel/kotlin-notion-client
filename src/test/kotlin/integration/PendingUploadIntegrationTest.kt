@@ -8,20 +8,25 @@ import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
 import it.saabel.kotlinnotionclient.NotionClient
 import it.saabel.kotlinnotionclient.config.NotionConfig
+import it.saabel.kotlinnotionclient.models.base.Icon
 import it.saabel.kotlinnotionclient.models.blocks.Block
+import it.saabel.kotlinnotionclient.models.pages.FileData
+import it.saabel.kotlinnotionclient.models.pages.PageProperty
 import it.saabel.kotlinnotionclient.utils.asFileSource
 
 /**
- * One live end-to-end check of the pending-upload resolution added for issue #75 (ADR 0001).
+ * One live end-to-end check of the pending-upload resolution from ADR 0001 (issues #75, #76).
  *
- * The unit tests pin down the mechanism — collection order, the rewrite per kind, failure
+ * The unit tests pin down the mechanism — collection order, the rewrite per surface, failure
  * atomicity — against a mock engine. What they cannot answer is whether Notion accepts the
- * request the resolver produces: several file blocks, each referencing an upload created moments
- * earlier in the same call, all inside a single `POST /v1/pages`. That is what this asserts, and
- * a failure here is a finding about the live API rather than about the walk.
+ * request the resolver produces: a page whose icon, whose files property and whose content
+ * blocks all reference uploads created moments earlier in the same call, inside a single
+ * `POST /v1/pages`. That is what this asserts, and a failure here is a finding about the live
+ * API rather than about the walk.
  *
- * Deliberately one page create, not a matrix: uploads are slow and the per-kind mapping is
- * already covered by unit tests.
+ * Deliberately one page create, not a matrix: uploads are slow, and both the per-kind mapping
+ * and the per-surface mapping are already covered by unit tests. The row is created under a
+ * data source because a files property only exists on a database row.
  *
  * Run with: `./gradlew integrationTest --tests "*PendingUploadIntegrationTest"`
  */
@@ -54,37 +59,68 @@ class PendingUploadIntegrationTest :
                 ).toByteArray()
 
             var createdPageId = ""
+            var createdDatabaseId = ""
 
             afterSpec {
-                if (createdPageId.isNotEmpty()) {
-                    if (shouldCleanupAfterTest()) {
-                        notion.pages.trash(createdPageId)
-                        println("✅ Cleaned up created page")
-                    } else {
-                        println("🔧 Cleanup skipped — page preserved for inspection")
-                    }
+                if (shouldCleanupAfterTest()) {
+                    if (createdPageId.isNotEmpty()) notion.pages.trash(createdPageId)
+                    if (createdDatabaseId.isNotEmpty()) notion.databases.trash(createdDatabaseId)
+                    println("✅ Cleaned up created page and database")
+                } else {
+                    println("🔧 Cleanup skipped — page and database preserved for inspection")
                 }
                 notion.close()
             }
 
-            "a page create resolves every local file in its content in one call" {
-                val page =
-                    notion.pages.create {
+            "a page create resolves the local files in its icon, files property and content in one call" {
+                // Scaffolding: a files property only exists on a database row, so the flow under
+                // test needs a data source to create into.
+                val database =
+                    notion.databases.create {
                         parent.page(parentPageId)
                         title("Pending Upload — Integration Test")
                         icon.emoji("📎")
+                        properties {
+                            title("Name")
+                            files("Attachments")
+                        }
+                    }
+                createdDatabaseId = database.id
+                val dataSourceId = database.dataSources.firstOrNull()?.id
+                dataSourceId.shouldNotBeNull()
+
+                // The flow under test: three local files across three surfaces, one create.
+                val page =
+                    notion.pages.create {
+                        parent.dataSource(dataSourceId)
+                        properties {
+                            title("Name", "Pending Upload — Integration Test")
+                            files("Attachments") { upload(pdfBytes.asFileSource("appendix.pdf")) }
+                        }
+                        icon.upload(pngBytes.asFileSource("logo.png"))
                         content {
                             paragraph("Mixed content, uploaded as part of this create.")
                             image(pngBytes.asFileSource("chart.png"), caption = "Q3")
-                            pdf(pdfBytes.asFileSource("appendix.pdf"))
                             html("<h1>Weekly report</h1><p>Generated by the nightly job.</p>")
                         }
                     }
                 createdPageId = page.id
                 println("📄 Created: ${page.url}")
 
+                // The icon was written as file_upload and reads back Notion-hosted — the write
+                // and read shapes differ, so this is Icon.File, not Icon.FileUpload.
+                page.icon.shouldBeInstanceOf<Icon.File>()
+
+                val fetched = notion.pages.retrieve(page.id)
+                val attachments = fetched.properties["Attachments"]
+                attachments.shouldBeInstanceOf<PageProperty.Files>()
+                attachments.files shouldHaveSize 1
+                attachments.files
+                    .single()
+                    .shouldBeInstanceOf<FileData.Uploaded>()
+
                 val blocks = notion.blocks.retrieveChildren(page.id)
-                blocks shouldHaveSize 4
+                blocks shouldHaveSize 3
 
                 blocks[0].shouldBeInstanceOf<Block.Paragraph>()
 
@@ -96,12 +132,9 @@ class PendingUploadIntegrationTest :
                     .single()
                     .plainText shouldBe "Q3"
 
-                val pdf = blocks[2].shouldBeInstanceOf<Block.PDF>()
-                pdf.pdf.file.shouldNotBeNull()
-
                 // An uploaded .html file renders as an HTML block, which the API returns as an
                 // embed carrying a Notion-hosted url rather than the file_upload it was written as.
-                blocks[3].shouldBeInstanceOf<Block.Embed>()
+                blocks[2].shouldBeInstanceOf<Block.Embed>()
             }
         }
     })

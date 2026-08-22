@@ -5,7 +5,12 @@ package it.saabel.kotlinnotionclient.models.comments
 import it.saabel.kotlinnotionclient.models.base.Parent
 import it.saabel.kotlinnotionclient.models.base.RichText
 import it.saabel.kotlinnotionclient.models.files.FileUpload
+import it.saabel.kotlinnotionclient.models.files.FileUploadOptions
 import it.saabel.kotlinnotionclient.models.richtext.RichTextBuilder
+import it.saabel.kotlinnotionclient.utils.FileSource
+import it.saabel.kotlinnotionclient.utils.asFileSource
+import java.io.File
+import java.nio.file.Path
 
 /**
  * DSL marker to prevent nested scopes in comment builders.
@@ -193,12 +198,7 @@ class CreateCommentRequestBuilder {
      * @param fileUploadId The ID of the uploaded file
      */
     fun attachment(fileUploadId: String) {
-        val currentAttachments = attachmentsValue?.toMutableList() ?: mutableListOf()
-        if (currentAttachments.size >= 3) {
-            throw IllegalArgumentException("Comments can have a maximum of 3 attachments")
-        }
-        currentAttachments.add(CommentAttachmentRequest(fileUploadId = fileUploadId))
-        attachmentsValue = currentAttachments
+        addAttachment(CommentAttachmentRequest(fileUploadId = fileUploadId))
     }
 
     /**
@@ -208,6 +208,65 @@ class CreateCommentRequestBuilder {
      */
     fun attachment(fileUpload: FileUpload) {
         attachment(fileUpload.id)
+    }
+
+    /**
+     * Attaches a local file, uploading it when the comment is created.
+     *
+     * This is the recommended way to attach a local file: nothing is uploaded while the builder
+     * runs — the file is recorded as a [CommentAttachmentRequest.PendingUpload] sentinel and
+     * `comments.create` resolves it before the request goes out, keeping the attachment inside
+     * the one call. See `docs/adr/0001-deferred-file-upload-resolution.md`.
+     *
+     * ```kotlin
+     * notion.comments.create {
+     *     parent { pageId(pageId) }
+     *     content { text("Trace attached") }
+     *     attachment(File("trace.txt"))
+     * }
+     * ```
+     *
+     * @param source the file to upload
+     * @param options upload options — content type override, progress callback, validation
+     * @throws IllegalArgumentException if the comment would carry more than 3 attachments
+     */
+    fun attachment(
+        source: FileSource,
+        options: FileUploadOptions = FileUploadOptions(),
+    ) {
+        addAttachment(CommentAttachmentRequest.PendingUpload(source = source, options = options))
+    }
+
+    /** Attaches a local file, uploading it when the comment is created. See [attachment]. */
+    fun attachment(
+        file: File,
+        options: FileUploadOptions = FileUploadOptions(),
+    ) {
+        attachment(file.asFileSource(), options)
+    }
+
+    /** Attaches a local file, uploading it when the comment is created. See [attachment]. */
+    fun attachment(
+        path: Path,
+        options: FileUploadOptions = FileUploadOptions(),
+    ) {
+        attachment(path.asFileSource(), options)
+    }
+
+    /**
+     * Appends [attachment] to the accumulated list, enforcing Notion's per-comment cap.
+     *
+     * Pending uploads are counted here as the attachments they will become, so the cap is
+     * reported at the call site that overshoots it rather than after three files have been
+     * uploaded for nothing.
+     */
+    private fun addAttachment(attachment: CommentAttachmentRequest) {
+        val currentAttachments = attachmentsValue?.toMutableList() ?: mutableListOf()
+        if (currentAttachments.size >= 3) {
+            throw IllegalArgumentException("Comments can have a maximum of 3 attachments")
+        }
+        currentAttachments.add(attachment)
+        attachmentsValue = currentAttachments
     }
 
     /**
