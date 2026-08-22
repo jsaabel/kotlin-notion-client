@@ -44,6 +44,25 @@ val integrationTest by tasks.registering(Test::class) {
     group = "verification"
     useJUnitPlatform()
     systemProperty("kotest.tags.include", "RequiresApi")
+    // Invoking this task is the opt-in; the env-var gate in integration/Util.kt keeps
+    // guarding accidental runs through other tasks.
+    environment("NOTION_RUN_INTEGRATION_TESTS", "true")
+    // Credentials from a gitignored .env (KEY=VALUE lines) so IDE run configs need no setup.
+    // Real environment variables take precedence.
+    val envFile = rootProject.file(".env")
+    if (envFile.exists()) {
+        envFile
+            .readLines()
+            .map { it.trim() }
+            .filter { it.isNotEmpty() && !it.startsWith("#") && "=" in it }
+            .forEach { line ->
+                val key = line.substringBefore("=").trim()
+                val value = line.substringAfter("=").trim().removeSurrounding("\"")
+                if (System.getenv(key) == null) {
+                    environment(key, value)
+                }
+            }
+    }
     testClassesDirs = sourceSets.test.get().output.classesDirs
     classpath = sourceSets.test.get().runtimeClasspath
     shouldRunAfter(tasks.test)
