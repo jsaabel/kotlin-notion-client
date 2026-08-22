@@ -19,13 +19,18 @@ import it.saabel.kotlinnotionclient.models.blocks.BlockList
 import it.saabel.kotlinnotionclient.models.blocks.BlockRequest
 import it.saabel.kotlinnotionclient.models.blocks.PageContentBuilder
 import it.saabel.kotlinnotionclient.models.blocks.pageContent
+import it.saabel.kotlinnotionclient.models.files.FileUploadOptions
+import it.saabel.kotlinnotionclient.utils.FileSource
 import it.saabel.kotlinnotionclient.utils.Pagination
+import it.saabel.kotlinnotionclient.utils.asFileSource
 import it.saabel.kotlinnotionclient.validation.RequestValidator
 import it.saabel.kotlinnotionclient.validation.ValidationConfig
 import it.saabel.kotlinnotionclient.validation.ValidationException
 import kotlinx.coroutines.flow.Flow
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import java.io.File
+import java.nio.file.Path
 
 /**
  * API client for Notion Blocks endpoints.
@@ -395,6 +400,327 @@ class BlocksApi(
         pageSize: Int = NotionApiLimits.Response.MAX_PAGE_SIZE,
         startCursor: String? = null,
     ): BlockList = retrieveChildrenPage(blockId, startCursor, pageSize)
+
+    // ---------------------------------------------------------------------
+    // Upload-and-attach helpers
+    //
+    // Thin compositions over EnhancedFileUploadApi plus the existing append
+    // path: upload the bytes, wait until Notion reports the upload as ready,
+    // then append the matching block. They throw like the rest of the client
+    // rather than returning FileUploadResult — see FileUploadResult.getOrThrow.
+    // ---------------------------------------------------------------------
+
+    private val uploads by lazy { EnhancedFileUploadApi(httpClient, config) }
+
+    /**
+     * Notion picks the embed's renderer from the uploaded file's extension, so an HTML payload
+     * saved under any other name silently becomes a plain file attachment.
+     */
+    private fun String.withHtmlExtension(): String =
+        if (endsWith(".html", ignoreCase = true) || endsWith(".htm", ignoreCase = true)) this else "$this.html"
+
+    /**
+     * Uploads a file and appends it to a page or block as an image block, in one call.
+     *
+     * Replaces the manual create → send → wait → attach dance:
+     * ```kotlin
+     * notion.blocks.appendImage(pageId, File("diagram.png"), caption = "…")
+     * ```
+     *
+     * @param blockId The ID of the parent block or page
+     * @param source The file to upload
+     * @param caption Optional caption text
+     * @param position Optional insertion position; appends at the end when omitted
+     * @param options Upload options — content type override, progress callback, validation
+     * @return BlockList containing the created block
+     * @throws it.saabel.kotlinnotionclient.models.files.FileUploadError if the upload fails
+     * @throws NotionException.ApiError for API-related errors (4xx, 5xx responses)
+     */
+    suspend fun appendImage(
+        blockId: String,
+        source: FileSource,
+        caption: String? = null,
+        position: BlockAppendPosition? = null,
+        options: FileUploadOptions = FileUploadOptions(),
+    ): BlockList {
+        val upload = uploads.uploadAndAwait(source, options)
+        return appendChildren(blockId, position) { imageFromUpload(upload, caption) }
+    }
+
+    /** Uploads [file] and appends it as an image block. See [appendImage]. */
+    suspend fun appendImage(
+        blockId: String,
+        file: File,
+        caption: String? = null,
+        position: BlockAppendPosition? = null,
+        options: FileUploadOptions = FileUploadOptions(),
+    ): BlockList = appendImage(blockId, file.asFileSource(), caption, position, options)
+
+    /** Uploads the file at [path] and appends it as an image block. See [appendImage]. */
+    suspend fun appendImage(
+        blockId: String,
+        path: Path,
+        caption: String? = null,
+        position: BlockAppendPosition? = null,
+        options: FileUploadOptions = FileUploadOptions(),
+    ): BlockList = appendImage(blockId, path.asFileSource(), caption, position, options)
+
+    /**
+     * Uploads a file and appends it to a page or block as a video block, in one call.
+     *
+     * Replaces the manual create → send → wait → attach dance:
+     * ```kotlin
+     * notion.blocks.appendVideo(pageId, File("demo.mp4"), caption = "…")
+     * ```
+     *
+     * @param blockId The ID of the parent block or page
+     * @param source The file to upload
+     * @param caption Optional caption text
+     * @param position Optional insertion position; appends at the end when omitted
+     * @param options Upload options — content type override, progress callback, validation
+     * @return BlockList containing the created block
+     * @throws it.saabel.kotlinnotionclient.models.files.FileUploadError if the upload fails
+     * @throws NotionException.ApiError for API-related errors (4xx, 5xx responses)
+     */
+    suspend fun appendVideo(
+        blockId: String,
+        source: FileSource,
+        caption: String? = null,
+        position: BlockAppendPosition? = null,
+        options: FileUploadOptions = FileUploadOptions(),
+    ): BlockList {
+        val upload = uploads.uploadAndAwait(source, options)
+        return appendChildren(blockId, position) { videoFromUpload(upload, caption) }
+    }
+
+    /** Uploads [file] and appends it as a video block. See [appendVideo]. */
+    suspend fun appendVideo(
+        blockId: String,
+        file: File,
+        caption: String? = null,
+        position: BlockAppendPosition? = null,
+        options: FileUploadOptions = FileUploadOptions(),
+    ): BlockList = appendVideo(blockId, file.asFileSource(), caption, position, options)
+
+    /** Uploads the file at [path] and appends it as a video block. See [appendVideo]. */
+    suspend fun appendVideo(
+        blockId: String,
+        path: Path,
+        caption: String? = null,
+        position: BlockAppendPosition? = null,
+        options: FileUploadOptions = FileUploadOptions(),
+    ): BlockList = appendVideo(blockId, path.asFileSource(), caption, position, options)
+
+    /**
+     * Uploads a file and appends it to a page or block as an audio block, in one call.
+     *
+     * Replaces the manual create → send → wait → attach dance:
+     * ```kotlin
+     * notion.blocks.appendAudio(pageId, File("narration.mp3"), caption = "…")
+     * ```
+     *
+     * @param blockId The ID of the parent block or page
+     * @param source The file to upload
+     * @param caption Optional caption text
+     * @param position Optional insertion position; appends at the end when omitted
+     * @param options Upload options — content type override, progress callback, validation
+     * @return BlockList containing the created block
+     * @throws it.saabel.kotlinnotionclient.models.files.FileUploadError if the upload fails
+     * @throws NotionException.ApiError for API-related errors (4xx, 5xx responses)
+     */
+    suspend fun appendAudio(
+        blockId: String,
+        source: FileSource,
+        caption: String? = null,
+        position: BlockAppendPosition? = null,
+        options: FileUploadOptions = FileUploadOptions(),
+    ): BlockList {
+        val upload = uploads.uploadAndAwait(source, options)
+        return appendChildren(blockId, position) { audioFromUpload(upload, caption) }
+    }
+
+    /** Uploads [file] and appends it as an audio block. See [appendAudio]. */
+    suspend fun appendAudio(
+        blockId: String,
+        file: File,
+        caption: String? = null,
+        position: BlockAppendPosition? = null,
+        options: FileUploadOptions = FileUploadOptions(),
+    ): BlockList = appendAudio(blockId, file.asFileSource(), caption, position, options)
+
+    /** Uploads the file at [path] and appends it as an audio block. See [appendAudio]. */
+    suspend fun appendAudio(
+        blockId: String,
+        path: Path,
+        caption: String? = null,
+        position: BlockAppendPosition? = null,
+        options: FileUploadOptions = FileUploadOptions(),
+    ): BlockList = appendAudio(blockId, path.asFileSource(), caption, position, options)
+
+    /**
+     * Uploads a file and appends it to a page or block as a PDF block, in one call.
+     *
+     * Replaces the manual create → send → wait → attach dance:
+     * ```kotlin
+     * notion.blocks.appendPdf(pageId, File("report.pdf"), caption = "…")
+     * ```
+     *
+     * @param blockId The ID of the parent block or page
+     * @param source The file to upload
+     * @param caption Optional caption text
+     * @param position Optional insertion position; appends at the end when omitted
+     * @param options Upload options — content type override, progress callback, validation
+     * @return BlockList containing the created block
+     * @throws it.saabel.kotlinnotionclient.models.files.FileUploadError if the upload fails
+     * @throws NotionException.ApiError for API-related errors (4xx, 5xx responses)
+     */
+    suspend fun appendPdf(
+        blockId: String,
+        source: FileSource,
+        caption: String? = null,
+        position: BlockAppendPosition? = null,
+        options: FileUploadOptions = FileUploadOptions(),
+    ): BlockList {
+        val upload = uploads.uploadAndAwait(source, options)
+        return appendChildren(blockId, position) { pdfFromUpload(upload, caption) }
+    }
+
+    /** Uploads [file] and appends it as a PDF block. See [appendPdf]. */
+    suspend fun appendPdf(
+        blockId: String,
+        file: File,
+        caption: String? = null,
+        position: BlockAppendPosition? = null,
+        options: FileUploadOptions = FileUploadOptions(),
+    ): BlockList = appendPdf(blockId, file.asFileSource(), caption, position, options)
+
+    /** Uploads the file at [path] and appends it as a PDF block. See [appendPdf]. */
+    suspend fun appendPdf(
+        blockId: String,
+        path: Path,
+        caption: String? = null,
+        position: BlockAppendPosition? = null,
+        options: FileUploadOptions = FileUploadOptions(),
+    ): BlockList = appendPdf(blockId, path.asFileSource(), caption, position, options)
+
+    /**
+     * Uploads a file and appends it as a file block, in one call.
+     *
+     * ```kotlin
+     * notion.blocks.appendFile(pageId, Paths.get("report.pdf"))
+     * ```
+     *
+     * @param blockId The ID of the parent block or page
+     * @param source The file to upload
+     * @param name Optional display name; defaults to the upload's own filename
+     * @param caption Optional caption text
+     * @param position Optional insertion position; appends at the end when omitted
+     * @param options Upload options — content type override, progress callback, validation
+     * @return BlockList containing the created block
+     * @throws it.saabel.kotlinnotionclient.models.files.FileUploadError if the upload fails
+     * @throws NotionException.ApiError for API-related errors (4xx, 5xx responses)
+     */
+    suspend fun appendFile(
+        blockId: String,
+        source: FileSource,
+        name: String? = null,
+        caption: String? = null,
+        position: BlockAppendPosition? = null,
+        options: FileUploadOptions = FileUploadOptions(),
+    ): BlockList {
+        val upload = uploads.uploadAndAwait(source, options)
+        return appendChildren(blockId, position) { fileFromUpload(upload, name, caption) }
+    }
+
+    /** Uploads [file] and appends it as a file block. See [appendFile]. */
+    suspend fun appendFile(
+        blockId: String,
+        file: File,
+        name: String? = null,
+        caption: String? = null,
+        position: BlockAppendPosition? = null,
+        options: FileUploadOptions = FileUploadOptions(),
+    ): BlockList = appendFile(blockId, file.asFileSource(), name, caption, position, options)
+
+    /** Uploads the file at [path] and appends it as a file block. See [appendFile]. */
+    suspend fun appendFile(
+        blockId: String,
+        path: Path,
+        name: String? = null,
+        caption: String? = null,
+        position: BlockAppendPosition? = null,
+        options: FileUploadOptions = FileUploadOptions(),
+    ): BlockList = appendFile(blockId, path.asFileSource(), name, caption, position, options)
+
+    /**
+     * Uploads raw HTML and appends it as an HTML block, in one call.
+     *
+     * Notion has no `html` block type: an HTML block is an `embed` whose `file_upload` points at
+     * an uploaded `.html` file (Jul 3 2026 changelog). Nothing about that is guessable from the
+     * API surface, which is exactly why this helper exists:
+     * ```kotlin
+     * notion.blocks.appendHtml(pageId, "<h1>Report</h1><p>…</p>")
+     * ```
+     *
+     * @param blockId The ID of the parent block or page
+     * @param html The HTML document or fragment to upload
+     * @param filename Name for the uploaded file; `.html` is appended unless the name already
+     *   ends in `.html` or `.htm`, because Notion decides how to render the embed from the
+     *   file's extension
+     * @param position Optional insertion position; appends at the end when omitted
+     * @param options Upload options — content type override, progress callback, validation
+     * @return BlockList containing the created block
+     * @throws it.saabel.kotlinnotionclient.models.files.FileUploadError if the upload fails
+     * @throws NotionException.ApiError for API-related errors (4xx, 5xx responses)
+     */
+    suspend fun appendHtml(
+        blockId: String,
+        html: String,
+        filename: String = "embed.html",
+        position: BlockAppendPosition? = null,
+        options: FileUploadOptions = FileUploadOptions(),
+    ): BlockList =
+        appendHtml(
+            blockId = blockId,
+            source = html.toByteArray().asFileSource(filename.withHtmlExtension()),
+            position = position,
+            options = options,
+        )
+
+    /**
+     * Uploads an HTML file and appends it as an HTML block. See [appendHtml].
+     *
+     * @param blockId The ID of the parent block or page
+     * @param source The `.html` file to upload
+     * @param position Optional insertion position; appends at the end when omitted
+     * @param options Upload options — content type override, progress callback, validation
+     * @return BlockList containing the created block
+     */
+    suspend fun appendHtml(
+        blockId: String,
+        source: FileSource,
+        position: BlockAppendPosition? = null,
+        options: FileUploadOptions = FileUploadOptions(),
+    ): BlockList {
+        val upload = uploads.uploadAndAwait(source, options)
+        return appendChildren(blockId, position) { embedFromUpload(upload) }
+    }
+
+    /** Uploads the HTML file [file] and appends it as an HTML block. See [appendHtml]. */
+    suspend fun appendHtml(
+        blockId: String,
+        file: File,
+        position: BlockAppendPosition? = null,
+        options: FileUploadOptions = FileUploadOptions(),
+    ): BlockList = appendHtml(blockId, file.asFileSource(), position, options)
+
+    /** Uploads the HTML file at [path] and appends it as an HTML block. See [appendHtml]. */
+    suspend fun appendHtml(
+        blockId: String,
+        path: Path,
+        position: BlockAppendPosition? = null,
+        options: FileUploadOptions = FileUploadOptions(),
+    ): BlockList = appendHtml(blockId, path.asFileSource(), position, options)
 }
 
 /**

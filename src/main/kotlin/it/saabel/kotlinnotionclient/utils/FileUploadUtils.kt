@@ -369,3 +369,21 @@ sealed class FileSource {
         override fun openStream(): InputStream = streamProvider()
     }
 }
+
+/**
+ * Wraps this file as a [FileSource] for the upload and upload-and-attach APIs.
+ */
+fun File.asFileSource(): FileSource = FileSource.FromFile(this)
+
+/**
+ * Wraps this path as a [FileSource] for the upload and upload-and-attach APIs.
+ */
+fun Path.asFileSource(): FileSource = FileSource.FromPath(this)
+
+/**
+ * Wraps these bytes as a [FileSource] under the given [filename].
+ *
+ * The filename matters: Notion derives the content type and the attachment's display name from
+ * its extension, so `"report.pdf"` and `"report"` are not interchangeable.
+ */
+fun ByteArray.asFileSource(filename: String): FileSource = FileSource.FromByteArray(filename, this)
