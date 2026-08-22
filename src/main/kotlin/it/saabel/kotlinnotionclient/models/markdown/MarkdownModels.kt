@@ -14,7 +14,11 @@ import kotlinx.serialization.Serializable
  * @property truncated `true` when the page was large enough that some subtrees could not be loaded
  * @property unknownBlockIds Up to 50 root IDs of the omitted subtrees
  * @property unknownBlockCount Total number of omitted subtree roots, which may exceed the number of
- *   IDs in [unknownBlockIds]. Defaults to `0` when the API omits the field.
+ *   IDs in [unknownBlockIds]. Defaults to `0` when the API omits the field. **Observed live
+ *   (issue #61): the REST response for a non-truncated page carries `truncated` and
+ *   `unknown_block_ids` but NOT this field** — it may be sent only on truncated responses,
+ *   or be MCP-only (the changelog frames it as an MCP `notion-fetch` change). Kept as a
+ *   defensive default-0 field.
  */
 @Serializable
 data class PageMarkdownResponse(

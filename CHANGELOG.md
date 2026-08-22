@@ -208,6 +208,29 @@ Eleven changelog-driven issues landed together, bringing the client up to date w
 
 ### Added
 
+- **HTML blocks via embed + file upload** (Jul 3 2026 Notion changelog):
+  `EmbedRequestContent` now accepts a `fileUpload` reference as an alternative to `url`
+  (exactly one required), with a new `PageContentBuilder.embedFromUpload(fileUploadId)`
+  DSL method. Verified live: `{"embed": {"file_upload": {"id": ...}}}` is accepted with
+  no type discriminator, and the created block reads back as an `embed` whose `url` is a
+  time-limited signed S3 URL. `EmbedContent.url` is now nullable (with defensive
+  `file`/`file_upload` fields) to match the undocumented read shape.
+
+- **Live-API verification pass (#61)** over the August 2026 catch-up features: async
+  tasks (real 202s observed on page create and markdown patch; async page-create
+  `result` is a full `page` object), status option groups (assignment round-trips on
+  create and update; omitted group preserves; group-free options default to "To-do"),
+  the windowed >10k drain (11,000 rows drained past the cap on `created_time`;
+  `unique_id` property sorts confirmed), and formula writes (`prop()` expressions stored
+  verbatim, readable syntax returned, formulas compute). New specs:
+  `AsyncTasksIntegrationTest`, `StatusGroupsIntegrationTest`,
+  `WindowedDrainIntegrationTest`, `FormulaWritesIntegrationTest`,
+  `HtmlEmbedIntegrationTest`, `MarkdownUnknownBlockCountIntegrationTest`.
+
+- **`.env` support for integration tests**: the `integrationTest` Gradle task now sets
+  `NOTION_RUN_INTEGRATION_TESTS=true` itself and forwards credentials from a gitignored
+  `.env` file (see `.env.example`), so IDE runs need no run-configuration setup.
+
 - **`property(name, PagePropertyValue)`** on the page-properties builder: a deliberate,
   documented escape hatch that sets a raw pre-built value, bypassing validation — for
   reproducing Notion's raw behaviour (e.g. in tests) without giving up the guard rails
@@ -254,6 +277,20 @@ existing code still compiles and still returns exactly what it returned before.
 `localDateTimeNaive`'s behaviour is deliberately kept: reading wall-clock digits is a
 legitimate need, not a mistake. Only the name changed, so that choosing it reads as a
 decision rather than an implementation detail.
+
+### Fixed
+
+- **`UniqueIdValue.number` is now nullable.** Observed live: while Notion asynchronously
+  backfills IDs after a `unique_id` property is added to an existing data source, rows
+  carry `{"prefix": null, "number": null}` — previously this crashed deserialization of
+  the entire query page. Also documented on `RowIterationKey.UniqueId`: rows still
+  awaiting backfill are silently excluded from a `unique_id`-keyed drain by the
+  server-side window filter.
+
+- **`unknown_block_count` corrected to inferred-and-unobserved.** The raw REST
+  page-markdown response carries `truncated` and `unknown_block_ids` but no
+  `unknown_block_count` (verified live on a non-truncated page); the field stays as a
+  defensive default-0 with amended KDoc.
 
 ### Changed
 
