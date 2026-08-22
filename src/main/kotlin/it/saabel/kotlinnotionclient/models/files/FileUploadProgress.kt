@@ -89,6 +89,28 @@ sealed class FileUploadResult {
 }
 
 /**
+ * Unwraps a [FileUploadResult], throwing on failure.
+ *
+ * [FileUploadResult] deliberately swallows exceptions so that advanced callers can inspect a
+ * partial upload; every other API in this client throws [FileUploadError] (an [Exception])
+ * instead. This bridges the two: use it when an upload is one step of a larger operation and a
+ * failure should abort it, the way a failed page create would.
+ *
+ * ```kotlin
+ * val upload = notion.enhancedFileUploads.uploadFile(File("report.pdf")).getOrThrow()
+ * notion.blocks.appendChildren(pageId) { fileFromUpload(upload) }
+ * ```
+ *
+ * @return the completed [FileUpload]
+ * @throws FileUploadError the error recorded on [FileUploadResult.Failure]
+ */
+fun FileUploadResult.getOrThrow(): FileUpload =
+    when (this) {
+        is FileUploadResult.Success -> fileUpload
+        is FileUploadResult.Failure -> throw error
+    }
+
+/**
  * Specific errors that can occur during file upload.
  */
 sealed class FileUploadError : Exception {
