@@ -27,7 +27,7 @@ annotation class CommentDslMarker
  * ## Basic Comment Example:
  * ```kotlin
  * val request = commentRequest {
- *     parent.pageId("12345678-1234-1234-1234-123456789abc")
+ *     parent.page("12345678-1234-1234-1234-123456789abc")
  *     content {
  *         text("This is a simple comment.")
  *     }
@@ -37,7 +37,7 @@ annotation class CommentDslMarker
  * ## Comment with Formatting:
  * ```kotlin
  * val request = commentRequest {
- *     parent.blockId("87654321-4321-4321-4321-210987654321")
+ *     parent.block("87654321-4321-4321-4321-210987654321")
  *     content {
  *         text("This comment has ")
  *         bold("bold text")
@@ -52,7 +52,7 @@ annotation class CommentDslMarker
  * ## Comment with Custom Display Name:
  * ```kotlin
  * val request = commentRequest {
- *     parent.pageId("12345678-1234-1234-1234-123456789abc")
+ *     parent.page("12345678-1234-1234-1234-123456789abc")
  *     content {
  *         text("This comment has a custom display name.")
  *     }
@@ -79,6 +79,18 @@ class CreateCommentRequestBuilder {
     val parent = ParentBuilder()
 
     /**
+     * Configures the parent in a lambda, as an alternative to the `parent.xxx()` receiver form.
+     *
+     * Both forms drive the same builder and are last-call-wins; see
+     * [docs/dsl-conventions.md](https://github.com/jsaabel/kotlin-notion-client/blob/main/docs/dsl-conventions.md).
+     *
+     * @param block Configuration block applied to the parent builder
+     */
+    fun parent(block: ParentBuilder.() -> Unit) {
+        parent.block()
+    }
+
+    /**
      * Inner builder class for specifying the parent of the comment.
      * Comments can only be parented by pages or blocks.
      */
@@ -89,17 +101,8 @@ class CreateCommentRequestBuilder {
          *
          * @param pageId The ID of the page to comment on
          */
-        fun pageId(pageId: String) {
-            this@CreateCommentRequestBuilder.parentValue = Parent.PageParent(pageId = pageId)
-        }
-
-        /**
-         * Sets the parent to a page (alias for pageId for consistency with other DSLs).
-         *
-         * @param pageId The ID of the page to comment on
-         */
         fun page(pageId: String) {
-            pageId(pageId)
+            this@CreateCommentRequestBuilder.parentValue = Parent.PageParent(pageId = pageId)
         }
 
         /**
@@ -107,17 +110,34 @@ class CreateCommentRequestBuilder {
          *
          * @param blockId The ID of the block to comment on
          */
-        fun blockId(blockId: String) {
+        fun block(blockId: String) {
             this@CreateCommentRequestBuilder.parentValue = Parent.BlockParent(blockId = blockId)
         }
 
         /**
-         * Sets the parent to a block (alias for blockId for consistency with other DSLs).
+         * Sets the parent to a page.
+         *
+         * @param pageId The ID of the page to comment on
+         */
+        @Deprecated(
+            message = "Parent accessors are named after the object, not its id, in every DSL; use page(id).",
+            replaceWith = ReplaceWith("page(pageId)"),
+        )
+        fun pageId(pageId: String) {
+            page(pageId)
+        }
+
+        /**
+         * Sets the parent to a block.
          *
          * @param blockId The ID of the block to comment on
          */
-        fun block(blockId: String) {
-            blockId(blockId)
+        @Deprecated(
+            message = "Parent accessors are named after the object, not its id, in every DSL; use block(id).",
+            replaceWith = ReplaceWith("block(blockId)"),
+        )
+        fun blockId(blockId: String) {
+            block(blockId)
         }
     }
 
@@ -220,7 +240,7 @@ class CreateCommentRequestBuilder {
      *
      * ```kotlin
      * notion.comments.create {
-     *     parent { pageId(pageId) }
+     *     parent.page(pageId)
      *     content { text("Trace attached") }
      *     attachment(File("trace.txt"))
      * }

@@ -30,7 +30,7 @@ class CreateCommentRequestBuilderTest :
                 it("should create a minimal comment request with page parent") {
                     val request =
                         createCommentRequest {
-                            parent.pageId("test-page-id")
+                            parent.page("test-page-id")
                             content {
                                 text("Hello world")
                             }
@@ -47,7 +47,7 @@ class CreateCommentRequestBuilderTest :
                 it("should create a minimal comment request with block parent") {
                     val request =
                         createCommentRequest {
-                            parent.blockId("test-block-id")
+                            parent.block("test-block-id")
                             content {
                                 text("Comment on block")
                             }
@@ -63,7 +63,7 @@ class CreateCommentRequestBuilderTest :
                 it("should support page parent configuration") {
                     val request =
                         createCommentRequest {
-                            parent.pageId("12345678-1234-1234-1234-123456789abc")
+                            parent.page("12345678-1234-1234-1234-123456789abc")
                             content {
                                 text("Test")
                             }
@@ -77,7 +77,7 @@ class CreateCommentRequestBuilderTest :
                 it("should support block parent configuration") {
                     val request =
                         createCommentRequest {
-                            parent.blockId("87654321-4321-4321-4321-210987654321")
+                            parent.block("87654321-4321-4321-4321-210987654321")
                             content {
                                 text("Test")
                             }
@@ -91,8 +91,8 @@ class CreateCommentRequestBuilderTest :
                 it("should overwrite parent if set multiple times") {
                     val request =
                         createCommentRequest {
-                            parent.pageId("page-id")
-                            parent.blockId("block-id") // This should overwrite the page
+                            parent.page("page-id")
+                            parent.block("block-id") // This should overwrite the page
                             content {
                                 text("Test")
                             }
@@ -136,7 +136,7 @@ class CreateCommentRequestBuilderTest :
                 it("should support simple text content") {
                     val request =
                         createCommentRequest {
-                            parent.pageId("test-page-id")
+                            parent.page("test-page-id")
                             content {
                                 text("Simple comment text")
                             }
@@ -151,7 +151,7 @@ class CreateCommentRequestBuilderTest :
                 it("should support richText() alias for content()") {
                     val request =
                         createCommentRequest {
-                            parent.pageId("test-page-id")
+                            parent.page("test-page-id")
                             richText {
                                 text("Using richText alias")
                                 bold("formatted text")
@@ -167,7 +167,7 @@ class CreateCommentRequestBuilderTest :
                 it("should support formatted text content") {
                     val request =
                         createCommentRequest {
-                            parent.pageId("test-page-id")
+                            parent.page("test-page-id")
                             content {
                                 text("This comment has ")
                                 bold("bold text")
@@ -190,7 +190,7 @@ class CreateCommentRequestBuilderTest :
                 it("should support complex rich text with links and mentions") {
                     val request =
                         createCommentRequest {
-                            parent.pageId("test-page-id")
+                            parent.page("test-page-id")
                             content {
                                 text("Check out ")
                                 link("https://notion.so", "Notion")
@@ -210,7 +210,7 @@ class CreateCommentRequestBuilderTest :
                 it("should support all types of mentions") {
                     val request =
                         createCommentRequest {
-                            parent.pageId("test-page-id")
+                            parent.page("test-page-id")
                             content {
                                 text("Mentions: ")
                                 userMention("user-123")
@@ -247,7 +247,7 @@ class CreateCommentRequestBuilderTest :
                 it("should support discussion ID") {
                     val request =
                         createCommentRequest {
-                            parent.pageId("test-page-id")
+                            parent.page("test-page-id")
                             content {
                                 text("Reply to discussion")
                             }
@@ -260,7 +260,7 @@ class CreateCommentRequestBuilderTest :
                 it("should support custom display name") {
                     val request =
                         createCommentRequest {
-                            parent.pageId("test-page-id")
+                            parent.page("test-page-id")
                             content {
                                 text("Comment from bot")
                             }
@@ -276,7 +276,7 @@ class CreateCommentRequestBuilderTest :
                 it("should support single attachment") {
                     val request =
                         createCommentRequest {
-                            parent.pageId("test-page-id")
+                            parent.page("test-page-id")
                             content {
                                 text("Comment with attachment")
                             }
@@ -299,7 +299,7 @@ class CreateCommentRequestBuilderTest :
 
                     val request =
                         createCommentRequest {
-                            parent.pageId("test-page-id")
+                            parent.page("test-page-id")
                             content {
                                 text("Comment with multiple attachments")
                             }
@@ -332,7 +332,7 @@ class CreateCommentRequestBuilderTest :
                     val exception =
                         shouldThrow<IllegalStateException> {
                             createCommentRequest {
-                                parent.pageId("test-page-id")
+                                parent.page("test-page-id")
                             }
                         }
 
@@ -343,7 +343,7 @@ class CreateCommentRequestBuilderTest :
                     val exception =
                         shouldThrow<IllegalStateException> {
                             createCommentRequest {
-                                parent.pageId("test-page-id")
+                                parent.page("test-page-id")
                                 content {
                                     // Empty content block
                                 }
@@ -357,7 +357,7 @@ class CreateCommentRequestBuilderTest :
                     val exception =
                         shouldThrow<IllegalStateException> {
                             createCommentRequest {
-                                parent.pageId("test-page-id")
+                                parent.page("test-page-id")
                                 content { text("hello") }
                                 markdown("**hello**")
                             }
@@ -378,7 +378,7 @@ class CreateCommentRequestBuilderTest :
                     val exception =
                         shouldThrow<IllegalArgumentException> {
                             createCommentRequest {
-                                parent.pageId("test-page-id")
+                                parent.page("test-page-id")
                                 content {
                                     text("Test")
                                 }
@@ -394,7 +394,7 @@ class CreateCommentRequestBuilderTest :
                     val exception =
                         shouldThrow<IllegalArgumentException> {
                             createCommentRequest {
-                                parent.pageId("test-page-id")
+                                parent.page("test-page-id")
                                 content {
                                     text("Test")
                                 }
@@ -413,7 +413,7 @@ class CreateCommentRequestBuilderTest :
                 it("should create a request with markdown content") {
                     val request =
                         createCommentRequest {
-                            parent.pageId("test-page-id")
+                            parent.page("test-page-id")
                             markdown("**bold** and _italic_ text")
                         }
 
@@ -424,7 +424,7 @@ class CreateCommentRequestBuilderTest :
                 it("should create a markdown request with all optional fields") {
                     val request =
                         createCommentRequest {
-                            parent.pageId("test-page-id")
+                            parent.page("test-page-id")
                             markdown("Hello from markdown!")
                             discussionId("discussion-123")
                             displayName("Bot Name")
@@ -442,7 +442,7 @@ class CreateCommentRequestBuilderTest :
                 it("should create complex comment with all features") {
                     val request =
                         createCommentRequest {
-                            parent.blockId("block-123")
+                            parent.block("block-123")
                             content {
                                 text("This is a comprehensive comment with ")
                                 bold("bold")
@@ -481,7 +481,7 @@ class CreateCommentRequestBuilderTest :
                 it("should allow building multiple requests independently") {
                     val request1 =
                         createCommentRequest {
-                            parent.pageId("page-1")
+                            parent.page("page-1")
                             content {
                                 text("First comment")
                             }
@@ -489,7 +489,7 @@ class CreateCommentRequestBuilderTest :
 
                     val request2 =
                         createCommentRequest {
-                            parent.blockId("block-2")
+                            parent.block("block-2")
                             content {
                                 bold("Second comment")
                             }

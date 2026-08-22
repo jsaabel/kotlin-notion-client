@@ -27,7 +27,7 @@ notion.pages.attachFiles(pageId, "Attachments", File("a.pdf"), File("b.pdf"))
 
 // Comments
 notion.comments.create(File("trace.txt")) {
-    parent.pageId(pageId)
+    parent.page(pageId)
     content { text("Stack trace attached") }
 }
 ```
@@ -171,7 +171,7 @@ same call as the comment:
 
 ```kotlin
 notion.comments.create {
-    parent.pageId(pageId)
+    parent.page(pageId)
     content { text("Trace attached") }
     attachment(File("trace.txt"))
 }
@@ -183,7 +183,7 @@ builder itself are kept and counted first.
 
 ```kotlin
 notion.comments.create(File("before.png"), File("after.png")) {
-    parent.pageId(pageId)
+    parent.page(pageId)
     content { text("Screenshots attached") }
 }
 ```

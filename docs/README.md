@@ -19,6 +19,7 @@
 - **[Custom Emojis](custom-emojis.md)** - List custom emojis and native icons
 
 ### Features
+- **[DSL Conventions](dsl-conventions.md)** - How the request builders are shaped, and why
 - **[Pagination](pagination.md)** - Handle paginated results efficiently
 - **[Rich Text DSL](rich-text-dsl.md)** - Format text with mentions, links, and more
 - **[File Uploads](file-uploads.md)** - Upload and manage files and images

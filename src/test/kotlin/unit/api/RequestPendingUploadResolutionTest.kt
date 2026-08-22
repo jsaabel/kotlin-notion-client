@@ -87,7 +87,7 @@ class RequestPendingUploadResolutionTest :
             test("a comment attachment records the local file instead of uploading it") {
                 val request =
                     createCommentRequest {
-                        parent.pageId("page-id")
+                        parent.page("page-id")
                         content { text("Trace attached") }
                         attachment(bytes("trace.txt"))
                     }
@@ -161,7 +161,7 @@ class RequestPendingUploadResolutionTest :
             test("serializing an unresolved comment attachment throws with an actionable message") {
                 val request =
                     createCommentRequest {
-                        parent.pageId("page-id")
+                        parent.page("page-id")
                         content { text("Trace attached") }
                         attachment(bytes("trace.txt"))
                     }
@@ -403,7 +403,7 @@ class RequestPendingUploadResolutionTest :
 
                 try {
                     CommentsApi(client, config).create {
-                        parent.pageId("page-id")
+                        parent.page("page-id")
                         content { text("Trace attached") }
                         attachment("existing-upload-id")
                         attachment(bytes("trace.txt"))
@@ -431,7 +431,7 @@ class RequestPendingUploadResolutionTest :
                 val error =
                     shouldThrow<IllegalArgumentException> {
                         createCommentRequest {
-                            parent.pageId("page-id")
+                            parent.page("page-id")
                             content { text("Too many") }
                             attachment(bytes("one.txt"))
                             attachment(bytes("two.txt"))
@@ -493,7 +493,7 @@ class RequestPendingUploadResolutionTest :
                 try {
                     shouldThrow<FileUploadError> {
                         CommentsApi(client, config).create {
-                            parent.pageId("page-id")
+                            parent.page("page-id")
                             content { text("Trace attached") }
                             attachment(bytes("trace.txt"))
                         }

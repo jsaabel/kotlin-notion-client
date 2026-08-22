@@ -97,7 +97,7 @@ sealed class Icon {
     }
 
     /**
-     * A local file recorded by `icon { upload(File(…)) }`, still waiting to be uploaded.
+     * A local file recorded by `icon.upload(File(…))`, still waiting to be uploaded.
      *
      * The client uploads it and swaps in the equivalent [FileUpload] before the request that
      * carries it is serialized — see `docs/adr/0001-deferred-file-upload-resolution.md`.
@@ -158,7 +158,7 @@ internal object IconPendingUploadSerializer : PendingUploadRefusingSerializer<Ic
     filename = { it.source.filename },
     remedy =
         "pass the request through a NotionClient method (pages.create, pages.update, " +
-            "databases.create, dataSources.update), or upload first and use icon { upload(id) }",
+            "databases.create, dataSources.update), or upload first and use icon.upload(id)",
 )
 
 /**

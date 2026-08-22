@@ -98,6 +98,64 @@ could not see any of this are recorded in
 [ADR 0002](docs/adr/0002-explicit-null-payloads.md). The client's JSON configuration now lives
 in `serialization/NotionJson` so tests can assert on the exact bytes a request produces.
 
+### One nesting rule, one parent convention, and twenty snippets that now compile (#81)
+
+The documented form of the DSL did not compile. Twenty snippets across the repo wrote
+`parent { … }` / `icon { … }` / `cover { … }` for builders exposed only as receiver properties —
+six user-facing (`README.md`, `QUICKSTART.md`, `docs/notebooks.md`, `docs/rich-text-dsl.md`,
+`docs/data-sources.md`), fourteen in KDoc, and two of those fourteen were *runtime error
+messages* telling a user to write `icon { upload(id) }`. Nothing breaks here; everything is
+additive or deprecated-and-kept.
+
+#### Added
+
+- **Every single-value nested builder now accepts a lambda as well as the receiver form.**
+  `parent { dataSource(id) }` and `parent.dataSource(id)` both compile and are last-call-wins
+  against each other. Covers `parent`/`icon`/`cover`/`template`/`position` on
+  `CreatePageRequestBuilder`, `icon`/`cover`/`template` on `UpdatePageRequestBuilder`,
+  `parent`/`icon`/`cover` on `DatabaseRequestBuilder`, `icon` on
+  `UpdateDataSourceRequestBuilder`, and `parent` on `CreateCommentRequestBuilder`,
+  `CreateDataSourceRequestBuilder` and `CreateViewRequestBuilder`.
+- **`parent` builders on the two surfaces that lacked one.** `dataSources.create` gains
+  `parent.database(id)`; `views.create` gains `parent.database(id, position)`,
+  `parent.dashboard(id, placement)` and `parent.newDatabase(pageId, afterBlockId)`.
+- **[`docs/dsl-conventions.md`](docs/dsl-conventions.md)** — the rule, written down: collection-
+  shaped nesting takes a lambda, single-value nesting supports both (docs teach the receiver
+  form), parents are always `parent.<object>(id)`.
+- **`DocumentedSnippetsTest`** compiles the documented forms as real code, so a builder change
+  that would falsify a README snippet fails the build instead of the reader.
+
+#### Deprecated
+
+All still compile and behave identically, all carry `ReplaceWith`, and all are scheduled for
+removal at 1.0.
+
+| Deprecated | Use |
+| --- | --- |
+| `parent.pageId(id)` / `parent.blockId(id)` (comments) | `parent.page(id)` / `parent.block(id)` |
+| `databaseId(id)` (data sources) | `parent.database(id)` |
+| `database(id, position)` (views) | `parent.database(id, position)` |
+| `dashboard(id, placement)` (views) | `parent.dashboard(id, placement)` |
+| `createDatabase(pageId, afterBlockId)` (views) | `parent.newDatabase(pageId, afterBlockId)` |
+
+`views.create` keeps `dataSourceId(id)` flat on purpose — it names the data source a view
+*reads from*, not what the view hangs off, and a `CreateViewRequest` carries both independently.
+
+#### Fixed (documentation)
+
+- All twenty snippets rewritten to the documented receiver form. Two were stale in other ways as
+  well: `dataSourceId(…)` was never a method on the page parent builder (it is `dataSource`),
+  and `docs/notebooks.md` still hung a page off a database, which has not been possible since
+  API version 2025-09-03.
+- `docs/rich-text-dsl.md`'s `blocks.append` example used `paragraph { richText { … } }` and a
+  `callout { icon { emoji = "⚠️" } }` — neither matched the block builders. Both corrected.
+- `docs/comments.md` listed `parent.pageId` and `parent.page` as "equivalent"; it now names the
+  canonical form and points at the deprecation.
+
+The decision, including why deprecate-and-keep rather than a straight rename on a pre-1.0
+surface, is recorded in
+[ADR 0003](docs/adr/0003-dsl-nesting-and-parent-addressing.md).
+
 ### ⚠️ Breaking Changes — `FileUpload` now matches the documented shape (#68)
 
 Three model-layer bugs meant valid, documented API responses failed to deserialize. Fixing

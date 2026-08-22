@@ -32,7 +32,7 @@ import java.nio.file.Path
  * Example:
  * ```kotlin
  * val request = createDataSourceRequest {
- *     databaseId("existing-database-id")
+ *     parent.database("existing-database-id")
  *     title("Projects Data Source")
  *     properties {
  *         title("Project Name")
@@ -52,10 +52,48 @@ class CreateDataSourceRequestBuilder {
     private val properties = mutableMapOf<String, CreateDatabaseProperty>()
 
     /**
+     * Builder for parent configuration.
+     */
+    val parent = ParentBuilder()
+
+    /**
+     * Configures the parent in a lambda, as an alternative to the `parent.xxx()` receiver form.
+     *
+     * Both forms drive the same builder and are last-call-wins; see
+     * [docs/dsl-conventions.md](https://github.com/jsaabel/kotlin-notion-client/blob/main/docs/dsl-conventions.md).
+     *
+     * @param block Configuration block applied to the parent builder
+     */
+    fun parent(block: ParentBuilder.() -> Unit) {
+        parent.block()
+    }
+
+    /**
+     * Builder for parent configuration.
+     *
+     * A data source always hangs off a database container.
+     */
+    @DataSourceRequestDslMarker
+    inner class ParentBuilder {
+        /**
+         * Sets the parent database this data source is added to.
+         *
+         * @param databaseId The database container ID
+         */
+        fun database(databaseId: String) {
+            this@CreateDataSourceRequestBuilder.databaseIdValue = databaseId
+        }
+    }
+
+    /**
      * Sets the database ID to add this data source to.
      *
      * @param id The database container ID
      */
+    @Deprecated(
+        message = "Parents are addressed through the parent builder in every DSL; use parent.database(id).",
+        replaceWith = ReplaceWith("parent.database(id)"),
+    )
     fun databaseId(id: String) {
         databaseIdValue = id
     }
@@ -96,7 +134,7 @@ class CreateDataSourceRequestBuilder {
      * @throws IllegalStateException if database ID is not set or no properties defined
      */
     fun build(): CreateDataSourceRequest {
-        require(databaseIdValue != null) { "Database ID must be specified" }
+        require(databaseIdValue != null) { "Parent database must be specified - call parent.database(id)" }
         require(properties.isNotEmpty()) { "Data source must have at least one property" }
         // A create request carries the complete schema, so a prop() reference to a
         // property that is not defined here can never be valid. (Update requests may
@@ -140,6 +178,18 @@ class UpdateDataSourceRequestBuilder {
     private val properties = mutableMapOf<String, CreateDatabaseProperty>()
 
     val icon = IconBuilder()
+
+    /**
+     * Configures the icon in a lambda, as an alternative to the `icon.xxx()` receiver form.
+     *
+     * Both forms drive the same builder and are last-call-wins; see
+     * [docs/dsl-conventions.md](https://github.com/jsaabel/kotlin-notion-client/blob/main/docs/dsl-conventions.md).
+     *
+     * @param block Configuration block applied to the icon builder
+     */
+    fun icon(block: IconBuilder.() -> Unit) {
+        icon.block()
+    }
 
     @DataSourceRequestDslMarker
     inner class IconBuilder {
@@ -201,7 +251,7 @@ class UpdateDataSourceRequestBuilder {
          * `docs/adr/0001-deferred-file-upload-resolution.md`.
          *
          * ```kotlin
-         * icon { upload(File("logo.png")) }
+         * icon.upload(File("logo.png"))
          * ```
          *
          * @param source the file to upload
