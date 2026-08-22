@@ -18,9 +18,14 @@ repositories {
 }
 
 dependencies {
-    // Main dependencies
-    implementation(libs.kotlinx.datetime)
-    implementation(libs.kotlinx.serialization.json)
+    // API dependencies: these types appear in the library's public signatures, so they must be
+    // on consumers' compile classpath (`api` publishes as Maven `compile` scope, `implementation`
+    // as `runtime` — which leaves callers unable to compile against the typed overloads).
+    api(libs.kotlinx.datetime) // LocalDate/LocalDateTime/TimeZone in date builders and accessors
+    api(libs.kotlinx.serialization.json) // JsonElement/JsonObject in view, block and database models
+    api(libs.kotlinx.coroutines.core) // Flow<T> returned by the *AsFlow/*PagedFlow pagination helpers
+
+    // Implementation dependencies: internal only, not exposed in public signatures
     implementation(libs.ktor.client.core)
     implementation(libs.bundles.ktor)
     implementation(libs.bundles.logging)
