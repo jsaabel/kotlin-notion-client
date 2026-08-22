@@ -1,0 +1,21 @@
+{
+  "object": "file_upload",
+  "id": "f04c8a19-3b5d-4e72-a6c8-91ed7b0f2a4c",
+  "created_time": "2025-03-15T20:53:00.000Z",
+  "created_by": {
+    "id": "c1e5b3a7-9d24-4f68-b0aa-2c8e4f7d1b93",
+    "type": "bot"
+  },
+  "last_edited_time": "2025-03-15T20:54:00.000Z",
+  "in_trash": false,
+  "expiry_time": "2025-03-15T21:53:00.000Z",
+  "status": "uploaded",
+  "filename": "remote-image.jpg",
+  "content_type": "image/jpeg",
+  "content_length": 51200,
+  "file_import_result": {
+    "type": "success",
+    "imported_time": "2025-03-15T20:54:00.000Z",
+    "success": {}
+  }
+}

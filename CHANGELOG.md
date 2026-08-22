@@ -61,6 +61,37 @@ mistake impossible to write silently. Migration for each break:
   time to interpret and is now rejected everywhere. *Migration:* use `date(name, date)`;
   if a time was actually intended, use `dateTimeWithTimeZone`.
 
+### ⚠️ Breaking Changes — `FileUpload` now matches the documented shape (#68)
+
+Three model-layer bugs meant valid, documented API responses failed to deserialize. Fixing
+them changes types callers may have relied on:
+
+- **`FileUpload.filename` and `FileUpload.contentType` are now `String?`.** The API reference
+  marks both nullable, and they genuinely are: a single-part upload created without a filename
+  keeps `filename` null until the send step, and `content_type` likewise stays null until it is
+  inferred from the form data. Declaring them non-null meant `createFileUpload { }` — a
+  documented, valid call — crashed on deserialization.
+  *Migration:* handle the null (`upload.filename ?: "untitled"`). `sendFileUpload(fileUpload,
+  …)` threads the nullable content type through unchanged, which is correct in both cases;
+  pass one explicitly via the `fileUploadId` overload if you need to.
+
+- **`FileUploadStatus` gained `EXPIRED` and `UNKNOWN`.** `expired` is one of four documented
+  statuses and previously failed to decode outright, so `retrieveFileUpload` threw and
+  `listFileUploads` threw if any result had expired. `UNKNOWN` is the forward-compat fallback,
+  matching the `Unknown` variants on `RollupResult`/`FormulaResult`.
+  *Migration:* exhaustive `when` blocks over `FileUploadStatus` need the two new branches. The
+  `isTerminal` and `isUnusable` properties cover the common cases without enumerating.
+
+- **`FileUploadError` gained `UploadUnusableError`.** Thrown by
+  `EnhancedFileUploadApi.waitForFileReady` when an upload reaches `EXPIRED` or `FAILED`,
+  replacing an `UnknownError` wrapping a synthetic exception. It carries the status and, for a
+  failed external-URL import, the `FileImportError` explaining why.
+  *Migration:* exhaustive `when` blocks over `FileUploadError` need the new branch.
+
+`models.files.FileUploadReference` is now a typealias for the canonical
+`models.base.FileUploadReference`, resolving a duplicate declaration; both import paths keep
+compiling, so this one is not breaking.
+
 ### August 2026 API catch-up (issues #32–#42)
 
 Eleven changelog-driven issues landed together, bringing the client up to date with Notion's
@@ -227,6 +258,19 @@ Eleven changelog-driven issues landed together, bringing the client up to date w
   `WindowedDrainIntegrationTest`, `FormulaWritesIntegrationTest`,
   `HtmlEmbedIntegrationTest`, `MarkdownUnknownBlockCountIntegrationTest`.
 
+- **`file_import_result` is now modelled (#68)** as a `FileImportResult` sealed class with
+  `Success`, `Error` and forward-compat `Unknown` variants. It is the only way the API reports
+  *why* an `external_url` import failed — previously a failed import surfaced as a bare
+  `status` with no reason. `FileUpload.importError` is the shortcut to the `FileImportError`
+  (its `type`, `code`, `message`, `parameter` and `status_code`).
+
+- **Previously unmodelled `FileUpload` fields (#68):** `complete_url` (documented on pending
+  multi-part uploads), `number_of_parts` as a `FileUploadPartCounts` (`total`/`sent` — a
+  running count, distinct from the request-side `Int`), and `created_by` as a deliberately
+  loose `FileUploadCreatedBy` (its `type` admits `agent` alongside `person`/`bot`, so it is
+  kept as a raw string). The last two were found while verifying the `in_trash` question
+  against the live OpenAPI schema.
+
 - **`.env` support for integration tests**: the `integrationTest` Gradle task now sets
   `NOTION_RUN_INTEGRATION_TESTS=true` itself and forwards credentials from a gitignored
   `.env` file (see `.env.example`), so IDE runs need no run-configuration setup.
@@ -291,6 +335,25 @@ decision rather than an implementation detail.
   page-markdown response carries `truncated` and `unknown_block_ids` but no
   `unknown_block_count` (verified live on a non-truncated page); the field stays as a
   defensive default-0 with amended KDoc.
+
+- **`FileUpload` model correctness (#68).** Beyond the breaking changes above:
+  `EnhancedFileUploadApi.waitForFileReady` now fails fast on `EXPIRED` and `FAILED` instead of
+  polling to the timeout — it previously only broke on `UPLOADED`/`FAILED`, so an expired
+  upload spun for the full wait even once it could decode at all.
+
+- **`docs/file-uploads.md` "Using Uploaded Files" showed a DSL that does not exist.** The
+  sample called a fictional `image { file { uploadedFile(id) } }` and named the builder
+  `children { }` where it is actually `content { }`. Corrected to the real
+  `imageFromUpload(id, caption)`, with a pointer to the sibling `…FromUpload` methods. The
+  generated code sample in `MediaIntegrationTest` likewise showed
+  `fileUploads.uploadFile("photo.jpg", bytes)`, omitting the required `contentType`.
+
+- **Vendored file-upload samples used a nonexistent `archived` key.** The five samples under
+  `reference/notion-api/sample_responses/file_uploads/` carried `archived`, which appears
+  nowhere in Notion's File Upload object; the real key is `in_trash`. Corrected — the model's
+  existing `@SerialName("in_trash")` was right all along. (Confirmed against the live
+  `fileUploadObjectResponse` OpenAPI schema on developers.notion.com, which lists `in_trash`
+  and no `archived`.)
 
 ### Changed
 

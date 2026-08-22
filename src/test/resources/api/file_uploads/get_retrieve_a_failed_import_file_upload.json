@@ -1,0 +1,27 @@
+{
+  "object": "file_upload",
+  "id": "d7b2e4f1-6c08-4a3d-8e91-5f0c2a6b74de",
+  "created_time": "2025-03-15T20:53:00.000Z",
+  "created_by": {
+    "id": "c1e5b3a7-9d24-4f68-b0aa-2c8e4f7d1b93",
+    "type": "bot"
+  },
+  "last_edited_time": "2025-03-15T20:54:00.000Z",
+  "in_trash": false,
+  "expiry_time": "2025-03-15T21:53:00.000Z",
+  "status": "failed",
+  "filename": "oversized.pdf",
+  "content_type": "application/pdf",
+  "content_length": null,
+  "file_import_result": {
+    "type": "error",
+    "imported_time": "2025-03-15T20:54:00.000Z",
+    "error": {
+      "type": "validation_error",
+      "code": "file_upload_invalid_size",
+      "message": "The file size is not within the allowed limit of 5 MiB. Please try again with a new file upload.",
+      "parameter": null,
+      "status_code": null
+    }
+  }
+}

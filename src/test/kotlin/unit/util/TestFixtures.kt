@@ -218,6 +218,29 @@ object TestFixtures {
         fun listFileUploadsAsString() = loadReferenceSampleResponseAsString("file_uploads", "get_list_file_uploads")
 
         fun sendFileUploadAsString() = loadReferenceSampleResponseAsString("file_uploads", "post_send_a_file_upload")
+
+        // Hand-built fixtures for shapes the official docs ship no sample for.
+        // See src/test/resources/api/file_uploads/README.md.
+
+        fun expiredFileUpload() = loadSampleResponse("file_uploads", "get_retrieve_an_expired_file_upload")
+
+        fun failedImportFileUpload() = loadSampleResponse("file_uploads", "get_retrieve_a_failed_import_file_upload")
+
+        fun importedFileUpload() = loadSampleResponse("file_uploads", "get_retrieve_an_imported_file_upload")
+
+        fun multiPartFileUpload() = loadSampleResponse("file_uploads", "post_create_a_multi_part_file_upload")
+
+        fun unknownStatusFileUpload() = loadSampleResponse("file_uploads", "get_retrieve_a_file_upload_unknown_status")
+
+        fun expiredFileUploadAsString() = loadSampleResponseAsString("file_uploads", "get_retrieve_an_expired_file_upload")
+
+        fun failedImportFileUploadAsString() = loadSampleResponseAsString("file_uploads", "get_retrieve_a_failed_import_file_upload")
+
+        fun importedFileUploadAsString() = loadSampleResponseAsString("file_uploads", "get_retrieve_an_imported_file_upload")
+
+        fun multiPartFileUploadAsString() = loadSampleResponseAsString("file_uploads", "post_create_a_multi_part_file_upload")
+
+        fun unknownStatusFileUploadAsString() = loadSampleResponseAsString("file_uploads", "get_retrieve_a_file_upload_unknown_status")
     }
 
     object Search {

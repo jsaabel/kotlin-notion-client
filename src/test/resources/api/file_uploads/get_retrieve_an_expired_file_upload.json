@@ -1,0 +1,16 @@
+{
+  "object": "file_upload",
+  "id": "a3f9c1d2-4b6e-4a10-9c33-7de2f0a1b845",
+  "created_time": "2025-03-15T20:53:00.000Z",
+  "created_by": {
+    "id": "c1e5b3a7-9d24-4f68-b0aa-2c8e4f7d1b93",
+    "type": "bot"
+  },
+  "last_edited_time": "2025-03-15T21:53:00.000Z",
+  "in_trash": false,
+  "expiry_time": "2025-03-15T21:53:00.000Z",
+  "status": "expired",
+  "filename": "unattached.pdf",
+  "content_type": "application/pdf",
+  "content_length": 2048
+}
