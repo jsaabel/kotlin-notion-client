@@ -15,7 +15,12 @@ import it.saabel.kotlinnotionclient.models.databases.DatabasePropertiesBuilder
 import it.saabel.kotlinnotionclient.models.databases.FormulaExpressions
 import it.saabel.kotlinnotionclient.models.databases.RollupConfigurations
 import it.saabel.kotlinnotionclient.models.files.FileUpload
+import it.saabel.kotlinnotionclient.models.files.FileUploadOptions
 import it.saabel.kotlinnotionclient.models.files.FileUploadStatus
+import it.saabel.kotlinnotionclient.utils.FileSource
+import it.saabel.kotlinnotionclient.utils.asFileSource
+import java.io.File
+import java.nio.file.Path
 
 /**
  * Builder for creating data source requests (API version 2025-09-03+).
@@ -186,6 +191,43 @@ class UpdateDataSourceRequestBuilder {
          */
         fun upload(fileUpload: FileUpload) {
             upload(fileUpload.id)
+        }
+
+        /**
+         * Sets an icon from a local file, uploading it when the request is sent.
+         *
+         * Nothing is uploaded while this builder runs: the file is recorded as
+         * [Icon.PendingUpload] and resolved by the client before the request goes out. See
+         * `docs/adr/0001-deferred-file-upload-resolution.md`.
+         *
+         * ```kotlin
+         * icon { upload(File("logo.png")) }
+         * ```
+         *
+         * @param source the file to upload
+         * @param options upload options — content type override, progress callback, validation
+         */
+        fun upload(
+            source: FileSource,
+            options: FileUploadOptions = FileUploadOptions(),
+        ) {
+            this@UpdateDataSourceRequestBuilder.iconValue = Icon.PendingUpload(source = source, options = options)
+        }
+
+        /** Sets an icon from a local file, uploading it when the request is sent. See [upload]. */
+        fun upload(
+            file: File,
+            options: FileUploadOptions = FileUploadOptions(),
+        ) {
+            upload(file.asFileSource(), options)
+        }
+
+        /** Sets an icon from a local file, uploading it when the request is sent. See [upload]. */
+        fun upload(
+            path: Path,
+            options: FileUploadOptions = FileUploadOptions(),
+        ) {
+            upload(path.asFileSource(), options)
         }
 
         fun native(

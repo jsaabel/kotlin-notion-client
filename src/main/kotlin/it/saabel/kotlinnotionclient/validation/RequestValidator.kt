@@ -1,11 +1,14 @@
 package it.saabel.kotlinnotionclient.validation
 
 import it.saabel.kotlinnotionclient.config.NotionApiLimits
+import it.saabel.kotlinnotionclient.models.base.Icon
 import it.saabel.kotlinnotionclient.models.base.RichText
 import it.saabel.kotlinnotionclient.models.blocks.BlockRequest
 import it.saabel.kotlinnotionclient.models.blocks.childrenOf
 import it.saabel.kotlinnotionclient.models.databases.CreateDatabaseRequest
 import it.saabel.kotlinnotionclient.models.pages.CreatePageRequest
+import it.saabel.kotlinnotionclient.models.pages.FileObject
+import it.saabel.kotlinnotionclient.models.pages.PageCover
 import it.saabel.kotlinnotionclient.models.pages.PagePropertyValue
 import it.saabel.kotlinnotionclient.models.pages.UpdatePageRequest
 
@@ -50,6 +53,9 @@ class RequestValidator(
             violations.addAll(validateBlockArray("children", children))
         }
 
+        violations.addAll(validateNoPendingUpload(request.icon))
+        violations.addAll(validateNoPendingUpload(request.cover))
+
         return ValidationResult(violations)
     }
 
@@ -63,6 +69,9 @@ class RequestValidator(
         request.properties?.forEach { (propertyName, property) ->
             violations.addAll(validatePageProperty(propertyName, property))
         }
+
+        violations.addAll(validateNoPendingUpload(request.icon))
+        violations.addAll(validateNoPendingUpload(request.cover))
 
         return ValidationResult(violations)
     }
@@ -80,6 +89,9 @@ class RequestValidator(
         request.description?.let { description ->
             violations.addAll(validateRichTextArray("description", description))
         }
+
+        violations.addAll(validateNoPendingUpload(request.icon))
+        violations.addAll(validateNoPendingUpload(request.cover))
 
         return ValidationResult(violations)
     }
@@ -309,12 +321,77 @@ class RequestValidator(
                 }
             }
 
+            is PagePropertyValue.FilesValue -> {
+                property.files.forEachIndexed { index, file ->
+                    if (file is FileObject.PendingUpload) {
+                        violations.add(
+                            unresolvedPendingUpload(
+                                field = "$propertyName.files[$index]",
+                                filename = file.source.filename,
+                                remedy = "Pass this request to pages.create or pages.update",
+                            ),
+                        )
+                    }
+                }
+            }
+
             // Other property types don't have size constraints
             else -> { /* No validation needed */ }
         }
 
         return violations
     }
+
+    /**
+     * Reports a sentinel that reached validation without being uploaded.
+     *
+     * Every API entry point resolves sentinels — uploading the file and substituting the
+     * reference — before validating, so these should never fire. They are here as defence in
+     * depth: a future path that forgets to resolve fails with a readable violation rather than
+     * a serialization error deep in the send pipeline.
+     */
+    private fun unresolvedPendingUpload(
+        field: String,
+        filename: String,
+        remedy: String,
+    ): ValidationViolation =
+        ValidationViolation(
+            field = field,
+            violationType = ViolationType.UNRESOLVED_PENDING_UPLOAD,
+            message =
+                "Request still carries a file pending upload ($filename); send it through a " +
+                    "NotionClient method, or upload first and reference the id",
+            currentValue = filename,
+            suggestedAction = remedy,
+        )
+
+    /** Reports an [Icon.PendingUpload] that reached validation. See [unresolvedPendingUpload]. */
+    private fun validateNoPendingUpload(icon: Icon?): List<ValidationViolation> =
+        if (icon is Icon.PendingUpload) {
+            listOf(
+                unresolvedPendingUpload(
+                    field = "icon",
+                    filename = icon.source.filename,
+                    remedy = "Pass this request to pages.create, pages.update, databases.create or dataSources.update",
+                ),
+            )
+        } else {
+            emptyList()
+        }
+
+    /** Reports a [PageCover.PendingUpload] that reached validation. See [unresolvedPendingUpload]. */
+    private fun validateNoPendingUpload(cover: PageCover?): List<ValidationViolation> =
+        if (cover is PageCover.PendingUpload) {
+            listOf(
+                unresolvedPendingUpload(
+                    field = "cover",
+                    filename = cover.source.filename,
+                    remedy = "Pass this request to pages.create, pages.update or databases.create",
+                ),
+            )
+        } else {
+            emptyList()
+        }
 
     /**
      * Validates an array of rich text objects.

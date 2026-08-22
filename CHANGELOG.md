@@ -239,6 +239,54 @@ Eleven changelog-driven issues landed together, bringing the client up to date w
 
 ### Added
 
+- **Local files on every attachment surface (#76, ADR 0001 stage 2).** The pending-upload
+  mechanism from #75 now covers a whole request, not just its block list, so a page create can
+  carry local files in its icon, its cover, its "Files & media" properties and its content at
+  once — one call, one upload pass, one `POST /v1/pages`:
+
+  ```kotlin
+  notion.pages.create {
+      parent.dataSource(dataSourceId)
+      title("Q3 Report")
+      icon.upload(File("logo.png"))
+      cover.upload(File("hero.png"))
+      properties {
+          files("Attachments") { upload(File("a.pdf")); upload(File("b.pdf")) }
+      }
+      content { image(File("chart.png")) }
+  }
+  ```
+
+  New builder overloads, each taking `FileSource`/`File`/`Path`:
+
+  - `FilesBuilder.upload(source, name = null)` — the entry is named after the file unless `name`
+    is given, matching `FileObject.upload`'s convention
+  - `upload(source)` on every icon and cover builder that got `upload(id)` in #69 —
+    `CreatePageRequestBuilder`, `UpdatePageRequestBuilder`, `DatabaseRequestBuilder`,
+    `UpdateDataSourceRequestBuilder`
+  - `CreateCommentRequestBuilder.attachment(source)` — the in-DSL form of a comment attachment,
+    now the recommended path; the pre-upload `comments.create(attachments) { … }` overload from
+    #69 stays
+
+  Resolution moved from the block list to the request: `pages.create`/`createAsync`/`update`,
+  `databases.create`, `dataSources.update` and `comments.create` pool every sentinel a request
+  carries into a **single** concurrent upload pass (still bounded at four) before validating and
+  sending. Failure stays atomic across the whole pool — a failed cover upload cancels the
+  in-flight files-property uploads and throws `FileUploadError` before the create is issued —
+  and sentinels are still matched to their uploads by position, so the same file attached to two
+  surfaces uploads twice. `comments.create` resolves before counting attachments, so Notion's
+  cap of three is checked against what actually goes on the wire.
+
+  Each new sentinel (`FileObject.PendingUpload`, `Icon.PendingUpload`, `PageCover.PendingUpload`,
+  `CommentAttachmentRequest.PendingUpload`) refuses to serialize with a message naming the file
+  and both ways out, and `RequestValidator` reports `UNRESOLVED_PENDING_UPLOAD` for an
+  unresolved icon, cover or files-property entry as defence in depth.
+
+  `CommentAttachmentRequest` became a sealed class to hold its pending variant. Constructing one
+  (`CommentAttachmentRequest("upload-id")`) and reading `.fileUploadId` / `.type` still compile;
+  `fileUploadId` is now `String?` on the base type, `null` only while pending. The JSON on the
+  wire is unchanged. `pages.attachFiles`'s read-merge behaviour is untouched.
+
 - **Local files inside the content DSL (#75, ADR 0001).** The block builders now take a local
   file wherever they took a URL or an upload id, which makes a page with several attachments a
   single call instead of an upload-and-thread-the-ids preamble:

@@ -36,16 +36,24 @@ Each helper takes a `File`, a `Path`, or a `FileSource` (which also covers byte 
 streams — see [File sources](#file-sources)), and each **throws** on failure like the rest of the
 client rather than returning a result you have to unwrap.
 
-### Local files inside the content DSL
+### Local files inside the builders
 
 For a page that carries several attachments, `pages.create` is one request — every file has to
-be uploaded before it is sent. The content DSL takes local files directly and the client
-resolves them for you:
+be uploaded before it is sent. The builders take local files directly and the client resolves
+them for you, on every surface a page can attach from:
 
 ```kotlin
 notion.pages.create {
-    parent.page(parentId)
+    parent.dataSource(dataSourceId)
     title("Q3 report")
+    icon.upload(File("logo.png"))
+    cover.upload(File("hero.png"))
+    properties {
+        files("Attachments") {
+            upload(File("a.pdf"))
+            upload(Paths.get("b.pdf"), name = "Appendix B")
+        }
+    }
     content {
         paragraph("Revenue held flat quarter on quarter.")
         image(File("chart.png"), caption = "Q3")
@@ -56,16 +64,27 @@ notion.pages.create {
 }
 ```
 
-`image`, `video`, `audio`, `file` and `pdf` each take a `File`, a `Path` or a `FileSource`
-alongside their existing URL forms, and `html` takes the markup as a string (or an `.html` file).
-This is the recommended way to create a page with more than one attachment: one call, no ids to
-thread through, and nothing to hoist above the builder.
+Every one of those files is uploaded in a single concurrent pass and swapped into the request
+before the one `POST /v1/pages` goes out. The surfaces that take a local file:
+
+| Surface | Call | Available on |
+| --- | --- | --- |
+| Content blocks | `image`/`video`/`audio`/`file`/`pdf`/`html` | `content { }`, `blocks.appendChildren`, `blocks.update` |
+| Files property | `files("…") { upload(file) }` | `pages.create`, `pages.update` |
+| Icon | `icon.upload(file)` | `pages.create`, `pages.update`, `databases.create`, `dataSources.update` |
+| Cover | `cover.upload(file)` | `pages.create`, `pages.update`, `databases.create` |
+| Comment attachment | `attachment(file)` | `comments.create` |
+
+Each takes a `File`, a `Path` or a `FileSource` alongside its existing URL or upload-id form.
+`files("…") { upload(file) }` names the entry after the file unless you pass `name`. This is the
+recommended way to create a page with more than one attachment: one call, no ids to thread
+through, and nothing to hoist above the builder.
 
 Builder lambdas are synchronous, so the upload cannot happen inside one. What the builder records
-is a *pending upload* — the file itself, carried in the block tree — and the suspending call that
-consumes the blocks does the uploading and swaps in the resulting references just before it sends.
-The same works for `blocks.appendChildren` and `blocks.update`, and the blocks can be built
-separately:
+is a *pending upload* — the file itself, carried in the request — and the suspending call that
+consumes the request does the uploading and swaps in the resulting references just before it
+sends. The same works for `blocks.appendChildren` and `blocks.update`, and the blocks can be
+built separately:
 
 ```kotlin
 val blocks = pageContent { image(File("chart.png")) }   // no upload yet
@@ -74,16 +93,18 @@ notion.blocks.appendChildren(pageId, blocks)            // uploads, then appends
 
 What this means in practice:
 
-- **Uploads run concurrently**, up to four at a time, and all of them finish before the page or
-  append request is sent.
+- **Uploads run concurrently**, up to four at a time, and all of them finish before the request
+  is sent. One request's files are pooled across every surface it uses, so a page create with an
+  icon, a cover, a files property and content blocks is still one upload pass.
 - **Failure is all-or-nothing at the request boundary.** The first failed upload cancels the rest
-  and throws `FileUploadError`; the create or append never happens, so no half-populated page is
-  left behind. Uploads that had already completed are orphaned on purpose — Notion has no
+  — across the whole pool, so a failed cover upload aborts the files-property uploads too — and
+  throws `FileUploadError`; the create or append never happens, so no half-populated page is left
+  behind. Uploads that had already completed are orphaned on purpose — Notion has no
   delete-upload endpoint, and an unattached upload expires an hour after it was created.
-- **The same file attached twice is uploaded twice.** Reusing one upload id across blocks is not
-  verified against the live API, so the client does not deduplicate.
-- **Only these methods resolve pending uploads.** Serializing the blocks yourself throws a
-  `SerializationException` naming the file, rather than silently sending an invalid block.
+- **The same file attached twice is uploaded twice.** Reusing one upload id across attachments is
+  not verified against the live API, so the client does not deduplicate.
+- **Only these methods resolve pending uploads.** Serializing the request yourself throws a
+  `SerializationException` naming the file, rather than silently sending an invalid payload.
 
 ### HTML blocks
 
@@ -124,6 +145,8 @@ notion.blocks.appendChildren(pageId) {
 
 ### Attaching to a files property
 
+At page-create time, attach from inside the builder — `files("…") { upload(File(…)) }`, see
+[Local files inside the builders](#local-files-inside-the-builders). Against an existing page,
 `attachFiles` is additive by default. Notion's files property is written whole — there is no
 per-entry append — so the helper reads the page first and re-sends the entries already there
 alongside the new uploads:
@@ -143,10 +166,20 @@ notion.pages.attachFiles(
 
 ### Comment attachments
 
-The comment DSL is a non-suspend lambda, so it cannot upload from inside
-`comments.create { attachment(File(...)) }`. The `create` overload that takes attachments uploads
-them before the builder runs and merges them into the request it produces. Attachments added by
-the builder itself are kept and counted first; Notion allows at most three per comment.
+Attach from inside the DSL — this is the recommended form, and it keeps the attachment in the
+same call as the comment:
+
+```kotlin
+notion.comments.create {
+    parent.pageId(pageId)
+    content { text("Trace attached") }
+    attachment(File("trace.txt"))
+}
+```
+
+The pre-upload overload is still there for callers that already hold the sources; it uploads them
+before the builder runs and merges them into the request it produces. Attachments added by the
+builder itself are kept and counted first.
 
 ```kotlin
 notion.comments.create(File("before.png"), File("after.png")) {
@@ -154,6 +187,9 @@ notion.comments.create(File("before.png"), File("after.png")) {
     content { text("Screenshots attached") }
 }
 ```
+
+Either way Notion allows at most three attachments per comment, and the cap is checked against
+what actually goes on the wire — a pending upload counts as the attachment it will become.
 
 ### File sources
 

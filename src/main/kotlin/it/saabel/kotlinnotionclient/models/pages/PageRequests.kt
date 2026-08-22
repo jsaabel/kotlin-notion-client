@@ -8,7 +8,10 @@ import it.saabel.kotlinnotionclient.models.base.RichText
 import it.saabel.kotlinnotionclient.models.base.SelectOptionColor
 import it.saabel.kotlinnotionclient.models.blocks.BlockRequest
 import it.saabel.kotlinnotionclient.models.dates.NotionDateStrings
+import it.saabel.kotlinnotionclient.models.files.FileUploadOptions
 import it.saabel.kotlinnotionclient.models.files.FileUploadReference
+import it.saabel.kotlinnotionclient.models.files.PendingUploadRefusingSerializer
+import it.saabel.kotlinnotionclient.utils.FileSource
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
@@ -534,6 +537,25 @@ sealed class FileObject {
         val name: String? = null,
     ) : FileObject()
 
+    /**
+     * A local file recorded by `files("…") { upload(File(…)) }`, still waiting to be uploaded.
+     *
+     * The client uploads it and swaps in the equivalent [FileUpload] before the request that
+     * carries it is serialized — see `docs/adr/0001-deferred-file-upload-resolution.md`.
+     * Serializing one yourself throws; see [FileObjectPendingUploadSerializer].
+     *
+     * @property source The bytes to upload
+     * @property name Display name; defaults to the source's filename at resolution
+     * @property options Upload options — content type override, progress callback, validation
+     */
+    @Serializable(with = FileObjectPendingUploadSerializer::class)
+    @SerialName("pending_upload")
+    data class PendingUpload(
+        val source: FileSource,
+        val name: String? = null,
+        val options: FileUploadOptions = FileUploadOptions(),
+    ) : FileObject()
+
     companion object {
         /**
          * Builds a [FileUpload] referencing an uploaded file by its ID.
@@ -669,3 +691,15 @@ sealed class PagePosition {
     @SerialName("page_end")
     data object PageEnd : PagePosition()
 }
+
+/**
+ * Serializer for [FileObject.PendingUpload] that refuses to serialize. See
+ * [PendingUploadRefusingSerializer].
+ */
+internal object FileObjectPendingUploadSerializer : PendingUploadRefusingSerializer<FileObject.PendingUpload>(
+    serialName = "pending_upload",
+    filename = { it.source.filename },
+    remedy =
+        "pass the request through a NotionClient method (pages.create, pages.update), " +
+            "or upload first and use files(\"…\") { upload(id) }",
+)

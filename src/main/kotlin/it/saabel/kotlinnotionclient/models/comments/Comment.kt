@@ -3,7 +3,10 @@ package it.saabel.kotlinnotionclient.models.comments
 import it.saabel.kotlinnotionclient.models.base.NotionObject
 import it.saabel.kotlinnotionclient.models.base.Parent
 import it.saabel.kotlinnotionclient.models.base.RichText
+import it.saabel.kotlinnotionclient.models.files.FileUploadOptions
+import it.saabel.kotlinnotionclient.models.files.PendingUploadRefusingSerializer
 import it.saabel.kotlinnotionclient.models.users.User
+import it.saabel.kotlinnotionclient.utils.FileSource
 import it.saabel.kotlinnotionclient.utils.PaginatedResponse
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -167,14 +170,90 @@ data class UpdateCommentRequest(
 
 /**
  * Request model for comment attachments.
+ *
+ * A comment attachment is either an already-uploaded file referenced by id
+ * ([CommentAttachmentRequest.FileUpload]) or a local file the client still has to upload
+ * ([CommentAttachmentRequest.PendingUpload], recorded by `attachment(File(…))` in the comment
+ * DSL). `CommentsApi.create` resolves every pending one before the request is serialized.
+ *
+ * `CommentAttachmentRequest("upload-id")` keeps working and builds the [FileUpload] variant.
  */
 @Serializable
-data class CommentAttachmentRequest(
-    @SerialName("file_upload_id")
-    val fileUploadId: String,
-    @SerialName("type")
-    val type: String = "file_upload",
-)
+sealed class CommentAttachmentRequest {
+    /**
+     * The file-upload id this attachment references, or `null` while it is still
+     * [PendingUpload].
+     */
+    abstract val fileUploadId: String?
+
+    /** The `type` discriminator Notion sees for this attachment. */
+    abstract val type: String
+
+    /**
+     * References a file already created through the File Upload API.
+     *
+     * @property fileUploadId The ID of the uploaded file
+     */
+    @Serializable
+    @SerialName("file_upload")
+    data class FileUpload(
+        @SerialName("file_upload_id")
+        override val fileUploadId: String,
+    ) : CommentAttachmentRequest() {
+        override val type: String get() = "file_upload"
+    }
+
+    /**
+     * A local file recorded by `attachment(File(…))`, still waiting to be uploaded.
+     *
+     * `CommentsApi.create` uploads it and swaps in the equivalent [FileUpload] before the
+     * request is serialized — see `docs/adr/0001-deferred-file-upload-resolution.md`.
+     * Serializing one yourself throws; see [CommentAttachmentPendingUploadSerializer].
+     *
+     * @property source The bytes to upload
+     * @property options Upload options — content type override, progress callback, validation
+     */
+    @Serializable(with = CommentAttachmentPendingUploadSerializer::class)
+    @SerialName("pending_upload")
+    data class PendingUpload(
+        val source: FileSource,
+        val options: FileUploadOptions = FileUploadOptions(),
+    ) : CommentAttachmentRequest() {
+        override val fileUploadId: String? get() = null
+        override val type: String get() = "pending_upload"
+    }
+
+    companion object {
+        /**
+         * Builds a [FileUpload] attachment referencing an uploaded file by its id.
+         *
+         * @param fileUploadId The ID of the uploaded file
+         * @param type Kept for source compatibility; only `"file_upload"` is accepted
+         */
+        operator fun invoke(
+            fileUploadId: String,
+            type: String = "file_upload",
+        ): FileUpload {
+            require(type == "file_upload") {
+                "Comment attachments are always type \"file_upload\", but \"$type\" was provided"
+            }
+            return FileUpload(fileUploadId = fileUploadId)
+        }
+    }
+}
+
+/**
+ * Serializer for [CommentAttachmentRequest.PendingUpload] that refuses to serialize. See
+ * [PendingUploadRefusingSerializer].
+ */
+internal object CommentAttachmentPendingUploadSerializer :
+    PendingUploadRefusingSerializer<CommentAttachmentRequest.PendingUpload>(
+        serialName = "pending_upload",
+        filename = { it.source.filename },
+        remedy =
+            "pass the request through comments.create, or upload first and use " +
+                "attachment(id)",
+    )
 
 /**
  * Request model for comment display name.

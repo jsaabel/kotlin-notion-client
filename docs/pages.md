@@ -143,6 +143,34 @@ val page = notion.pages.create {
 }
 ```
 
+### Create a Page with Local Files
+
+Icon, cover, "Files & media" properties and content blocks all take a local file directly. The
+client uploads them all in one concurrent pass and swaps in the resulting references before the
+single `POST /v1/pages` goes out — nothing to upload above the call, no ids to thread through:
+
+```kotlin
+val page = notion.pages.create {
+    parent.dataSource("data-source-id")
+    properties {
+        title("Name", "Q3 Report")
+        files("Attachments") {
+            upload(File("a.pdf"))
+            upload(Paths.get("b.pdf"), name = "Appendix B")
+        }
+    }
+    icon.upload(File("logo.png"))
+    cover.upload(File("hero.png"))
+    content {
+        image(File("chart.png"), caption = "Q3")
+    }
+}
+```
+
+If any upload fails the rest are cancelled, `FileUploadError` is thrown, and the page is never
+created. `pages.update` takes local files the same way for icon, cover and files properties. See
+[File uploads](file-uploads.md) for the full picture.
+
 ### Update Page Properties
 
 ```kotlin
@@ -168,6 +196,15 @@ val updated = notion.pages.update("page-id") {
 
     // Update cover
     cover.external("https://example.com/new-cover.jpg")
+}
+```
+
+Both also take a local file, uploaded as part of the update:
+
+```kotlin
+val updated = notion.pages.update("page-id") {
+    icon.upload(File("logo.png"))
+    cover.upload(File("hero.png"))
 }
 ```
 
