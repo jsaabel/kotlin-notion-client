@@ -3,6 +3,11 @@
 package it.saabel.kotlinnotionclient.models.pages
 
 import it.saabel.kotlinnotionclient.models.files.FileUpload
+import it.saabel.kotlinnotionclient.models.files.FileUploadOptions
+import it.saabel.kotlinnotionclient.utils.FileSource
+import it.saabel.kotlinnotionclient.utils.asFileSource
+import java.io.File
+import java.nio.file.Path
 
 /**
  * DSL marker for the files builder to prevent accidental nesting of outer-scope
@@ -61,6 +66,50 @@ class FilesBuilder {
         name: String? = null,
     ) {
         files.add(FileObject.upload(fileUpload.id, name ?: fileUpload.filename))
+    }
+
+    /**
+     * Attaches a local file, uploading it when the request is sent.
+     *
+     * Nothing is uploaded while this builder runs: the file is recorded as a
+     * [FileObject.PendingUpload] sentinel and resolved by `pages.create` / `pages.update`
+     * before the request goes out. See `docs/adr/0001-deferred-file-upload-resolution.md`.
+     *
+     * ```kotlin
+     * files("Attachments") {
+     *     upload(File("report.pdf"))
+     *     upload(Paths.get("appendix.pdf"), name = "Appendix A.pdf")
+     * }
+     * ```
+     *
+     * @param source the file to upload
+     * @param name optional display name; defaults to the source's filename
+     * @param options upload options — content type override, progress callback, validation
+     */
+    fun upload(
+        source: FileSource,
+        name: String? = null,
+        options: FileUploadOptions = FileUploadOptions(),
+    ) {
+        files.add(FileObject.PendingUpload(source = source, name = name, options = options))
+    }
+
+    /** Attaches a local file, uploading it when the request is sent. See [upload]. */
+    fun upload(
+        file: File,
+        name: String? = null,
+        options: FileUploadOptions = FileUploadOptions(),
+    ) {
+        upload(file.asFileSource(), name, options)
+    }
+
+    /** Attaches a local file, uploading it when the request is sent. See [upload]. */
+    fun upload(
+        path: Path,
+        name: String? = null,
+        options: FileUploadOptions = FileUploadOptions(),
+    ) {
+        upload(path.asFileSource(), name, options)
     }
 
     /**

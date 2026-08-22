@@ -49,6 +49,9 @@ class DataSourcesApi(
 ) {
     private val validator = RequestValidator(validationConfig)
 
+    /** Resolves the pending-upload sentinels an icon or cover builder may have recorded. */
+    private val uploads by lazy { EnhancedFileUploadApi(httpClient, config) }
+
     /**
      * Retrieves a data source object using the ID specified.
      *
@@ -334,12 +337,14 @@ class DataSourcesApi(
     suspend fun update(
         dataSourceId: String,
         request: UpdateDataSourceRequest,
-    ): DataSource =
-        try {
+    ): DataSource {
+        val finalRequest = uploads.resolvePendingUploads(request)
+
+        return try {
             val response: HttpResponse =
                 httpClient.patch("${config.baseUrl}/data_sources/$dataSourceId") {
                     contentType(ContentType.Application.Json)
-                    setBody(request)
+                    setBody(finalRequest)
                 }
 
             if (response.status.isSuccess()) {
@@ -352,6 +357,7 @@ class DataSourcesApi(
         } catch (e: Exception) {
             throw NotionException.NetworkError(e)
         }
+    }
 
     /**
      * Lists available templates for a data source.

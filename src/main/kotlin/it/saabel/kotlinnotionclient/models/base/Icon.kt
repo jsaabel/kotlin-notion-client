@@ -1,5 +1,8 @@
 package it.saabel.kotlinnotionclient.models.base
 
+import it.saabel.kotlinnotionclient.models.files.FileUploadOptions
+import it.saabel.kotlinnotionclient.models.files.PendingUploadRefusingSerializer
+import it.saabel.kotlinnotionclient.utils.FileSource
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
@@ -92,6 +95,25 @@ sealed class Icon {
     }
 
     /**
+     * A local file recorded by `icon { upload(File(…)) }`, still waiting to be uploaded.
+     *
+     * The client uploads it and swaps in the equivalent [FileUpload] before the request that
+     * carries it is serialized — see `docs/adr/0001-deferred-file-upload-resolution.md`.
+     * Serializing one yourself throws; see [IconPendingUploadSerializer].
+     *
+     * @property source The bytes to upload
+     * @property options Upload options — content type override, progress callback, validation
+     */
+    @Serializable(with = IconPendingUploadSerializer::class)
+    @SerialName("pending_upload")
+    data class PendingUpload(
+        val source: FileSource,
+        val options: FileUploadOptions = FileUploadOptions(),
+    ) : Icon() {
+        override val type: String = "pending_upload"
+    }
+
+    /**
      * A native Notion icon (built-in icon library with optional color).
      *
      * Valid colors: "gray" (default), "lightgray", "brown", "yellow", "orange",
@@ -107,3 +129,15 @@ sealed class Icon {
         constructor(icon: NativeIconObject) : this(type = "icon", icon = icon)
     }
 }
+
+/**
+ * Serializer for [Icon.PendingUpload] that refuses to serialize. See
+ * [PendingUploadRefusingSerializer].
+ */
+internal object IconPendingUploadSerializer : PendingUploadRefusingSerializer<Icon.PendingUpload>(
+    serialName = "pending_upload",
+    filename = { it.source.filename },
+    remedy =
+        "pass the request through a NotionClient method (pages.create, pages.update, " +
+            "databases.create, dataSources.update), or upload first and use icon { upload(id) }",
+)

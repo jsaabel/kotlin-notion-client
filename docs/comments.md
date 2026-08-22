@@ -116,8 +116,25 @@ val comment = notion.comments.create {
 
 ### Comment with File Attachments
 
-The `create` overload that takes attachments uploads them first and merges them into the request,
-so the whole thing is one call:
+Attach a local file from inside the DSL — this is the recommended form:
+
+```kotlin
+val comment = notion.comments.create {
+    parent.page("page-id")
+    richText {
+        text("Here's the report you requested!")
+    }
+    attachment(File("report.pdf"))
+}
+```
+
+The builder is a non-suspend lambda, so nothing is uploaded while it runs: the file is recorded
+and `comments.create` uploads it and swaps in the resulting id just before it sends. `File`,
+`Path` and `FileSource` all work. A failed upload throws `FileUploadError` and no comment is
+created.
+
+The `create` overload that takes attachments up front is still available, for callers that
+already hold the sources:
 
 ```kotlin
 val comment = notion.comments.create(File("report.pdf")) {
@@ -128,8 +145,7 @@ val comment = notion.comments.create(File("report.pdf")) {
 }
 ```
 
-The comment DSL is a non-suspend lambda, so it cannot upload from inside the builder. If you
-already have an upload, attach it by object or by id:
+And if you already have an upload, attach it by object or by id:
 
 ```kotlin
 val upload = notion.enhancedFileUploads.uploadFile(File("report.pdf")).getOrThrow()
@@ -306,8 +322,10 @@ comments.forEach { comment ->
 - Rich text supports all standard formatting (bold, italic, code, links, mentions)
 
 ### Attachments
-- Maximum 3 attachments per comment
-- Attachments must be uploaded first using the File Uploads API
+- Maximum 3 attachments per comment, counted against what actually goes on the wire — a local
+  file recorded by `attachment(File(…))` counts as the attachment it will become
+- A local file passed to `attachment(...)` is uploaded by `comments.create`; anything else must
+  be uploaded first using the File Uploads API
 
 ### Parent Requirements
 - Comments must specify either a page ID or block ID as parent

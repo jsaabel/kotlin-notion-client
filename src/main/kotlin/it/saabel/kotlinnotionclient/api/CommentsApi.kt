@@ -174,18 +174,22 @@ class CommentsApi(
      * @throws NotionException.AuthenticationError for authentication failures
      * @throws IllegalArgumentException if attachments exceed limit of 3
      */
-    suspend fun create(request: CreateCommentRequest): Comment =
-        try {
+    suspend fun create(request: CreateCommentRequest): Comment {
+        // Uploads first: the cap below counts what actually goes on the wire, and a failed
+        // upload must abort before any comment is created.
+        val finalRequest = uploads.resolvePendingUploads(request)
+
+        return try {
             // Validate attachment limit
-            request.attachments?.let { attachments ->
+            finalRequest.attachments?.let { attachments ->
                 if (attachments.size > 3) {
                     throw IllegalArgumentException("Comments can have a maximum of 3 attachments, but ${attachments.size} were provided")
                 }
             }
 
             // Validate exactly one of rich_text or markdown is provided
-            val hasRichText = !request.richText.isNullOrEmpty()
-            val hasMarkdown = request.markdown != null
+            val hasRichText = !finalRequest.richText.isNullOrEmpty()
+            val hasMarkdown = finalRequest.markdown != null
             if (hasRichText && hasMarkdown) {
                 throw IllegalArgumentException("Comment content must use either rich_text or markdown, not both")
             }
@@ -197,7 +201,7 @@ class CommentsApi(
             val response: HttpResponse =
                 httpClient.post(url) {
                     contentType(ContentType.Application.Json)
-                    setBody(request)
+                    setBody(finalRequest)
                 }
 
             if (response.status.isSuccess()) {
@@ -212,6 +216,7 @@ class CommentsApi(
         } catch (e: Exception) {
             throw NotionException.NetworkError(e)
         }
+    }
 
     /**
      * Creates a new comment on a page or block using the DSL builder.
@@ -443,11 +448,11 @@ class CommentsApi(
     // ---------------------------------------------------------------------
     // Upload-and-attach helpers
     //
-    // The comment DSL is a non-suspend lambda, so it cannot upload from inside
-    // `comments.create { attachment(File(…)) }` — deferred uploads inside the
-    // content DSL are tracked separately (issue #70). This overload takes the
-    // pre-upload route instead: the files are uploaded before the builder runs
-    // and merged into the request it produces.
+    // The in-DSL form — `comments.create { attachment(File(…)) }` — is the
+    // recommended path since #76: the builder records a sentinel and `create`
+    // resolves it. These overloads take the pre-upload route instead, for
+    // callers that already hold the sources: the files are uploaded before the
+    // builder runs and merged into the request it produces.
     // ---------------------------------------------------------------------
 
     private val uploads by lazy { EnhancedFileUploadApi(httpClient, config) }
