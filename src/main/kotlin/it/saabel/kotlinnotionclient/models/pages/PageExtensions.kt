@@ -230,6 +230,7 @@ fun Page.getPlainTextForProperty(name: String): String? {
                 is FormulaResult.BooleanResult -> formula.boolean?.toString()
                 is FormulaResult.DateResult -> formula.date?.start
                 is FormulaResult.UnsupportedResult -> null
+                is FormulaResult.Unknown -> null
             }
         }
 
@@ -239,6 +240,8 @@ fun Page.getPlainTextForProperty(name: String): String? {
                 is RollupResult.DateResult -> rollup.date?.start
                 is RollupResult.ArrayResult -> "${rollup.array.size} item(s)"
                 is RollupResult.UnsupportedResult -> null
+                is RollupResult.IncompleteResult -> null
+                is RollupResult.Unknown -> null
             }
         }
 
