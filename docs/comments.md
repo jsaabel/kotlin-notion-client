@@ -80,7 +80,7 @@ val comment = notion.comments.create {
     parent.page("page-id")
     richText {
         text("Check out ")
-        link("https://notion.so", "Notion")
+        link("https://notion.com", "Notion")
         text(" and contact ")
         userMention("user-id-123")
         text(" for more details.")

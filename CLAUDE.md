@@ -174,6 +174,10 @@ This testing approach ensures our models can handle the complexity of real Notio
 - Sample responses from the official API documentation are available under `@reference/notion-api/sample_responses/` and its subfolders
 - These sample responses can and should be used for mock responses and in other cases where appropriate
 
+### Other SDK implementations for cross-checking
+- `@reference/python/` is a placeholder: its `.gitignore` ignores everything but itself, so it holds no committed code — clone the official Python SDK into it locally on demand when you need to cross-check that implementation.
+- `@reference/js/` takes the opposite approach: it's a small **committed** excerpt (not gitignored) of specific JavaScript SDK helpers judged worth vendoring outright — currently the pagination/large-data-source-iteration helpers (`iterateAllDataSourceRows`/`collectAllDataSourceRows`) from `notion-sdk-js`, with origin and license noted in `reference/js/README.md`. If a broader JS cross-reference is ever needed, prefer adding a gitignored placeholder like `reference/python/`'s rather than vendoring more files there.
+
 ## Important Reminders
 
 ### Test Execution Guidelines

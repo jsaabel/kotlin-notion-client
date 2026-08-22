@@ -22,7 +22,7 @@
     {
       "type": "text",
       "text": {
-        "content": "Today'\''s grocery list",
+        "content": "Today's grocery list",
         "link": null
       },
       "annotations": {
@@ -33,7 +33,7 @@
         "code": false,
         "color": "default"
       },
-      "plain_text": "Today'\''s grocery list",
+      "plain_text": "Today's grocery list",
       "href": null
     }
   ],
@@ -112,7 +112,7 @@
       "name": "Cost of next trip",
       "type": "formula",
       "formula": {
-        "value": "if(prop(\"In stock\"), 0, prop(\"Price\"))"
+        "expression": "if(prop(\"In stock\"), 0, prop(\"Price\"))"
       }
     },
     "Last ordered": {
@@ -148,31 +148,29 @@
       "type": "multi_select",
       "multi_select": {
         "options": [
-          [
-            {
-              "id": "d209b920-212c-4040-9d4a-bdf349dd8b2a",
-              "name": "Duc Loi Market",
-              "color": "blue"
-            },
-            {
-              "id": "70104074-0f91-467b-9787-00d59e6e1e41",
-              "name": "Rainbow Grocery",
-              "color": "gray"
-            },
-            {
-              "id": "6c3867c5-d542-4f84-b6e9-a420c43094e7",
-              "name": "Gus's Community Market",
-              "color": "yellow"
-            },
-            {
-              "id": "a62fbb5f-fed4-44a4-8cac-cba5f518c1a1",
-              "name": "The Good Life Grocery",
-              "color": "orange"
-            }
-          ]
+          {
+            "id": "d209b920-212c-4040-9d4a-bdf349dd8b2a",
+            "name": "Duc Loi Market",
+            "color": "blue"
+          },
+          {
+            "id": "70104074-0f91-467b-9787-00d59e6e1e41",
+            "name": "Rainbow Grocery",
+            "color": "gray"
+          },
+          {
+            "id": "6c3867c5-d542-4f84-b6e9-a420c43094e7",
+            "name": "Gus's Community Market",
+            "color": "yellow"
+          },
+          {
+            "id": "a62fbb5f-fed4-44a4-8cac-cba5f518c1a1",
+            "name": "The Good Life Grocery",
+            "color": "orange"
+          }
         ]
       }
-    }
+    },
     "Photo": {
       "id": "aTIT",
       "name": "Photo",

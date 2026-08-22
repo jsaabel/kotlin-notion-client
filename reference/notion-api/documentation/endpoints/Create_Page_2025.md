@@ -131,3 +131,17 @@ Returns either:
 ## Requirements
 
 Integration must have "Insert Content capabilities" on target parent.
+
+## Additions since this page was fetched (API version `2026-03-11`)
+
+This page still describes the `2025-09-03` shape it was fetched against. Live
+docs confirm these additions on top of it as of 2026-08-22 — see the linked
+files under `documentation/general/` for full detail rather than duplicating
+it here:
+
+- `filter_properties` query parameter — see `../general/13_Filter_Properties.md`
+- `markdown` body field (alternative to `children`) and `allow_async` for an
+  async create-from-markdown flow — see `../general/14_Page_Markdown.md` and
+  `../general/15_Async_Tasks.md`
+- `template.timezone` (IANA string) to control how template variables like
+  `@now`/`@today` resolve
