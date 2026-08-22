@@ -29,7 +29,7 @@ import it.saabel.kotlinnotionclient.api.UsersApi
 import it.saabel.kotlinnotionclient.api.ViewsApi
 import it.saabel.kotlinnotionclient.config.NotionConfig
 import it.saabel.kotlinnotionclient.ratelimit.NotionRateLimit
-import kotlinx.serialization.json.Json
+import it.saabel.kotlinnotionclient.serialization.NotionJson
 
 /**
  * Main entry point for the Notion API client.
@@ -147,15 +147,9 @@ class NotionClient
                 HttpClient(CIO) {
                     // Install JSON serialization
                     install(ContentNegotiation) {
-                        // TODO: Consider adding info on why these options are chosen
-                        json(
-                            Json {
-                                ignoreUnknownKeys = true
-                                prettyPrint = config.prettyPrint
-                                encodeDefaults = true
-                                explicitNulls = false
-                            },
-                        )
+                        // NotionJson documents why each setting is what it is, and lets tests
+                        // assert on the exact bytes a request produces.
+                        json(NotionJson.forClient(prettyPrint = config.prettyPrint))
                     }
 
                     // Install authentication

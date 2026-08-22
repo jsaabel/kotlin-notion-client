@@ -273,13 +273,15 @@ class UpdatePageRequestBuilder {
         }
 
         /**
-         * Removes the page icon by setting it to null.
+         * Removes the page icon.
          *
-         * Note: According to the Notion API, to remove an icon, you should
-         * pass null for the icon field in the request.
+         * Notion removes an icon when the request carries `"icon": null`, so the request records
+         * [Icon.Removed] — a sentinel that serializes to exactly that. A plain Kotlin `null` would
+         * be dropped from the payload and the page would keep its icon; see
+         * `docs/adr/0002-explicit-null-payloads.md`.
          */
         fun remove() {
-            this@UpdatePageRequestBuilder.iconValue = null
+            this@UpdatePageRequestBuilder.iconValue = Icon.Removed
         }
     }
 
@@ -389,13 +391,15 @@ class UpdatePageRequestBuilder {
         }
 
         /**
-         * Removes the page cover by setting it to null.
+         * Removes the page cover.
          *
-         * Note: According to the Notion API, to remove a cover, you should
-         * pass null for the cover field in the request.
+         * Notion removes a cover when the request carries `"cover": null`, so the request records
+         * [PageCover.Removed] — a sentinel that serializes to exactly that. A plain Kotlin `null`
+         * would be dropped from the payload and the page would keep its cover; see
+         * `docs/adr/0002-explicit-null-payloads.md`.
          */
         fun remove() {
-            this@UpdatePageRequestBuilder.coverValue = null
+            this@UpdatePageRequestBuilder.coverValue = PageCover.Removed
         }
     }
 
