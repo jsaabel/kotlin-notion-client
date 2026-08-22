@@ -4,7 +4,9 @@ import it.saabel.kotlinnotionclient.models.base.Color
 import it.saabel.kotlinnotionclient.models.base.ExternalFile
 import it.saabel.kotlinnotionclient.models.base.Icon
 import it.saabel.kotlinnotionclient.models.base.RichText
+import it.saabel.kotlinnotionclient.models.files.FileUploadOptions
 import it.saabel.kotlinnotionclient.models.files.FileUploadReference
+import it.saabel.kotlinnotionclient.utils.FileSource
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
@@ -367,6 +369,54 @@ sealed class BlockRequest {
         @SerialName("tab")
         val tab: TabRequestContent,
     ) : BlockRequest()
+
+    /**
+     * A local file that still has to be uploaded before this block can be sent.
+     *
+     * Emitted by the [PageContentBuilder] overloads that take a [FileSource] (or a
+     * `java.io.File` / `java.nio.file.Path` / an HTML string) instead of a file-upload id.
+     * Because builder lambdas are synchronous, no upload can happen while the block tree is
+     * being constructed; the sentinel carries the file through the tree instead and the
+     * suspending API layer resolves it — uploading the bytes and substituting the resulting
+     * `file_upload` reference — just before the request is serialized. See
+     * `docs/adr/0001-deferred-file-upload-resolution.md`.
+     *
+     * Every entry point that accepts blocks resolves sentinels: [BlocksApi.appendChildren][
+     * it.saabel.kotlinnotionclient.api.BlocksApi.appendChildren],
+     * [BlocksApi.update][it.saabel.kotlinnotionclient.api.BlocksApi.update] and
+     * [PagesApi.create][it.saabel.kotlinnotionclient.api.PagesApi.create]. Serializing one
+     * yourself throws — see [PendingUploadSerializer].
+     *
+     * @property kind Which block the resolved sentinel becomes
+     * @property source The bytes to upload
+     * @property caption Caption rich text for the resolved block, already built
+     * @property name Display name, used by [kind] [PendingUploadKind.FILE] only
+     * @property options Upload options — content type override, progress callback, validation
+     */
+    @Serializable(with = PendingUploadSerializer::class)
+    @SerialName("pending_upload")
+    data class PendingUpload(
+        val kind: PendingUploadKind,
+        val source: FileSource,
+        val caption: List<RichText> = emptyList(),
+        val name: String? = null,
+        val options: FileUploadOptions = FileUploadOptions(),
+    ) : BlockRequest()
+}
+
+/**
+ * Which block a [BlockRequest.PendingUpload] resolves into once its file has been uploaded.
+ *
+ * [HTML] resolves to an embed block: Notion renders an uploaded `.html` file as an HTML block
+ * (Jul 3 2026 changelog), which is why there is no separate `html` block type.
+ */
+enum class PendingUploadKind {
+    IMAGE,
+    VIDEO,
+    AUDIO,
+    FILE,
+    PDF,
+    HTML,
 }
 
 // REQUEST CONTENT CLASSES

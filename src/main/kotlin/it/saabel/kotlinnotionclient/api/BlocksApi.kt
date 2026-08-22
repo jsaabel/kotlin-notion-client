@@ -23,6 +23,7 @@ import it.saabel.kotlinnotionclient.models.files.FileUploadOptions
 import it.saabel.kotlinnotionclient.utils.FileSource
 import it.saabel.kotlinnotionclient.utils.Pagination
 import it.saabel.kotlinnotionclient.utils.asFileSource
+import it.saabel.kotlinnotionclient.utils.withHtmlExtension
 import it.saabel.kotlinnotionclient.validation.RequestValidator
 import it.saabel.kotlinnotionclient.validation.ValidationConfig
 import it.saabel.kotlinnotionclient.validation.ValidationException
@@ -196,10 +197,13 @@ class BlocksApi(
         children: List<BlockRequest>,
         position: BlockAppendPosition? = null,
     ): BlockList {
-        validator.validateOrThrow("children", children)
+        // Local files recorded by the builder are uploaded here, before validation: the
+        // validator reasons about the blocks that get sent, and a sentinel is not one of them.
+        val resolved = uploads.resolvePendingUploads(children)
+        validator.validateOrThrow("children", resolved)
 
         return try {
-            val request = AppendBlockChildrenRequest(children = children, position = position)
+            val request = AppendBlockChildrenRequest(children = resolved, position = position)
             val response: HttpResponse =
                 httpClient.patch("${config.baseUrl}/blocks/$blockId/children") {
                     contentType(ContentType.Application.Json)
@@ -265,13 +269,14 @@ class BlocksApi(
         blockId: String,
         request: BlockRequest,
     ): Block {
-        validator.validateOrThrow("block", listOf(request))
+        val resolved = uploads.resolvePendingUploads(listOf(request)).single()
+        validator.validateOrThrow("block", listOf(resolved))
 
         return try {
             val response: HttpResponse =
                 httpClient.patch("${config.baseUrl}/blocks/$blockId") {
                     contentType(ContentType.Application.Json)
-                    setBody(request)
+                    setBody(resolved)
                 }
 
             if (response.status.isSuccess()) {
@@ -411,13 +416,6 @@ class BlocksApi(
     // ---------------------------------------------------------------------
 
     private val uploads by lazy { EnhancedFileUploadApi(httpClient, config) }
-
-    /**
-     * Notion picks the embed's renderer from the uploaded file's extension, so an HTML payload
-     * saved under any other name silently becomes a plain file attachment.
-     */
-    private fun String.withHtmlExtension(): String =
-        if (endsWith(".html", ignoreCase = true) || endsWith(".htm", ignoreCase = true)) this else "$this.html"
 
     /**
      * Uploads a file and appends it to a page or block as an image block, in one call.

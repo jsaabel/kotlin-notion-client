@@ -239,6 +239,46 @@ Eleven changelog-driven issues landed together, bringing the client up to date w
 
 ### Added
 
+- **Local files inside the content DSL (#75, ADR 0001).** The block builders now take a local
+  file wherever they took a URL or an upload id, which makes a page with several attachments a
+  single call instead of an upload-and-thread-the-ids preamble:
+
+  ```kotlin
+  notion.pages.create {
+      parent.page(parentId)
+      title("Q3 report")
+      content {
+          image(File("chart.png"), caption = "Q3")
+          html(reportHtml)
+          pdf(Paths.get("appendix.pdf"))
+      }
+  }
+  ```
+
+  `image`, `video`, `audio`, `file` and `pdf` gain `FileSource`/`File`/`Path` overloads;
+  `html(markup, filename, caption)` uploads the markup under an `.html` name and resolves to an
+  embed, the shape Notion renders as an HTML block. `file` defaults the block's display name to
+  the source's filename.
+
+  Builder lambdas are synchronous, so nothing is uploaded while one runs: the builder records a
+  `BlockRequest.PendingUpload` sentinel carrying the file, and every suspending entry point that
+  consumes blocks — `pages.create`/`createAsync`, `blocks.appendChildren`, `blocks.update` —
+  uploads and substitutes before validating and sending. Because resolution hooks the raw
+  request funnels, building the blocks separately works too:
+  `pageContent { image(File(…)) }` handed to `appendChildren(id, blocks)` uploads on the way out.
+
+  Uploads within one call run concurrently (bounded at four) and the first failure cancels the
+  rest and throws `FileUploadError` **before** the create or append is sent, so no partially
+  populated page is left behind; uploads that had already completed are left to expire, since
+  Notion exposes no delete-upload endpoint. The same file attached twice uploads twice —
+  reusing one upload id across blocks is unverified against the live API, so the client does not
+  deduplicate.
+
+  This is additive: `pageContent {}` still returns `List<BlockRequest>` and no existing signature
+  changed. Serializing an unresolved sentinel by hand throws a `SerializationException` naming
+  the file and pointing at both ways out, and `RequestValidator` reports an
+  `UNRESOLVED_PENDING_UPLOAD` violation as defence in depth.
+
 - **Embed blocks take a caption (#69).** Undocumented — the embed reference lists only `url` —
   but verified live: Notion accepts a caption on an embed and echoes it back on the created
   block. Added to `EmbedRequestContent`, to `EmbedContent` on the read side, and to

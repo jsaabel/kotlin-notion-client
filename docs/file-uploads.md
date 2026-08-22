@@ -36,6 +36,55 @@ Each helper takes a `File`, a `Path`, or a `FileSource` (which also covers byte 
 streams — see [File sources](#file-sources)), and each **throws** on failure like the rest of the
 client rather than returning a result you have to unwrap.
 
+### Local files inside the content DSL
+
+For a page that carries several attachments, `pages.create` is one request — every file has to
+be uploaded before it is sent. The content DSL takes local files directly and the client
+resolves them for you:
+
+```kotlin
+notion.pages.create {
+    parent.page(parentId)
+    title("Q3 report")
+    content {
+        paragraph("Revenue held flat quarter on quarter.")
+        image(File("chart.png"), caption = "Q3")
+        html(reportHtml)
+        pdf(Paths.get("appendix.pdf"))
+        file(File("raw-data.csv"))
+    }
+}
+```
+
+`image`, `video`, `audio`, `file` and `pdf` each take a `File`, a `Path` or a `FileSource`
+alongside their existing URL forms, and `html` takes the markup as a string (or an `.html` file).
+This is the recommended way to create a page with more than one attachment: one call, no ids to
+thread through, and nothing to hoist above the builder.
+
+Builder lambdas are synchronous, so the upload cannot happen inside one. What the builder records
+is a *pending upload* — the file itself, carried in the block tree — and the suspending call that
+consumes the blocks does the uploading and swaps in the resulting references just before it sends.
+The same works for `blocks.appendChildren` and `blocks.update`, and the blocks can be built
+separately:
+
+```kotlin
+val blocks = pageContent { image(File("chart.png")) }   // no upload yet
+notion.blocks.appendChildren(pageId, blocks)            // uploads, then appends
+```
+
+What this means in practice:
+
+- **Uploads run concurrently**, up to four at a time, and all of them finish before the page or
+  append request is sent.
+- **Failure is all-or-nothing at the request boundary.** The first failed upload cancels the rest
+  and throws `FileUploadError`; the create or append never happens, so no half-populated page is
+  left behind. Uploads that had already completed are orphaned on purpose — Notion has no
+  delete-upload endpoint, and an unattached upload expires an hour after it was created.
+- **The same file attached twice is uploaded twice.** Reusing one upload id across blocks is not
+  verified against the live API, so the client does not deduplicate.
+- **Only these methods resolve pending uploads.** Serializing the blocks yourself throws a
+  `SerializationException` naming the file, rather than silently sending an invalid block.
+
 ### HTML blocks
 
 Notion has no `html` block type. An HTML block is an `embed` whose `file_upload` points at an
@@ -58,7 +107,9 @@ notion.blocks.appendHtml(
 `appendHtml` uploads the string as `embed.html` and attaches it. Pass `filename` to name it
 something else — `.html` is appended unless the name already ends in `.html` or `.htm`, because
 Notion decides how to render the embed from the file's extension. There are `File`, `Path` and
-`FileSource` overloads too, for HTML you already have on disk.
+`FileSource` overloads too, for HTML you already have on disk. Inside a content builder the
+same block is `html(reportHtml)` — see [Local files inside the content
+DSL](#local-files-inside-the-content-dsl).
 
 Embeds take a caption, including HTML blocks. This is undocumented — the embed reference lists
 only `url` — but verified live: Notion accepts the caption and echoes it back on the created
