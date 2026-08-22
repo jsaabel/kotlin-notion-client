@@ -16,6 +16,7 @@ import it.saabel.kotlinnotionclient.config.NotionConfig
 import it.saabel.kotlinnotionclient.exceptions.NotionException
 import it.saabel.kotlinnotionclient.exceptions.toNotionApiError
 import it.saabel.kotlinnotionclient.models.comments.Comment
+import it.saabel.kotlinnotionclient.models.comments.CommentAttachmentRequest
 import it.saabel.kotlinnotionclient.models.comments.CommentList
 import it.saabel.kotlinnotionclient.models.comments.CreateCommentRequest
 import it.saabel.kotlinnotionclient.models.comments.CreateCommentRequestBuilder
@@ -25,8 +26,12 @@ import it.saabel.kotlinnotionclient.models.comments.UpdateCommentRequestBuilder
 import it.saabel.kotlinnotionclient.models.comments.createCommentRequest
 import it.saabel.kotlinnotionclient.models.comments.retrieveCommentsRequest
 import it.saabel.kotlinnotionclient.models.comments.updateCommentRequest
+import it.saabel.kotlinnotionclient.models.files.FileUploadOptions
+import it.saabel.kotlinnotionclient.utils.FileSource
 import it.saabel.kotlinnotionclient.utils.Pagination
+import it.saabel.kotlinnotionclient.utils.asFileSource
 import kotlinx.coroutines.flow.Flow
+import java.io.File
 
 /**
  * API client for Notion Comments endpoints.
@@ -434,4 +439,68 @@ class CommentsApi(
                 pageSize = NotionApiLimits.Response.MAX_PAGE_SIZE,
             )
         }
+
+    // ---------------------------------------------------------------------
+    // Upload-and-attach helpers
+    //
+    // The comment DSL is a non-suspend lambda, so it cannot upload from inside
+    // `comments.create { attachment(File(…)) }` — deferred uploads inside the
+    // content DSL are tracked separately (issue #70). This overload takes the
+    // pre-upload route instead: the files are uploaded before the builder runs
+    // and merged into the request it produces.
+    // ---------------------------------------------------------------------
+
+    private val uploads by lazy { EnhancedFileUploadApi(httpClient, config) }
+
+    /**
+     * Uploads files and creates a comment carrying them as attachments, in one call.
+     *
+     * ```kotlin
+     * notion.comments.create(listOf(File("trace.txt").asFileSource())) {
+     *     parent { pageId(pageId) }
+     *     content { text("Stack trace attached") }
+     * }
+     * ```
+     *
+     * Attachments added by the [builder] itself are kept and counted first; Notion allows at
+     * most three per comment in total.
+     *
+     * @param attachments The files to upload and attach
+     * @param options Upload options — content type override, progress callback, validation
+     * @param builder DSL block for building the comment request
+     * @return Comment The created comment
+     * @throws IllegalArgumentException if the comment would carry more than 3 attachments
+     * @throws it.saabel.kotlinnotionclient.models.files.FileUploadError if any upload fails
+     * @throws NotionException.ApiError for API-related errors (4xx, 5xx responses)
+     */
+    suspend fun create(
+        attachments: List<FileSource>,
+        options: FileUploadOptions = FileUploadOptions(),
+        builder: CreateCommentRequestBuilder.() -> Unit,
+    ): Comment {
+        val request = createCommentRequest(builder)
+        val existing = request.attachments.orEmpty()
+        require(existing.size + attachments.size <= MAX_COMMENT_ATTACHMENTS) {
+            "Comments can have a maximum of $MAX_COMMENT_ATTACHMENTS attachments, but " +
+                "${existing.size + attachments.size} were provided"
+        }
+
+        val uploaded =
+            attachments.map { source ->
+                CommentAttachmentRequest(fileUploadId = uploads.uploadAndAwait(source, options).id)
+            }
+
+        return create(request.copy(attachments = existing + uploaded))
+    }
+
+    /** Uploads [attachments] and creates a comment carrying them. See [create]. */
+    suspend fun create(
+        vararg attachments: File,
+        builder: CreateCommentRequestBuilder.() -> Unit,
+    ): Comment = create(attachments.map { it.asFileSource() }, builder = builder)
+
+    private companion object {
+        /** Notion's per-comment attachment cap. */
+        const val MAX_COMMENT_ATTACHMENTS = 3
+    }
 }

@@ -19,12 +19,14 @@ import it.saabel.kotlinnotionclient.exceptions.NotionException
 import it.saabel.kotlinnotionclient.exceptions.toNotionApiError
 import it.saabel.kotlinnotionclient.models.asynctasks.AsyncTask
 import it.saabel.kotlinnotionclient.models.base.Parent
+import it.saabel.kotlinnotionclient.models.files.FileUploadOptions
 import it.saabel.kotlinnotionclient.models.pages.AsyncPageCreateResult
 import it.saabel.kotlinnotionclient.models.pages.CreatePageRequest
 import it.saabel.kotlinnotionclient.models.pages.CreatePageRequestBuilder
 import it.saabel.kotlinnotionclient.models.pages.MovePageParent
 import it.saabel.kotlinnotionclient.models.pages.MovePageRequest
 import it.saabel.kotlinnotionclient.models.pages.Page
+import it.saabel.kotlinnotionclient.models.pages.PageProperty
 import it.saabel.kotlinnotionclient.models.pages.PagePropertyItemResponse
 import it.saabel.kotlinnotionclient.models.pages.PagePropertyValue
 import it.saabel.kotlinnotionclient.models.pages.PropertyItem
@@ -33,11 +35,15 @@ import it.saabel.kotlinnotionclient.models.pages.UpdatePageRequest
 import it.saabel.kotlinnotionclient.models.pages.UpdatePageRequestBuilder
 import it.saabel.kotlinnotionclient.models.pages.createPageRequest
 import it.saabel.kotlinnotionclient.models.pages.updatePageRequest
+import it.saabel.kotlinnotionclient.utils.FileSource
 import it.saabel.kotlinnotionclient.utils.Pagination
+import it.saabel.kotlinnotionclient.utils.asFileSource
 import it.saabel.kotlinnotionclient.validation.RequestValidator
 import it.saabel.kotlinnotionclient.validation.ValidationConfig
 import it.saabel.kotlinnotionclient.validation.ValidationException
 import kotlinx.coroutines.flow.Flow
+import java.io.File
+import java.nio.file.Path
 
 /**
  * API client for Notion Pages endpoints.
@@ -639,4 +645,165 @@ class PagesApi(
                 }
             retrievePropertyItemsPage(url)
         }
+
+    // ---------------------------------------------------------------------
+    // Upload-and-attach helpers
+    //
+    // Thin compositions over EnhancedFileUploadApi plus the existing update
+    // path: upload the bytes, wait until Notion reports the upload as ready,
+    // then write the icon, cover or files property. They throw like the rest
+    // of the client rather than returning FileUploadResult — see
+    // FileUploadResult.getOrThrow.
+    // ---------------------------------------------------------------------
+
+    private val uploads by lazy { EnhancedFileUploadApi(httpClient, config) }
+
+    /**
+     * Uploads an image and sets it as the page's icon, in one call.
+     *
+     * ```kotlin
+     * notion.pages.setIcon(pageId, File("logo.png"))
+     * ```
+     *
+     * Notion accepts only `external` and `file_upload` icons on write, so an uploaded file is
+     * the only way to set a workspace-hosted icon through the API.
+     *
+     * @param pageId The ID of the page to update
+     * @param source The image to upload
+     * @param options Upload options — content type override, progress callback, validation
+     * @return Page object representing the updated page
+     * @throws it.saabel.kotlinnotionclient.models.files.FileUploadError if the upload fails
+     * @throws NotionException.ApiError for API-related errors (4xx, 5xx responses)
+     */
+    suspend fun setIcon(
+        pageId: String,
+        source: FileSource,
+        options: FileUploadOptions = FileUploadOptions(),
+    ): Page {
+        val upload = uploads.uploadAndAwait(source, options)
+        return update(pageId) { icon.upload(upload) }
+    }
+
+    /** Uploads [file] and sets it as the page's icon. See [setIcon]. */
+    suspend fun setIcon(
+        pageId: String,
+        file: File,
+        options: FileUploadOptions = FileUploadOptions(),
+    ): Page = setIcon(pageId, file.asFileSource(), options)
+
+    /** Uploads the file at [path] and sets it as the page's icon. See [setIcon]. */
+    suspend fun setIcon(
+        pageId: String,
+        path: Path,
+        options: FileUploadOptions = FileUploadOptions(),
+    ): Page = setIcon(pageId, path.asFileSource(), options)
+
+    /**
+     * Uploads an image and sets it as the page's cover, in one call.
+     *
+     * ```kotlin
+     * notion.pages.setCover(pageId, File("hero.png"))
+     * ```
+     *
+     * @param pageId The ID of the page to update
+     * @param source The image to upload
+     * @param options Upload options — content type override, progress callback, validation
+     * @return Page object representing the updated page
+     * @throws it.saabel.kotlinnotionclient.models.files.FileUploadError if the upload fails
+     * @throws NotionException.ApiError for API-related errors (4xx, 5xx responses)
+     */
+    suspend fun setCover(
+        pageId: String,
+        source: FileSource,
+        options: FileUploadOptions = FileUploadOptions(),
+    ): Page {
+        val upload = uploads.uploadAndAwait(source, options)
+        return update(pageId) { cover.upload(upload) }
+    }
+
+    /** Uploads [file] and sets it as the page's cover. See [setCover]. */
+    suspend fun setCover(
+        pageId: String,
+        file: File,
+        options: FileUploadOptions = FileUploadOptions(),
+    ): Page = setCover(pageId, file.asFileSource(), options)
+
+    /** Uploads the file at [path] and sets it as the page's cover. See [setCover]. */
+    suspend fun setCover(
+        pageId: String,
+        path: Path,
+        options: FileUploadOptions = FileUploadOptions(),
+    ): Page = setCover(pageId, path.asFileSource(), options)
+
+    /**
+     * Uploads files and attaches them to a "Files & media" page property, in one call.
+     *
+     * ```kotlin
+     * notion.pages.attachFiles(pageId, "Attachments", File("a.pdf"), File("b.pdf"))
+     * ```
+     *
+     * Notion's files property is written whole — there is no per-entry append — so by default
+     * this reads the page first and re-sends the entries already there alongside the new
+     * uploads, which is what "attach" implies. Pass `replace = true` to overwrite the property
+     * with only the new files instead.
+     *
+     * @param pageId The ID of the page to update
+     * @param propertyName The name of the "Files & media" property
+     * @param sources The files to upload and attach
+     * @param replace true to drop the property's existing entries instead of keeping them
+     * @param options Upload options — content type override, progress callback, validation
+     * @return Page object representing the updated page
+     * @throws IllegalArgumentException if [sources] is empty, or if [propertyName] exists on the
+     *   page but is not a "Files & media" property
+     * @throws it.saabel.kotlinnotionclient.models.files.FileUploadError if any upload fails
+     * @throws NotionException.ApiError for API-related errors (4xx, 5xx responses)
+     */
+    suspend fun attachFiles(
+        pageId: String,
+        propertyName: String,
+        sources: List<FileSource>,
+        replace: Boolean = false,
+        options: FileUploadOptions = FileUploadOptions(),
+    ): Page {
+        require(sources.isNotEmpty()) { "attachFiles requires at least one file" }
+
+        val currentFiles =
+            if (replace) {
+                emptyList()
+            } else {
+                when (val property = retrieve(pageId).properties[propertyName]) {
+                    null -> {
+                        emptyList()
+                    }
+
+                    is PageProperty.Files -> {
+                        property.files
+                    }
+
+                    else -> {
+                        throw IllegalArgumentException(
+                            "Property '$propertyName' is a ${property.type} property, not files",
+                        )
+                    }
+                }
+            }
+
+        val newUploads = sources.map { uploads.uploadAndAwait(it, options) }
+
+        return update(pageId) {
+            properties {
+                files(propertyName) {
+                    currentFiles.forEach { existing(it) }
+                    newUploads.forEach { upload(it) }
+                }
+            }
+        }
+    }
+
+    /** Uploads [files] and attaches them to a "Files & media" property. See [attachFiles]. */
+    suspend fun attachFiles(
+        pageId: String,
+        propertyName: String,
+        vararg files: File,
+    ): Page = attachFiles(pageId, propertyName, files.map { it.asFileSource() })
 }
