@@ -4,7 +4,7 @@ Get started with the Kotlin Notion Client in under 5 minutes.
 
 ## Prerequisites
 
-1. **Notion Integration**: Create an integration at [notion.so/my-integrations](https://www.notion.so/my-integrations)
+1. **Notion Integration**: Create an integration at [notion.com/my-integrations](https://www.notion.com/my-integrations)
 2. **API Token**: Copy your integration's API token (starts with `secret_`)
 3. **Share Content**: Share a page or database with your integration
 4. **Kotlin Project**: Kotlin 2.3+ with JVM target 17+

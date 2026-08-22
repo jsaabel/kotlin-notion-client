@@ -1,7 +1,7 @@
 # Integration Capabilities
 
 All integrations have associated **capabilities** which enforce what an integration can do and see in a Notion workspace. These capabilities, when combined, determine which API endpoints an integration can call and what content and user-related information it can access.  
-To set your integration's capabilities, see the [Authorization guide](https://developers.notion.com/docs/authorization) or navigate to [https://www.notion.so/my-integrations](https://www.notion.so/my-integrations).
+To set your integration's capabilities, see the [Authorization guide](https://developers.notion.com/docs/authorization) or navigate to [https://www.notion.com/my-integrations](https://www.notion.com/my-integrations).
 
 > 📘 **Note**  
 > If an integration is added to a page, then the integration can access the page’s children.
