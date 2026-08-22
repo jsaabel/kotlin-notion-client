@@ -13,6 +13,7 @@ import io.ktor.http.isSuccess
 import it.saabel.kotlinnotionclient.config.NotionApiLimits
 import it.saabel.kotlinnotionclient.config.NotionConfig
 import it.saabel.kotlinnotionclient.exceptions.NotionException
+import it.saabel.kotlinnotionclient.exceptions.toNotionApiError
 import it.saabel.kotlinnotionclient.models.datasources.CreateDataSourceRequest
 import it.saabel.kotlinnotionclient.models.datasources.CreateDataSourceRequestBuilder
 import it.saabel.kotlinnotionclient.models.datasources.DataSource
@@ -67,18 +68,7 @@ class DataSourcesApi(
             if (response.status.isSuccess()) {
                 response.body<DataSource>()
             } else {
-                val errorBody =
-                    try {
-                        response.body<String>()
-                    } catch (e: Exception) {
-                        "Could not read error response body"
-                    }
-
-                throw NotionException.ApiError(
-                    code = response.status.value.toString(),
-                    status = response.status.value,
-                    details = "HTTP ${response.status.value}: ${response.status.description}. Response: $errorBody",
-                )
+                throw response.toNotionApiError()
             }
         } catch (e: NotionException) {
             throw e // Re-throw our own exceptions
@@ -107,6 +97,9 @@ class DataSourcesApi(
      * ```
      *
      * @param dataSourceId The ID of the data source to query
+     * @param filterProperties Optional list of property IDs to restrict the properties returned
+     *   for each page. Accepts both the percent-encoded form returned by pre-normalization data
+     *   source schemas and the decoded form returned elsewhere (e.g. `}Vpb`). At most 100 IDs.
      * @param builder DSL builder lambda for constructing the query
      * @return List of all matching pages across all result pages
      * @throws NotionException.NetworkError for network-related failures
@@ -115,11 +108,28 @@ class DataSourcesApi(
      */
     suspend fun query(
         dataSourceId: String,
+        filterProperties: List<String>? = null,
         builder: DataSourceQueryBuilder.() -> Unit,
     ): List<it.saabel.kotlinnotionclient.models.pages.Page> {
         val request = dataSourceQuery(builder)
-        return query(dataSourceId, request)
+        return query(dataSourceId, request, filterProperties)
     }
+
+    /**
+     * Queries a data source, restricted to archived (or explicitly non-archived) rows.
+     *
+     * Convenience method mirroring [query] for the common case of also filtering by archive
+     * status. Notion returns either archived or non-archived pages, never both.
+     *
+     * @param dataSourceId The ID of the data source to query
+     * @param isArchived `true` to return archived pages, `false` to explicitly request the
+     *   non-archived set
+     * @return List of all matching pages across all result pages
+     */
+    suspend fun query(
+        dataSourceId: String,
+        isArchived: Boolean,
+    ): List<it.saabel.kotlinnotionclient.models.pages.Page> = query(dataSourceId, DataSourceQueryRequest(isArchived = isArchived))
 
     /**
      * Queries a data source with optional filtering and sorting.
@@ -129,6 +139,9 @@ class DataSourcesApi(
      *
      * @param dataSourceId The ID of the data source to query
      * @param request The query request with filters and sorts
+     * @param filterProperties Optional list of property IDs to restrict the properties returned
+     *   for each page. Accepts both the percent-encoded form returned by pre-normalization data
+     *   source schemas and the decoded form returned elsewhere (e.g. `}Vpb`). At most 100 IDs.
      * @return List of all matching pages across all result pages
      * @throws NotionException.QueryResultLimitReached when Notion truncates the result
      *     set at its 10,000-row cap. The exception carries the partial results, the
@@ -136,11 +149,14 @@ class DataSourcesApi(
      * @throws NotionException.NetworkError for network-related failures
      * @throws NotionException.ApiError for API-related errors (4xx, 5xx responses)
      * @throws NotionException.AuthenticationError for authentication failures
+     * @throws IllegalArgumentException if [filterProperties] has more than 100 entries
      */
     suspend fun query(
         dataSourceId: String,
         request: DataSourceQueryRequest = DataSourceQueryRequest(),
+        filterProperties: List<String>? = null,
     ): List<it.saabel.kotlinnotionclient.models.pages.Page> {
+        validateFilterPropertiesLimit(filterProperties)
         val allPages = mutableListOf<it.saabel.kotlinnotionclient.models.pages.Page>()
         var currentCursor: String? = null
         var pageCount = 0
@@ -152,7 +168,7 @@ class DataSourcesApi(
                     pageSize = NotionApiLimits.Response.MAX_PAGE_SIZE,
                 )
 
-            val response = querySinglePage(dataSourceId, paginatedRequest)
+            val response = querySinglePage(dataSourceId, paginatedRequest, filterProperties)
             allPages.addAll(response.results)
 
             response.requestStatus?.takeIf { it.isIncomplete }?.let { status ->
@@ -191,34 +207,28 @@ class DataSourcesApi(
      *
      * @param dataSourceId The ID of the data source to query
      * @param request The query request with filters, sorts, and pagination parameters
+     * @param filterProperties Optional list of property IDs to restrict the properties returned
+     *   for each page. At most 100 IDs.
      * @return DatabaseQueryResponse containing a single page of results
+     * @throws IllegalArgumentException if [filterProperties] has more than 100 entries
      */
     private suspend fun querySinglePage(
         dataSourceId: String,
         request: DataSourceQueryRequest,
+        filterProperties: List<String>? = null,
     ): DataSourceQueryResponse =
         try {
             val response: HttpResponse =
                 httpClient.post("${config.baseUrl}/data_sources/$dataSourceId/query") {
                     contentType(ContentType.Application.Json)
+                    filterProperties(filterProperties)
                     setBody(request)
                 }
 
             if (response.status.isSuccess()) {
                 response.body<DataSourceQueryResponse>()
             } else {
-                val errorBody =
-                    try {
-                        response.body<String>()
-                    } catch (e: Exception) {
-                        "Could not read error response body"
-                    }
-
-                throw NotionException.ApiError(
-                    code = response.status.value.toString(),
-                    status = response.status.value,
-                    details = "HTTP ${response.status.value}: ${response.status.description}. Response: $errorBody",
-                )
+                throw response.toNotionApiError()
             }
         } catch (e: NotionException) {
             throw e // Re-throw our own exceptions
@@ -273,18 +283,7 @@ class DataSourcesApi(
             if (response.status.isSuccess()) {
                 response.body<DataSource>()
             } else {
-                val errorBody =
-                    try {
-                        response.body<String>()
-                    } catch (e: Exception) {
-                        "Could not read error response body"
-                    }
-
-                throw NotionException.ApiError(
-                    code = response.status.value.toString(),
-                    status = response.status.value,
-                    details = "HTTP ${response.status.value}: ${response.status.description}. Response: $errorBody",
-                )
+                throw response.toNotionApiError()
             }
         } catch (e: NotionException) {
             throw e // Re-throw our own exceptions
@@ -346,18 +345,7 @@ class DataSourcesApi(
             if (response.status.isSuccess()) {
                 response.body<DataSource>()
             } else {
-                val errorBody =
-                    try {
-                        response.body<String>()
-                    } catch (e: Exception) {
-                        "Could not read error response body"
-                    }
-
-                throw NotionException.ApiError(
-                    code = response.status.value.toString(),
-                    status = response.status.value,
-                    details = "HTTP ${response.status.value}: ${response.status.description}. Response: $errorBody",
-                )
+                throw response.toNotionApiError()
             }
         } catch (e: NotionException) {
             throw e // Re-throw our own exceptions
@@ -446,18 +434,7 @@ class DataSourcesApi(
             if (response.status.isSuccess()) {
                 response.body<TemplatesResponse>()
             } else {
-                val errorBody =
-                    try {
-                        response.body<String>()
-                    } catch (e: Exception) {
-                        "Could not read error response body"
-                    }
-
-                throw NotionException.ApiError(
-                    code = response.status.value.toString(),
-                    status = response.status.value,
-                    details = "HTTP ${response.status.value}: ${response.status.description}. Response: $errorBody",
-                )
+                throw response.toNotionApiError()
             }
         } catch (e: NotionException) {
             throw e // Re-throw our own exceptions
@@ -484,16 +461,36 @@ class DataSourcesApi(
      * ```
      *
      * @param dataSourceId The ID of the data source to query
+     * @param filterProperties Optional list of property IDs to restrict the properties returned
+     *   for each page. At most 100 IDs.
      * @param builder DSL builder lambda for constructing the query
      * @return Flow<Page> that emits individual pages from all result pages
      */
     fun queryAsFlow(
         dataSourceId: String,
+        filterProperties: List<String>? = null,
         builder: DataSourceQueryBuilder.() -> Unit,
     ): Flow<it.saabel.kotlinnotionclient.models.pages.Page> {
         val request = dataSourceQuery(builder)
-        return queryAsFlow(dataSourceId, request)
+        return queryAsFlow(dataSourceId, request, filterProperties)
     }
+
+    /**
+     * Queries a data source and returns results as a Flow for reactive processing, restricted to
+     * archived (or explicitly non-archived) rows.
+     *
+     * Convenience method mirroring [queryAsFlow] for the common case of also filtering by archive
+     * status. Notion returns either archived or non-archived pages, never both.
+     *
+     * @param dataSourceId The ID of the data source to query
+     * @param isArchived `true` to return archived pages, `false` to explicitly request the
+     *   non-archived set
+     * @return Flow<Page> that emits individual pages from all result pages
+     */
+    fun queryAsFlow(
+        dataSourceId: String,
+        isArchived: Boolean,
+    ): Flow<it.saabel.kotlinnotionclient.models.pages.Page> = queryAsFlow(dataSourceId, DataSourceQueryRequest(isArchived = isArchived))
 
     /**
      * Queries a data source and returns results as a Flow for reactive processing.
@@ -505,13 +502,21 @@ class DataSourcesApi(
      *
      * @param dataSourceId The ID of the data source to query
      * @param request The query request with filters and sorts
+     * @param filterProperties Optional list of property IDs to restrict the properties returned
+     *   for each page. At most 100 IDs.
      * @return Flow<Page> that emits individual pages from all result pages
+     * @throws IllegalArgumentException if [filterProperties] has more than 100 entries
      */
     fun queryAsFlow(
         dataSourceId: String,
         request: DataSourceQueryRequest = DataSourceQueryRequest(),
-    ): Flow<it.saabel.kotlinnotionclient.models.pages.Page> =
-        flow {
+        filterProperties: List<String>? = null,
+    ): Flow<it.saabel.kotlinnotionclient.models.pages.Page> {
+        // Validated eagerly (at call time, not lazily on first collection) — consistent with
+        // fail-fast validation elsewhere and with a caller's likely expectation that an
+        // IllegalArgumentException surfaces before any Flow is even handed back.
+        validateFilterPropertiesLimit(filterProperties)
+        return flow {
             val emitted = mutableListOf<it.saabel.kotlinnotionclient.models.pages.Page>()
             var cursor: String? = null
             do {
@@ -522,6 +527,7 @@ class DataSourcesApi(
                             startCursor = cursor,
                             pageSize = NotionApiLimits.Response.MAX_PAGE_SIZE,
                         ),
+                        filterProperties,
                     )
                 response.results.forEach {
                     emitted.add(it)
@@ -537,6 +543,7 @@ class DataSourcesApi(
                 cursor = response.nextCursor
             } while (response.hasMore)
         }
+    }
 
     /**
      * Queries a data source and returns response pages as a Flow.
@@ -610,16 +617,38 @@ class DataSourcesApi(
      * ```
      *
      * @param dataSourceId The ID of the data source to query
+     * @param filterProperties Optional list of property IDs to restrict the properties returned
+     *   for each page. At most 100 IDs.
      * @param builder DSL builder lambda for constructing the query (including optional [pageSize])
+     * @return [DataSourceQueryResponse] for the first page of matching results
+     * @throws IllegalArgumentException if [filterProperties] has more than 100 entries
+     */
+    suspend fun queryFirstPage(
+        dataSourceId: String,
+        filterProperties: List<String>? = null,
+        builder: DataSourceQueryBuilder.() -> Unit = {},
+    ): DataSourceQueryResponse {
+        validateFilterPropertiesLimit(filterProperties)
+        val request = dataSourceQuery(builder)
+        return querySinglePage(dataSourceId, request, filterProperties)
+    }
+
+    /**
+     * Queries the first page of a data source, restricted to archived (or explicitly
+     * non-archived) rows, without auto-paginating.
+     *
+     * Convenience method mirroring [queryFirstPage] for the common case of also filtering by
+     * archive status. Notion returns either archived or non-archived pages, never both.
+     *
+     * @param dataSourceId The ID of the data source to query
+     * @param isArchived `true` to return archived pages, `false` to explicitly request the
+     *   non-archived set
      * @return [DataSourceQueryResponse] for the first page of matching results
      */
     suspend fun queryFirstPage(
         dataSourceId: String,
-        builder: DataSourceQueryBuilder.() -> Unit = {},
-    ): DataSourceQueryResponse {
-        val request = dataSourceQuery(builder)
-        return querySinglePage(dataSourceId, request)
-    }
+        isArchived: Boolean,
+    ): DataSourceQueryResponse = querySinglePage(dataSourceId, DataSourceQueryRequest(isArchived = isArchived))
 
     // ========== Large Data Source Iteration ==========
 

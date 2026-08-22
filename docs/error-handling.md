@@ -16,8 +16,11 @@ sealed class NotionException(message: String, cause: Throwable? = null) : Except
     data class ApiError(val code: String, val status: Int, val details: String? = null)
     data class AuthenticationError(val details: String)
     data class RateLimitError(val retryAfterSeconds: Long? = null)
+    data class ServiceOverloadedError(val retryAfterSeconds: Long? = null, val details: String? = null)
     data class ValidationError(val field: String? = null, val details: String)
     data class UnexpectedError(val details: String, val originalCause: Throwable? = null)
+    // Plus QueryResultLimitReached and IterationStalled, thrown only by the auto-paginating
+    // and windowed data source query helpers — see their KDoc for when each applies.
 }
 ```
 
@@ -49,9 +52,13 @@ Errors returned by the Notion API with HTTP status codes and error codes.
 - `403` - Forbidden (insufficient permissions)
 - `404` - Object not found
 - `409` - Conflict (version mismatch)
-- `429` - Rate limited
-- `500` - Internal server error
-- `503` - Service unavailable
+- `429` - Rate limited (retried automatically — see [Rate Limiting](#rate-limiting); surfaces as `ApiError` with `status = 429` only once retries are exhausted)
+- `500` - Internal server error (not retried — see [Rate Limiting](#rate-limiting))
+- `502` / `503` / `504` - Bad gateway / service unavailable / gateway timeout (retried automatically)
+
+`529` (service overloaded) is retried the same way as `429`, but once retries are exhausted it
+surfaces as the dedicated [`ServiceOverloadedError`](#serviceoverloadederror) below instead of
+`ApiError`.
 
 #### AuthenticationError
 Authentication and authorization failures.
@@ -72,9 +79,24 @@ Rate limiting errors when API quota is exceeded.
 - `retryAfterSeconds: Long?` - Number of seconds to wait before retrying (from `Retry-After` header)
 
 **Rate limiting behavior:**
-- Notion API uses rate limiting headers (`x-ratelimit-limit`, `x-ratelimit-remaining`, `x-ratelimit-reset`)
-- The client can be configured to automatically retry with exponential backoff
-- See [Rate Limiting](#rate-limiting) section for strategies
+- Notion signals rate limiting with an HTTP `429` and a `Retry-After` header (seconds to wait)
+- The client automatically retries `429` responses honouring that header — see [Rate Limiting](#rate-limiting)
+- In current builds, once retries are exhausted a `429` surfaces as `NotionException.ApiError` with `status = 429`, not as `RateLimitError` — `RateLimitError` is reserved on the hierarchy for callers doing their own manual retry bookkeeping (e.g. after catching `ApiError` and checking `status == 429`)
+
+#### ServiceOverloadedError
+Thrown when Notion returns `529` (service overloaded) and the client's automatic retries (see [Rate Limiting](#rate-limiting)) are exhausted.
+
+**Properties:**
+- `retryAfterSeconds: Long?` - Seconds the API asked the client to wait, from the final failed attempt's `Retry-After` header (`null` when absent)
+- `details: String?` - Raw error details from the final failed response
+
+```kotlin
+try {
+    client.pages.retrieve(pageId)
+} catch (e: NotionException.ServiceOverloadedError) {
+    logger.warn("Notion overloaded even after retries, backing off ${e.retryAfterSeconds ?: "a while"}s")
+}
+```
 
 #### ValidationError
 Client-side validation errors caught before making API requests.
@@ -101,7 +123,7 @@ Unexpected errors that don't fit other categories.
 ### Simple Try-Catch
 
 ```kotlin
-import no.saabelit.kotlinnotionclient.exceptions.NotionException
+import it.saabel.kotlinnotionclient.exceptions.NotionException
 
 try {
     val page = client.pages.retrieve("page-id")
@@ -145,6 +167,10 @@ try {
             logger.warn("Rate limited, retry after ${e.retryAfterSeconds}s")
             // Wait and retry
         }
+        is NotionException.ServiceOverloadedError -> {
+            logger.warn("Notion overloaded even after automatic retries, retry after ${e.retryAfterSeconds}s")
+            // Back off further and retry
+        }
         is NotionException.ValidationError -> {
             logger.error("Validation failed: ${e.details}")
             // Fix input and retry
@@ -152,6 +178,11 @@ try {
         is NotionException.UnexpectedError -> {
             logger.error("Unexpected error", e.originalCause)
             // Report bug
+        }
+        is NotionException.QueryResultLimitReached, is NotionException.IterationStalled -> {
+            // Thrown only by data source query/iteration helpers hitting Notion's 10,000-row
+            // cap — see their KDoc for recovery strategies (narrower query, UniqueId iteration key).
+            logger.error(e.message)
         }
     }
 }
@@ -189,7 +220,7 @@ The client performs validation **before** making API calls to catch errors early
 Validation errors throw a `ValidationException` (extends `IllegalArgumentException`) with detailed information:
 
 ```kotlin
-import no.saabelit.kotlinnotionclient.validation.ValidationException
+import it.saabel.kotlinnotionclient.validation.ValidationException
 
 try {
     // Attempt to create too many blocks at once
@@ -258,7 +289,7 @@ try {
 Configure validation behavior:
 
 ```kotlin
-import no.saabelit.kotlinnotionclient.validation.ValidationConfig
+import it.saabel.kotlinnotionclient.validation.ValidationConfig
 
 val config = NotionConfig(
     apiToken = "secret_...",
@@ -281,116 +312,87 @@ val client = NotionClient(config)
 
 ## Rate Limiting
 
-The Notion API enforces rate limits to ensure service stability. The client provides automatic retry strategies and rate limit tracking.
+The Notion API enforces rate limits to ensure service stability. The client handles this
+transparently through [`NotionRateLimit`](../src/main/kotlin/it/saabel/kotlinnotionclient/ratelimit/NotionRateLimit.kt),
+a Ktor client plugin hooked into the `Send` pipeline phase — every outbound request flows through
+it automatically, so API methods never wrap calls in retry logic themselves. It handles two
+concerns:
+
+- **Proactive throttling** — a continuous-refill token bucket paces outbound requests at
+  `sustainedRate` req/s, allowing short bursts up to `burstCapacity`.
+- **Reactive retry** — on retryable HTTP statuses and transient network failures, the pipeline
+  retries with a delay strategy chosen per status (see the [retry matrix](#retry-matrix) below).
 
 ### Rate Limit Configuration
 
 ```kotlin
-import no.saabelit.kotlinnotionclient.config.NotionConfig
-import no.saabelit.kotlinnotionclient.ratelimit.RateLimitConfig
-import no.saabelit.kotlinnotionclient.ratelimit.RateLimitStrategy
+import it.saabel.kotlinnotionclient.config.NotionConfig
+import it.saabel.kotlinnotionclient.ratelimit.RateLimitConfig
+import kotlin.time.Duration.Companion.seconds
 
 val config = NotionConfig(
     apiToken = "secret_...",
-    enableRateLimit = true,
-    rateLimitConfig = RateLimitConfig.BALANCED  // Predefined strategy
+    enableRateLimit = true, // default
+    rateLimitConfig = RateLimitConfig(
+        sustainedRate = 3.0,       // req/s; matches Notion's documented sustained ceiling
+        burstCapacity = 20,        // requests allowed to proceed immediately before pacing kicks in
+        maxRetries = 3,            // retries *after* the initial attempt (up to 4 calls total)
+        retryBaseDelay = 1.seconds,
+        retryMaxDelay = 30.seconds,
+        jitterFactor = 0.1,        // 0.0–1.0, randomizes each backoff delay
+    ),
 )
 
 val client = NotionClient(config)
 ```
 
-### Predefined Rate Limit Strategies
+`RateLimitConfig` validates its own fields in an `init` block (e.g. `maxRetries >= 0`,
+`retryMaxDelay >= retryBaseDelay`, `jitterFactor in 0.0..1.0`) — invalid combinations fail fast
+with an `IllegalArgumentException` at construction time. There are no named presets
+(`CONSERVATIVE`/`BALANCED`/`AGGRESSIVE`) — tune the fields directly for your workload; raise
+`burstCapacity` for heavy-concurrency fan-out rather than `sustainedRate`, which is pinned to
+Notion's documented ceiling.
 
-#### CONSERVATIVE
-Most cautious approach - minimizes chance of hitting rate limits:
-- **Max retries:** 5
-- **Base delay:** 1000ms
-- **Max delay:** 60000ms (1 minute)
-- **Jitter factor:** 0.1
-- **Respects `Retry-After` header:** Yes
+### Retry Matrix
 
-#### BALANCED (Recommended)
-Good balance between performance and safety:
-- **Max retries:** 3
-- **Base delay:** 500ms
-- **Max delay:** 30000ms (30 seconds)
-- **Jitter factor:** 0.15
-- **Respects `Retry-After` header:** Yes
+The plugin classifies failures by type — inspecting the `HttpStatusCode` or exception class
+directly, never by string-matching an error message — and picks one of two delay strategies:
 
-#### AGGRESSIVE
-Fastest retry with minimal delays:
-- **Max retries:** 2
-- **Base delay:** 200ms
-- **Max delay:** 10000ms (10 seconds)
-- **Jitter factor:** 0.2
-- **Respects `Retry-After` header:** Yes
+| Status / failure | Retried? | Delay strategy |
+|---|---|---|
+| `429` (rate limited) | Yes | `Retry-After` header (seconds) + 1s safety margin; falls back to exponential backoff if the header is absent |
+| `529` (service overloaded) | Yes | Same as `429` — Notion ships the same `Retry-After` contract for both |
+| `502` / `503` / `504` (bad gateway / unavailable / gateway timeout) | Yes | Exponential backoff with jitter (`retryBaseDelay * 2^attempt`, capped at `retryMaxDelay`) |
+| `500` (internal server error) | **No** | Typically a non-transient server-side fault, not a blip |
+| Other `4xx` | No | Not retried |
+| Network failures (`IOException` and subtypes — timeouts, connection resets, DNS failures) | Yes | Same exponential backoff as `502`/`503`/`504` |
+| Success | — | Returned immediately |
 
-### Custom Rate Limit Configuration
+The `Retry-After`-driven delay deliberately does **not** stack with the exponential schedule —
+it replaces it. After the final permitted attempt, a failure is returned/thrown immediately with
+no extra delay.
 
-```kotlin
-val customConfig = RateLimitConfig(
-    strategy = RateLimitStrategy.CUSTOM,
-    maxRetries = 4,
-    baseDelayMs = 750,
-    maxDelayMs = 45000,
-    jitterFactor = 0.12,
-    respectRetryAfter = true
-)
-
-val config = NotionConfig(
-    apiToken = "secret_...",
-    enableRateLimit = true,
-    rateLimitConfig = customConfig
-)
-```
-
-### Rate Limit Headers
-
-Notion returns rate limiting information in response headers:
-
-| Header | Description |
-|--------|-------------|
-| `x-ratelimit-limit` | Maximum requests allowed in the window |
-| `x-ratelimit-remaining` | Requests remaining in current window |
-| `x-ratelimit-reset` | Unix timestamp when limit resets |
-| `retry-after` | Seconds to wait before retrying (429 responses) |
-
-### Handling Rate Limit Errors Manually
-
-```kotlin
-import kotlinx.coroutines.delay
-import no.saabelit.kotlinnotionclient.exceptions.NotionException
-
-suspend fun retrievePageWithRetry(pageId: String, maxAttempts: Int = 3): Page? {
-    repeat(maxAttempts) { attempt ->
-        try {
-            return client.pages.retrieve(pageId)
-        } catch (e: NotionException.RateLimitError) {
-            if (attempt == maxAttempts - 1) {
-                throw e  // Last attempt, re-throw
-            }
-
-            val waitTime = e.retryAfterSeconds ?: (1L shl attempt)  // Exponential backoff
-            println("Rate limited, waiting ${waitTime}s before retry ${attempt + 1}/$maxAttempts")
-            delay(waitTime * 1000)
-        }
-    }
-    return null
-}
-```
+**Once retries are exhausted:**
+- A `429` currently surfaces as `NotionException.ApiError` with `status = 429`.
+- A `529` surfaces as the dedicated [`NotionException.ServiceOverloadedError`](#serviceoverloadederror), carrying `retryAfterSeconds` from the final attempt's header when present.
+- Every other retried-and-still-failing status surfaces as `NotionException.ApiError` with the corresponding `status`.
+- A persisting network failure surfaces as `NotionException.NetworkError`.
 
 ### Disabling Rate Limiting
 
-To disable automatic rate limit handling:
+To disable the throttle + retry pipeline entirely (every request is sent exactly once, with no
+pacing):
 
 ```kotlin
 val config = NotionConfig(
     apiToken = "secret_...",
-    enableRateLimit = false  // Disable rate limiting
+    enableRateLimit = false,
 )
 ```
 
-When disabled, rate limit errors are thrown as `NotionException.ApiError` with status 429.
+With rate limiting disabled, a `429` or `529` is not retried and surfaces immediately as
+`NotionException.ApiError` (or `NotionException.ServiceOverloadedError` for `529`) on the very
+first attempt.
 
 ## Common Patterns
 
@@ -444,7 +446,7 @@ suspend fun getPageOrDefault(pageId: String): Page? {
 ### Validation Before Batch Operations
 
 ```kotlin
-import no.saabelit.kotlinnotionclient.validation.*
+import it.saabel.kotlinnotionclient.validation.*
 
 fun validateBeforeBatch(blocks: List<BlockRequest>) {
     if (blocks.size > 100) {
@@ -504,6 +506,10 @@ try {
             logger.warn("Rate limited, retry after ${e.retryAfterSeconds}s")
             // Monitor rate limit occurrences
         }
+        is NotionException.ServiceOverloadedError -> {
+            logger.warn("Notion overloaded, retry after ${e.retryAfterSeconds}s")
+            // Monitor overload occurrences separately from rate limiting
+        }
         else -> logger.error("Unexpected error", e)
     }
     throw e
@@ -521,8 +527,11 @@ when (exception) {
     is NotionException.ApiError -> handleApi()
     is NotionException.AuthenticationError -> handleAuth()
     is NotionException.RateLimitError -> handleRateLimit()
+    is NotionException.ServiceOverloadedError -> handleServiceOverloaded()
     is NotionException.ValidationError -> handleValidation()
     is NotionException.UnexpectedError -> handleUnexpected()
+    is NotionException.QueryResultLimitReached -> handleQueryLimit()
+    is NotionException.IterationStalled -> handleIterationStall()
 }
 ```
 

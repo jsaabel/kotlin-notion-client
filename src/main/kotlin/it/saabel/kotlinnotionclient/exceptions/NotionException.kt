@@ -46,6 +46,28 @@ sealed class NotionException(
     ) : NotionException("Rate limit exceeded${retryAfterSeconds?.let { " (retry after $it seconds)" } ?: ""}")
 
     /**
+     * Thrown when Notion returns `529` (service overloaded) and the request's retries — handled
+     * transparently by the [it.saabel.kotlinnotionclient.ratelimit.NotionRateLimit] plugin, which
+     * retries `529` on the `Retry-After`-driven schedule — are exhausted.
+     *
+     * Kept distinct from [ApiError] so callers can pattern-match on transient overload without
+     * string- or status-code-sniffing a generic error, and so [retryAfterSeconds] (when Notion sent
+     * one on the final failed attempt) is available as a typed field rather than buried in [details].
+     *
+     * @property retryAfterSeconds Seconds the API asked the client to wait, from the final attempt's
+     *   `Retry-After` header — `null` when the header was absent.
+     * @property details Raw error details from the final failed response, if any.
+     */
+    data class ServiceOverloadedError(
+        val retryAfterSeconds: Long? = null,
+        val details: String? = null,
+    ) : NotionException(
+            "Notion API is temporarily overloaded (HTTP 529), retries exhausted" +
+                (retryAfterSeconds?.let { " (retry after $it seconds)" } ?: "") +
+                (details?.let { " - $it" } ?: ""),
+        )
+
+    /**
      * Validation errors (invalid input, missing required fields, etc.)
      */
     data class ValidationError(

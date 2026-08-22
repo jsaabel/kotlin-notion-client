@@ -12,6 +12,7 @@ import io.ktor.http.contentType
 import io.ktor.http.isSuccess
 import it.saabel.kotlinnotionclient.config.NotionConfig
 import it.saabel.kotlinnotionclient.exceptions.NotionException
+import it.saabel.kotlinnotionclient.exceptions.toNotionApiError
 import it.saabel.kotlinnotionclient.models.databases.ArchiveDatabaseRequest
 import it.saabel.kotlinnotionclient.models.databases.CreateDatabaseRequest
 import it.saabel.kotlinnotionclient.models.databases.Database
@@ -62,18 +63,7 @@ class DatabasesApi(
             if (response.status.isSuccess()) {
                 response.body<Database>()
             } else {
-                val errorBody =
-                    try {
-                        response.body<String>()
-                    } catch (e: Exception) {
-                        "Could not read error response body"
-                    }
-
-                throw NotionException.ApiError(
-                    code = response.status.value.toString(),
-                    status = response.status.value,
-                    details = "HTTP ${response.status.value}: ${response.status.description}. Response: $errorBody",
-                )
+                throw response.toNotionApiError()
             }
         } catch (e: NotionException) {
             throw e // Re-throw our own exceptions
@@ -134,36 +124,13 @@ class DatabasesApi(
                                 setBody(UpdateDataSourceRequest(icon = finalRequest.icon))
                             }
                         if (!iconPatchResponse.status.isSuccess()) {
-                            val errorBody =
-                                try {
-                                    iconPatchResponse.body<String>()
-                                } catch (e: Exception) {
-                                    "Could not read error response body"
-                                }
-                            throw NotionException.ApiError(
-                                code = iconPatchResponse.status.value.toString(),
-                                status = iconPatchResponse.status.value,
-                                details =
-                                    "HTTP ${iconPatchResponse.status.value}: " +
-                                        "${iconPatchResponse.status.description}. Response: $errorBody",
-                            )
+                            throw iconPatchResponse.toNotionApiError()
                         }
                     }
                 }
                 database
             } else {
-                val errorBody =
-                    try {
-                        response.body<String>()
-                    } catch (e: Exception) {
-                        "Could not read error response body"
-                    }
-
-                throw NotionException.ApiError(
-                    code = response.status.value.toString(),
-                    status = response.status.value,
-                    details = "HTTP ${response.status.value}: ${response.status.description}. Response: $errorBody",
-                )
+                throw response.toNotionApiError()
             }
         } catch (e: NotionException) {
             throw e // Re-throw our own exceptions
@@ -197,18 +164,7 @@ class DatabasesApi(
             if (response.status.isSuccess()) {
                 response.body<Database>()
             } else {
-                val errorBody =
-                    try {
-                        response.body<String>()
-                    } catch (e: Exception) {
-                        "Could not read error response body"
-                    }
-
-                throw NotionException.ApiError(
-                    code = response.status.value.toString(),
-                    status = response.status.value,
-                    details = "HTTP ${response.status.value}: ${response.status.description}. Response: $errorBody",
-                )
+                throw response.toNotionApiError()
             }
         } catch (e: NotionException) {
             throw e // Re-throw our own exceptions

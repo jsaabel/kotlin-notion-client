@@ -1,5 +1,6 @@
 package unit.api
 
+import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.annotation.Tags
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
@@ -162,6 +163,32 @@ class PagesFilterPropertiesTest :
             api.retrieve("page-id", filterProperties = listOf("100%done"))
 
             params shouldBe listOf("100%done")
+        }
+
+        "retrieve rejects more than 100 filterProperties IDs" {
+            val api = pagesApi { okResponse() }
+            val tooMany = (1..101).map { "prop-$it" }
+
+            shouldThrow<IllegalArgumentException> {
+                api.retrieve("page-id", filterProperties = tooMany)
+            }
+        }
+
+        "retrieve accepts exactly 100 filterProperties IDs" {
+            var params = emptyList<String>()
+            val api =
+                pagesApi { request ->
+                    params =
+                        request.url.parameters
+                            .getAll("filter_properties")
+                            .orEmpty()
+                    okResponse()
+                }
+            val exactly100 = (1..100).map { "prop-$it" }
+
+            api.retrieve("page-id", filterProperties = exactly100)
+
+            params.size shouldBe 100
         }
 
         // ========== create ==========
