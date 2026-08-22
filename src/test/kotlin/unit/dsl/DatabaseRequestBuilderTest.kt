@@ -137,6 +137,7 @@ class DatabaseRequestBuilderTest :
                         databaseRequest {
                             parent.page("test-page-id")
                             title("Test Database")
+                            @Suppress("DEPRECATION")
                             icon.file("https://files.notion.so/icon.png", "2023-01-01T00:00:00.000Z")
                             properties {
                                 title("Name")
@@ -154,6 +155,7 @@ class DatabaseRequestBuilderTest :
                         databaseRequest {
                             parent.page("test-page-id")
                             title("Test Database")
+                            @Suppress("DEPRECATION")
                             icon.file("https://files.notion.so/icon.png")
                             properties {
                                 title("Name")
@@ -190,6 +192,7 @@ class DatabaseRequestBuilderTest :
                         databaseRequest {
                             parent.page("test-page-id")
                             title("Test Database")
+                            @Suppress("DEPRECATION")
                             cover.file("https://files.notion.so/cover.jpg", "2023-01-01T00:00:00.000Z")
                             properties {
                                 title("Name")
@@ -211,6 +214,7 @@ class DatabaseRequestBuilderTest :
                         databaseRequest {
                             parent.page("test-page-id")
                             title("Test Database")
+                            @Suppress("DEPRECATION")
                             cover.file("https://files.notion.so/cover.jpg")
                             properties {
                                 title("Name")

@@ -78,6 +78,7 @@ class UpdatePageRequestBuilderTest :
                         checkbox("Done", true)
                     }
                     icon.external("https://example.com/icon.png")
+                    @Suppress("DEPRECATION")
                     cover.file("https://example.com/cover.jpg", "2024-12-31T23:59:59.000Z")
                     trash()
                 }

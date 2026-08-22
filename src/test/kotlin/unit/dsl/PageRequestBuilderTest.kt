@@ -312,6 +312,7 @@ class PageRequestBuilderTest :
                     val request =
                         createPageRequest {
                             parent.dataSource("test-ds-id")
+                            @Suppress("DEPRECATION")
                             icon.file("https://files.notion.com/icon.png", "2024-12-31")
                         }
 
@@ -324,6 +325,7 @@ class PageRequestBuilderTest :
                     val request =
                         createPageRequest {
                             parent.dataSource("test-ds-id")
+                            @Suppress("DEPRECATION")
                             icon.file("https://files.notion.com/icon.png")
                         }
 
@@ -349,6 +351,7 @@ class PageRequestBuilderTest :
                     val request =
                         createPageRequest {
                             parent.dataSource("test-ds-id")
+                            @Suppress("DEPRECATION")
                             cover.file("https://files.notion.com/cover.jpg", "2024-12-31")
                         }
 
@@ -361,6 +364,7 @@ class PageRequestBuilderTest :
                     val request =
                         createPageRequest {
                             parent.dataSource("test-ds-id")
+                            @Suppress("DEPRECATION")
                             cover.file("https://files.notion.com/cover.jpg")
                         }
 
@@ -433,6 +437,7 @@ class PageRequestBuilderTest :
                             parent.page("parent-page-id")
                             title("Child Page Title")
                             icon.emoji("\uD83D\uDCC4")
+                            @Suppress("DEPRECATION")
                             cover.file("https://files.notion.com/image.png")
                             content {
                                 heading1("Child Page Content")

@@ -151,7 +151,7 @@ class AsyncTasksIntegrationTest :
                         val page = done.pageResultOrNull()
                         val md = done.markdownResultOrNull()
                         println("   result decoded as Page: ${page != null}, as PageMarkdownResponse: ${md != null}")
-                        println("   raw result keys: ${done.result?.keys}")
+                        println("   raw result keys: ${done.result.keys}")
                         (page != null || md != null).shouldBeTrue()
                     }
                 }
