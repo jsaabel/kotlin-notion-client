@@ -5,87 +5,46 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [Unreleased] — targeting 0.6.0
 
-### `databases.update` — the container attributes are reachable at last
+The largest release this library has had: a catch-up with every Notion API change through
+August 2026, a file-upload overhaul that makes local files first-class across the whole
+request surface, and a deliberate correctness pass over our own past output.
 
-`DatabasesApi` had `retrieve`, `create` and `trash` and no `update`, so the attributes the
-2025-09-03 database *container* owns were unreachable once the database existed: an icon set at
-create time could never be changed, and moving a database to a different parent — a capability
-Notion added in that same API version — had no client-side path at all.
+**How this release was built — and a note on AI.** This project has been open about its
+heavy use of AI from the start, and this release leans into it further: the work was carried
+out almost entirely by AI agents (Claude Code) in an orchestrated run — twenty-plus GitHub
+issues (#32–#42, #56–#62, #68–#70, #75–#76, #80–#82) implemented one agent per issue,
+reviewed and merged as PRs (#45–#85) onto a shared release branch, followed by a dedicated
+live-API verification pass (#61) against a real workspace. That openness cuts both ways:
+several fixes in this release correct bugs that earlier, equally AI-assisted releases
+introduced — most seriously a timezone bug where offset-less datetimes were silently stored
+shifted (see the breaking dates section below), and an `icon.remove()`/property-clearing DSL
+whose payloads never reached the wire. The live verification pass exists precisely because
+high-confidence implementation from documentation alone is not the same as observed
+behaviour; it forced two further model fixes of its own. Findings, agent reports and
+decisions are recorded per issue, in `FOLLOWUPS.md`, and in `docs/adr/`.
 
-- **New: `databases.update(id, request)` and `databases.update(id) { … }`**, carrying the
-  container's half of the 2025-09-03 split: `parent`, `title`, `icon`, `cover`, `is_inline` and
-  `in_trash`. The schema, the description and a data source's own title stay on
-  `dataSources.update`; `title`, `icon` and `in_trash` exist on both because the container and
-  each data source carry their own.
+### Highlights
 
-  ```kotlin
-  notion.databases.update(databaseId) {
-      title("Q3 Planning")
-      icon.emoji("📊")
-      parent.page(newParentId)
-      inline(true)
-  }
-  ```
+- **Local files are first-class everywhere.** `content { image(File(…)) }`,
+  `icon.upload(File(…))`, `files("Attachments") { upload(File(…)) }`, comment attachments —
+  one call, one bounded concurrent upload pass, atomic failure ([ADR 0001](docs/adr/0001-deferred-file-upload-resolution.md)).
+- **`databases.update` at last** — retitle, re-icon, and *move* a database; the icon/cover
+  set-vs-clear support matrix established live.
+- **Past the 10,000-row ceiling** — windowed drains for data sources *and* views.
+- **Async tasks** — polling, flows, async markdown writes and async page creation.
+- **Webhook signature verification** with typed event models.
+- **Formulas and rollups can finally be written**, with typed configurations on the read side.
+- **A correctness pass over our own output**: timezone-safe date writes, `null` payloads that
+  actually clear things, a `FileUpload` model matching the documented shape, and uncomputable
+  formula/rollup values that no longer crash page deserialization.
+- **One DSL convention, documented and compile-tested** — every documented snippet now
+  compiles, enforced by `DocumentedSnippetsTest`.
 
-- **New: `UpdateDatabaseRequest` and `UpdateDatabaseRequestBuilder`**, mirroring the page update
-  pair — same nested-builder layout, both the `icon.emoji(…)` receiver form and the
-  `icon { emoji(…) }` lambda form, and `updateDatabaseRequest { … }` as the standalone entry
-  point.
+### ⚠️ Breaking changes
 
-- **Moving a database is now possible.** `parent.page(id)`, `parent.block(id)` and
-  `parent.workspace()` on the update builder relocate an existing database.
-
-- **`icon.upload(File(…))` and `cover.upload(File(…))` resolve** through the same pending-upload
-  pass as every other attachment surface.
-
-- **No `icon.remove()` / `cover.remove()` on this surface**, and that is a finding rather than an
-  omission. The page endpoint documents `"icon": null` as the removal instruction; the database
-  endpoint rejects it, for both attributes — verified live:
-
-  ```
-  HTTP 400 validation_error: body failed validation:
-  body.icon should be an object or `undefined`, instead was `null`.
-  ```
-
-  A container icon or cover can be replaced but not cleared. The removal sentinels from the
-  previous entry encode correctly; this endpoint simply does not accept what they encode, so the
-  affordance is left off rather than shipped broken.
-
-- **New: `dataSources.update(id) { icon.remove() }`** — the removal that *does* work, and the one
-  that matters. `PATCH /v1/data_sources` accepts `"icon": null`, and Notion's UI renders the data
-  source, so this is how the icon a reader sees is cleared. Verified live.
-
-- **`UpdateDataSourceRequestBuilder` still has no cover builder**, now for a quotable reason
-  rather than an unresolved one — `PATCH /v1/data_sources` answers a `cover` with
-  `The `cover` property is not supported for data sources. Use the Update Database API instead.`
-
-The four answers are asymmetric enough to be worth stating as a matrix, and
-`IconCoverSupportIntegrationTest` asserts every cell of it:
-
-| Endpoint | Attribute | Set | Clear |
-| --- | --- | --- | --- |
-| `PATCH /v1/databases` | `icon` | yes | no |
-| `PATCH /v1/databases` | `cover` | yes | no |
-| `PATCH /v1/data_sources` | `icon` | yes | **yes** |
-| `PATCH /v1/data_sources` | `cover` | no | — |
-
-- **Setting a cover on an inline database fails fast.** Notion does not support the combination,
-  so a request that sets `cover` alongside `is_inline = true` throws `IllegalArgumentException`
-  at build time instead of returning a 400. `cover.remove()` alongside `inline(true)` stays
-  legal.
-
-- **`databases.trash(id)` is now a wrapper over the update path.** `in_trash` is a container
-  attribute like any other; the payload it sends is unchanged. `update(id) { restore() }` brings
-  a database back.
-
-Nothing left open on this: the matrix above was established against the live API, and the one
-question the issue raised — the missing data source cover builder — turned out to have an explicit
-answer from the endpoint itself.
-
-
-### ⚠️ Breaking Changes — the write side is now offset-preserving, zone-explicit and validating
+#### Dates: the write side is now offset-preserving, zone-explicit and validating (#31)
 
 A consumer shipped a bug in which offset-less datetimes written through this library were
 read by Notion as UTC, silently moving every touched event by the local UTC offset while
@@ -139,7 +98,72 @@ mistake impossible to write silently. Migration for each break:
   time to interpret and is now rejected everywhere. *Migration:* use `date(name, date)`;
   if a time was actually intended, use `dateTimeWithTimeZone`.
 
-### ⚠️ Behaviour change — icon/cover removal and property clearing now reach the wire (#80)
+#### `FileUpload` now matches the documented shape (#68)
+
+Three model-layer bugs meant valid, documented API responses failed to deserialize. Fixing
+them changes types callers may have relied on:
+
+- **`FileUpload.filename` and `FileUpload.contentType` are now `String?`.** The API reference
+  marks both nullable, and they genuinely are: a single-part upload created without a filename
+  keeps `filename` null until the send step, and `content_type` likewise stays null until it is
+  inferred from the form data. Declaring them non-null meant `createFileUpload { }` — a
+  documented, valid call — crashed on deserialization.
+  *Migration:* handle the null (`upload.filename ?: "untitled"`). `sendFileUpload(fileUpload,
+  …)` threads the nullable content type through unchanged, which is correct in both cases;
+  pass one explicitly via the `fileUploadId` overload if you need to.
+
+- **`FileUploadStatus` gained `EXPIRED` and `UNKNOWN`.** `expired` is one of four documented
+  statuses and previously failed to decode outright, so `retrieveFileUpload` threw and
+  `listFileUploads` threw if any result had expired. `UNKNOWN` is the forward-compat fallback,
+  matching the `Unknown` variants on `RollupResult`/`FormulaResult`.
+  *Migration:* exhaustive `when` blocks over `FileUploadStatus` need the two new branches. The
+  `isTerminal` and `isUnusable` properties cover the common cases without enumerating.
+
+- **`FileUploadError` gained `UploadUnusableError`.** Thrown by
+  `EnhancedFileUploadApi.waitForFileReady` when an upload reaches `EXPIRED` or `FAILED`,
+  replacing an `UnknownError` wrapping a synthetic exception. It carries the status and, for a
+  failed external-URL import, the `FileImportError` explaining why.
+  *Migration:* exhaustive `when` blocks over `FileUploadError` need the new branch.
+
+(`models.files.FileUploadReference` is now a typealias for the canonical
+`models.base.FileUploadReference`, resolving a duplicate declaration; both import paths keep
+compiling, so this one is not breaking.)
+
+#### Formula, rollup and status models (#36, #39, #42, #57, #59)
+
+- **`FormulaResult` and `RollupResult` gained an `UnsupportedResult` subclass** (#36). An
+  exhaustive `when` over either sealed class with no `else` branch no longer compiles.
+  *This fixes a latent crash:* Notion returns `type: "unsupported"` for formulas and rollups
+  that depend on too many related pages, and the missing subclass previously failed
+  deserialization of the **entire page** with `JsonDecodingException`. Runtime behaviour for
+  input that already worked is unchanged.
+- **`RollupResult` gained an `IncompleteResult` subclass, and both `FormulaResult` and
+  `RollupResult` gained an `Unknown` fallback subclass** (#57). Same effect on an exhaustive
+  `when`: another arm is now required (or an `else`). `IncompleteResult` fixes the same crash
+  class as #36 for Notion's documented `rollup.type: "incomplete"` value (a rollup still being
+  computed); `Unknown` closes the class of bug rather than one instance — any future
+  `formula.type`/`rollup.type` Notion adds now degrades to `Unknown` (raw JSON preserved)
+  instead of failing page deserialization, mirroring `PageProperty.Unknown`.
+- **`StatusConfiguration.options` now takes `List<CreateStatusOption>`** instead of
+  `List<CreateSelectOption>` (#39). Source-breaking only for callers constructing the model
+  directly; DSL users (`status { option(...) }`) are unaffected. The dedicated type exists so
+  `group` cannot be set on select/multi-select options, which the API rejects.
+- **`DatabaseProperty.Formula.formula` is now `FormulaConfiguration`**, not `JsonObject` (#42).
+  Source-breaking for consumers reading the raw object; use `.expression` instead.
+- **`DatabaseProperty.Rollup.rollup` is now `RollupConfiguration`**, not `JsonObject` (#59).
+  Source-breaking for consumers reading the raw object; use `.function`,
+  `.relationPropertyName`/`.relationPropertyId` and `.rollupPropertyName`/`.rollupPropertyId`
+  (or the `.relationReference`/`.rollupReference` shorthands on the property) instead. Same
+  shape of change as the `Formula.formula` break above.
+- **`SearchFilter.property` now defaults to `null`, not `"object"`** (#58). A hand-written
+  `SearchFilter(inTrash = true)` bypassing `SearchRequestBuilder` previously emitted a spurious
+  `"property":"object"` alongside `in_trash` — `property` is now omitted unless a non-null
+  `value` is also set, and an `init` block rejects the invalid combination
+  (`property` set with `value` null, or `property` set to anything but `"object"`) with
+  `IllegalArgumentException`. `SearchRequestBuilder`/`searchRequest { }` callers are
+  unaffected — the builder already set both fields together.
+
+#### ⚠️ Behaviour change: icon/cover removal and property clearing now reach the wire (#80)
 
 Two DSL affordances lost the `null` that carried their intent, because the client encodes with
 `explicitNulls = false` and the serializer cannot tell "this request does not touch that field"
@@ -176,293 +200,15 @@ could not see any of this are recorded in
 [ADR 0002](docs/adr/0002-explicit-null-payloads.md). The client's JSON configuration now lives
 in `serialization/NotionJson` so tests can assert on the exact bytes a request produces.
 
-### One nesting rule, one parent convention, and twenty snippets that now compile (#81)
-
-The documented form of the DSL did not compile. Twenty snippets across the repo wrote
-`parent { … }` / `icon { … }` / `cover { … }` for builders exposed only as receiver properties —
-six user-facing (`README.md`, `QUICKSTART.md`, `docs/notebooks.md`, `docs/rich-text-dsl.md`,
-`docs/data-sources.md`), fourteen in KDoc, and two of those fourteen were *runtime error
-messages* telling a user to write `icon { upload(id) }`. Nothing breaks here; everything is
-additive or deprecated-and-kept.
-
-#### Added
-
-- **Every single-value nested builder now accepts a lambda as well as the receiver form.**
-  `parent { dataSource(id) }` and `parent.dataSource(id)` both compile and are last-call-wins
-  against each other. Covers `parent`/`icon`/`cover`/`template`/`position` on
-  `CreatePageRequestBuilder`, `icon`/`cover`/`template` on `UpdatePageRequestBuilder`,
-  `parent`/`icon`/`cover` on `DatabaseRequestBuilder`, `icon` on
-  `UpdateDataSourceRequestBuilder`, and `parent` on `CreateCommentRequestBuilder`,
-  `CreateDataSourceRequestBuilder` and `CreateViewRequestBuilder`.
-- **`parent` builders on the two surfaces that lacked one.** `dataSources.create` gains
-  `parent.database(id)`; `views.create` gains `parent.database(id, position)`,
-  `parent.dashboard(id, placement)` and `parent.newDatabase(pageId, afterBlockId)`.
-- **[`docs/dsl-conventions.md`](docs/dsl-conventions.md)** — the rule, written down: collection-
-  shaped nesting takes a lambda, single-value nesting supports both (docs teach the receiver
-  form), parents are always `parent.<object>(id)`.
-- **`DocumentedSnippetsTest`** compiles the documented forms as real code, so a builder change
-  that would falsify a README snippet fails the build instead of the reader.
-
-#### Deprecated
-
-All still compile and behave identically, all carry `ReplaceWith`, and all are scheduled for
-removal at 1.0.
-
-| Deprecated | Use |
-| --- | --- |
-| `parent.pageId(id)` / `parent.blockId(id)` (comments) | `parent.page(id)` / `parent.block(id)` |
-| `databaseId(id)` (data sources) | `parent.database(id)` |
-| `database(id, position)` (views) | `parent.database(id, position)` |
-| `dashboard(id, placement)` (views) | `parent.dashboard(id, placement)` |
-| `createDatabase(pageId, afterBlockId)` (views) | `parent.newDatabase(pageId, afterBlockId)` |
-
-`views.create` keeps `dataSourceId(id)` flat on purpose — it names the data source a view
-*reads from*, not what the view hangs off, and a `CreateViewRequest` carries both independently.
-
-#### Fixed (documentation)
-
-- All twenty snippets rewritten to the documented receiver form. Two were stale in other ways as
-  well: `dataSourceId(…)` was never a method on the page parent builder (it is `dataSource`),
-  and `docs/notebooks.md` still hung a page off a database, which has not been possible since
-  API version 2025-09-03.
-- `docs/rich-text-dsl.md`'s `blocks.append` example used `paragraph { richText { … } }` and a
-  `callout { icon { emoji = "⚠️" } }` — neither matched the block builders. Both corrected.
-- `docs/comments.md` listed `parent.pageId` and `parent.page` as "equivalent"; it now names the
-  canonical form and points at the deprecation.
-
-The decision, including why deprecate-and-keep rather than a straight rename on a pre-1.0
-surface, is recorded in
-[ADR 0003](docs/adr/0003-dsl-nesting-and-parent-addressing.md).
-
-### ⚠️ Breaking Changes — `FileUpload` now matches the documented shape (#68)
-
-Three model-layer bugs meant valid, documented API responses failed to deserialize. Fixing
-them changes types callers may have relied on:
-
-- **`FileUpload.filename` and `FileUpload.contentType` are now `String?`.** The API reference
-  marks both nullable, and they genuinely are: a single-part upload created without a filename
-  keeps `filename` null until the send step, and `content_type` likewise stays null until it is
-  inferred from the form data. Declaring them non-null meant `createFileUpload { }` — a
-  documented, valid call — crashed on deserialization.
-  *Migration:* handle the null (`upload.filename ?: "untitled"`). `sendFileUpload(fileUpload,
-  …)` threads the nullable content type through unchanged, which is correct in both cases;
-  pass one explicitly via the `fileUploadId` overload if you need to.
-
-- **`FileUploadStatus` gained `EXPIRED` and `UNKNOWN`.** `expired` is one of four documented
-  statuses and previously failed to decode outright, so `retrieveFileUpload` threw and
-  `listFileUploads` threw if any result had expired. `UNKNOWN` is the forward-compat fallback,
-  matching the `Unknown` variants on `RollupResult`/`FormulaResult`.
-  *Migration:* exhaustive `when` blocks over `FileUploadStatus` need the two new branches. The
-  `isTerminal` and `isUnusable` properties cover the common cases without enumerating.
-
-- **`FileUploadError` gained `UploadUnusableError`.** Thrown by
-  `EnhancedFileUploadApi.waitForFileReady` when an upload reaches `EXPIRED` or `FAILED`,
-  replacing an `UnknownError` wrapping a synthetic exception. It carries the status and, for a
-  failed external-URL import, the `FileImportError` explaining why.
-  *Migration:* exhaustive `when` blocks over `FileUploadError` need the new branch.
-
-`models.files.FileUploadReference` is now a typealias for the canonical
-`models.base.FileUploadReference`, resolving a duplicate declaration; both import paths keep
-compiling, so this one is not breaking.
-
-### August 2026 API catch-up (issues #32–#42)
-
-Eleven changelog-driven issues landed together, bringing the client up to date with Notion's
-2026 API changes. Three carry source-breaking changes, listed first.
-
-#### ⚠️ Breaking
-
-- **`FormulaResult` and `RollupResult` gained an `UnsupportedResult` subclass** (#36). An
-  exhaustive `when` over either sealed class with no `else` branch no longer compiles.
-  *This fixes a latent crash:* Notion returns `type: "unsupported"` for formulas and rollups
-  that depend on too many related pages, and the missing subclass previously failed
-  deserialization of the **entire page** with `JsonDecodingException`. Runtime behaviour for
-  input that already worked is unchanged.
-- **`RollupResult` gained an `IncompleteResult` subclass, and both `FormulaResult` and
-  `RollupResult` gained an `Unknown` fallback subclass** (#57). Same effect on an exhaustive
-  `when`: another arm is now required (or an `else`). `IncompleteResult` fixes the same crash
-  class as #36 for Notion's documented `rollup.type: "incomplete"` value (a rollup still being
-  computed); `Unknown` closes the class of bug rather than one instance — any future
-  `formula.type`/`rollup.type` Notion adds now degrades to `Unknown` (raw JSON preserved)
-  instead of failing page deserialization, mirroring `PageProperty.Unknown`.
-- **`StatusConfiguration.options` now takes `List<CreateStatusOption>`** instead of
-  `List<CreateSelectOption>` (#39). Source-breaking only for callers constructing the model
-  directly; DSL users (`status { option(...) }`) are unaffected. The dedicated type exists so
-  `group` cannot be set on select/multi-select options, which the API rejects.
-- **`DatabaseProperty.Formula.formula` is now `FormulaConfiguration`**, not `JsonObject` (#42).
-  Source-breaking for consumers reading the raw object; use `.expression` instead.
-- **`DatabaseProperty.Rollup.rollup` is now `RollupConfiguration`**, not `JsonObject` (#59).
-  Source-breaking for consumers reading the raw object; use `.function`,
-  `.relationPropertyName`/`.relationPropertyId` and `.rollupPropertyName`/`.rollupPropertyId`
-  (or the `.relationReference`/`.rollupReference` shorthands on the property) instead. Same shape
-  of change as the `Formula.formula` break above.
-- **`SearchFilter.property` now defaults to `null`, not `"object"`** (#58). A hand-written
-  `SearchFilter(inTrash = true)` bypassing `SearchRequestBuilder` previously emitted a spurious
-  `"property":"object"` alongside `in_trash` — `property` is now omitted unless a non-null `value`
-  is also set, and an `init` block rejects the invalid combination
-  (`property` set with `value` null, or `property` set to anything but `"object"`) with
-  `IllegalArgumentException`. `SearchRequestBuilder`/`searchRequest { }` callers are unaffected —
-  the builder already set both fields together.
-
-#### Added
-
-- **Async task polling and async markdown writes** (#38). New `client.asyncTasks` with
-  `retrieve`, `waitForCompletion` (mirroring `EnhancedFileUploadApi.waitForFileReady`, but
-  honouring the server's `poll_after_seconds` hint when it is longer) and `pollAsFlow`. New
-  `replaceContentAsync`/`updateContentAsync` return a sealed `AsyncMarkdownResult`, since the
-  API only *may* go async. Errors surface as `AsyncTaskException`.
-- **Resumable iteration past the 10,000-row pagination ceiling** (#40). Opt-in
-  `dataSources.iterateAllRows(...)` (`Flow<Page>`) and `collectAllRows(...)` drain a large data
-  source by windowing on a monotonic key — `RowIterationKey.CreatedTime` by default, or
-  `UniqueId` for guaranteed progress. Plain `query` still throws `QueryResultLimitReached`.
-  The drain is **not a snapshot**: rows created, deleted, or edited mid-drain may be missed or
-  included, and a single `created_time` bucket holding over 10,000 rows raises
-  `IterationStalled` rather than looping. See the KDoc for the full guarantees.
-- **Webhook signature verification and typed event models** (#41). `verifyWebhookSignature(...)`
-  computes HMAC-SHA256 over the **raw** body and compares with `MessageDigest.isEqual`; it
-  accepts only `ByteArray`/`String`, so a re-serialized model — which silently breaks the HMAC —
-  cannot be passed by accident. Typed `WebhookEvent` models with an `UNKNOWN` event-type
-  fallback, plus a worked Ktor receiver in `docs/webhooks.md`. Note the scheme has no replay
-  protection: Notion sends no timestamp header.
-- **Formula properties can now be written** (#42). `CreateDatabaseProperty.Formula` and a
-  `formula(name, expression, description)` DSL method — previously formulas could not be created
-  through this client at all. Expressions are validated at the call site for blank input,
-  unterminated string literals, unbalanced brackets, malformed `prop()` calls, and (on create)
-  `prop()` references to properties absent from the schema being written. Semantic validity —
-  function names, arity, types, cycles — is not locally decidable and is left to the API's
-  `validation_error`.
-- **Status options can be assigned to groups** on create and update (#39), via `group` on
-  `StatusBuilder.option(...)`. An omitted `group` preserves the option's current group on
-  update; new options default to "To-do".
-- **`is_archived` on data source query and `filter.in_trash` on search** (#33), reaching trashed
-  and archived rows for the first time, with `isArchived()`/`inTrash()` DSL surface.
-- **`filter_properties` on page create, update and retrieve** (#34), emitted as repeated query
-  parameters. Property IDs are percent-decoded before transmission, so the schema shape
-  (`%7DVpb`) and the view-response shape (`}Vpb`) produce identical requests.
-- **`unknownBlockCount` on `PageMarkdownResponse`** (#35). `unknownBlockIds` is capped at 50 by
-  the API, so its size is not a substitute for the count on a heavily truncated page.
-- **`NotionException.ServiceOverloadedError`** (#58), a dedicated exception for a `529` that
-  exhausts `NotionRateLimit`'s retries, carrying `retryAfterSeconds` from the final attempt's
-  `Retry-After` header. Previously surfaced as a generic `ApiError` with `status = 529`.
-- **`filter_properties` and `is_archived` on data source query** (#58) —
-  `dataSources.query`/`queryAsFlow`/`queryFirstPage` gained a `filterProperties: List<String>?`
-  parameter (mirroring `PagesApi`, #34) and an `isArchived: Boolean` convenience overload
-  (mirroring `SearchApi.search(query: String)`). `filter_properties` is validated client-side
-  against the API's documented 100-ID cap, on both this endpoint and pages
-  create/update/retrieve (previously unvalidated).
-- **`SearchApi.search(query: String, inTrash: Boolean)`**, a trash-filtered convenience overload
-  mirroring `search(query: String)` (#58).
-- **Pages can be created from Markdown, synchronously or asynchronously** (#59). The Jun 29 2026
-  changelog enabled `allow_async` on `POST /v1/pages` when a `markdown` body is supplied;
-  `CreatePageRequest` already carried `markdown` but `PagesApi` exposed no markdown-shaped call and
-  no async path. New `createFromMarkdown(parent, markdown, title)`, plus
-  `createFromMarkdownAsync(...)`/`createAsync(request)`/`createAsync { }` returning a sealed
-  `AsyncPageCreateResult` (`Accepted(task)` on 202, `Completed(page)` on 200) — a 202 cannot be
-  forced, the API decides, exactly as with `AsyncMarkdownResult` (#38). `create` now rejects
-  `allowAsync = true` and `createAsync` rejects a request with no `markdown` body. `AsyncTask`
-  gained `pageResultOrNull()`, and both result accessors now check the payload's `object` field,
-  because Notion documents the succeeded-task result shape only for the markdown PATCH operation.
-- **`views.iterateAllRows(...)`/`collectAllRows(...)` drain every row behind a view** past the
-  10,000-row cap (#59). A view query *cannot* be windowed the way #40 windows a data source —
-  `POST /v1/views/{id}/queries` accepts nothing but `page_size` and paginating a cached query takes
-  no filter — so, following Notion's own guidance, the drain resolves the view to its
-  `data_source_id` and re-runs the windowed data source query with the view's `filter`. The view's
-  `sorts` are replaced by the ascending iteration-key sort, `quick_filters` and group/sub-item
-  scoping are not replicated (a view relying on them yields *more* rows here than it displays), and
-  full `Page` objects are emitted rather than the `{object, id}` references a view query returns.
-  #40's limitations carry over: not a snapshot, boundary re-reads de-duplicated by id, and a view
-  filter already two levels deep cannot be `and`-wrapped. A view with no `data_source_id` (a
-  dashboard) raises `ValidationError`. The internal engine is now `WindowedRowIteration`, shared by
-  both surfaces.
-- **Rollup properties are now typed and can be written** (#59). `RollupConfiguration` replaces the
-  untyped `JsonObject` on both the read and write side (see the breaking note above), `RollupFunction`
-  covers all 24 documented functions with an `UNKNOWN` read-side fallback so a newly added function
-  cannot break deserializing a whole data source, and `CreateDatabaseProperty.Rollup` plus `rollup(...)`
-  DSL overloads make rollups creatable for the first time. Validation stays at construction time per
-  the #31/#42 precedent rather than moving into `RequestValidator`: missing or blank relation /
-  rolled-up references and the `UNKNOWN` sentinel fail at the call site, and **create** requests —
-  which carry the complete schema — additionally reject a rollup naming a relation that is absent or
-  is not a relation property. Update requests carry a partial schema and are deliberately not checked.
-
-#### Fixed
-
-- **HTTP 529 Service Overload is now retried** (#32), on the same `Retry-After`-honouring path as
-  429 rather than falling through to the caller as a bare `ApiError`.
-- **Uncomputable formula and rollup values no longer break page deserialization** (#36) — see the
-  breaking-changes note above.
-- **`DatabaseProperty.id` now comes back percent-decoded from a `DataSource`'s schema** (#58,
-  closes `IDEAS.md` #5) — previously only `PagesApi`'s `filter_properties` had a local workaround
-  for the encoded shape (e.g. `%7DVpb` instead of `}Vpb`); the fix now lives at the deserialization
-  source, and that workaround was promoted into a shared `PropertyIds.decode` util instead of
-  removed, so a caller passing an ID copied from a raw pre-fix response still works.
-
-#### Changed
-
-- Generated record links and documentation examples use `app.notion.com` (#37). Parsing remains
-  tolerant of legacy `notion.so` URLs, pinned by tests. No production code constructed or parsed
-  record URLs, so this is a documentation and forward-guard change.
-- Corrected stale KDoc claiming status groups cannot be configured via the API and that status
-  properties cannot be updated (#39) — both lapsed with the June 2026 changelog.
-- `docs/error-handling.md`'s Rate Limiting section resynced against the current
-  `RateLimitConfig`/`NotionRateLimit` shape (#58) — it previously documented a `strategy`/
-  `baseDelayMs`/`maxDelayMs`/`respectRetryAfter` API and `CONSERVATIVE`/`BALANCED`/`AGGRESSIVE`
-  presets that no longer exist, and never stated which statuses are retried. Now documents the
-  429/529/502/503/504 retry matrix and the new `ServiceOverloadedError`.
-
-
 ### Added
 
-- **Local files on every attachment surface (#76, ADR 0001 stage 2).** The pending-upload
-  mechanism from #75 now covers a whole request, not just its block list, so a page create can
-  carry local files in its icon, its cover, its "Files & media" properties and its content at
-  once — one call, one upload pass, one `POST /v1/pages`:
+#### Files and attachments (#68, #69, #70, #75, #76 — [ADR 0001](docs/adr/0001-deferred-file-upload-resolution.md))
 
-  ```kotlin
-  notion.pages.create {
-      parent.dataSource(dataSourceId)
-      title("Q3 Report")
-      icon.upload(File("logo.png"))
-      cover.upload(File("hero.png"))
-      properties {
-          files("Attachments") { upload(File("a.pdf")); upload(File("b.pdf")) }
-      }
-      content { image(File("chart.png")) }
-  }
-  ```
-
-  New builder overloads, each taking `FileSource`/`File`/`Path`:
-
-  - `FilesBuilder.upload(source, name = null)` — the entry is named after the file unless `name`
-    is given, matching `FileObject.upload`'s convention
-  - `upload(source)` on every icon and cover builder that got `upload(id)` in #69 —
-    `CreatePageRequestBuilder`, `UpdatePageRequestBuilder`, `DatabaseRequestBuilder`,
-    `UpdateDataSourceRequestBuilder`
-  - `CreateCommentRequestBuilder.attachment(source)` — the in-DSL form of a comment attachment,
-    now the recommended path; the pre-upload `comments.create(attachments) { … }` overload from
-    #69 stays
-
-  Resolution moved from the block list to the request: `pages.create`/`createAsync`/`update`,
-  `databases.create`, `dataSources.update` and `comments.create` pool every sentinel a request
-  carries into a **single** concurrent upload pass (still bounded at four) before validating and
-  sending. Failure stays atomic across the whole pool — a failed cover upload cancels the
-  in-flight files-property uploads and throws `FileUploadError` before the create is issued —
-  and sentinels are still matched to their uploads by position, so the same file attached to two
-  surfaces uploads twice. `comments.create` resolves before counting attachments, so Notion's
-  cap of three is checked against what actually goes on the wire.
-
-  Each new sentinel (`FileObject.PendingUpload`, `Icon.PendingUpload`, `PageCover.PendingUpload`,
-  `CommentAttachmentRequest.PendingUpload`) refuses to serialize with a message naming the file
-  and both ways out, and `RequestValidator` reports `UNRESOLVED_PENDING_UPLOAD` for an
-  unresolved icon, cover or files-property entry as defence in depth.
-
-  `CommentAttachmentRequest` became a sealed class to hold its pending variant. Constructing one
-  (`CommentAttachmentRequest("upload-id")`) and reading `.fileUploadId` / `.type` still compile;
-  `fileUploadId` is now `String?` on the base type, `null` only while pending. The JSON on the
-  wire is unchanged. `pages.attachFiles`'s read-merge behaviour is untouched.
-
-- **Local files inside the content DSL (#75, ADR 0001).** The block builders now take a local
-  file wherever they took a URL or an upload id, which makes a page with several attachments a
-  single call instead of an upload-and-thread-the-ids preamble:
+- **Local files inside the content DSL (#75).** The block builders take a local file wherever
+  they took a URL or an upload id — `image`, `video`, `audio`, `file` and `pdf` gain
+  `FileSource`/`File`/`Path` overloads, and `html(markup, filename, caption)` uploads the
+  markup under an `.html` name and resolves to an embed, the shape Notion renders as an HTML
+  block:
 
   ```kotlin
   notion.pages.create {
@@ -476,40 +222,38 @@ Eleven changelog-driven issues landed together, bringing the client up to date w
   }
   ```
 
-  `image`, `video`, `audio`, `file` and `pdf` gain `FileSource`/`File`/`Path` overloads;
-  `html(markup, filename, caption)` uploads the markup under an `.html` name and resolves to an
-  embed, the shape Notion renders as an HTML block. `file` defaults the block's display name to
-  the source's filename.
+  Builder lambdas are synchronous, so nothing uploads while one runs: the builder records a
+  `BlockRequest.PendingUpload` sentinel, and every suspending entry point that consumes
+  blocks — `pages.create`/`createAsync`, `blocks.appendChildren`, `blocks.update` — uploads
+  and substitutes before validating and sending. Building blocks separately works too:
+  `pageContent { image(File(…)) }` handed to `appendChildren(id, blocks)` uploads on the way
+  out.
 
-  Builder lambdas are synchronous, so nothing is uploaded while one runs: the builder records a
-  `BlockRequest.PendingUpload` sentinel carrying the file, and every suspending entry point that
-  consumes blocks — `pages.create`/`createAsync`, `blocks.appendChildren`, `blocks.update` —
-  uploads and substitutes before validating and sending. Because resolution hooks the raw
-  request funnels, building the blocks separately works too:
-  `pageContent { image(File(…)) }` handed to `appendChildren(id, blocks)` uploads on the way out.
+- **Local files on every attachment surface (#76).** The same mechanism covers a whole
+  request, not just its block list — a page create can carry local files in its icon, cover,
+  "Files & media" properties and content at once, resolved in a **single** upload pass before
+  one `POST /v1/pages`. New overloads, each taking `FileSource`/`File`/`Path`:
+  `FilesBuilder.upload(source, name = null)`; `upload(source)` on every icon and cover
+  builder (`CreatePageRequestBuilder`, `UpdatePageRequestBuilder`, `DatabaseRequestBuilder`,
+  `UpdateDataSourceRequestBuilder`); and `CreateCommentRequestBuilder.attachment(source)`.
+  `comments.create` resolves before counting attachments, so Notion's cap of three is checked
+  against what actually goes on the wire.
 
-  Uploads within one call run concurrently (bounded at four) and the first failure cancels the
-  rest and throws `FileUploadError` **before** the create or append is sent, so no partially
-  populated page is left behind; uploads that had already completed are left to expire, since
-  Notion exposes no delete-upload endpoint. The same file attached twice uploads twice —
-  reusing one upload id across blocks is unverified against the live API, so the client does not
-  deduplicate.
-
-  This is additive: `pageContent {}` still returns `List<BlockRequest>` and no existing signature
-  changed. Serializing an unresolved sentinel by hand throws a `SerializationException` naming
-  the file and pointing at both ways out, and `RequestValidator` reports an
-  `UNRESOLVED_PENDING_UPLOAD` violation as defence in depth.
-
-- **Embed blocks take a caption (#69).** Undocumented — the embed reference lists only `url` —
-  but verified live: Notion accepts a caption on an embed and echoes it back on the created
-  block. Added to `EmbedRequestContent`, to `EmbedContent` on the read side, and to
-  `embed(url, caption)`, `embedFromUpload(id, caption)` and `BlocksApi.appendHtml(..., caption)`.
-  This closes the last of the three findings issue #69 flagged as needing live adjudication;
-  the answers now live as assertions in `FileAttachIntegrationTest` rather than as probes.
+- **Upload semantics, shared by both stages:** uploads within one call run concurrently
+  (bounded at four); the first failure cancels the rest and throws `FileUploadError`
+  **before** the create or append is sent, so no partially populated page is left behind
+  (already-completed uploads are left to expire — Notion has no delete-upload endpoint).
+  The same file attached twice uploads twice; reusing one upload id across blocks is
+  unverified against the live API, so the client does not deduplicate. Serializing an
+  unresolved sentinel throws a `SerializationException` naming the file and both ways out,
+  and `RequestValidator` reports `UNRESOLVED_PENDING_UPLOAD` as defence in depth.
+  (`CommentAttachmentRequest` became a sealed class to hold its pending variant; constructing
+  one and reading `.fileUploadId`/`.type` still compile, with `fileUploadId` now `String?`,
+  null only while pending. Wire JSON unchanged.)
 
 - **One-call upload-and-attach helpers (#69).** Attaching a file used to cost a four-step
-  dance — create a file upload, send the bytes, wait for it to be ready, then reference its
-  id. New suspend helpers do all four:
+  dance — create an upload, send the bytes, wait for ready, reference the id. New suspend
+  helpers do all four, living on the API that owns the target:
 
   ```kotlin
   notion.blocks.appendImage(pageId, File("diagram.png"), caption = "Architecture")
@@ -518,87 +262,173 @@ Eleven changelog-driven issues landed together, bringing the client up to date w
   notion.pages.setIcon(pageId, File("logo.png"))
   notion.pages.setCover(pageId, File("hero.png"))
   notion.pages.attachFiles(pageId, "Attachments", File("a.pdf"), File("b.pdf"))
-  notion.comments.create(File("trace.txt")) { parent.pageId(pageId); content { text("…") } }
+  notion.comments.create(File("trace.txt")) { parent.page(pageId); content { text("…") } }
   ```
 
-  Each takes a `File`, `Path` or `FileSource`, delegates the upload half to
-  `EnhancedFileUploadApi` (no upload logic is duplicated), and **throws** like the rest of the
-  client rather than returning a `FileUploadResult` the caller has to unwrap.
-  `attachFiles` is additive by default — it reads the page first so entries already in the
-  property survive the write — with `replace = true` for the overwrite.
-  They live on the API that owns the target (`blocks`/`pages`/`comments`) rather than behind a
-  separate `notion.attachments` facade, so they surface in completion right next to
-  `appendChildren` and `update`.
+  Each delegates the upload half to `EnhancedFileUploadApi` and **throws** like the rest of
+  the client rather than returning a result to unwrap. `attachFiles` is additive by default —
+  it reads the page first so existing entries survive — with `replace = true` for overwrite.
 
-- **`FileUploadResult.getOrThrow()`** bridges the enhanced upload API's sealed result to the
-  throwing contract every other API uses:
-  `notion.enhancedFileUploads.uploadFile(file).getOrThrow()`. `FileUploadResult` stays the
-  advanced-path return type — nothing about the existing surface changed.
-
-- **`File`/`Path`/`ByteArray.asFileSource()`** extensions, so anything can be handed to the
-  upload and attach APIs without naming a `FileSource` subclass.
-
-- **Icons and covers can finally be set from an upload (#69).** `Icon.FileUpload` and
-  `PageCover.FileUpload` existed as models but were unreachable from every DSL — there was no
-  `upload(...)` setter and no `icon(Icon)` escape hatch, so the only workaround was to bypass
-  the builders entirely. All four `IconBuilder`s (page create, page update, database, data
-  source) and all three `CoverBuilder`s now expose `upload(fileUploadId)` and
+- **Icons and covers can be set from an upload (#69).** `Icon.FileUpload` and
+  `PageCover.FileUpload` existed as models but were unreachable from every DSL. All four
+  `IconBuilder`s and all three `CoverBuilder`s now expose `upload(fileUploadId)` and
   `upload(fileUpload)`. Verified live, and worth knowing: an icon or cover is *written* as
-  `file_upload` but *reads back* as `Icon.File` / `PageCover.File` — a signed S3 URL with about
+  `file_upload` but *reads back* as `Icon.File`/`PageCover.File` — a signed S3 URL with about
   an hour of life. Copying appearance between pages means re-uploading or switching to
   `external`, not echoing back what was read.
 
-- **`FileUpload`-typed overloads everywhere an upload is attached (#69).** The upload APIs hand
-  back a `FileUpload`; every attach site used to take a bare id `String`. Added to
+- **`FileUpload`-typed overloads everywhere an upload is attached (#69):**
   `imageFromUpload`/`videoFromUpload`/`audioFromUpload`/`fileFromUpload`/`pdfFromUpload`/
   `embedFromUpload`, `FilesBuilder.upload`, `CreateCommentRequestBuilder.attachment`, and the
-  new icon/cover `upload`. The file-block and files-property overloads default the display name
-  to the upload's own filename.
+  new icon/cover `upload` — no more passing bare id strings. The file-block and files-property
+  overloads default the display name to the upload's own filename.
 
-- **HTML blocks via embed + file upload** (Jul 3 2026 Notion changelog):
-  `EmbedRequestContent` now accepts a `fileUpload` reference as an alternative to `url`
-  (exactly one required), with a new `PageContentBuilder.embedFromUpload(fileUploadId)`
-  DSL method. Verified live: `{"embed": {"file_upload": {"id": ...}}}` is accepted with
-  no type discriminator, and the created block reads back as an `embed` whose `url` is a
-  time-limited signed S3 URL. `EmbedContent.url` is now nullable (with defensive
-  `file`/`file_upload` fields) to match the undocumented read shape.
+- **HTML blocks via embed + file upload** (Jul 3 2026 Notion changelog): `EmbedRequestContent`
+  accepts a `fileUpload` reference as an alternative to `url` (exactly one required), with
+  `PageContentBuilder.embedFromUpload(fileUploadId)`. Verified live:
+  `{"embed": {"file_upload": {"id": …}}}` is accepted with no type discriminator, and the
+  created block reads back as an `embed` whose `url` is a time-limited signed S3 URL.
+  `EmbedContent.url` is now nullable (with defensive `file`/`file_upload` fields) to match the
+  undocumented read shape.
 
-- **Live-API verification pass (#61)** over the August 2026 catch-up features: async
-  tasks (real 202s observed on page create and markdown patch; async page-create
-  `result` is a full `page` object), status option groups (assignment round-trips on
-  create and update; omitted group preserves; group-free options default to "To-do"),
-  the windowed >10k drain (11,000 rows drained past the cap on `created_time`;
-  `unique_id` property sorts confirmed), and formula writes (`prop()` expressions stored
-  verbatim, readable syntax returned, formulas compute). New specs:
-  `AsyncTasksIntegrationTest`, `StatusGroupsIntegrationTest`,
-  `WindowedDrainIntegrationTest`, `FormulaWritesIntegrationTest`,
-  `HtmlEmbedIntegrationTest`, `MarkdownUnknownBlockCountIntegrationTest`.
+- **Embed blocks take a caption (#69).** Undocumented — the embed reference lists only
+  `url` — but verified live: Notion accepts a caption on an embed and echoes it back. Added to
+  `EmbedRequestContent`, `EmbedContent`, `embed(url, caption)`, `embedFromUpload(id, caption)`
+  and `BlocksApi.appendHtml(..., caption)`.
 
 - **`file_import_result` is now modelled (#68)** as a `FileImportResult` sealed class with
-  `Success`, `Error` and forward-compat `Unknown` variants. It is the only way the API reports
-  *why* an `external_url` import failed — previously a failed import surfaced as a bare
-  `status` with no reason. `FileUpload.importError` is the shortcut to the `FileImportError`
-  (its `type`, `code`, `message`, `parameter` and `status_code`).
+  `Success`, `Error` and forward-compat `Unknown` variants — the only way the API reports
+  *why* an `external_url` import failed. `FileUpload.importError` is the shortcut to the
+  `FileImportError` (`type`, `code`, `message`, `parameter`, `status_code`). Also modelled:
+  `complete_url`, `number_of_parts` as `FileUploadPartCounts` (`total`/`sent`), and
+  `created_by` as a deliberately loose `FileUploadCreatedBy` (its `type` admits `agent`
+  alongside `person`/`bot`).
 
-- **Previously unmodelled `FileUpload` fields (#68):** `complete_url` (documented on pending
-  multi-part uploads), `number_of_parts` as a `FileUploadPartCounts` (`total`/`sent` — a
-  running count, distinct from the request-side `Int`), and `created_by` as a deliberately
-  loose `FileUploadCreatedBy` (its `type` admits `agent` alongside `person`/`bot`, so it is
-  kept as a raw string). The last two were found while verifying the `in_trash` question
-  against the live OpenAPI schema.
+- **`FileUploadResult.getOrThrow()`** bridges the enhanced upload API's sealed result to the
+  throwing contract every other API uses; **`File`/`Path`/`ByteArray.asFileSource()`**
+  extensions let anything be handed to the upload and attach APIs without naming a
+  `FileSource` subclass.
 
-- **`.env` support for integration tests**: the `integrationTest` Gradle task now sets
-  `NOTION_RUN_INTEGRATION_TESTS=true` itself and forwards credentials from a gitignored
-  `.env` file (see `.env.example`), so IDE runs need no run-configuration setup.
+#### Databases, data sources and schema (#39, #42, #57, #59, #82)
 
-- **`property(name, PagePropertyValue)`** on the page-properties builder: a deliberate,
-  documented escape hatch that sets a raw pre-built value, bypassing validation — for
-  reproducing Notion's raw behaviour (e.g. in tests) without giving up the guard rails
-  everywhere else.
+- **`databases.update(id, request)` and `databases.update(id) { … }` (#82)** — the container
+  attributes are reachable at last. `DatabasesApi` had `retrieve`, `create` and `trash` but no
+  `update`, so an icon set at create time could never be changed and moving a database had no
+  client-side path. The new surface carries the container's half of the 2025-09-03 split:
+  `parent`, `title`, `icon`, `cover`, `is_inline` and `in_trash` (schema, description and a
+  data source's own title stay on `dataSources.update`).
 
-- **Date read accessors now say which time they give you.** Reading a Notion date
-  value answers one of three different questions, and the accessor name now states
-  which one, so a call site is readable without opening the library:
+  ```kotlin
+  notion.databases.update(databaseId) {
+      title("Q3 Planning")
+      icon.emoji("📊")
+      parent.page(newParentId)   // moving a database is now possible
+      inline(true)
+  }
+  ```
+
+  `UpdateDatabaseRequest`/`UpdateDatabaseRequestBuilder` mirror the page update pair;
+  `icon.upload(File(…))`/`cover.upload(File(…))` resolve through the pending-upload pass;
+  `databases.trash(id)` is now a wrapper over the update path, and `update(id) { restore() }`
+  brings a database back. Setting a cover together with `is_inline = true` fails fast at build
+  time — Notion does not support the combination.
+
+- **The icon/cover set-vs-clear support matrix, established live** and pinned by
+  `IconCoverSupportIntegrationTest`. There is deliberately no `icon.remove()`/`cover.remove()`
+  on the database container surface: the endpoint rejects `"icon": null`
+  (`HTTP 400 … should be an object or `undefined``), so a container icon/cover can be replaced
+  but not cleared. The removal that *does* work — and the one the UI renders — is
+  **`dataSources.update(id) { icon.remove() }`**, also new. A data source `cover` is rejected
+  outright ("Use the Update Database API instead"), which is why
+  `UpdateDataSourceRequestBuilder` has no cover builder:
+
+  | Endpoint | Attribute | Set | Clear |
+  | --- | --- | --- | --- |
+  | `PATCH /v1/databases` | `icon` | yes | no |
+  | `PATCH /v1/databases` | `cover` | yes | no |
+  | `PATCH /v1/data_sources` | `icon` | yes | **yes** |
+  | `PATCH /v1/data_sources` | `cover` | no | — |
+
+- **Formula properties can be written (#42).** `CreateDatabaseProperty.Formula` and a
+  `formula(name, expression, description)` DSL method — previously formulas could not be
+  created through this client at all. Expressions are validated at the call site for blank
+  input, unterminated string literals, unbalanced brackets, malformed `prop()` calls, and (on
+  create) `prop()` references to properties absent from the schema being written. Semantic
+  validity — function names, arity, types, cycles — is left to the API's `validation_error`.
+
+- **Rollup properties are typed and can be written (#59).** `RollupConfiguration` replaces the
+  untyped `JsonObject` on read and write, `RollupFunction` covers all 24 documented functions
+  with an `UNKNOWN` read-side fallback, and `CreateDatabaseProperty.Rollup` plus `rollup(...)`
+  DSL overloads make rollups creatable for the first time. Validation lives at construction
+  time per the #31/#42 precedent; create requests (which carry the complete schema)
+  additionally reject a rollup naming a relation that is absent or not a relation property.
+
+- **Status options can be assigned to groups** on create and update (#39), via `group` on
+  `StatusBuilder.option(...)`. An omitted `group` preserves the option's current group on
+  update; new options default to "To-do". Verified live in the #61 pass, including moving an
+  existing option between groups.
+
+#### Query, search and pagination (#33, #34, #40, #58, #59)
+
+- **Resumable iteration past the 10,000-row pagination ceiling (#40).** Opt-in
+  `dataSources.iterateAllRows(...)` (`Flow<Page>`) and `collectAllRows(...)` drain a large
+  data source by windowing on a monotonic key — `RowIterationKey.CreatedTime` by default, or
+  `UniqueId` for guaranteed progress. Plain `query` still throws `QueryResultLimitReached`.
+  The drain is **not a snapshot**: rows created, deleted or edited mid-drain may be missed or
+  included, and a single `created_time` bucket holding over 10,000 rows raises
+  `IterationStalled` rather than looping. Verified live against an 11,000-row data source:
+  all rows drained past the cap, zero duplicates, `unique_id` property sorts confirmed.
+
+- **`views.iterateAllRows(...)`/`collectAllRows(...)` drain every row behind a view (#59).**
+  A view query cannot be windowed (`POST /v1/views/{id}/queries` accepts nothing but
+  `page_size`), so, following Notion's own guidance, the drain resolves the view to its
+  `data_source_id` and re-runs the windowed data source query with the view's `filter`. The
+  view's `sorts` are replaced by the iteration-key sort; `quick_filters` and group/sub-item
+  scoping are not replicated (such a view yields *more* rows here than it displays); full
+  `Page` objects are emitted. #40's limitations carry over. A view with no `data_source_id`
+  (a dashboard) raises `ValidationError`. The shared engine is `WindowedRowIteration`.
+
+- **`is_archived` on data source query and `filter.in_trash` on search (#33)** — reaching
+  trashed and archived rows for the first time, with `isArchived()`/`inTrash()` DSL surface,
+  plus convenience overloads (#58): `query`/`queryAsFlow`/`queryFirstPage(dataSourceId,
+  isArchived)` and `SearchApi.search(query, inTrash)`.
+
+- **`filter_properties` on page create, update and retrieve (#34)** and on data source
+  `query`/`queryAsFlow`/`queryFirstPage` (#58), emitted as repeated query parameters and
+  validated client-side against the API's documented 100-ID cap. Property IDs are
+  percent-decoded before transmission, so the schema shape (`%7DVpb`) and the view-response
+  shape (`}Vpb`) produce identical requests.
+
+#### Async operations (#38, #59)
+
+- **Async task polling (#38).** New `client.asyncTasks` with `retrieve`, `waitForCompletion`
+  (honouring the server's `poll_after_seconds` hint when it is longer than the configured
+  interval) and `pollAsFlow`. New `replaceContentAsync`/`updateContentAsync` return a sealed
+  `AsyncMarkdownResult`, since the API only *may* go async. Errors surface as
+  `AsyncTaskException`. Real 202s were observed live in the #61 pass, on both markdown PATCH
+  and page create.
+
+- **Pages can be created from Markdown, synchronously or asynchronously (#59).** New
+  `createFromMarkdown(parent, markdown, title)`, plus `createFromMarkdownAsync(...)`/
+  `createAsync(request)`/`createAsync { }` returning a sealed `AsyncPageCreateResult`
+  (`Accepted(task)` on 202, `Completed(page)` on 200 — the API decides, a 202 cannot be
+  forced). `create` rejects `allowAsync = true` and `createAsync` rejects a request with no
+  `markdown` body. `AsyncTask` gained `pageResultOrNull()`, and both result accessors check
+  the payload's `object` field.
+
+#### Webhooks (#41)
+
+- **`verifyWebhookSignature(...)`** computes HMAC-SHA256 over the **raw** body and compares
+  with `MessageDigest.isEqual`; it accepts only `ByteArray`/`String`, so a re-serialized
+  model — which silently breaks the HMAC — cannot be passed by accident. Typed `WebhookEvent`
+  models with an `UNKNOWN` event-type fallback, plus a worked Ktor receiver in
+  `docs/webhooks.md`. Note the scheme has no replay protection: Notion sends no timestamp
+  header (mitigation guidance: dedupe on event `id`).
+
+#### Dates: read accessors that say which time they give you (#30)
+
+- Reading a Notion date value answers one of three different questions, and the accessor name
+  now states which one:
 
   | Question | Accessor |
   |----------|----------|
@@ -606,86 +436,141 @@ Eleven changelog-driven issues landed together, bringing the client up to date w
   | absolute instant in UTC | `utcInstant` / `endUtcInstant` |
   | the value's own stored UTC offset | `storedOffset` / `endStoredOffset` |
 
-  `storedOffset` is new capability, not a rename: nothing previously exposed the
-  offset a value actually carries, which is the question you have to ask to detect
-  that a value has drifted (local times silently stored as UTC, say).
+  `storedOffset` is new capability, not a rename: nothing previously exposed the offset a
+  value actually carries — the question you have to ask to detect that a value has drifted.
 
-- **`offsetIn(timeZone)` / `endOffsetIn(timeZone)`** return the offset a named zone
-  would have had at the value's *own* wall-clock date and time, DST included.
-  Comparing it against `storedOffset` is the audit: a mismatch means the value is not
-  the local time in that zone it is supposed to be. Ambiguous wall-clock times resolve
-  to the earlier offset; nonexistent ones shift forward past the gap.
+- **`offsetIn(timeZone)` / `endOffsetIn(timeZone)`** return the offset a named zone would
+  have had at the value's *own* wall-clock date and time, DST included. Comparing it against
+  `storedOffset` is the audit: a mismatch means the value is not the local time in that zone
+  it is supposed to be.
 
 - **`requireUtcInstant()` / `requireEndUtcInstant()`** return the UTC instant or throw
-  `IllegalArgumentException` naming the offending value and what to do about it, for
-  call sites where a missing instant is a bug rather than an absence.
+  `IllegalArgumentException` naming the offending value, for call sites where a missing
+  instant is a bug rather than an absence.
 
-### Deprecated
+#### DSL conventions: one nesting rule, one parent convention (#81)
 
-- **`icon.file(url, expiryTime)` and `cover.file(url, expiryTime)` on every request builder
-  (#69).** These emit `type: "file"` — the *read* shape, a Notion-hosted expiring URL — while
-  the [Page object reference](https://developers.notion.com/reference/page) documents icon and
-  cover as accepting only `external` or `file_upload` on write. Verified live: the request fails
-  with HTTP 400 `validation_error`, naming `emoji`, `external`, `custom_emoji`, `file_upload`
-  and `icon` as the accepted set — there is no input for which these calls succeed. Use
-  `external(url)` for a publicly hosted file, or the new `upload(...)` for one sent through the
-  File Upload API. Left at warning level rather than `DeprecationLevel.ERROR` so the merge does
-  not break compilation for existing callers; escalating is a one-line change if preferred.
+The documented form of the DSL did not compile: twenty snippets across the repo wrote
+`parent { … }` / `icon { … }` / `cover { … }` for builders exposed only as receiver
+properties — six user-facing, fourteen in KDoc, two of those inside *runtime error messages*.
+Nothing breaks here; everything is additive or deprecated-and-kept:
 
-No behaviour changed — each deprecated accessor delegates to its replacement, so
-existing code still compiles and still returns exactly what it returned before.
+- **Every single-value nested builder accepts a lambda as well as the receiver form.**
+  `parent { dataSource(id) }` and `parent.dataSource(id)` both compile and are
+  last-call-wins. Covers `parent`/`icon`/`cover`/`template`/`position` across the page,
+  database, data source, comment and view request builders.
+- **`parent` builders on the two surfaces that lacked one:** `dataSources.create` gains
+  `parent.database(id)`; `views.create` gains `parent.database(id, position)`,
+  `parent.dashboard(id, placement)` and `parent.newDatabase(pageId, afterBlockId)`.
+- **[`docs/dsl-conventions.md`](docs/dsl-conventions.md)** — the rule, written down:
+  collection-shaped nesting takes a lambda, single-value nesting supports both (docs teach
+  the receiver form), parents are always `parent.<object>(id)`.
+- **`DocumentedSnippetsTest`** compiles the documented forms as real code, so a builder change
+  that would falsify a README snippet fails the build instead of the reader.
+- All twenty snippets rewritten; the decision (deprecate-and-keep rather than rename on a
+  pre-1.0 surface) is recorded in
+  [ADR 0003](docs/adr/0003-dsl-nesting-and-parent-addressing.md).
 
-| Deprecated | Replacement |
-|------------|-------------|
-| `localDateTimeNaive` | `wallClockDateTime` |
-| `endLocalDateTimeNaive` | `endWallClockDateTime` |
-| `instantValue` | `utcInstant` |
-| `endInstantValue` | `endUtcInstant` |
-| `toLocalDateTime(timeZone)` | `localDateTimeIn(timeZone)` |
-| `endToLocalDateTime(timeZone)` | `endLocalDateTimeIn(timeZone)` |
+#### Errors and resilience (#32, #58)
 
-`localDateTimeNaive`'s behaviour is deliberately kept: reading wall-clock digits is a
-legitimate need, not a mistake. Only the name changed, so that choosing it reads as a
-decision rather than an implementation detail.
+- **HTTP 529 Service Overload is retried (#32)**, on the same `Retry-After`-honouring path as
+  429 rather than falling through to the caller as a bare `ApiError`.
+- **`NotionException.ServiceOverloadedError` (#58)** — a dedicated exception for a 529 that
+  exhausts `NotionRateLimit`'s retries, carrying `retryAfterSeconds` from the final attempt.
+  The per-API error-mapping boilerplate was centralized into a shared
+  `HttpResponse.toNotionApiError()` so the new type reaches every endpoint.
+
+#### Everything else
+
+- **`property(name, PagePropertyValue)`** on the page-properties builder: a deliberate,
+  documented escape hatch that sets a raw pre-built value, bypassing validation.
+- Generated record links and documentation examples use `app.notion.com` (#37); parsing
+  remains tolerant of legacy `notion.so` URLs, pinned by tests.
+- **`integrationTest` and `testAll` Gradle tasks exist now (#56)** — CLAUDE.md had documented
+  them for months while `build.gradle.kts` had only `test`. `test` excludes `RequiresApi`,
+  `integrationTest` includes it and forwards credentials from a gitignored `.env` (see
+  `.env.example`), setting `NOTION_RUN_INTEGRATION_TESTS=true` itself.
+- **A live-API verification pass (#61)** over the catch-up features, as new integration
+  specs: `AsyncTasksIntegrationTest`, `StatusGroupsIntegrationTest`,
+  `WindowedDrainIntegrationTest`, `FormulaWritesIntegrationTest`, `HtmlEmbedIntegrationTest`,
+  `MarkdownUnknownBlockCountIntegrationTest`, `IconCoverSupportIntegrationTest`.
+- **Vendored Notion API reference refreshed (#60):** `filter_properties`, page-markdown
+  endpoints, async tasks, status option groups, the full 2026-03-11→08-20 changelog, and the
+  webhooks reference — agents no longer need to web-fetch the live changelog to confirm field
+  shapes.
 
 ### Fixed
 
 - **`UniqueIdValue.number` is now nullable.** Observed live: while Notion asynchronously
-  backfills IDs after a `unique_id` property is added to an existing data source, rows
-  carry `{"prefix": null, "number": null}` — previously this crashed deserialization of
-  the entire query page. Also documented on `RowIterationKey.UniqueId`: rows still
-  awaiting backfill are silently excluded from a `unique_id`-keyed drain by the
-  server-side window filter.
-
-- **`unknown_block_count` corrected to inferred-and-unobserved.** The raw REST
+  backfills IDs after a `unique_id` property is added to an existing data source, rows carry
+  `{"prefix": null, "number": null}` — previously this crashed deserialization of the entire
+  query page. Also documented on `RowIterationKey.UniqueId`: rows still awaiting backfill are
+  silently excluded from a `unique_id`-keyed drain by the server-side window filter.
+- **Uncomputable formula and rollup values no longer break page deserialization** (#36, #57) —
+  see the breaking-changes section.
+- **`DatabaseProperty.id` comes back percent-decoded from a `DataSource`'s schema** (#58,
+  closes `IDEAS.md` #5) — the fix now lives at the deserialization source
+  (`DatabasePropertySerializer`), with the old `PagesApi` workaround promoted into a shared
+  `PropertyIds.decode` util so IDs copied from raw pre-fix responses still work.
+- **`EnhancedFileUploadApi.waitForFileReady` fails fast on `EXPIRED` and `FAILED`** (#68)
+  instead of polling to the timeout.
+- **`unknown_block_count` corrected to inferred-and-unobserved (#35, #61).** The raw REST
   page-markdown response carries `truncated` and `unknown_block_ids` but no
   `unknown_block_count` (verified live on a non-truncated page); the field stays as a
-  defensive default-0 with amended KDoc.
-
-- **`FileUpload` model correctness (#68).** Beyond the breaking changes above:
-  `EnhancedFileUploadApi.waitForFileReady` now fails fast on `EXPIRED` and `FAILED` instead of
-  polling to the timeout — it previously only broke on `UPLOADED`/`FAILED`, so an expired
-  upload spun for the full wait even once it could decode at all.
-
-- **`docs/file-uploads.md` "Using Uploaded Files" showed a DSL that does not exist.** The
-  sample called a fictional `image { file { uploadedFile(id) } }` and named the builder
-  `children { }` where it is actually `content { }`. Corrected to the real
-  `imageFromUpload(id, caption)`, with a pointer to the sibling `…FromUpload` methods. The
-  generated code sample in `MediaIntegrationTest` likewise showed
-  `fileUploads.uploadFile("photo.jpg", bytes)`, omitting the required `contentType`.
-
-- **Vendored file-upload samples used a nonexistent `archived` key.** The five samples under
-  `reference/notion-api/sample_responses/file_uploads/` carried `archived`, which appears
-  nowhere in Notion's File Upload object; the real key is `in_trash`. Corrected — the model's
-  existing `@SerialName("in_trash")` was right all along. (Confirmed against the live
-  `fileUploadObjectResponse` OpenAPI schema on developers.notion.com, which lists `in_trash`
-  and no `archived`.)
+  defensive default-0 with amended KDoc. `unknown_block_ids` is capped at 50 by the API, so
+  its size is not a substitute for the count.
+- **`DataSource.description` defaults to `emptyList()`** (#56) — the official
+  `partialDataSourceObjectResponse` shape genuinely omits it, and decoding the vendored
+  fixture previously threw `MissingFieldException`.
+- **Documentation that showed a DSL that does not exist:** `docs/file-uploads.md`'s
+  fictional `image { file { uploadedFile(id) } }` corrected to the real
+  `imageFromUpload(id, caption)`; `docs/error-handling.md`'s Rate Limiting section resynced
+  against the actual `RateLimitConfig`/`NotionRateLimit` shape with the 429/529/502/503/504
+  retry matrix (#58); stale KDoc claiming status groups cannot be configured via the API
+  corrected (#39).
+- **Vendored file-upload samples used a nonexistent `archived` key** — the real key is
+  `in_trash`; the model's existing `@SerialName("in_trash")` was right all along. Likewise
+  the stale `patch_update_a_database.json` sample (`value` → `expression`, plus three JSON
+  syntax bugs).
 
 ### Changed
 
-- Date values with sub-second precision now keep it. The old accessors stripped the
-  fractional seconds before parsing, so `…T14:30:00.123Z` read back as `14:30:00`.
-  Notion returns `.000` for every value it stores, so this is invisible in practice.
+- Date values with sub-second precision now keep it. The old accessors stripped fractional
+  seconds before parsing, so `…T14:30:00.123Z` read back as `14:30:00`. Notion returns
+  `.000` for every value it stores, so this is invisible in practice.
+
+### Deprecated
+
+All still compile and behave identically, all carry `ReplaceWith`, and all are scheduled for
+removal at 1.0.
+
+- **`icon.file(url, expiryTime)` and `cover.file(url, expiryTime)` on every request builder
+  (#69).** These emit `type: "file"` — the *read* shape — which the write side rejects with
+  HTTP 400 for every input; there is no input for which these calls succeed. Use
+  `external(url)` or the new `upload(...)`.
+- **Date read accessors renamed (#30):**
+
+  | Deprecated | Replacement |
+  |------------|-------------|
+  | `localDateTimeNaive` | `wallClockDateTime` |
+  | `endLocalDateTimeNaive` | `endWallClockDateTime` |
+  | `instantValue` | `utcInstant` |
+  | `endInstantValue` | `endUtcInstant` |
+  | `toLocalDateTime(timeZone)` | `localDateTimeIn(timeZone)` |
+  | `endToLocalDateTime(timeZone)` | `endLocalDateTimeIn(timeZone)` |
+
+- **Parent addressing brought onto the one convention (#81):**
+
+  | Deprecated | Use |
+  | --- | --- |
+  | `parent.pageId(id)` / `parent.blockId(id)` (comments) | `parent.page(id)` / `parent.block(id)` |
+  | `databaseId(id)` (data sources) | `parent.database(id)` |
+  | `database(id, position)` (views) | `parent.database(id, position)` |
+  | `dashboard(id, placement)` (views) | `parent.dashboard(id, placement)` |
+  | `createDatabase(pageId, afterBlockId)` (views) | `parent.newDatabase(pageId, afterBlockId)` |
+
+  `views.create` keeps `dataSourceId(id)` flat on purpose — it names the data source a view
+  *reads from*, not what the view hangs off.
 
 ### Fixed
 
@@ -707,12 +592,12 @@ decision rather than an implementation detail.
 ### Unchanged, deliberately
 
 `utcInstant` still returns null — rather than throwing — for a value that is absent,
-date-only, offset-less or malformed. Notion returns an offset for every time-bearing
-value, so in practice null means "no time here", and throwing from a property getter
-would break every existing caller. The strictness is opt-in via `requireUtcInstant()`,
-which distinguishes the four cases in its message.
+date-only, offset-less or malformed. Notion returns an offset for every time-bearing value,
+so in practice null means "no time here", and throwing from a property getter would break
+every existing caller. The strictness is opt-in via `requireUtcInstant()`, which
+distinguishes the four cases in its message.
 
-## [0.5.0] - Unreleased
+## [0.5.0] - 2026-05-31
 
 ### ⚠️ Breaking Changes
 
