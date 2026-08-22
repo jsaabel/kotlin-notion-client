@@ -28,6 +28,10 @@ data class NotionFile(
 
 /**
  * Represents a reference to a file uploaded via the File Upload API.
+ *
+ * This is the canonical declaration, living beside the other file-object primitives.
+ * `it.saabel.kotlinnotionclient.models.files.FileUploadReference` is a typealias for it, so the
+ * same value can be passed to blocks, page properties, icons and covers alike.
  */
 @Serializable
 data class FileUploadReference(

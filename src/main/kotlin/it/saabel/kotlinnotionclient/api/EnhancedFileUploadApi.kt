@@ -230,10 +230,16 @@ class EnhancedFileUploadApi(
      * Waits for a file upload to reach the "uploaded" status.
      * This is particularly useful for external file imports which may need time to process.
      *
+     * Fails fast on the terminal statuses an upload can never leave — [FileUploadStatus.EXPIRED]
+     * and [FileUploadStatus.FAILED] — rather than polling until the timeout. For a failed
+     * external-URL import the thrown error carries [FileUpload.importError], the only place the
+     * API reports why the import failed.
+     *
      * @param fileUploadId The ID of the file upload to wait for
      * @param maxWaitTimeMs Maximum time to wait in milliseconds (default: 10 seconds)
      * @param checkIntervalMs Interval between status checks in milliseconds (default: 500ms)
      * @return The file upload once it reaches "uploaded" status
+     * @throws FileUploadError.UploadUnusableError if the upload expired or failed
      * @throws FileUploadError.TimeoutError if the file doesn't become ready within the timeout
      */
     suspend fun waitForFileReady(
@@ -250,8 +256,12 @@ class EnhancedFileUploadApi(
                 return fileUpload
             }
 
-            if (fileUpload.status == FileUploadStatus.FAILED) {
-                throw FileUploadError.UnknownError(Exception("File upload failed: ${fileUpload.id}"))
+            if (fileUpload.status.isUnusable) {
+                throw FileUploadError.UploadUnusableError(
+                    uploadId = fileUpload.id,
+                    status = fileUpload.status,
+                    importError = fileUpload.importError,
+                )
             }
 
             delay(checkIntervalMs)

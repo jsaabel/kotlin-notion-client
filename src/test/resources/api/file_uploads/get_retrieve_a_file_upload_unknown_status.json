@@ -1,0 +1,19 @@
+{
+  "object": "file_upload",
+  "id": "0b7d5e93-1a2c-4f86-9b40-3ec8d5721fa9",
+  "created_time": "2025-03-15T20:53:00.000Z",
+  "last_edited_time": "2025-03-15T20:53:00.000Z",
+  "in_trash": false,
+  "expiry_time": null,
+  "status": "quarantined",
+  "filename": "future.bin",
+  "content_type": "application/octet-stream",
+  "content_length": 10,
+  "file_import_result": {
+    "type": "partial",
+    "imported_time": "2025-03-15T20:54:00.000Z",
+    "partial": {
+      "reason": "still processing"
+    }
+  }
+}

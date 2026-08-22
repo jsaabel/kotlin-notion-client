@@ -304,7 +304,7 @@ class MediaIntegrationTest :
                                 video("https://example.com/video.mp4")
 
                                 // Uploaded media
-                                val upload = client.fileUploads.uploadFile("photo.jpg", bytes)
+                                val upload = client.fileUploads.uploadFile("photo.jpg", "image/jpeg", bytes)
                                 imageFromUpload(upload.id, "Uploaded photo")
                                 """.trimIndent(),
                             caption = "Simple DSL for both external and uploaded media",
