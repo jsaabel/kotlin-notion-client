@@ -27,7 +27,7 @@ A modern, type-safe Kotlin client for the Notion API with comprehensive DSL supp
 ```kotlin
 // Gradle (Kotlin DSL)
 dependencies {
-    implementation("it.saabel:kotlin-notion-client:0.5.0")
+    implementation("it.saabel:kotlin-notion-client:0.6.0")
 }
 ```
 
@@ -36,7 +36,7 @@ dependencies {
 <dependency>
     <groupId>it.saabel</groupId>
     <artifactId>kotlin-notion-client</artifactId>
-    <version>0.5.0</version>
+    <version>0.6.0</version>
 </dependency>
 ```
 
@@ -227,7 +227,7 @@ The **[Kotlin Notebooks](notebooks/)** are the best way to learn the library:
 7. [File Uploads](notebooks/07-file-uploads.ipynb) - Uploading files, external imports, media blocks
 8. [What's New in v0.4.0](notebooks/08-whats-new-in-v0.4.ipynb) — Tour of all breaking changes and new features added in v0.4.0
 
-All notebooks use v0.5.0 and can be run in IntelliJ IDEA (with the Kotlin Notebook plugin) or Jupyter (with kotlin-jupyter-kernel). Run each cell in order; set the required environment variables before starting. Note that notebook output cells reflect the authoring-time version and have not all been re-run for v0.5.0.
+The notebooks currently pin **v0.4.1** in their `@file:DependsOn` cells and have not yet been re-run against 0.6.0 — their output cells reflect the version they were authored against. They can be run in IntelliJ IDEA (with the Kotlin Notebook plugin) or Jupyter (with kotlin-jupyter-kernel); run each cell in order and set the required environment variables before starting. Bumping the pin to 0.6.0 will require code changes, since 0.6.0 is a breaking release (see [`CHANGELOG.md`](CHANGELOG.md)). Refreshing them is tracked in [#87](https://github.com/jsaabel/kotlin-notion-client/issues/87).
 
 ## Building from Source
 

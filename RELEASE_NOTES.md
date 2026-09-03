@@ -1,9 +1,8 @@
-# v0.6.0 — Release notes (draft)
+# v0.6.0
 
-> Draft of the concise, highlights-only changelog for the v0.6.0 GitHub Release, and the
-> source for the README/announcement blurb. The full technical record — every change with
-> migration notes — lives in [`CHANGELOG.md`](CHANGELOG.md). Publish plan: `0.6.0-SNAPSHOT`
-> first, battle-tested in a downstream consumer (festival-scripts), then the public release.
+> The full technical record — every change with its migration notes — lives in
+> [`CHANGELOG.md`](CHANGELOG.md). This release was published as `0.6.0-SNAPSHOT` first and
+> battle-tested in a downstream consumer before being cut.
 
 ---
 

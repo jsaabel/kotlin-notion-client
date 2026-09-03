@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased] — targeting 0.6.0
+## [0.6.0] - 2026-09-03
 
 The largest release this library has had: a catch-up with every Notion API change through
 August 2026, a file-upload overhaul that makes local files first-class across the whole
@@ -1028,6 +1028,7 @@ This is the first public release of the Kotlin Notion Client library.
 
 **Note**: This is an early release. Users should expect potential issues and are encouraged to report them via GitHub Issues.
 
+[0.6.0]: https://github.com/jsaabel/kotlin-notion-client/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/jsaabel/kotlin-notion-client/compare/v0.4.2...v0.5.0
 [0.4.2]: https://github.com/jsaabel/kotlin-notion-client/compare/v0.4.1...v0.4.2
 [0.4.1]: https://github.com/jsaabel/kotlin-notion-client/compare/v0.4.0...v0.4.1
