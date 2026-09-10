@@ -1,0 +1,467 @@
+<title>Explicit Nulls and the Sentinel Pattern</title>
+<style>
+/* Shared stylesheet for the docs/learning series.
+   Inlined verbatim into each lesson's <style> block — no linking, no network. */
+
+html { -webkit-text-size-adjust: 100%; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-size: 17px;
+  line-height: 1.6;
+  color: #1a1a1a;
+  background: #fdfdfc;
+  max-width: 70ch;
+  margin: 0 auto;
+  padding: 2rem 1.25rem 6rem;
+}
+h1, h2, h3 { line-height: 1.25; font-weight: 650; }
+h1 { font-size: 1.9rem; margin: 0 0 .25rem; }
+h2 { font-size: 1.4rem; margin: 2.75rem 0 .75rem; padding-bottom: .3rem; border-bottom: 2px solid #d8d5cd; }
+h3 { font-size: 1.12rem; margin: 1.9rem 0 .5rem; color: #33312c; }
+p, li { margin: 0 0 1rem; }
+li { margin-bottom: .45rem; }
+ul, ol { padding-left: 1.5rem; }
+
+a { color: #0b5a9e; text-decoration: underline; text-underline-offset: 2px; }
+a:hover { color: #073e6d; }
+a:visited { color: #5a3a8e; }
+
+code {
+  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+  font-size: .875em;
+  background: #f1efe9;
+  border-radius: 3px;
+  padding: .1em .32em;
+}
+pre {
+  background: #f6f5f1;
+  border: 1px solid #e0ddd4;
+  border-radius: 4px;
+  padding: .85rem 1rem;
+  overflow-x: auto;
+  font-size: .82rem;
+  line-height: 1.5;
+}
+pre code { background: none; padding: 0; font-size: inherit; }
+
+.subtitle { color: #57544d; font-size: 1rem; margin: 0 0 2rem; }
+.difficulty {
+  display: inline-block; font-size: .78rem; letter-spacing: .04em; text-transform: uppercase;
+  background: #e8e5dc; border-radius: 3px; padding: .12em .5em; color: #46433c;
+}
+.src { display: block; font-size: .78rem; color: #6b675f; margin: 1.4rem 0 .3rem; }
+
+.callout { border: 1px solid #c9c4b6; border-left: 4px solid #8a8272; background: #faf9f5;
+  border-radius: 4px; padding: 1rem 1.1rem .35rem; margin: 1.25rem 0; }
+.callout h3 { margin-top: 0; }
+
+blockquote { margin: 1.25rem 0; padding: .1rem 0 .1rem 1rem; border-left: 3px solid #d8d5cd; color: #3b3833; }
+hr { border: 0; border-top: 1px solid #e0ddd4; margin: 3rem 0; }
+table { border-collapse: collapse; width: 100%; font-size: .92rem; }
+th, td { border: 1px solid #e0ddd4; padding: .4rem .6rem; text-align: left; vertical-align: top; }
+th { background: #f4f2ec; }
+</style>
+
+<h1>02 — <code>explicitNulls = false</code> and the sentinel pattern</h1>
+<p class="subtitle">When one Kotlin <code>null</code> has to mean three different things · <span class="difficulty">Hard</span></p>
+<h2>The hook</h2>
+
+<p>On 22 August 2026 two affordances in this library's DSL were checked against the live API, and
+neither did what it said. <code>docs/adr/0002-explicit-null-payloads.md</code> opens on the one that
+had been wrong the longest:</p>
+<span class="src">docs/adr/0002-explicit-null-payloads.md:17–22</span>
+<pre><code>- **`icon.remove()` / `cover.remove()` were silent no-ops.** Notion removes an icon or cover
+  when the request carries `&quot;icon&quot;: null` —
+  `reference/notion-api/documentation/endpoints/Update_Page_2025.md` is explicit (&quot;Set to
+  `null` to remove&quot;). Both builders set the backing field to `null`, so
+  `updatePageRequest { icon.remove() }` encoded to `{}` — an empty PATCH, which Notion accepts
+  and does nothing with. The call compiled, ran, returned a `Page` and changed nothing.</code></pre>
+
+<p>Compiled, ran, returned a <code>Page</code>, changed nothing. The sibling affordance failed in the
+opposite register:</p>
+<span class="src">docs/adr/0002-explicit-null-payloads.md:23–31</span>
+<pre><code>- **Clearing a property value threw.** Seven `PagePropertiesBuilder` setters document &quot;null for
+  empty&quot; and construct a value object whose payload field is `null`: `select`, `status`,
+  `date`, `dateTime`, `number`, `url`, `email`, `phoneNumber`. Notion clears a property when it
+  receives `{&quot;Status&quot;:{&quot;select&quot;:null}}`; the encoder emitted `{&quot;Status&quot;:{&quot;type&quot;:&quot;select&quot;}}` —
+  the discriminator survived, the instruction did not. Notion **rejects** that shape with HTTP
+  400 `validation_error`, listing every payload key it would have accepted
+  (&quot;`body.properties.Stage.select should be defined, instead was undefined`&quot;), and leaves the
+  property at its previous value. This half was a loud failure, not silent data loss — no
+  caller can have been depending on it.</code></pre>
+
+<p>One root cause, two failure modes, kept apart because they justify the fix differently — "one is a
+change the caller cannot see not happening, the other is a call that never worked at all" (lines 33–34 of the same ADR). Then the finding this
+lesson is really about:</p>
+<span class="src">docs/adr/0002-explicit-null-payloads.md:36–41</span>
+<pre><code>Neither was visible to the test suite, and that is the more interesting half of the finding.
+`UpdatePageRequestBuilderTest` asserted `request.icon shouldBe null` after `icon.remove()` —
+byte-identical to the assertion for a request that never mentioned the icon. Every affected
+path had a **passing model-level test**, including the ones whose live call would have thrown.
+The bug lives entirely between the model and the wire, so only an assertion on encoded bytes
+can see it.</code></pre>
+
+<p>That is a class of bug, not an incident, and it deserves a name. <strong>An assertion on a model
+and an assertion on the wire are different tests, and only the second is testing
+serialization.</strong> Everything between your objects and the bytes — a custom serializer, a
+naming strategy, a global include-or-omit setting — is code no model-level assertion reaches.
+Every affected path here had a passing test, including the ones that earned a 400.</p>
+<h2>The concept, plainly</h2>
+
+<p>Notion's page update is a merge patch in all but name: the body carries the fields you are
+changing and nothing else. The reference is explicit about what a <code>null</code> inside it
+means:</p>
+<span class="src">reference/notion-api/documentation/endpoints/Update_Page_2025.md:27–28</span>
+<pre><code>| `icon` | object \| null | Set page icon (emoji, external URL, file upload, or custom emoji). Set to `null` to remove. |
+| `cover` | object \| null | Set page cover (file upload or external URL). Set to `null` to remove. |</code></pre>
+
+<p>So the wire carries two instructions that both involve the word null. <em>Key absent</em> means
+leave the icon alone; <em>key present, holding JSON <code>null</code></em> means delete it. Kotlin
+has one <code>null</code>, and <code>val icon: Icon? = null</code> has to express both.</p>
+
+<p><code>explicitNulls = false</code> resolves that globally, in favour of the common case: a null
+field is omitted. For a request layer of one nullable field per optional input that is what makes
+a PATCH a PATCH — otherwise every <code>updatePageRequest { }</code> sends <code>null</code> for
+every field the caller never touched, and Notion reads those as instructions.</p>
+
+<p>Count the meanings one <code>null</code> now carries. <em>Absent from this request</em>: never
+set, drop it. <em>Set this to JSON null</em>: set deliberately, to the removal instruction.
+<em>The API returned null</em>: this page has no icon. Three meanings, one representation, and the
+encoder always picks the first. It is not making a mistake; it is answering a question that was
+never asked properly.</p>
+
+<p>The fix is not to change the encoder's mind, per field or globally. It is to stop asking it a
+question it cannot answer:</p>
+<span class="src">docs/adr/0002-explicit-null-payloads.md:48–51</span>
+<pre><code>Model an intended `null` as a **value**, not as the absence of one. A Kotlin `null` on a
+nullable request field keeps its single, honest meaning — &quot;this request says nothing about that
+field&quot; — and anything that must reach the wire as `null` is a non-null Kotlin value whose
+serializer writes `null` on purpose. `explicitNulls = false` then never has a decision to make.</code></pre>
+
+<p>Once "remove the icon" is a <em>value</em> — a non-null <code>Icon</code> whose serializer writes
+<code>null</code> on purpose — the nullable field goes back to one meaning, and untouched-versus-cleared
+becomes visible to the type system instead of buried in an encoder setting. That is the pattern; the
+rest is where to put it.</p>
+<h2>This code, annotated</h2>
+<h3>Where the setting lives</h3>
+<span class="src">src/main/kotlin/it/saabel/kotlinnotionclient/serialization/NotionJson.kt:15–19</span>
+<pre><code> * - `explicitNulls = false` — a PATCH should carry only the fields it changes, so an unset
+ *   nullable field is omitted rather than sent as `null`. Where `null` *is* the payload — icon and
+ *   cover removal, clearing a property value — the intent is carried by a sentinel and a serializer
+ *   that emits JSON `null` explicitly, never by a Kotlin `null` field. See
+ *   `docs/adr/0002-explicit-null-payloads.md`.</code></pre>
+
+<p>One <code>Json</code> instance, <code>internal</code>, built in one place
+(<code>NotionJson.kt:21–29</code>) so tests assert against the configuration the client installs —
+and its KDoc states the rule and its exception in one breath.</p>
+<h3>The one method that does the dropping</h3>
+<span class="src">src/main/kotlin/it/saabel/kotlinnotionclient/models/pages/PageRequests.kt:75–82</span>
+<pre><code>@Serializable
+data class UpdatePageRequest(
+    @SerialName(&quot;properties&quot;)
+    val properties: Map&lt;String, PagePropertyValue&gt;? = null,
+    @SerialName(&quot;icon&quot;)
+    val icon: Icon? = null,
+    @SerialName(&quot;cover&quot;)
+    val cover: PageCover? = null,</code></pre>
+
+<p>Every field there is nullable with a <code>null</code> default, so the plugin-generated serializer
+writes each one with <code>encodeNullableSerializableElement</code>. That name matters more than
+anything else in this lesson. <code>CompositeEncoder</code> offers two ways to write a structure
+member, and kotlinx's JSON encoder overrides only one: <code>StreamingJsonEncoder</code> declares
+<code>encodeNullableSerializableElement</code>, which skips the element entirely when the value is
+<code>null</code> and <code>explicitNulls</code> is off. It does not declare
+<code>encodeSerializableElement</code> at all — that one is inherited from
+<code>AbstractEncoder</code>, which writes the key and hands the value to the serializer it was
+given. <code>javap -p</code> on <code>kotlinx-serialization-json-jvm-1.11.0.jar</code> shows
+exactly that.</p>
+
+<p>So the whole fix is a choice between two overloads, re-derivable from one question: <em>which
+method has the authority to write nothing?</em> Only the nullable one. Anything that must reach the
+wire travels a route where that decision is never taken — hold a non-null value, or go through
+<code>encodeSerializableElement</code> with a serializer that accepts nulls. This repo uses both, one
+per failure mode.</p>
+<h3>Route one: a value that exists in order to be written as null</h3>
+<span class="src">src/main/kotlin/it/saabel/kotlinnotionclient/models/base/Icon.kt:130–133</span>
+<pre><code>    @Serializable(with = IconRemovedSerializer::class)
+    data object Removed : Icon() {
+        override val type: String = &quot;removed&quot;
+    }</code></pre>
+<span class="src">src/main/kotlin/it/saabel/kotlinnotionclient/serialization/ExplicitNullSerializers.kt:38–47</span>
+<pre><code>internal abstract class RemovalSentinelSerializer&lt;T : Any&gt;(
+    serialName: String,
+) : KSerializer&lt;T&gt; {
+    override val descriptor: SerialDescriptor = buildClassSerialDescriptor(serialName)
+
+    @OptIn(ExperimentalSerializationApi::class)
+    override fun serialize(
+        encoder: Encoder,
+        value: T,
+    ) = encoder.encodeNull()</code></pre>
+
+<p>The <code>descriptor</code> has no elements — honest, since nothing is ever written through it;
+its name is "for diagnostics only" (line 36), and <code>serialize</code> is one
+<code>encodeNull()</code>. <code>icon.remove()</code> sets <code>iconValue = Icon.Removed</code>
+(<code>UpdatePageRequestBuilder.kt:319–321</code>), so the field holds a non-null value:
+<code>encodeNullableSerializableElement</code> has no decision to make and delegates, and the
+serializer writes the <code>null</code> the encoder would otherwise have written for the wrong
+reason. The sentinel is write-only — <code>deserialize</code> throws (lines 49–53), because a
+removed icon reads back as an ordinary Kotlin <code>null</code> (ADR 0002, lines 108–109).</p>
+<h3>Route two: keep the key, whatever the payload</h3>
+<span class="src">src/main/kotlin/it/saabel/kotlinnotionclient/models/pages/PageRequests.kt:214–219</span>
+<pre><code>    @Serializable(with = SelectValueSerializer::class)
+    @SerialName(&quot;select&quot;)
+    data class SelectValue(
+        @SerialName(&quot;select&quot;)
+        val select: SelectOption?,
+    ) : PagePropertyValue() {</code></pre>
+
+<p><code>PagePropertyValue</code> is a plain <code>@Serializable</code> sealed class
+(<code>PageRequests.kt:104–105</code>), so <code>"type"</code> is the class discriminator kotlinx's
+polymorphic layer injects, while <code>"select"</code> is written by the variant's own element
+serializer. Two different pieces of code write those two keys — which is why the old bug produced
+<code>{"type":"select"}</code> and not <code>{}</code>: the discriminator survived because whatever
+dropped the payload had no say over it.</p>
+<span class="src">src/main/kotlin/it/saabel/kotlinnotionclient/serialization/ExplicitNullSerializers.kt:70–80</span>
+<pre><code>internal abstract class ClearableValueSerializer&lt;T : Any, P : Any&gt;(
+    serialName: String,
+    payloadKey: String,
+    payloadSerializer: KSerializer&lt;P&gt;,
+) : KSerializer&lt;T&gt; {
+    private val nullablePayloadSerializer: KSerializer&lt;P?&gt; = payloadSerializer.nullable
+
+    override val descriptor: SerialDescriptor =
+        buildClassSerialDescriptor(serialName) {
+            element(payloadKey, nullablePayloadSerializer.descriptor)
+        }</code></pre>
+<span class="src">src/main/kotlin/it/saabel/kotlinnotionclient/serialization/ExplicitNullSerializers.kt:88–95</span>
+<pre><code>    override fun serialize(
+        encoder: Encoder,
+        value: T,
+    ) = encoder.encodeStructure(descriptor) {
+        // encodeSerializableElement, not encodeNullableSerializableElement: the latter is where
+        // explicitNulls = false drops the key. The nullable serializer writes the null instead.
+        encodeSerializableElement(descriptor, 0, nullablePayloadSerializer, payloadOf(value))
+    }</code></pre>
+
+<p>The comment is the lesson, put where whoever changes the line will read it. The payload serializer
+is wrapped once with <code>.nullable</code>: a <code>KSerializer&lt;P&gt;</code> becomes a
+<code>KSerializer&lt;P?&gt;</code> that writes <code>encodeNull()</code> rather than refusing a
+null. The descriptor declares one element, and <code>buildClassSerialDescriptor</code> gives it
+<code>CLASS</code> kind — which the polymorphic encoder needs in order to inject
+<code>"type"</code>.</p>
+
+<p><code>serialize</code> then writes that element with <code>encodeSerializableElement</code> and
+the <code>KSerializer&lt;P?&gt;</code>: the key goes out unconditionally, and the null, when there
+is one, is written by the nullable serializer. A cleared value and a set one now differ only in
+the payload — which, as the KDoc notes at line 64, "also matches what Notion sends on the way in".
+Subclasses supply <code>payloadOf</code> and <code>withPayload</code>. There are seven:</p>
+<span class="src">src/main/kotlin/it/saabel/kotlinnotionclient/models/pages/ClearablePropertyValueSerializers.kt:6–15</span>
+<pre><code>// Serializers for the page property values that can be *cleared*.
+//
+// Each of these carries a single nullable payload where `null` means &quot;empty this property&quot;, and
+// Notion only hears that instruction if the key survives: `{&quot;select&quot;: null}`, not `{}`. Under the
+// client&#x27;s `explicitNulls = false` the generated serializers drop the key and the update silently
+// does nothing, so each writes its key unconditionally instead. See [ClearableValueSerializer] and
+// `docs/adr/0002-explicit-null-payloads.md`.
+//
+// List-valued properties (`multi_select`, `people`, `relation`, `files`) are not here: they clear
+// with `[]`, which is not a null and encodes fine.</code></pre>
+<span class="src">src/main/kotlin/it/saabel/kotlinnotionclient/models/pages/ClearablePropertyValueSerializers.kt:18–26</span>
+<pre><code>internal object NumberValueSerializer : ClearableValueSerializer&lt;PagePropertyValue.NumberValue, Double&gt;(
+    serialName = &quot;number&quot;,
+    payloadKey = &quot;number&quot;,
+    payloadSerializer = Double.serializer(),
+) {
+    override fun payloadOf(value: PagePropertyValue.NumberValue): Double? = value.number
+
+    override fun withPayload(payload: Double?): PagePropertyValue.NumberValue = PagePropertyValue.NumberValue(number = payload)
+}</code></pre>
+
+<p>Seven serializers for the eight setters the ADR lists, because <code>date</code> and
+<code>dateTime</code> both build a <code>DateValue</code>. The header's last paragraph is what
+stops the pattern spreading: list-valued properties clear with <code>[]</code>, which is not a
+null. The ADR also turned down the generalisation — one serializer over the whole property map —
+as "fix-up-at-a-distance": "a reader of <code>SelectValue</code> sees a nullable field with no
+hint that its null is load-bearing" (lines 89–93).</p>
+<h3>The <code>{}</code> hazard</h3>
+<span class="src">src/main/kotlin/it/saabel/kotlinnotionclient/models/base/IconSerializer.kt:53–66</span>
+<pre><code>    override fun serialize(
+        encoder: Encoder,
+        value: Icon,
+    ) {
+        when (value) {
+            is Icon.Emoji -&gt; encoder.encodeSerializableValue(Icon.Emoji.serializer(), value)
+            is Icon.CustomEmoji -&gt; encoder.encodeSerializableValue(Icon.CustomEmoji.serializer(), value)
+            is Icon.External -&gt; encoder.encodeSerializableValue(Icon.External.serializer(), value)
+            is Icon.File -&gt; encoder.encodeSerializableValue(Icon.File.serializer(), value)
+            is Icon.FileUpload -&gt; encoder.encodeSerializableValue(Icon.FileUpload.serializer(), value)
+            is Icon.NativeIcon -&gt; encoder.encodeSerializableValue(Icon.NativeIcon.serializer(), value)
+            is Icon.PendingUpload -&gt; encoder.encodeSerializableValue(IconPendingUploadSerializer, value)
+            is Icon.Removed -&gt; encoder.encodeSerializableValue(IconRemovedSerializer, value)
+        }</code></pre>
+
+<p><code>JsonContentPolymorphicSerializer</code> gives encoding away free: implement
+<code>selectDeserializer</code>, and on the way out it resolves the runtime class's serializer
+reflectively — the right price for most of this hierarchy, and the decode half still uses it
+(lines 31–47). But <code>Icon.Removed</code> is a <code>data object</code>, and a reflective
+lookup for an object variant can land on the generic object serializer, which writes
+<code>{}</code>. Not a crash: an icon field set to an empty object — the silently wrong payload
+the ADR exists to remove, reintroduced by the mechanism meant to fix it. The explicit
+<code>when</code> also buys exhaustiveness. <code>PageCoverSerializer.kt:48–59</code> is the same.</p>
+<h3>The test that can see it</h3>
+<span class="src">src/test/kotlin/unit/models/pages/ExplicitNullPayloadSerializationTest.kt:41–42, 58–59</span>
+<pre><code>            test(&quot;icon.remove() encodes as an explicit null&quot;) {
+                encode(updatePageRequest { icon.remove() }) shouldBe &quot;&quot;&quot;{&quot;icon&quot;:null}&quot;&quot;&quot;
+// …
+            test(&quot;an untouched icon or cover is still omitted entirely&quot;) {
+                encode(updatePageRequest { lock() }) shouldBe &quot;&quot;&quot;{&quot;is_locked&quot;:true}&quot;&quot;&quot;</code></pre>
+
+<p>Those two assertions are the discipline: the first pins that the sentinel reaches the wire, the
+second that the rule it is an exception to still holds. Neither is expressible about
+<code>request.icon</code> — a field whose two values only became distinguishable when the sentinel
+was introduced.</p>
+<span class="src">src/test/kotlin/unit/models/pages/ExplicitNullPayloadSerializationTest.kt:99–103</span>
+<pre><code>            cleared.forEach { (key, request) -&gt;
+                test(&quot;clearing a $key property encodes $key: null&quot;) {
+                    encode(request) shouldBe &quot;&quot;&quot;{&quot;properties&quot;:{&quot;P&quot;:{&quot;type&quot;:&quot;$key&quot;,&quot;$key&quot;:null}}}&quot;&quot;&quot;
+                }
+            }</code></pre>
+
+<p>Seven setters as a <code>Map</code> driving seven generated tests (lines 88–97), so an eighth
+costs one line. The live half is in
+<code>src/test/kotlin/integration/ExplicitNullPayloadIntegrationTest.kt</code> — tagged
+<code>RequiresApi</code>, so do not run it casually. It pins what Notion does with the <em>old</em>
+payload by sending it by hand.</p>
+<span class="src">src/test/kotlin/integration/ExplicitNullPayloadIntegrationTest.kt:150–155</span>
+<pre><code>                // What the *old* payload did: the discriminator with the key dropped. Sent raw,
+                // because no client API can build that shape any more. Verified 2026-08-22: the
+                // API rejects it outright with 400 validation_error, listing every payload key it
+                // would have accepted (&quot;body.properties.Stage.select should be defined, instead
+                // was `undefined`&quot;), and the property keeps its previous value. So clearing a
+                // property never silently lost data the way icon/cover removal did — it threw.</code></pre>
+<span class="src">src/test/kotlin/integration/ExplicitNullPayloadIntegrationTest.kt:158–158, 164–166</span>
+<pre><code>                val raw = rawPatch(token, &quot;pages/${page.id}&quot;, &quot;&quot;&quot;{&quot;properties&quot;:{&quot;Stage&quot;:{&quot;type&quot;:&quot;select&quot;}}}&quot;&quot;&quot;)
+// …
+                raw.first shouldBe 400
+                raw.second shouldContain &quot;body.properties.Stage.select should be defined&quot;
+                afterRaw shouldBe &quot;Doing&quot;</code></pre>
+
+<p>A test that constructs a payload the library can no longer produce, in order to record why — so
+the 400 is a documented property of the API rather than the memory of an afternoon.</p>
+<h3>Why not just flip the switch</h3>
+<span class="src">docs/adr/0002-explicit-null-payloads.md:80–85</span>
+<pre><code>- **Flip `explicitNulls` to `true` and model absence explicitly.** Semantically the more honest
+  model, and it removes the *cause* rather than the instances. Rejected on blast radius: every
+  `?= null` field in every request model would start serializing as `null` unless individually
+  wrapped in an absence type, which is a rewrite of the whole request layer to fix two known
+  sites. The sentinel mechanism is itself reusable, so a third instance is cheap — and if the
+  request layer is ever reshaped for other reasons, this decision is worth revisiting.</code></pre>
+
+<p>A clean worked example of scoping a fix. The rejected option is conceded to be <em>better</em> —
+it "removes the <em>cause</em> rather than the instances" — and rejected anyway on blast radius:
+two known sites against every nullable field in every request model, each needing an absence
+wrapper. Not a fix; a rewrite with a fix inside it.</p>
+
+<p>Two details make that honest rather than merely convenient. It names the condition under which the
+decision expires — "if the request layer is ever reshaped for other reasons, this decision is worth
+revisiting". And it records the obvious per-field escape hatch, and why it is not one:</p>
+<span class="src">docs/adr/0002-explicit-null-payloads.md:86–88</span>
+<pre><code>- **`@EncodeDefault` on the nullable payload fields.** Does not work: `explicitNulls = false`
+  drops a null nullable field in `encodeNullableSerializableElement`, independently of whether
+  the value is a default.</code></pre>
+
+<p>The same distinction from the other side: the check lives in
+<code>encodeNullableSerializableElement</code>, not in whatever decides defaults, so an annotation
+about defaults cannot reach it.</p>
+<h2>The analogy, and its limits</h2>
+
+<p>The Jackson instinct is right about the setting and wrong about the fix.
+<code>@JsonInclude(Include.NON_NULL)</code> is the same policy, and if you have configured it on
+an <code>ObjectMapper</code> you have shipped this bug's cousin. But Jackson's inclusion is
+<em>per property and overridable</em>: annotate one field <code>Include.ALWAYS</code> and it opts
+back in. Reaching for that here costs the afternoon. <code>explicitNulls</code> belongs to the
+<code>Json</code> instance and has no per-property override; <code>@EncodeDefault</code> is about
+defaults, and the check is not there. That absence is why the fix has to be a <em>type</em>.</p>
+
+<p>The second analogy holds better. A patchable field is a three-state field — absent, null, present
+— and the ecosystem's usual answer is a wrapper: <code>JsonNullable&lt;T&gt;</code> from the
+OpenAPI generators, or a hand-rolled <code>Undefined | Null | Value</code>. This repo reached the
+same three states more cheaply, pushing the extra state into a type that was already sealed.
+<strong>Where that stops:</strong> only where the field's type is yours to extend.
+<code>Icon</code> could gain <code>Removed</code>; a field declared <code>String?</code> cannot,
+which is why the clearable values needed the other route. The two are not stylistic variation.</p>
+
+<p>And a sentinel is not free at the boundary: adding a variant to a public sealed hierarchy is a
+source-breaking change for any exhaustive <code>when</code> in user code (ADR 0002, lines
+104–107), where a wrapper would have been additive. Cheap here only because nothing matched
+exhaustively — checked, not assumed.</p>
+<h2>See it yourself</h2>
+
+<p>This runs against the repo as it stands, hits no network, and takes about a second:</p>
+
+<pre><code>./gradlew test -Dkotest.tags.include="Unit" --tests "*.ExplicitNullPayloadSerializationTest"</code></pre>
+
+<p>Read the test file beside the output — twenty-odd assertions, all on strings. Then break
+it on purpose: in
+<code>src/main/kotlin/it/saabel/kotlinnotionclient/models/pages/PageRequests.kt</code>, delete
+line 164, the <code>@Serializable(with = NumberValueSerializer::class)</code> on
+<code>NumberValue</code>, so the variant falls back to its plugin-generated serializer. Re-run.
+The cleared-number case now reports an actual of
+<code>{"properties":{"P":{"type":"number"}}}</code> — the discriminator without the instruction,
+the payload Notion answers with a 400. One deleted annotation is the entire bug.</p>
+<h2>Exercises</h2>
+
+<div class="callout">
+<h3>Exercise 1 — Verifiable</h3>
+<p>Pin the <em>old, broken</em> payload for one of the seven clearable setters, watch it fail, then
+correct it. Use <code>number</code>.</p>
+<ol>
+<li>Write a fresh Kotest <code>FunSpec</code>, tagged <code>@Tags("Unit")</code>, encoding
+<code>updatePageRequest { properties { number("P", null as Double?) } }</code> with
+<code>NotionJson.default</code>. The cast picks the nullable overload
+(<code>PagePropertiesBuilder.kt:165–170</code>).</li>
+<li>Assert on the <em>model</em> first: <code>request.properties!!["P"] shouldBe
+PagePropertyValue.NumberValue(number = null)</code>. Green — and green before the fix too.</li>
+<li>Now assert on the bytes, pinning the pre-fix payload:
+<code>{"properties":{"P":{"type":"number"}}}</code>.</li>
+</ol>
+<p><strong>Expected end state.</strong> Step 3 fails, and the message is the lesson: expected
+<code>{"properties":{"P":{"type":"number"}}}</code>, actual
+<code>{"properties":{"P":{"type":"number","number":null}}}</code>. Change the expectation to the
+actual and it goes green. The assertion has moved from "the field is null" — true in both worlds,
+therefore worthless — to "the encoded bytes are
+<code>{"properties":{"P":{"type":"number","number":null}}}</code>", false in exactly one.</p>
+<p><strong>Then earn the failure back.</strong> Delete <code>PageRequests.kt:164</code> and re-run:
+your corrected assertion now fails with the old bytes as the actual. Restore the line.</p>
+</div>
+
+<div class="callout">
+<h3>Exercise 2 — Extension</h3>
+<p>ADR 0002 claims "the sentinel mechanism is itself reusable, so a third instance is cheap" (lines
+84–85). Test that by designing the third instance for a case the repo does not handle:
+<strong>deleting a property from a data source schema</strong>.
+<code>DataSourceRequestBuilder.kt:359–360</code> tells callers to remove a property by simply not
+including it — check that against the API before believing it, and notice the claim's shape.</p>
+<p>Three places it strains. The intended null sits in a <strong>map value</strong>, not a class
+member — so which encoder method does a <code>Map</code> serializer use for its values, and does
+<code>explicitNulls</code> reach it at all? That answer may make the sentinel unnecessary, or
+impossible. Second, the variant would live on <code>DatabaseProperty</code>, which is also decoded
+from responses — what keeps it out of a schema someone read back? Third, deleting a property
+destroys data, and the ADR's rejected fourth option was to document the raw request instead. Is
+this where that one is right?</p>
+</div>
+<h2>Further reading</h2>
+
+<ul>
+<li><a href="../adr/0002-explicit-null-payloads.md"><code>docs/adr/0002-explicit-null-payloads.md</code></a>,
+§Alternatives considered — four options, and the blast-radius argument against the honest one.</li>
+<li><a href="https://github.com/Kotlin/kotlinx.serialization/blob/master/docs/json.md#explicit-nulls">kotlinx.serialization JSON guide, "Explicit nulls"</a>
+— the setting as its authors describe it, including its effect on <em>decoding</em>.</li>
+<li><a href="https://github.com/Kotlin/kotlinx.serialization/blob/master/docs/serializers.md#handwritten-composite-serializer">kotlinx.serialization guide, "Handwritten composite serializer"</a>
+— <code>encodeStructure</code>, <code>buildClassSerialDescriptor</code> and element indices: what
+<code>ClearableValueSerializer</code> is built out of.</li>
+<li><a href="https://kotlinlang.org/api/kotlinx.serialization/kotlinx-serialization-core/kotlinx.serialization.encoding/-composite-encoder/encode-nullable-serializable-element.html"><code>CompositeEncoder.encodeNullableSerializableElement</code> API reference</a>
+— read it beside <code>encodeSerializableElement</code> on the same page; the asymmetry is visible
+in the signatures.</li>
+</ul>
