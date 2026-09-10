@@ -1,0 +1,390 @@
+<title>Being a Library, Not an Application</title>
+<style>
+/* Shared stylesheet for the docs/learning series.
+   Inlined verbatim into each lesson's <style> block — no linking, no network. */
+
+html { -webkit-text-size-adjust: 100%; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-size: 17px;
+  line-height: 1.6;
+  color: #1a1a1a;
+  background: #fdfdfc;
+  max-width: 70ch;
+  margin: 0 auto;
+  padding: 2rem 1.25rem 6rem;
+}
+h1, h2, h3 { line-height: 1.25; font-weight: 650; }
+h1 { font-size: 1.9rem; margin: 0 0 .25rem; }
+h2 { font-size: 1.4rem; margin: 2.75rem 0 .75rem; padding-bottom: .3rem; border-bottom: 2px solid #d8d5cd; }
+h3 { font-size: 1.12rem; margin: 1.9rem 0 .5rem; color: #33312c; }
+p, li { margin: 0 0 1rem; }
+li { margin-bottom: .45rem; }
+ul, ol { padding-left: 1.5rem; }
+
+a { color: #0b5a9e; text-decoration: underline; text-underline-offset: 2px; }
+a:hover { color: #073e6d; }
+a:visited { color: #5a3a8e; }
+
+code {
+  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+  font-size: .875em;
+  background: #f1efe9;
+  border-radius: 3px;
+  padding: .1em .32em;
+}
+pre {
+  background: #f6f5f1;
+  border: 1px solid #e0ddd4;
+  border-radius: 4px;
+  padding: .85rem 1rem;
+  overflow-x: auto;
+  font-size: .82rem;
+  line-height: 1.5;
+}
+pre code { background: none; padding: 0; font-size: inherit; }
+
+.subtitle { color: #57544d; font-size: 1rem; margin: 0 0 2rem; }
+.difficulty {
+  display: inline-block; font-size: .78rem; letter-spacing: .04em; text-transform: uppercase;
+  background: #e8e5dc; border-radius: 3px; padding: .12em .5em; color: #46433c;
+}
+.src { display: block; font-size: .78rem; color: #6b675f; margin: 1.4rem 0 .3rem; }
+
+.callout { border: 1px solid #c9c4b6; border-left: 4px solid #8a8272; background: #faf9f5;
+  border-radius: 4px; padding: 1rem 1.1rem .35rem; margin: 1.25rem 0; }
+.callout h3 { margin-top: 0; }
+
+blockquote { margin: 1.25rem 0; padding: .1rem 0 .1rem 1rem; border-left: 3px solid #d8d5cd; color: #3b3833; }
+hr { border: 0; border-top: 1px solid #e0ddd4; margin: 3rem 0; }
+table { border-collapse: collapse; width: 100%; font-size: .92rem; }
+th, td { border: 1px solid #e0ddd4; padding: .4rem .6rem; text-align: left; vertical-align: top; }
+th { background: #f4f2ec; }
+</style>
+
+<h1>06 — Being a library, not an application</h1>
+<p class="subtitle">Every public name is a promise, and you cannot see who is holding you to it · <span class="difficulty">Medium</span></p>
+
+<h2>The hook</h2>
+
+<p>Most library READMEs open with badges. <code>README.md</code> opens with a warning:</p>
+<span class="src">README.md:5–11</span>
+<pre><code>&gt; **⚠️ AI-Assisted Development Notice**
+&gt; This library is developed primarily by AI agents (Claude Code) under human direction. While it includes comprehensive testing (1,200+ unit tests), validation against official Notion API samples, and live-API integration passes, please be aware of potential issues:
+&gt; - Documentation examples may not perfectly match implementation
+&gt; - Edge cases may exist that weren't covered in testing
+&gt; - Some API patterns may have inconsistencies
+&gt;
+&gt; We are deliberately open about this — including when it bites: several fixes in the upcoming 0.6.0 release correct bugs that earlier AI-assisted releases introduced (see [CHANGELOG.md](CHANGELOG.md)).</code></pre>
+
+<p>The changelog says it again, longer, with issue numbers attached:</p>
+<span class="src">CHANGELOG.md:23–27</span>
+<pre><code>live-API verification pass (#61) against a real workspace. That openness cuts both ways:
+several fixes in this release correct bugs that earlier, equally AI-assisted releases
+introduced — most seriously a timezone bug where offset-less datetimes were silently stored
+shifted (see the breaking dates section below), and an `icon.remove()`/property-clearing DSL
+whose payloads never reached the wire. The live verification pass exists precisely because
+// …</code></pre>
+
+<p>At face value that is a statement about publishing, not about AI: once an artifact is on Maven
+Central, <em>fixing a bug</em> and <em>breaking a caller</em> are often the same physical act. 0.6.0
+shipped on 2026-09-03 (<code>CHANGELOG.md:12</code>), the installation snippet tells you to depend
+on it (<code>README.md:30</code>), and <code>gradle.properties:6</code> already reads
+<code>version=0.7.0-SNAPSHOT</code>. "The upcoming 0.6.0 release" is a released one now,
+downloadable by strangers — and nothing in this repository can tell you how many of them wrote an
+exhaustive <code>when</code> over <code>Icon</code>.</p>
+
+<h2>The concept, plainly</h2>
+
+<p>In an application the compiler sees every call site: rename a field and the build either goes
+green or hands you the list of repairs. A published library inverts that. The compiler sees the call
+sites that do not matter — your own tests and samples — and none of the ones that do. The discipline
+replacing "recompile everything" is deciding in advance what you will be held to.</p>
+
+<p>Four constraints get collapsed into the word "breaking". They are independent:</p>
+
+<p><strong>Visibility</strong> — what a consumer can name at all. Anything <code>public</code> is
+part of the deal whether you meant it or not; anything <code>internal</code> is yours to change on a
+whim.</p>
+
+<p><strong>Source compatibility</strong> — their code still compiles. Adding a variant to a sealed
+hierarchy breaks this: an exhaustive <code>when</code> without <code>else</code> no longer does.</p>
+
+<p><strong>Binary compatibility</strong> — their <em>already-compiled</em> jar still links,
+without recompilation. Adding a property to a public data class breaks this while leaving source
+compatibility intact: the primary constructor and the synthetic <code>copy$default</code> both
+change JVM descriptors, so an old caller meets <code>NoSuchMethodError</code> even though
+recompiling its unchanged source would have succeeded.</p>
+
+<p><strong>The promise</strong> — what your version number and changelog say you will do. Social,
+not mechanical, and the only one a user can read in advance.</p>
+
+<p>Neither of the middle two implies the other, and a change can dodge both and still break
+someone. When <code>SearchFilter.property</code> stopped defaulting to <code>"object"</code>
+(<code>CHANGELOG.md:162–168</code>) no signature moved: Kotlin compiles default arguments into the
+<em>callee</em>, so an old jar calling <code>SearchFilter(inTrash = true)</code> links perfectly and
+silently sends a different payload — a break no compiler on either side will mention.</p>
+
+<p>And one structural fact explains why a library needs tooling an application does not.
+<strong>Your test suite compiles from source, in the same build, against the classes it tests.</strong>
+It is not unlikely to catch a binary break; it is incapable of it. So is <code>./gradlew build</code>.
+The only observer who can see one is a consumer who did not recompile.</p>
+
+<h2>This code, annotated</h2>
+
+<h3>A variant added to a sealed hierarchy</h3>
+
+<p>ADR-0002 adds two write-only sentinels so an intended JSON <code>null</code> is carried by a
+value rather than a Kotlin <code>null</code>. Its Consequences section states the cost, then bounds
+it:</p>
+<span class="src">docs/adr/0002-explicit-null-payloads.md:104–107</span>
+<pre><code>- `Icon` and `PageCover` gain a variant. Both are sealed and public, so an exhaustive `when`
+  over them in user code stops compiling. In this repo nothing matched exhaustively —
+  `RequestValidator` and `PendingUploadResolver` both test `is …PendingUpload` and are
+  unaffected.</code></pre>
+
+<p>The variant:</p>
+<span class="src">src/main/kotlin/it/saabel/kotlinnotionclient/models/base/Icon.kt:130–133</span>
+<pre><code>    @Serializable(with = IconRemovedSerializer::class)
+    data object Removed : Icon() {
+        override val type: String = "removed"
+    }</code></pre>
+
+<p>Walk the blast radius rather than assuming it. A consumer's exhaustive <code>when (icon)</code>
+with no <code>else</code> now fails to compile; one with an <code>else</code>, or an <code>if</code>
+chain of <code>is</code> checks, is untouched. A jar compiled against 0.5.0 links fine and cannot
+even hit the latent <code>NoWhenBranchMatchedException</code>: the sentinel is write-only, produced
+by <code>icon.remove()</code> and never by decoding (<code>CHANGELOG.md:198–200</code>).
+Source-only, then, and only for callers who took the exhaustiveness Kotlin offered them.</p>
+
+<p>And it was not a one-off: 0.6.0 widened six closed types this way —
+<code>FileUploadStatus</code>, <code>FileUploadError</code>, <code>FormulaResult</code>,
+<code>RollupResult</code>, <code>Icon</code> and <code>PageCover</code>
+(<code>CHANGELOG.md:119–124</code>, <code>:126–130</code>, <code>:138–139</code>,
+<code>:144–147</code>, <code>:198–200</code>) — each with an explicit <em>Migration:</em> line. The
+project does not avoid the break; it prices it. The instinct predates the agents:
+<code>IDEAS.md</code> row 2 parks a "breaking rename" for "before the 0.4.0 release".</p>
+
+<p>Which is defensible, because there is no deprecation cycle for this.
+<code>@Deprecated</code> marks a declaration you can stop using; it cannot express "a
+<code>when</code> you already wrote will need another arm". The softenings are structural and must
+be chosen in advance — and one is already here. The <code>Unknown</code> fallbacks exist so that
+"any future <code>formula.type</code>/<code>rollup.type</code> Notion adds now degrades to
+<code>Unknown</code>" (<code>CHANGELOG.md:148–150</code>). A hierarchy with a documented catch-all
+teaches callers to write <code>else</code>, and callers who write <code>else</code> do not break:
+usually read as a deserialization safety net, equally a compatibility one.</p>
+
+<h3><code>internal</code>, and the thirteen serializers that missed it</h3>
+
+<p>The rate limiter is the cleanest use of visibility here — the bucket is an implementation
+detail and is marked as one:</p>
+<span class="src">src/main/kotlin/it/saabel/kotlinnotionclient/ratelimit/TokenBucket.kt:26–30</span>
+<pre><code>internal class TokenBucket(
+    private val sustainedRate: Double,
+    private val burstCapacity: Int,
+    private val currentTimeMillis: () -&gt; Long = { System.nanoTime() / 1_000_000 },
+) {</code></pre>
+
+<p>while <code>RateLimitConfig</code> — the thing a caller tunes — stays public. Better still, the
+plugin's config class is public but carries a member that is not:</p>
+<span class="src">src/main/kotlin/it/saabel/kotlinnotionclient/ratelimit/NotionRateLimit.kt:25–29</span>
+<pre><code>    /**
+     * Test seam: overrides the token bucket's millisecond time source so tests can drive pacing
+     * with `kotlinx.coroutines.test` virtual time. `null` uses a real monotonic clock.
+     */
+    internal var timeSourceMillis: (() -&gt; Long)? = null</code></pre>
+
+<p>Exactly what <code>internal</code> is for: a seam the tests need
+(<code>src/test/kotlin/unit/ratelimit/RetryAfterPluginTest.kt:84</code> sets it), owed to no
+consumer.</p>
+
+<p>Elsewhere the line falls where it happened to fall. Of 429 top-level type declarations under
+<code>src/main/kotlin</code>, 26 are <code>internal</code>. One category shows the arbitrariness:
+<strong>thirteen</strong> top-level serializer objects are public and <strong>fifteen</strong> are
+internal, doing the same job. The telling pair belongs to one model —
+<code>IconSerializer</code> is public (<code>models/base/IconSerializer.kt:30</code>) while
+<code>IconRemovedSerializer</code>, for a nested variant of that same class, is internal
+(<code>models/base/Icon.kt:167</code>). A serializer named only inside
+<code>@Serializable(with = …)</code> is an implementation detail by construction; publishing it
+promises its name and behaviour to people with no reason to want either.</p>
+
+<p>One habit keeps that invisible. Forty of the hundred files under <code>src/main/kotlin</code>
+open with exactly <code>@file:Suppress("unused")</code>, thirty-four of them among the sixty-six in
+<code>models/</code>. It is not wrong — most public declarations in a library legitimately have no
+in-repo caller — but it is file-wide and permanent , and "nothing here names this declaration" is
+exactly the signal that would have flagged those thirteen serializers.</p>
+
+<h3>What actually ships</h3>
+
+<p>The dependency block is unusually thoughtful about it — most projects never write this comment
+down:</p>
+<span class="src">build.gradle.kts:20–31</span>
+<pre><code>dependencies {
+    // API dependencies: these types appear in the library's public signatures, so they must be
+    // on consumers' compile classpath (`api` publishes as Maven `compile` scope, `implementation`
+    // as `runtime` — which leaves callers unable to compile against the typed overloads).
+    api(libs.kotlinx.datetime) // LocalDate/LocalDateTime/TimeZone in date builders and accessors
+    api(libs.kotlinx.serialization.json) // JsonElement/JsonObject in view, block and database models
+    api(libs.kotlinx.coroutines.core) // Flow&lt;T&gt; returned by the *AsFlow/*PagedFlow pagination helpers
+
+    // Implementation dependencies: internal only, not exposed in public signatures
+    implementation(libs.ktor.client.core)
+    implementation(libs.bundles.ktor)
+    implementation(libs.bundles.logging)</code></pre>
+
+<p>The last line is where the application habit survives. That bundle is two artifacts:</p>
+<span class="src">gradle/libs.versions.toml:50</span>
+<pre><code>logging = ["slf4j-api", "logback-classic"]</code></pre>
+
+<p><code>logback-classic</code> is a logging <em>backend</em>, and <code>implementation</code>
+publishes it at Maven <code>runtime</code> scope — so every consumer gets Logback on their runtime
+classpath, where SLF4J binds whichever backend it finds first. Picking the backend is the
+application's call; a library ships the facade at most. Here not even that is used:
+<code>grep -rn "org.slf4j\|LoggerFactory" src/main/kotlin</code> returns nothing. The client logs
+through Ktor with a hand-rolled logger:</p>
+<span class="src">src/main/kotlin/it/saabel/kotlinnotionclient/NotionClient.kt:167–172</span>
+<pre><code>                            logger =
+                                object : Logger {
+                                    override fun log(message: String) {
+                                        println(message)
+                                    }
+                                }</code></pre>
+
+<p>Opt-in, so defensible (installed only when <code>config.logLevel != LogLevel.NONE</code>,
+<code>NotionClient.kt:165</code>) — but the checklist at
+<code>journal/2025_10_15_Maven_Central_Publishing_Setup.md:362</code> asks for "No Debug Code:
+Remove println statements", and this is a library writing to a consumer's stdout while shipping an
+unused Logback.</p>
+
+<p>The publication config is tidy, and one conditional carries the local workflow:</p>
+<span class="src">build.gradle.kts:116–119</span>
+<pre><code>    // Sign all publications with GPG — skipped for local publishing (./gradlew publishToMavenLocal -PskipSigning)
+    if (!project.hasProperty("skipSigning")) {
+        signAllPublications()
+    }</code></pre>
+
+<p>Central requires signatures; a local smoke test does not, and needing a GPG key to try your own
+artifact is what stops people testing releases. Dokka is applied bare
+(<code>build.gradle.kts:5</code>) — enough for the <code>dokkaJavadocJar</code> Central wants.</p>
+
+<h3>What the version number promises</h3>
+
+<p><code>CHANGELOG.md:6</code> says the project "adheres to Semantic Versioning", which at
+<code>0.x</code> mostly disclaims: clause 4 says anything may change at any time and the API should
+not be considered stable. The repo behaves accordingly — 0.6.0 is a breaking minor — and neither
+<code>README.md</code> nor <code>CONTRIBUTING.md</code> states a stability policy, a support window
+or a route to 1.0.0.</p>
+
+<p>What <em>is</em> promised is not stability but disclosure, and the README notice is its strong
+form: an API document naming the failure modes of its own construction before you adopt it. It costs
+the impression of solidity — no rival README volunteers "some API patterns may have
+inconsistencies" — and buys a reader who knows what to check. The accounting behind it is real; one <code>FOLLOWUPS.md</code> row catches the version question at the right moment:</p>
+<span class="src">FOLLOWUPS.md:77</span>
+<pre><code>| 37 | run-wide | **Three source-breaking changes landed on this branch** (#36 sealed-class additions, #39 `StatusConfiguration.options`, #42 `DatabaseProperty.Formula.formula`). All are captured in the batched CHANGELOG entry. Confirm the version bump reflects them before release. | filed (#62) |</code></pre>
+
+<p>Note what it counts: three <em>source</em>-breaking changes, found by agents reading their own
+diffs. No mechanism counted them, and none is a binary break. That is the gap where
+<code>binary-compatibility-validator</code> would sit — it is not in the plugins block
+(<code>build.gradle.kts:3–10</code>), and adopting it is yours to weigh, not a task here. What it
+does is narrow. <code>apiDump</code> writes a human-readable <code>.api</code> file listing every
+public and protected JVM declaration; <code>apiCheck</code>, wired into <code>check</code>, fails
+the build when the compiled surface stops matching it. It has no opinion about whether a change is
+good — it turns "the ABI changed" into a diff you must review in the same commit, which is the one
+thing the compiler and the tests structurally cannot give you. On Kotlin 2.3.21
+(<code>gradle/libs.versions.toml:5</code>) it needs no separate plugin; the Kotlin Gradle plugin has
+carried the validation natively since 2.2. The objection: at <code>0.x</code>, breaking
+deliberately each release, the file is one more artifact to regenerate. The answer: regenerating it
+is precisely when you would notice a break you had not priced.</p>
+
+<h2>The analogy, and its limits</h2>
+
+<p><code>internal</code> reads like Java's package-private, and day to day it does: usable by
+nearby code, invisible to consumers. Three places it stops mapping:</p>
+
+<p><strong>The unit is the compilation, not the package.</strong> <code>internal</code> spans the
+whole main source set, so <code>TokenBucket</code> is reachable from every package here and none
+outside — a publish/don't-publish switch, not a layering tool.</p>
+
+<p><strong>Tests are inside it.</strong> The Kotlin Gradle plugin associates the test compilation
+with main, which is why <code>RetryAfterPluginTest.kt:84</code> can set an <code>internal var</code>
+from another package. So marking something <code>internal</code> will not break your test
+compilation: <code>compileKotlin</code> is the only signal.</p>
+
+<p><strong>The JVM does not enforce it.</strong> An <code>internal</code> class compiles to a
+public class file and <code>internal</code> functions get name-mangled with the module name; a
+determined Java consumer can call both. It states what you will support, not what you have locked —
+which is why a tool that <em>records</em> the surface adds something a keyword cannot.</p>
+
+<p>And one analogy to distrust outright: "0.x means nothing is stable, so nothing is my problem".
+The version governs when you may break the API, not whether you must know what it is.</p>
+
+<h2>See it yourself</h2>
+
+<p>Look at the contract you publish, not the one in the build script:</p>
+<pre><code>./gradlew generatePomFileForMavenPublication
+grep -B2 -A3 "logback" build/publications/maven/pom-default.xml</code></pre>
+
+<p>Thirteen dependencies, Logback among them at <code>runtime</code> scope. Then measure the
+surface itself:</p>
+<pre><code>grep -rhE '^(public |internal |abstract |open |sealed |data |value |enum |annotation |fun )*(class|interface|object) ' src/main/kotlin --include=*.kt | wc -l
+grep -rhE '^internal (abstract |open |sealed |data |value |enum |annotation |fun )*(class|interface|object) ' src/main/kotlin --include=*.kt | wc -l</code></pre>
+
+<h2>Exercises</h2>
+
+<div class="callout">
+<h3>Exercise 1 — Verifiable</h3>
+<p>Mark a public type <code>internal</code> and let the compiler map what depends on it — twice,
+reverting each edit with <code>git checkout -- &lt;file&gt;</code>.</p>
+<p><strong>Run A.</strong> Put <code>internal</code> in front of <code>object IconSerializer</code>
+at <code>src/main/kotlin/it/saabel/kotlinnotionclient/models/base/IconSerializer.kt:30</code> and
+run <code>./gradlew compileKotlin</code>. <em>Expected end state:</em> <code>BUILD SUCCESSFUL</code>,
+zero errors — an <code>@Serializable(with = …)</code> reference is not a signature, so nothing leaks.
+The silence is the finding.</p>
+<p><strong>Run B.</strong> Do the same to <code>data class FileUploadProgress</code> at
+<code>src/main/kotlin/it/saabel/kotlinnotionclient/models/files/FileUploadProgress.kt:8</code>.
+<em>Expected end state:</em> exactly two errors, both in that file (paths trimmed):</p>
+<pre><code>e: …/models/files/FileUploadProgress.kt:66:20 'public' function exposes its 'internal' parameter type 'FileUploadProgress'.
+e: …/models/files/FileUploadProgress.kt:87:9 'public' function exposes its 'internal' parameter type 'FileUploadProgress'.</code></pre>
+<p>Those two lines <em>are</em> the type's public reach: <code>UploadProgressCallback</code> and
+<code>FileUploadResult.Failure.partialProgress</code>, and nothing else in a hundred files. Now
+repeat it on something load-bearing — <code>models/base/Icon.kt:31</code> is a good scare —
+predicting the error count first. The caution underneath: making a published type internal is itself
+a source break, and this decision's window is before publication.</p>
+</div>
+
+<div class="callout">
+<h3>Exercise 2 — Extension</h3>
+<p>ADR-0002 lists four rejected alternatives (<code>docs/adr/0002-explicit-null-payloads.md:78–96</code>);
+a deprecation cycle is not among them, and the source break appears only in Consequences, noted
+rather than decided. Write the amendment that treats it as a decision.</p>
+<p>Sketch the staged version: what ships in 0.6.0 if <code>Icon.Removed</code> may not appear yet?
+Candidates worth costing — a separate <code>IconUpdate</code> type used only by request builders,
+leaving <code>Icon</code> untouched; the sentinel plus a documented "always write an
+<code>else</code>"; or a <code>@Deprecated</code> shim, worth proving cannot exist rather than
+assuming it.</p>
+<p>Then price them. How many releases does the cycle span at this cadence, and who is protected?
+Concretely: a consumer with an exhaustive <code>when</code> over <code>Icon</code>, pinned to 0.5.0.
+What would they do differently given a deprecation warning rather than a compile error plus a
+<em>Migration:</em> line?</p>
+<p>Finally: at <code>0.x</code> semver already permits the hard break, so a deprecation cycle is a
+promise stronger than your version number makes. Decide whether to start making it before 1.0.0, and
+what triggers it — every sealed hierarchy, or only those a consumer plausibly matches on. That rule,
+not this one ADR, is the deliverable.</p>
+</div>
+
+<h2>Further reading</h2>
+
+<ul>
+<li><a href="../adr/0002-explicit-null-payloads.md"><code>docs/adr/0002-explicit-null-payloads.md</code></a>,
+§Consequences — four bullets, the first two of which are the whole compatibility argument.</li>
+<li><a href="https://kotlinlang.org/docs/api-guidelines-backward-compatibility.html#compatibility-types">Backward
+compatibility guidelines for library authors, §Compatibility types</a> — the split, with the
+<code>fib()</code> default-argument example; §Avoid using data classes in your API, on the same
+page, bites a models-heavy library hardest.</li>
+<li><a href="https://github.com/Kotlin/binary-compatibility-validator#what-makes-an-incompatible-change-to-the-public-binary-api">binary-compatibility-validator
+README, §What makes an incompatible change to the public binary API</a> — an enumerated list that
+doubles as a review checklist even if you never install the plugin.</li>
+<li><a href="https://semver.org/spec/v2.0.0.html#spec-item-4">Semantic Versioning 2.0.0, clause 4</a>
+— what <code>0.y.z</code> disclaims; clause 1, above it, still requires a public API declared
+"precise and comprehensive".</li>
+</ul>
