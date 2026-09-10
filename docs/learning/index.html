@@ -1,0 +1,115 @@
+<!-- Contents page for the docs/learning series. Self-contained: no network, no JS. -->
+<title>Learning series — kotlin-notion-client</title>
+<style>
+/* Shared stylesheet for the docs/learning series.
+   Inlined verbatim into each lesson's <style> block — no linking, no network. */
+
+html { -webkit-text-size-adjust: 100%; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-size: 17px;
+  line-height: 1.6;
+  color: #1a1a1a;
+  background: #fdfdfc;
+  max-width: 70ch;
+  margin: 0 auto;
+  padding: 2rem 1.25rem 6rem;
+}
+h1, h2, h3 { line-height: 1.25; font-weight: 650; }
+h1 { font-size: 1.9rem; margin: 0 0 .25rem; }
+h2 { font-size: 1.4rem; margin: 2.75rem 0 .75rem; padding-bottom: .3rem; border-bottom: 2px solid #d8d5cd; }
+h3 { font-size: 1.12rem; margin: 1.9rem 0 .5rem; color: #33312c; }
+p, li { margin: 0 0 1rem; }
+li { margin-bottom: .45rem; }
+ul, ol { padding-left: 1.5rem; }
+
+a { color: #0b5a9e; text-decoration: underline; text-underline-offset: 2px; }
+a:hover { color: #073e6d; }
+a:visited { color: #5a3a8e; }
+
+code {
+  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+  font-size: .875em;
+  background: #f1efe9;
+  border-radius: 3px;
+  padding: .1em .32em;
+}
+pre {
+  background: #f6f5f1;
+  border: 1px solid #e0ddd4;
+  border-radius: 4px;
+  padding: .85rem 1rem;
+  overflow-x: auto;
+  font-size: .82rem;
+  line-height: 1.5;
+}
+pre code { background: none; padding: 0; font-size: inherit; }
+
+.subtitle { color: #57544d; font-size: 1rem; margin: 0 0 2rem; }
+.difficulty {
+  display: inline-block; font-size: .78rem; letter-spacing: .04em; text-transform: uppercase;
+  background: #e8e5dc; border-radius: 3px; padding: .12em .5em; color: #46433c;
+}
+.src { display: block; font-size: .78rem; color: #6b675f; margin: 1.4rem 0 .3rem; }
+
+.callout { border: 1px solid #c9c4b6; border-left: 4px solid #8a8272; background: #faf9f5;
+  border-radius: 4px; padding: 1rem 1.1rem .35rem; margin: 1.25rem 0; }
+.callout h3 { margin-top: 0; }
+
+blockquote { margin: 1.25rem 0; padding: .1rem 0 .1rem 1rem; border-left: 3px solid #d8d5cd; color: #3b3833; }
+hr { border: 0; border-top: 1px solid #e0ddd4; margin: 3rem 0; }
+table { border-collapse: collapse; width: 100%; font-size: .92rem; }
+th, td { border: 1px solid #e0ddd4; padding: .4rem .6rem; text-align: left; vertical-align: top; }
+th { background: #f4f2ec; }
+
+.toc { list-style: none; padding-left: 0; }
+.toc > li { margin-bottom: 1.6rem; }
+.toc > li > a { font-size: 1.08rem; font-weight: 650; }
+.toc > li > .difficulty { margin-left: .5rem; vertical-align: 2px; }
+.toc > li > p { margin: .35rem 0 0; color: #46433c; }
+</style>
+
+<h1>Learning series</h1>
+<p class="subtitle">Six standalone lessons about the internals of
+<code>kotlin-notion-client</code>. Each one is independently readable, in any order.</p>
+
+<ol class="toc">
+    <li>
+      <a href="01-the-wire-is-the-contract.html">01 — The wire is the contract</a>
+      <span class="difficulty">medium</span>
+      <p>Why this library hand-writes <code>KSerializer</code>s instead of leaning on <code>@Serializable</code>: Notion&rsquo;s <code>"type"</code> tag names a sibling key rather than acting as a class discriminator, and a closed sealed hierarchy crashes on every property type Notion ships after your release.</p>
+    </li>
+    <li>
+      <a href="02-explicit-nulls-and-the-sentinel-pattern.html">02 — <code>explicitNulls = false</code> and the sentinel pattern</a>
+      <span class="difficulty">hard</span>
+      <p>Why <code>explicitNulls = false</code> silently ate <code>icon.remove()</code> for months while making <code>select(name, null)</code> fail with an HTTP 400, and how a write-only sentinel value plus a choice between two <code>CompositeEncoder</code> overloads fixes both.</p>
+    </li>
+    <li>
+      <a href="03-type-safe-builders.html">03 — Type-safe builders, and why five authors got the DSL wrong</a>
+      <span class="difficulty">easy&ndash;medium</span>
+      <p>How <code>Builder.() -&gt; Unit</code> powers every request DSL in the library, why single-value builders carry a <code>val</code> and a same-named <code>fun</code>, and what twenty snippets that never compiled say about designing affordances rather than blaming users.</p>
+    </li>
+    <li>
+      <a href="04-coroutine-primitives-in-anger.html">04 — Coroutine primitives in anger: the rate limiter</a>
+      <span class="difficulty">hard</span>
+      <p>A continuous-refill token bucket, a <code>Mutex</code> deliberately held across its <code>delay</code>, a Ktor <code>Send</code> hook that paces retries too, and the injected clock that makes all of it testable in virtual time.</p>
+    </li>
+    <li>
+      <a href="05-pagination-as-a-cold-flow.html">05 — Pagination as a cold Flow</a>
+      <span class="difficulty">medium</span>
+      <p>How ten lines of <code>flow { }</code> turn a Notion cursor chain into a cold stream &mdash; what coldness actually buys, why <code>collectAll</code> is usually still the right call, and where the chain stops working at 10,000 rows.</p>
+    </li>
+    <li>
+      <a href="06-being-a-library-not-an-application.html">06 — Being a library, not an application</a>
+      <span class="difficulty">medium</span>
+      <p>What changes when the compiler can no longer see your callers: sealed-variant source breaks, <code>internal</code> as a real tool, binary versus source compatibility, and what a 0.x version number actually promises.</p>
+    </li>
+</ol>
+
+<hr>
+
+<p>Every code excerpt in these lessons is quoted verbatim from the file and line range cited
+above it, and every behavioural claim is traced to code, an ADR under <code>docs/adr/</code>,
+a <code>journal/</code> entry, or <code>CHANGELOG.md</code>. The brief that specified the
+series, and the findings the lessons turned up along the way, are in
+<code>docs/learning/HANDOFF.md</code>.</p>

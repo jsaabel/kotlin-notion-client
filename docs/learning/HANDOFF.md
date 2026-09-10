@@ -306,3 +306,93 @@ Exercises:
 
 *(Leave empty. Append anything the lessons turn up that looks genuinely wrong, with a file
 reference and one sentence. Do not fix it.)*
+
+Nothing below was fixed. Each line names a file and says what looks wrong in one sentence.
+
+### Possible defects
+
+- `src/main/kotlin/it/saabel/kotlinnotionclient/utils/Pagination.kt:79`, `:114`, `:150` — all three
+  generic helpers loop on `while (page.hasMore)` while feeding `page.nextCursor` forward, so a
+  response with `has_more: true` and `next_cursor: null` re-fetches page one forever;
+  `WindowedRowIteration.kt:91` guards exactly this (`while (response.hasMore && cursor != null)`)
+  and the vendored JS helper loops on the cursor, so both siblings have the guard this one lacks.
+- `src/main/kotlin/it/saabel/kotlinnotionclient/models/base/ParentSerializer.kt:40` — `Parent` has no
+  `Unknown` fallback and throws on an unrecognised parent type, the same crash class `PageProperty`
+  and `DatabaseProperty` were both hotfixed for; `"agent_id"` in that `when` shows Notion does add
+  parent types.
+- `src/main/kotlin/it/saabel/kotlinnotionclient/NotionClient.kt:170` — the default Ktor logger writes
+  to stdout via `println`, against the project's own pre-publication checklist item ("No Debug Code:
+  Remove println statements", `journal/2025_10_15_Maven_Central_Publishing_Setup.md:362`).
+- `gradle/libs.versions.toml:50` and `build.gradle.kts:31` — `logback-classic`, a logging *backend*,
+  is published to consumers at Maven `runtime` scope, and neither slf4j nor logback is referenced
+  anywhere in `src/main/kotlin`.
+
+### Dead or misleading code
+
+- `src/main/kotlin/it/saabel/kotlinnotionclient/models/base/ParentSerializer.kt:50` —
+  `ParentSurrogate` is `internal` and referenced nowhere in `src/`; its KDoc claims it is what
+  serializes the hierarchy back to the API's flat structure, but encoding goes through
+  `JsonContentPolymorphicSerializer.serialize`'s reflective lookup instead.
+- `src/main/kotlin/it/saabel/kotlinnotionclient/models/pages/PagePropertySerializer.kt:3` and `:10` —
+  `DeserializationStrategy` and `JsonContentPolymorphicSerializer` are imported but unused, left over
+  from the design sketched in `journal/2025_11_03_Unsupported_Property_Types_Investigation.md:83-90`.
+
+### Documentation that does not match the code
+
+- `docs/pagination.md:412-413` — the unit-test example imports `no.saabelit.kotlinnotionclient.utils.…`,
+  a package that does not exist (the real root is `it.saabel.kotlinnotionclient`); the same file's §3
+  shows `querySinglePage()`, which is `private`.
+- `src/main/kotlin/it/saabel/kotlinnotionclient/models/pages/PagePropertySerializer.kt:25` and `:28-32` —
+  the KDoc cites `"verification"` as an example of an *unknown* type and omits it from the supported
+  list, although a real branch exists at `:147`.
+- `CHANGELOG.md:946` — describes the fallback as returning `PageProperty.Unsupported`; the type has
+  always been `PageProperty.Unknown`, now a confusingly close neighbour of
+  `FormulaResult.UnsupportedResult`.
+- `CHANGELOG.md:377` — heads #40 "Resumable iteration past the 10,000-row pagination ceiling", but it
+  resumes across windows within one drain and no state survives the process, which reads as a stronger
+  promise than shipped.
+- `src/test/kotlin/unit/ratelimit/VirtualTimeProbeTest.kt:22` and
+  `src/test/kotlin/integration/ratelimit/RateLimitProbeTest.kt:25` — both cite
+  `journal/_task_07_rate_limiting_overhaul.md`, which no longer exists.
+- `README.md:11` — still says "the upcoming 0.6.0 release" although 0.6.0 shipped on 2026-09-03
+  (`CHANGELOG.md:12`) and `README.md:30` already tells users to depend on it.
+- `CONTRIBUTING.md:81` — says "JDK 17 or higher"; the toolchain is Java 21 (`build.gradle.kts:100-104`)
+  and `README.md:46` says JVM 21+.
+- `docs/adr/0002-explicit-null-payloads.md:23-25` — says "Seven `PagePropertiesBuilder` setters" and
+  then lists eight names; there are seven serializers because `date`/`dateTime` share `DateValue`.
+- `src/main/kotlin/it/saabel/kotlinnotionclient/models/datasources/DataSourceRequestBuilder.kt:359-360` —
+  the `properties` KDoc tells callers "To remove a property, simply don't include it in this
+  configuration", structurally the same claim ADR-0002 disproved for `icon.remove()`; unverified
+  against the live API, and no reference doc under `reference/notion-api/` covers this endpoint.
+
+### Design observations, not defects
+
+- `src/main/kotlin/it/saabel/kotlinnotionclient/ratelimit/TokenBucket.kt:17-18` — the KDoc asserts
+  acquisitions are "FIFO-fair", but `kotlinx.coroutines`' `Mutex` documents no fairness or ordering
+  guarantee; the property rests on the implementation's wait queue and is pinned only by
+  `TokenBucketTest`.
+- Visibility appears to have been drawn by accident rather than by decision: 13 top-level serializer
+  objects are public and 15 are `internal` for the same job, including `IconSerializer` (public)
+  versus `IconRemovedSerializer` (internal) for the same model.
+- The per-family `@DslMarker` split lets the outer receiver leak one level out, which is what
+  `@DslMarker` exists to prevent: `createPageRequest { properties { icon.emoji("x") } }` compiles
+  because `CreatePageRequestBuilder` carries `PageRequestDslMarker` while `PagePropertiesBuilder`
+  carries `PagePropertiesDslMarker`.
+
+### Errors in this brief itself
+
+- Lesson 03's premise that `models/views/ViewRequestBuilder.kt` holds "the **only** `@DslMarker` in the
+  codebase" is wrong: thirteen files declare thirteen separate marker annotations.
+- Lesson 04 names the injected seam `timeSourceMillis`, which is correct for the plugin config
+  (`NotionRateLimit.kt:29`) but not for the `TokenBucket` constructor parameter it feeds, which is
+  `currentTimeMillis` (`TokenBucket.kt:29`).
+- Lesson 05's stated motivation for windowed iteration — that a cursor chain over a mutating data
+  source can miss or duplicate rows — is not what the code says: `WindowedRowIteration.kt:19` and
+  `RowIterationKey.kt:4-6` both give Notion's 10,000-row query cap as the reason, and mutation is why
+  `last_edited_time` is deliberately not offered as a key.
+- Lesson 06's "The reader has already done this once" undercounts: 0.6.0 added variants to six sealed
+  hierarchies (`CHANGELOG.md:119-124`, `:126-130`, `:138-139`, `:144-147`, `:198-200`). Its
+  "`internal` used sparingly" is also off — 56 declarations across 33 files — and
+  `mavenCentralPublishing` lives in `gradle.properties:10`, not `build.gradle.kts`.
+- Lesson 03's Exercise 1 option "pick a single-value builder that still exposes only one form" has no
+  target left; every single-value nested builder in the request DSLs now exposes both.
