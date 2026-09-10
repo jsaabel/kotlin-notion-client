@@ -1,0 +1,453 @@
+<title>Type-Safe Builders</title>
+<style>
+/* Shared stylesheet for the docs/learning series.
+   Inlined verbatim into each lesson's <style> block — no linking, no network. */
+
+html { -webkit-text-size-adjust: 100%; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-size: 17px;
+  line-height: 1.6;
+  color: #1a1a1a;
+  background: #fdfdfc;
+  max-width: 70ch;
+  margin: 0 auto;
+  padding: 2rem 1.25rem 6rem;
+}
+h1, h2, h3 { line-height: 1.25; font-weight: 650; }
+h1 { font-size: 1.9rem; margin: 0 0 .25rem; }
+h2 { font-size: 1.4rem; margin: 2.75rem 0 .75rem; padding-bottom: .3rem; border-bottom: 2px solid #d8d5cd; }
+h3 { font-size: 1.12rem; margin: 1.9rem 0 .5rem; color: #33312c; }
+p, li { margin: 0 0 1rem; }
+li { margin-bottom: .45rem; }
+ul, ol { padding-left: 1.5rem; }
+
+a { color: #0b5a9e; text-decoration: underline; text-underline-offset: 2px; }
+a:hover { color: #073e6d; }
+a:visited { color: #5a3a8e; }
+
+code {
+  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+  font-size: .875em;
+  background: #f1efe9;
+  border-radius: 3px;
+  padding: .1em .32em;
+}
+pre {
+  background: #f6f5f1;
+  border: 1px solid #e0ddd4;
+  border-radius: 4px;
+  padding: .85rem 1rem;
+  overflow-x: auto;
+  font-size: .82rem;
+  line-height: 1.5;
+}
+pre code { background: none; padding: 0; font-size: inherit; }
+
+.subtitle { color: #57544d; font-size: 1rem; margin: 0 0 2rem; }
+.difficulty {
+  display: inline-block; font-size: .78rem; letter-spacing: .04em; text-transform: uppercase;
+  background: #e8e5dc; border-radius: 3px; padding: .12em .5em; color: #46433c;
+}
+.src { display: block; font-size: .78rem; color: #6b675f; margin: 1.4rem 0 .3rem; }
+
+.callout { border: 1px solid #c9c4b6; border-left: 4px solid #8a8272; background: #faf9f5;
+  border-radius: 4px; padding: 1rem 1.1rem .35rem; margin: 1.25rem 0; }
+.callout h3 { margin-top: 0; }
+
+blockquote { margin: 1.25rem 0; padding: .1rem 0 .1rem 1rem; border-left: 3px solid #d8d5cd; color: #3b3833; }
+hr { border: 0; border-top: 1px solid #e0ddd4; margin: 3rem 0; }
+table { border-collapse: collapse; width: 100%; font-size: .92rem; }
+th, td { border: 1px solid #e0ddd4; padding: .4rem .6rem; text-align: left; vertical-align: top; }
+th { background: #f4f2ec; }
+</style>
+
+<h1>03 — Type-safe builders, and why five authors got the DSL wrong</h1>
+<p class="subtitle"><code>Builder.() -&gt; Unit</code>, the arity convention, and the affordance underneath · <span class="difficulty">Easy–medium</span></p>
+
+<h2>The hook</h2>
+
+<p><code>docs/adr/0003-dsl-nesting-and-parent-addressing.md</code> was accepted on 22 August 2026,
+and its Context section is one of those rare bug reports where the evidence does all the
+arguing:</p>
+<span class="src">docs/adr/0003-dsl-nesting-and-parent-addressing.md:12–20</span>
+<pre><code>**Nesting.** Collection-shaped nesting takes a lambda — `properties { … }`, `content { … }`,
+`files { … }`, `richText { … }`. Single-value nesting takes a receiver property —
+`icon.emoji("📄")`, `parent.dataSource(id)`. That split is defensible, but it was never written
+down, and the evidence says nobody infers it: **twenty snippets across the repo wrote the lambda
+form for a single-value builder, and none of them compiled.** Six were user-facing
+(`README.md`, `QUICKSTART.md`, `docs/notebooks.md`, `docs/rich-text-dsl.md`,
+`docs/data-sources.md`), fourteen were KDoc, and two of those fourteen were *runtime error
+messages* telling a user to write `icon { upload(id) }` — a repair instruction that does not
+compile. Five separate authoring passes independently reached for the lambda.</code></pre>
+
+<p>The clause that stops being about a DSL is the last one: <em>five separate authoring passes
+independently reached for the lambda</em>. Not one careless author — five passes, months apart,
+across README prose, quickstart docs and the KDoc on the builders themselves, each written by
+somebody who had the source open.</p>
+
+<p>The two runtime error messages are the artefact worth seeing whole.
+<code>src/main/kotlin/it/saabel/kotlinnotionclient/models/base/Icon.kt</code> holds a serializer
+that refuses to encode an icon whose file has not been uploaded yet, and hands the caller a
+remedy string. Before the ADR, that remedy read:</p>
+<span class="src">src/main/kotlin/it/saabel/kotlinnotionclient/models/base/Icon.kt:156–162, at commit 22344f7^</span>
+<pre><code>internal object IconPendingUploadSerializer : PendingUploadRefusingSerializer&lt;Icon.PendingUpload&gt;(
+    serialName = "pending_upload",
+    filename = { it.source.filename },
+    remedy =
+        "pass the request through a NotionClient method (pages.create, pages.update, " +
+            "databases.create, dataSources.update), or upload first and use icon { upload(id) }",
+)</code></pre>
+
+<p>A user hits a runtime exception, reads the remedy, types it in exactly, and gets a compile
+error. The library instructed them in a syntax it rejected. Today the same lines read:</p>
+<span class="src">src/main/kotlin/it/saabel/kotlinnotionclient/models/base/Icon.kt:156–162</span>
+<pre><code>internal object IconPendingUploadSerializer : PendingUploadRefusingSerializer&lt;Icon.PendingUpload&gt;(
+    serialName = "pending_upload",
+    filename = { it.source.filename },
+    remedy =
+        "pass the request through a NotionClient method (pages.create, pages.update, " +
+            "databases.create, dataSources.update), or upload first and use icon.upload(id)",
+)</code></pre>
+
+<p>Braces to a dot. And this was not a surprise finding — the drift had been logged and left:</p>
+<span class="src">journal/2025_10_16_Developer_Experience_Exploration.md:579–583</span>
+<pre><code>4. **[FINDING #4] Parent Lambda Pattern Not Supported**
+   - Issue: `parent { databaseId(...) }` doesn't work
+   - Working: `parent.dataSource(id)` works fine
+   - Impact: Inconsistent API - some places use lambdas, others don't
+   - Recommendation: Either support both patterns everywhere or document why not</code></pre>
+
+<p>Ten months of accrual between that entry and the ADR that closed it, and in those ten months
+the count went up.</p>
+
+<h2>The concept, plainly</h2>
+
+<p>A function type with receiver — <code>Builder.() -&gt; Unit</code> — is the entire mechanism a
+Kotlin DSL runs on. It is an ordinary one-argument function whose argument is bound as
+<code>this</code> inside the body instead of being named. On the JVM it compiles to
+<code>Function1&lt;Builder, Unit&gt;</code>; the receiver is the parameter, and the difference is
+purely in how the compiler resolves unqualified names in the body. That is why
+<code>emoji("📄")</code> inside a block resolves to a method on a builder the caller never
+mentions.</p>
+
+<p>Which gives every DSL in this repository the same three-part shape: construct a builder, run
+the caller's block against it as receiver, ask it for the immutable request object.
+<code>Builder().apply(block).build()</code> is that shape written on one line, and it recurs
+often enough here that it is worth recognising as a single idiom rather than three calls. The
+builder is mutable and throwaway; the thing it returns is a <code>@Serializable</code> data class
+that goes on the wire.</p>
+
+<p>The design question a builder DSL then has to answer, over and over, is <em>what shape does a
+nested builder take at the call site</em> — and this repository's answer, which ADR 0003 finally
+wrote down, is that the shape follows the arity of the thing being built:</p>
+<span class="src">docs/adr/0003-dsl-nesting-and-parent-addressing.md:43–48</span>
+<pre><code>- **Collection-shaped nesting takes a lambda.** `properties`, `content`, `files`, `richText`.
+  There is no receiver-property form and there should not be: the braces group many calls.
+- **Single-value nesting supports both.** Every single-value nested builder now exposes a `val`
+  *and* a same-named `fun` taking a lambda. A `val` and a `fun` of the same name coexist in
+  Kotlin without a JVM signature clash — they live in different namespaces — so this is purely
+  additive.</code></pre>
+
+<p>Note what the second bullet is not. It is not "we picked the better form". It is "we kept the
+form we teach and stopped punishing the form people reach for", which is a different kind of
+decision — a concession to observed behaviour rather than an argument won. The docs still teach
+<code>icon.emoji("📄")</code>, on the grounds that braces around a single call are noise
+(lines 58–62 of the same ADR). The lambda exists so that being wrong costs nothing.</p>
+
+<h2>This code, annotated</h2>
+
+<h3>The idiom, in one line and in four</h3>
+<span class="src">src/main/kotlin/it/saabel/kotlinnotionclient/models/datasources/DataSourceQueryBuilder.kt:36</span>
+<pre><code>fun dataSourceQuery(builder: DataSourceQueryBuilder.() -&gt; Unit): DataSourceQueryRequest = DataSourceQueryBuilder().apply(builder).build()</code></pre>
+
+<p>Everything is in that signature. <code>apply</code> takes a <code>T.() -&gt; Unit</code> and
+returns its receiver, so <code>.apply(builder)</code> is exactly "run the caller's block against a
+fresh builder"; <code>.build()</code> converts. The same thing written out:</p>
+<span class="src">src/main/kotlin/it/saabel/kotlinnotionclient/models/pages/CreatePageRequestBuilder.kt:626–630</span>
+<pre><code>fun createPageRequest(block: CreatePageRequestBuilder.() -&gt; Unit): CreatePageRequest {
+    val builder = CreatePageRequestBuilder()
+    builder.block()
+    return builder.build()
+}</code></pre>
+
+<p><code>builder.block()</code> is the call that binds the receiver. A function type with receiver
+is invoked like an extension function, and that is the only syntax you need to know to write one
+of these from scratch.</p>
+
+<h3>Collection nesting: a lambda, and only a lambda</h3>
+<span class="src">src/main/kotlin/it/saabel/kotlinnotionclient/models/pages/CreatePageRequestBuilder.kt:184–188</span>
+<pre><code>    fun properties(block: PagePropertiesBuilder.() -&gt; Unit) {
+        val builder = PagePropertiesBuilder()
+        builder.block()
+        properties.putAll(builder.build())
+    }</code></pre>
+
+<p>The idiom again, one level down, with <code>putAll</code> instead of a return. There is no
+<code>val properties</code> beside it, deliberately: the braces earn their place by grouping many
+calls, and a <code>properties.title("Name", "x")</code> chain would put a dot in front of every
+property on a page.</p>
+
+<h3>Single-value nesting: the <code>val</code> and the <code>fun</code></h3>
+<span class="src">src/main/kotlin/it/saabel/kotlinnotionclient/models/pages/CreatePageRequestBuilder.kt:92–107</span>
+<pre><code>    /**
+     * Builder for icon configuration.
+     */
+    val icon = IconBuilder()
+
+    /**
+     * Configures the icon in a lambda, as an alternative to the `icon.xxx()` receiver form.
+     *
+     * Both forms drive the same builder and are last-call-wins; see
+     * [docs/dsl-conventions.md](https://github.com/jsaabel/kotlin-notion-client/blob/main/docs/dsl-conventions.md).
+     *
+     * @param block Configuration block applied to the icon builder
+     */
+    fun icon(block: IconBuilder.() -&gt; Unit) {
+        icon.block()
+    }</code></pre>
+
+<p>Four lines of implementation across the pair, and <code>icon.block()</code> is the same
+receiver-binding call as before — this time against the long-lived <code>val</code> rather than a
+fresh instance, which is what makes the two forms interchangeable rather than merely similar.
+Both mutate the same <code>IconBuilder</code>, so both are last-call-wins, and mixing them in one
+request is legal if pointless. <code>docs/dsl-conventions.md:50–59</code> states this as the rule
+new builders follow.</p>
+
+<p>The ADR's justification for the pair is a claim about namespaces, and it is checkable. Compile
+the module and disassemble:</p>
+<pre><code>javap -p build/classes/kotlin/main/it/saabel/kotlinnotionclient/models/pages/CreatePageRequestBuilder.class</code></pre>
+<pre><code>// …
+  private final it.saabel.kotlinnotionclient.models.pages.CreatePageRequestBuilder$IconBuilder icon;
+  public final it.saabel.kotlinnotionclient.models.pages.CreatePageRequestBuilder$IconBuilder getIcon();
+  public final void icon(kotlin.jvm.functions.Function1&lt;? super it.saabel.kotlinnotionclient.models.pages.CreatePageRequestBuilder$IconBuilder, kotlin.Unit&gt;);
+// …</code></pre>
+
+<p>Three members, no collision, for two reasons stacked on each other. The property's JVM name
+is <code>getIcon</code>, not <code>icon</code>, so it never meets the function; the backing field
+<em>is</em> called <code>icon</code>, and does not clash with the method because fields and
+methods are separate namespaces in the class file. On the Kotlin side it is simpler still:
+<code>icon { … }</code> is a call, resolved in the function namespace, and
+<code>icon.emoji(…)</code> is a property access. Being additive is not a lucky accident of this
+one name.</p>
+
+<h3>Where the nested builder writes to</h3>
+<span class="src">src/main/kotlin/it/saabel/kotlinnotionclient/models/pages/CreatePageRequestBuilder.kt:320–329</span>
+<pre><code>    @PageRequestDslMarker
+    inner class IconBuilder {
+        /**
+         * Sets an emoji icon.
+         *
+         * @param emoji The emoji character(s)
+         */
+        fun emoji(emoji: String) {
+            this@CreatePageRequestBuilder.iconValue = Icon.Emoji(emoji = emoji)
+        }</code></pre>
+
+<p><code>inner</code>, so the nested builder holds a reference to the outer one and can assign
+<code>iconValue</code> through a qualified <code>this</code>. It stores nothing itself; it is pure
+syntax, a namespace with side effects. That matters for the interchangeability above — because
+the state lives on the outer builder, it makes no difference whether you reached
+<code>emoji</code> through the <code>val</code> or through the lambda.</p>
+
+<h3><code>@DslMarker</code>, and what it actually restricts</h3>
+<span class="src">src/main/kotlin/it/saabel/kotlinnotionclient/models/views/ViewRequestBuilder.kt:5–10</span>
+<pre><code>/**
+ * DSL marker for View request builders. Prevents nested builder calls from leaking into
+ * outer builder scopes.
+ */
+@DslMarker
+annotation class ViewRequestDslMarker</code></pre>
+
+<p>An annotation class annotated <code>@DslMarker</code> becomes a scope-control marker: when two
+implicit receivers in scope carry markers <em>of the same annotation class</em>, only the
+innermost is available without qualification. It is not one marker for the codebase.
+<code>grep -rn "DslMarker" src/main</code> finds thirteen files declaring thirteen marker
+annotations — <code>PageRequestDslMarker</code>, <code>PagePropertiesDslMarker</code>,
+<code>RichTextDslMarker</code>, <code>DatabaseRequestDslMarker</code> and so on, each covering one
+builder family. Four builder files carry no marker at all, <code>DataSourceQueryBuilder.kt</code>
+and <code>PageContentBuilder.kt</code> among them.</p>
+
+<p>That per-family split has a consequence that is easy to miss and easy to check. Within a
+family the marker bites: <code>createPageRequest</code> and its <code>IconBuilder</code> both
+carry <code>PageRequestDslMarker</code>, so an outer call made from inside <code>icon { }</code>
+is rejected. Across families it does not: <code>PagePropertiesBuilder</code> carries a
+<em>different</em> marker, so from inside <code>properties { }</code> the whole page builder is
+still implicitly in scope, and this compiles today —</p>
+<pre><code>createPageRequest {
+    parent.dataSource("ds")
+    properties {
+        title("Name", "x")
+        icon.emoji("📄")     // outer receiver, reached from the properties block
+    }
+}</code></pre>
+
+<p>— which is precisely the leak the annotation exists to prevent, one level out. Worth knowing
+before treating the markers as blanket protection. And even inside a family the restriction is
+narrow by design: it removes the <em>implicit</em> receiver only. Capture the outer builder in a
+local and call through it explicitly and the compiler is content, because you have said which
+receiver you meant, which was the whole complaint.</p>
+
+<h3>The test that keeps the documentation honest</h3>
+<span class="src">src/test/kotlin/unit/dsl/DocumentedSnippetsTest.kt:85–105</span>
+<pre><code>            it("is accepted everywhere the receiver form is, and agrees with it") {
+                val receiverForm =
+                    createPageRequest {
+                        parent.dataSource("data-source-id")
+                        icon.emoji("📄")
+                        cover.external("https://example.com/cover.png")
+                        template.none()
+                        position.pageEnd()
+                    }
+
+                val lambdaForm =
+                    createPageRequest {
+                        parent { dataSource("data-source-id") }
+                        icon { emoji("📄") }
+                        cover { external("https://example.com/cover.png") }
+                        template { none() }
+                        position { pageEnd() }
+                    }
+
+                lambdaForm shouldBe receiverForm
+            }</code></pre>
+
+<p>Two assertions in one: that both forms compile — which is what a source file can assert and a
+Markdown fence cannot — and that they produce equal requests. The file's own header calls this
+out: it "holds the documented conventions as real code so that a builder change which would
+falsify a README snippet fails the build instead of the reader" (lines 25–27). That is the
+structural fix. Deprecating the old spellings fixed the twenty snippets; this test is what stops
+the twenty-first.</p>
+
+<h2>The analogy, and its limits</h2>
+
+<p>The closest familiar thing is Gradle's Kotlin DSL, and the mapping is exact rather than
+evocative. <code>dependencies { }</code> is a method taking a function type with receiver;
+<code>implementation(…)</code> inside it resolves against a receiver nobody wrote down. Gradle has
+the same asymmetry between block-shaped and property-shaped configuration, taught by convention
+rather than by the compiler.</p>
+
+<p>The analogy that misleads is the classical Java builder —
+<code>new Builder().icon(x).build()</code>. It looks like the same pattern in different syntax,
+and it is not, in the one way that decides this design. A chained Java builder has a single flat
+namespace: every method is a method on the one builder, so <code>icon</code> can only be a method
+and the question this ADR is about cannot arise. Nesting is what buys scoped namespaces —
+<code>emoji</code> means something only inside an icon — and scoped namespaces are what create a
+choice of shape at each call site, and therefore the possibility of choosing inconsistently. The
+chaining style also returns the builder from every call, which is why
+<code>DataSourceQueryBuilder</code>'s methods return <code>DataSourceQueryBuilder</code> while
+<code>CreatePageRequestBuilder</code>'s return <code>Unit</code>.</p>
+
+<p>Which brings the actual point. Five careful passes reached for a form that did not exist, and
+the fix was to make it exist. That inversion is the transferable part of this ADR and it is not
+about DSLs at all. <strong>When competent users converge on the same wrong usage, the wrong thing
+is the affordance.</strong> The alternative reading — that five authors were each individually
+sloppy — requires believing something less likely than "braces after a name look callable". Every
+API you own emits a guess about how to use it, through its shape rather than its documentation,
+and the reliable way to learn what that guess is, is to notice what people write when they are
+not looking it up. Twenty uncompiled snippets are an unusually clean measurement of that, because
+nobody was trying to measure anything.</p>
+
+<h2>See it yourself</h2>
+
+<p>Start with the guarantee. No network, about a second:</p>
+<pre><code>./gradlew test -Dkotest.tags.include="Unit" --tests "*.DocumentedSnippetsTest"</code></pre>
+
+<p>Then break it on purpose — which for a DSL means a compile error, not a red test. Create
+<code>src/test/kotlin/unit/dsl/ScratchProbe.kt</code>:</p>
+<pre><code>package unit.dsl
+
+import it.saabel.kotlinnotionclient.models.pages.createPageRequest
+
+fun probe() {
+    createPageRequest {
+        parent.dataSource("ds")
+        icon {
+            title("Leaked outer call")
+        }
+    }
+}</code></pre>
+
+<p><code>title</code> is a method on the outer <code>CreatePageRequestBuilder</code>; both
+receivers carry <code>PageRequestDslMarker</code>. Run <code>./gradlew compileTestKotlin</code>:</p>
+<pre><code>e: file:///home/user/kotlin-notion-client/src/test/kotlin/unit/dsl/ScratchProbe.kt:9:13 'fun title(titleText: String): Unit' cannot be called in this context with an implicit receiver. Use an explicit receiver if necessary.</code></pre>
+
+<p>That last sentence is the annotation describing its own scope. Take it at its word: bind the
+outer builder to a local, call <code>outer.title(…)</code> from inside the same
+<code>icon { }</code> block, and it compiles. Now swap the probe body for the cross-family case
+from earlier — <code>properties { title("Name", "x"); icon.emoji("📄") }</code> — and it compiles
+too, with no marker error, because the two builders carry different markers. Delete the file when
+you are done.</p>
+
+<h2>Exercises</h2>
+
+<div class="callout">
+<h3>Exercise 1 — Verifiable</h3>
+<p>Reproduce the compile error the twenty snippets produced, and read what it actually said. Every
+single-value builder in the repo now exposes both forms, so the pre-ADR shape has to be rebuilt —
+fifteen lines will do it, in a scratch file at
+<code>src/test/kotlin/unit/dsl/ScratchProbe.kt</code>:</p>
+<pre><code>package unit.dsl
+
+class PreAdrBuilder {
+    class IconBuilder {
+        fun emoji(emoji: String) = Unit
+    }
+
+    val icon = IconBuilder()
+}
+
+fun probeD() {
+    PreAdrBuilder().apply {
+        icon { emoji("📄") }
+    }
+}</code></pre>
+<p><strong>Expected end state.</strong> <code>./gradlew compileTestKotlin</code> fails with exactly
+two errors on the <code>icon { emoji("📄") }</code> line, and the first is the one worth staring
+at:</p>
+<pre><code>e: file:///home/user/kotlin-notion-client/src/test/kotlin/unit/dsl/ScratchProbe.kt:13:9 Unresolved reference 'icon'.
+e: file:///home/user/kotlin-notion-client/src/test/kotlin/unit/dsl/ScratchProbe.kt:13:16 Unresolved reference 'emoji'.</code></pre>
+<p><em>Unresolved reference <code>icon</code></em> — while <code>val icon</code> sits four lines
+above, in scope, spelled identically. <code>icon { … }</code> is a call, so it is looked up in the
+function namespace, and the property is not a candidate; the compiler cannot even see the thing
+you meant, so it offers no hint about the dot. Then predict, before running, what
+<code>properties.title("Name", "x")</code> does inside a real <code>createPageRequest { }</code> —
+the mirror mistake, made against a collection builder that will never have a receiver form. Check
+it. The answer involves a private field and is worse than you expect.</p>
+</div>
+
+<div class="callout">
+<h3>Exercise 2 — Extension</h3>
+<p>Sketch the repo-wide <code>@DslMarker</code> migration. Today there are thirteen markers, one
+per builder family, plus four unmarked builder files; the demonstration above shows what that
+buys and what it lets through. The obvious move is one <code>@NotionDsl</code> annotation applied
+everywhere.</p>
+<p>Work out what it would reject that is currently legal and reasonable. Start with the case that
+compiles today: is <code>properties { … icon.emoji("📄") }</code> a leak worth forbidding, or a
+convenience someone is relying on? Then look for the places where crossing a family boundary is
+the <em>point</em> — a rich text block built inside a page property, inside a content block,
+inside a page request is three or four nested receivers deep, and unifying the markers makes every
+outer one unreachable at once. Is there a legitimate call that becomes unwritable without a
+<code>this@</code> label?</p>
+<p>Then the release question, which is the real one. This library publishes to Maven Central.
+Adding <code>@DslMarker</code> to an existing builder cannot break a binary, but it can absolutely
+stop a user's source compiling — so is the migration a breaking change, and if it is, what does a
+deprecation cycle even look like for a compile-time scope rule? ADR 0003's own answer for the
+spellings it deprecated is at lines 87–90; decide whether the same reasoning transfers.</p>
+</div>
+
+<h2>Further reading</h2>
+
+<ul>
+<li><a href="../adr/0003-dsl-nesting-and-parent-addressing.md"><code>docs/adr/0003-dsl-nesting-and-parent-addressing.md</code></a>,
+§Context and §Decision 1 — the twenty-snippet evidence, and the arity rule it produced.</li>
+<li><a href="../dsl-conventions.md"><code>docs/dsl-conventions.md</code></a>, §1 "Nesting shape
+follows arity" — the rule as a new builder's author should meet it, with the
+<code>val</code>/<code>fun</code> pair to copy.</li>
+<li><a href="https://kotlinlang.org/docs/type-safe-builders.html#scope-control-dslmarker">Kotlin
+docs, "Type-safe builders" §Scope control: @DslMarker</a> — the precise statement of what the
+annotation restricts, including the explicit-receiver escape.</li>
+<li><a href="https://kotlinlang.org/docs/lambdas.html#function-types">Kotlin docs, "Lambdas"
+§Function types</a> — receiver types in function-type notation, and why
+<code>A.(B) -&gt; C</code> and <code>(A, B) -&gt; C</code> are interchangeable at the type level.</li>
+</ul>
