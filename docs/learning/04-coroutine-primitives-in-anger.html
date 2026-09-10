@@ -1,0 +1,446 @@
+<title>Coroutine Primitives in Anger</title>
+<style>
+/* Shared stylesheet for the docs/learning series.
+   Inlined verbatim into each lesson's <style> block — no linking, no network. */
+
+html { -webkit-text-size-adjust: 100%; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-size: 17px;
+  line-height: 1.6;
+  color: #1a1a1a;
+  background: #fdfdfc;
+  max-width: 70ch;
+  margin: 0 auto;
+  padding: 2rem 1.25rem 6rem;
+}
+h1, h2, h3 { line-height: 1.25; font-weight: 650; }
+h1 { font-size: 1.9rem; margin: 0 0 .25rem; }
+h2 { font-size: 1.4rem; margin: 2.75rem 0 .75rem; padding-bottom: .3rem; border-bottom: 2px solid #d8d5cd; }
+h3 { font-size: 1.12rem; margin: 1.9rem 0 .5rem; color: #33312c; }
+p, li { margin: 0 0 1rem; }
+li { margin-bottom: .45rem; }
+ul, ol { padding-left: 1.5rem; }
+
+a { color: #0b5a9e; text-decoration: underline; text-underline-offset: 2px; }
+a:hover { color: #073e6d; }
+a:visited { color: #5a3a8e; }
+
+code {
+  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+  font-size: .875em;
+  background: #f1efe9;
+  border-radius: 3px;
+  padding: .1em .32em;
+}
+pre {
+  background: #f6f5f1;
+  border: 1px solid #e0ddd4;
+  border-radius: 4px;
+  padding: .85rem 1rem;
+  overflow-x: auto;
+  font-size: .82rem;
+  line-height: 1.5;
+}
+pre code { background: none; padding: 0; font-size: inherit; }
+
+.subtitle { color: #57544d; font-size: 1rem; margin: 0 0 2rem; }
+.difficulty {
+  display: inline-block; font-size: .78rem; letter-spacing: .04em; text-transform: uppercase;
+  background: #e8e5dc; border-radius: 3px; padding: .12em .5em; color: #46433c;
+}
+.src { display: block; font-size: .78rem; color: #6b675f; margin: 1.4rem 0 .3rem; }
+
+.callout { border: 1px solid #c9c4b6; border-left: 4px solid #8a8272; background: #faf9f5;
+  border-radius: 4px; padding: 1rem 1.1rem .35rem; margin: 1.25rem 0; }
+.callout h3 { margin-top: 0; }
+
+blockquote { margin: 1.25rem 0; padding: .1rem 0 .1rem 1rem; border-left: 3px solid #d8d5cd; color: #3b3833; }
+hr { border: 0; border-top: 1px solid #e0ddd4; margin: 3rem 0; }
+table { border-collapse: collapse; width: 100%; font-size: .92rem; }
+th, td { border: 1px solid #e0ddd4; padding: .4rem .6rem; text-align: left; vertical-align: top; }
+th { background: #f4f2ec; }
+</style>
+
+<h1>04 — Coroutine primitives in anger: the rate limiter</h1>
+<p class="subtitle">A <code>Mutex</code> held across a <code>delay</code>, a Ktor <code>Send</code> hook, and a clock you are allowed to lie to · <span class="difficulty">Hard</span></p>
+
+<h2>The hook</h2>
+
+<p>On 30 May 2026 the rate limiter was assessed rather than changed.
+<code>journal/2026_05_30_01_RateLimiting_Diagnosis.md</code> is headed <em>"No code changes —
+assessment only"</em>, and its walk-through of a fan-out batch reads:</p>
+<span class="src">journal/2026_05_30_01_RateLimiting_Diagnosis.md:47–53</span>
+<pre><code>- 100 coroutines fire simultaneously; ~3 succeed, ~97 get 429.
+- All 97 enter their own retry loop with the same exponential schedule. Jitter is only
+  ±10 %, so they cluster within a 200 ms window.
+- After ~1 s they all retry simultaneously → ~3 succeed, ~94 fail again.
+- After 1 + 2 + 4 = 7 s (≈3 retries each), only ~9 of the 100 will have succeeded.
+  The other ~91 hit `MAX_RETRIES_EXCEEDED` and throw, even though the right answer was
+  simply "wait longer."</code></pre>
+
+<p>Nothing there is a coding error. The backoff, the jitter and the retry ceiling were all right.
+What was missing was any mechanism by which a hundred coroutines could know about each other, so each
+reached the same conclusion at the same instant — defect #1, "no global concurrency control" (line
+107). Version 0.5.0 shipped the next day; <code>CHANGELOG.md:802–807</code> records <code>ratelimit/</code> collapsing "from ~600 LOC across three files to 286 LOC across three
+files". Two decisions inside those 286 lines look like bugs on a first read.</p>
+
+<h2>The concept, plainly</h2>
+
+<p>The plugin does two unrelated jobs. <strong>Proactive throttling</strong> stops you generating
+<code>429</code>s: outbound requests are paced so the server never has cause to complain.
+<strong>Reactive retry</strong> handles what you could not predict — a limit you hit anyway, a gateway
+that blinked, a socket that timed out. The first is a queue discipline, the second an error
+classifier; the diagnosis is entirely about the absence of the first.</p>
+
+<p>A token bucket is the throttle. Its whole state is a fractional count of tokens, a refill rate, a
+ceiling, and the timestamp at which the count was last brought up to date. Sending costs one token;
+if there is not one, you wait. The bucket starts full, which is what gives you a burst: the first
+<code>burstCapacity</code> requests pay nothing.</p>
+
+<p>The word doing the work is <strong>continuous</strong>. There is no timer and no coroutine waking
+every 333 ms to add a token: refill is computed lazily, when somebody asks, from elapsed time since
+the last computation — <code>tokens += elapsed × rate</code>. That is why the count is a
+<code>Double</code>. Were tokens whole, a caller arriving 200 ms into a 333 ms interval would see zero
+and wait a full interval, discarding credit it had already earned; discrete grants make the rate
+lurch and tie it to when callers arrive relative to the tick. Fractionally, the
+bucket holds 0.6 of a token and the caller sleeps exactly as long as the remaining 0.4 needs.</p>
+
+<h2>This code, annotated</h2>
+
+<h3><code>refill()</code>, and the two guards in it</h3>
+<span class="src">src/main/kotlin/it/saabel/kotlinnotionclient/ratelimit/TokenBucket.kt:36–40</span>
+<pre><code>    private val tokensPerMillis = sustainedRate / 1000.0
+    private val mutex = Mutex()
+
+    private var tokens: Double = burstCapacity.toDouble()
+    private var lastRefill: Long = currentTimeMillis()</code></pre>
+<span class="src">src/main/kotlin/it/saabel/kotlinnotionclient/ratelimit/TokenBucket.kt:63–70</span>
+<pre><code>    private fun refill() {
+        val now = currentTimeMillis()
+        val elapsed = now - lastRefill
+        if (elapsed &gt; 0) {
+            tokens = (tokens + elapsed * tokensPerMillis).coerceAtMost(burstCapacity.toDouble())
+            lastRefill = now
+        }
+    }</code></pre>
+
+<p>Four fields, two mutable, one line of arithmetic. <code>lastRefill</code> is stamped at
+construction, so a client idle for an hour banks no credit, and <code>coerceAtMost</code> is the
+ceiling that makes this a bucket rather than an accumulator. The <code>if (elapsed &gt; 0)</code>
+guard stops <code>lastRefill</code> advancing when no time has passed — several acquisitions inside
+one millisecond is normal during a burst, and a clock that has not moved must not swallow credit.</p>
+
+<h3>The <code>Mutex</code> is held across the <code>delay</code></h3>
+<span class="src">src/main/kotlin/it/saabel/kotlinnotionclient/ratelimit/TokenBucket.kt:48–61</span>
+<pre><code>    suspend fun acquire() {
+        mutex.withLock {
+            while (true) {
+                refill()
+                if (tokens &gt;= 1.0) {
+                    tokens -= 1.0
+                    return
+                }
+                val deficit = 1.0 - tokens
+                val waitMillis = ceil(deficit / tokensPerMillis).toLong().coerceAtLeast(1L)
+                delay(waitMillis)
+            }
+        }
+    }</code></pre>
+
+<p>Take the reviewer's reading first; it is a good one. Standard advice is to hold a lock for
+as few instructions as possible; here it is held across a <code>delay</code> that can run a third of
+a second, inside a loop, so the hold can span several, blocking everyone else wanting a token. The
+obvious rewrite — compute <code>waitMillis</code> under the lock, release, sleep
+outside, come back — is what you would reach for in almost any lock-and-sleep situation.</p>
+
+<p>That rewrite is the bug at the top of this page, rebuilt inside the throttle meant to prevent it.
+Waiters sleeping outside the lock all wake at roughly the same instant, having computed their delay
+from the same observed deficit; they race for one token, one wins, the rest recompute and sleep
+again. There is no ordering property at all — a coroutine can lose arbitrarily often, so the caller
+that arrived first may be served last, or never. Holding the lock turns the problem into a queue: the
+mutex's own wait list <em>is</em> the request queue, and waiters are handed the token in arrival
+order.</p>
+
+<p>The cost that looks alarming is not real either. The lock is held for exactly as long as it takes
+to mint one token — precisely the interval in which, by definition, nobody else may send anything.
+Throughput is capped at that rate by construction, so none is lost, and a coroutine suspended inside
+<code>withLock</code> occupies no thread.</p>
+
+<p>Two honest caveats. The KDoc's claim that acquisitions are "FIFO-fair"
+(<code>TokenBucket.kt:17–18</code>) rests on the implementation's wait queue; the current
+<code>kotlinx.coroutines.sync.Mutex</code> API documentation promises no ordering, so the property is
+pinned by a test rather than a contract. And the queue is strictly first-come-first-served, with no
+priority and no timeout on <code>acquire</code>:</p>
+<span class="src">src/test/kotlin/unit/ratelimit/TokenBucketTest.kt:69–80</span>
+<pre><code>                val completionOrder = mutableListOf&lt;Int&gt;()
+                val total = 25
+                repeat(total) { index -&gt;
+                    launch {
+                        bucket.acquire()
+                        completionOrder += index
+                    }
+                }
+                advanceUntilIdle()
+
+                // No starvation: every acquirer completes, strictly in arrival order.
+                completionOrder shouldBe (0 until total).toList()</code></pre>
+
+<h3>Hooking <code>Send</code> rather than every call site</h3>
+<span class="src">src/main/kotlin/it/saabel/kotlinnotionclient/ratelimit/NotionRateLimit.kt:114–122</span>
+<pre><code>        on(Send) { request -&gt;
+            var attemptNumber = 0
+
+            // Set once a terminal response is reached (success or a non-retryable failure); the loop
+            // exits only then, so after it `result` is a guaranteed non-null call.
+            var result: HttpClientCall? = null
+            while (result == null) {
+                // Every send — initial or retry — is paced through the bucket.
+                tokenBucket.acquire()</code></pre>
+
+<p><code>createClientPlugin</code> builds a plugin from a config factory and a block of hooks;
+<code>Send</code> is the outermost. A handler registered with <code>on(Send)</code> receives the
+fully-built request and must return an <code>HttpClientCall</code>, normally via
+<code>proceed(request)</code> — and it may call <code>proceed</code> more than once. That is why
+retry belongs here and not at a response hook: a response observer sees a call that already happened;
+a <code>Send</code> handler owns the decision to make it again. Note where <code>acquire()</code>
+sits — inside the loop, so a retry buys a token like any initial attempt. Exempting retries from your
+own pacing accelerates exactly when the server asked you to slow down.</p>
+
+<p>Hooking the pipeline also fixes a coverage bug, not a matter of taste. Previously each API method
+opted in by wrapping its call, and <code>SearchApi</code> and <code>FileUploadApi</code> never had
+(diagnosis, lines 89–93; fix at <code>CHANGELOG.md:767–769</code>). A guarantee every future call site
+must remember is not a guarantee.</p>
+
+<h3>Classification by type, never by message</h3>
+<span class="src">src/main/kotlin/it/saabel/kotlinnotionclient/ratelimit/NotionRateLimit.kt:42–44</span>
+<pre><code> * - Classifies failures by *type*, never by string-matching `error.message`: the plugin has the
+ *   response object in scope, so it inspects [io.ktor.http.HttpStatusCode] and exception classes
+ *   directly.</code></pre>
+
+<p>The KDoc is emphatic because its predecessor did the other thing, and the diagnosis costed it:</p>
+<span class="src">journal/2026_05_30_01_RateLimiting_Diagnosis.md:79–83</span>
+<pre><code>- `isRetryableError` / `isClientError` / `isServerError` work by
+  `error.message?.lowercase().contains("429" / "400" / "500" / …)`.
+  Brittle: a 404 whose response body or URL contains "500" would be misclassified.
+  Notion's JSON also uses `"code": "rate_limited"` — if we ever surface that string
+  instead of `429`, classification breaks.</code></pre>
+
+<p>String-matching is what a naive <code>catch</code> forces on you: by then you often hold only the
+exception's rendered message, the status flattened into prose. The <code>Send</code> handler never
+gets there — it holds the call and reads the status as a number:</p>
+<span class="src">src/main/kotlin/it/saabel/kotlinnotionclient/ratelimit/NotionRateLimit.kt:149–161</span>
+<pre><code>                val delayDuration =
+                    when {
+                        status in RETRY_AFTER_STATUSES &amp;&amp; retriesRemaining -&gt; retryAfterDelay(call, attemptNumber)
+                        status in RETRYABLE_SERVER_STATUSES &amp;&amp; retriesRemaining -&gt; exponentialBackoff(attemptNumber)
+                        else -&gt; null
+                    }
+
+                if (delayDuration == null) {
+                    result = call
+                } else {
+                    delay(delayDuration)
+                    attemptNumber++
+                }</code></pre>
+
+<p><code>RETRY_AFTER_STATUSES = setOf(429, 529)</code> (<code>NotionRateLimit.kt:174</code>): both
+ship Notion's <code>Retry-After</code>, so <code>529</code> takes the header-driven path, and the
+header <em>replaces</em> the exponential schedule rather than stacking with it — lines 102–112 wait
+the header value plus a one-second rounding margin. The other set carries the sharper judgement:</p>
+<span class="src">src/main/kotlin/it/saabel/kotlinnotionclient/ratelimit/NotionRateLimit.kt:176–181</span>
+<pre><code>/**
+ * Server-side statuses worth retrying on the exponential schedule. `500` is deliberately excluded:
+ * it usually signals a non-transient server fault rather than a transient blip, whereas `502`
+ * (bad gateway), `503` (service unavailable) and `504` (gateway timeout) are typically momentary.
+ */
+private val RETRYABLE_SERVER_STATUSES = setOf(502, 503, 504)</code></pre>
+
+<p>Lumping all of <code>5xx</code> together is the default reflex and it is wrong.
+<code>502</code>/<code>503</code>/<code>504</code> are statements about infrastructure, usually true
+for a second or two; a <code>500</code> is a statement about your request, and retrying it fetches the
+same exception again while delaying the error the caller needs
+(<code>TypedRetryClassifierPluginTest.kt:119–149</code> pins exactly one attempt). Note
+<code>retriesRemaining</code> too: once retries are exhausted the guard fails and the call returns
+immediately rather than sleeping one unused interval — defect #5, pinned by
+<code>MaxRetriesWallTimeTest:69–73</code> at 7,000 virtual milliseconds rather than 15,000.</p>
+
+<h3>The clock, and the test that guards the tests</h3>
+<span class="src">src/main/kotlin/it/saabel/kotlinnotionclient/ratelimit/NotionRateLimit.kt:25–29</span>
+<pre><code>    /**
+     * Test seam: overrides the token bucket's millisecond time source so tests can drive pacing
+     * with `kotlinx.coroutines.test` virtual time. `null` uses a real monotonic clock.
+     */
+    internal var timeSourceMillis: (() -&gt; Long)? = null</code></pre>
+
+<p>One nullable function, <code>internal</code> so it is not public API, threaded into the bucket as
+<code>pluginConfig.timeSourceMillis ?: { System.nanoTime() / 1_000_000 }</code>
+(<code>NotionRateLimit.kt:81</code>). Tests pass <code>{ currentTime }</code>. Inside
+<code>runTest</code>, <code>delay</code> does not sleep: the test dispatcher holds a scheduler of
+pending resumptions ordered by virtual instant and, when nothing is runnable, jumps the clock to the
+next one. The bucket would still <em>run</em> on its real clock there — measuring real milliseconds
+against skipped delays, and pacing wrongly. The injection makes the two clocks one clock.</p>
+
+<span class="src">src/test/kotlin/unit/ratelimit/VirtualTimeProbeTest.kt:49–58</span>
+<pre><code>                val wallElapsed = wallStart.elapsedNow()
+                val virtualElapsed = currentTime - virtualStart
+
+                println("  Wall-clock elapsed: ${wallElapsed.inWholeMilliseconds} ms")
+                println("  Virtual elapsed:    $virtualElapsed ms")
+
+                // Virtual time advanced by sum(delays) = 7000 ms
+                virtualElapsed shouldBe 7_000L
+                // Wall-clock barely moved (the whole loop was simulated)
+                wallElapsed.inWholeMilliseconds shouldBeLessThan 500L</code></pre>
+
+<p><code>VirtualTimeProbeTest</code> tests no production code; its KDoc calls it "Investigation #4",
+written before the rewrite to establish that virtual time survives the shape the design would use — a
+retry loop with a <code>delay</code> inside <code>mutex.withLock { }</code>. The first assertion in
+each of its three tests is the ordinary one. The second is the interesting one:
+<code>wallElapsed shouldBeLessThan 500L</code> is not testing the loop, it is testing that the loop
+was <em>simulated</em>.</p>
+
+<p>That guards a suite passing for the wrong reason. Every timing test downstream asserts a virtual
+duration, and all would keep passing if virtual time quietly stopped applying:
+<code>MaxRetriesWallTimeTest</code> would still see 7,000 ms elapse, because 7,000 ms really would.
+Nothing goes red; the suite merely becomes slow and non-deterministic while staying green, and this
+assertion is the only thing that fails in that scenario. The transferable move:
+<strong>when a test's value depends on a mechanism the test does not itself exercise</strong> — a
+clock that is fake, a fixture that is loaded, a mock that is wired — <strong>assert the mechanism
+too</strong>.</p>
+
+<h2>The analogy, and its limits</h2>
+
+<p>The mapping that holds is Guava's <code>RateLimiter</code>: the same bucket, the same
+continuous-refill arithmetic, the same fractional-permit accounting — right up to the point where
+Guava's <code>acquire()</code> parks the calling thread, which is why a JVM library cannot casually
+put one in front of a thread-pooled client and why this one can.</p>
+
+<p>The analogy that actively misleads is the one your instincts reach for at
+<code>TokenBucket.kt:49–58</code>: a <code>synchronized</code> block with a <code>Thread.sleep()</code>
+in it. That really is the anti-pattern it resembles. A platform thread holding a monitor while
+sleeping cannot be reused, and a queue of them is a stack of parked OS resources; the
+compute-then-release-then-sleep advice exists because of exactly that cost. Carry the instinct into
+Kotlin unexamined and you will "fix" this bucket into a thundering herd. A coroutine suspended inside
+<code>withLock</code> holds a logical lock and no thread, so the only resource held is the right to
+be next — which is the resource the bucket exists to allocate. The point is narrower than "coroutines
+are cheap": <strong>rules of thumb about lock hold times are proxies for a thread cost that
+suspension removes, and once a proxy stops tracking its cost, the rule can invert.</strong></p>
+
+<p>One analogy to refuse: a token bucket is not a semaphore. A <code>Semaphore(20)</code> bounds
+requests <em>in flight</em>; the bucket bounds requests <em>started per second</em> and returns
+nothing on completion. Notion's limit is a rate — but the library therefore bounds concurrency not at
+all.</p>
+
+<h2>See it yourself</h2>
+
+<p>The bucket's own tests, offline and under a second:</p>
+<pre><code>./gradlew test -Dkotest.tags.include="Unit" --tests "*.TokenBucketTest"</code></pre>
+
+<p>Then watch the two clocks diverge — <code>VirtualTimeProbeTest</code> prints both:</p>
+<pre><code>./gradlew test -Dkotest.tags.include="Unit" --tests "*.VirtualTimeProbeTest" -i 2>&amp;1 | grep -E "Wall|Virtual"</code></pre>
+<pre><code>      Wall-clock elapsed: 1 ms
+      Virtual elapsed:    7000 ms
+      Virtual elapsed for 5 acquires: 1665 ms (expected ~1666 ms)
+      Wall-clock elapsed:             0 ms
+      Virtual elapsed: 30000 ms (expected 30000)
+      Wall elapsed:    0 ms</code></pre>
+
+<p>Thirty seconds of <code>Retry-After</code> waiting, simulated in under a millisecond. The middle
+pair: five acquisitions from an empty bucket at 3/s cost 1,665 virtual milliseconds and zero real
+ones.</p>
+
+<h2>Exercises</h2>
+
+<div class="callout">
+<h3>Exercise 1 — Verifiable</h3>
+<p>Predict the timestamps before running. Take <code>sustainedRate = 2.0</code> and
+<code>burstCapacity = 3</code>, launch eight coroutines that each <code>acquire()</code>, and work out
+from <code>TokenBucket.kt:48–70</code> when each returns.</p>
+<p>The derivation: the bucket starts with 3.0 tokens at <code>currentTime</code> 0, so acquisitions
+1–3 decrement and return without reaching the <code>delay</code>. The fourth finds 0.0, so
+<code>deficit</code> is 1.0 and <code>tokensPerMillis</code> is <code>0.002</code>, giving
+<code>waitMillis = ceil(1.0 / 0.002) = 500</code>; it sleeps, loops, refills exactly one token and
+takes it. Everyone after pays the same 500 ms. As a scratch spec at
+<code>src/test/kotlin/unit/ratelimit/ScratchTimingProbe.kt</code>:</p>
+<pre><code>@file:OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+
+package unit.ratelimit
+
+import io.kotest.core.annotation.Tags
+import io.kotest.core.spec.style.FunSpec
+import io.kotest.matchers.shouldBe
+import it.saabel.kotlinnotionclient.ratelimit.TokenBucket
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.test.advanceUntilIdle
+import kotlinx.coroutines.test.currentTime
+import kotlinx.coroutines.test.runTest
+
+@Tags("Unit")
+class ScratchTimingProbe :
+    FunSpec({
+        test("eight acquisitions at rate 2.0, burst 3") {
+            runTest {
+                val bucket =
+                    TokenBucket(
+                        sustainedRate = 2.0,
+                        burstCapacity = 3,
+                        currentTimeMillis = { currentTime },
+                    )
+                val times = mutableListOf&lt;Long&gt;()
+                repeat(8) {
+                    launch {
+                        bucket.acquire()
+                        times += currentTime
+                    }
+                }
+                advanceUntilIdle()
+                times shouldBe listOf(0L, 0L, 0L, 500L, 1000L, 1500L, 2000L, 2500L)
+            }
+        }
+    })
+</code></pre>
+<p><strong>Expected end state.</strong>
+<code>./gradlew test -Dkotest.tags.include="Unit" --tests "*.ScratchTimingProbe"</code> goes green
+with exactly <code>[0, 0, 0, 500, 1000, 1500, 2000, 2500]</code> — no tolerance window, no range
+matcher. Then set <code>sustainedRate = 3.0</code> and predict again: you will not get 334, 667,
+1000. Work out from the <code>ceil</code> and the leftover fractional token why the gaps alternate.
+Delete the file when you are finished.</p>
+</div>
+
+<div class="callout">
+<h3>Exercise 2 — Extension</h3>
+<p>The scope of the bucket is stated as a rule, not an accident:</p>
+<span class="src">src/main/kotlin/it/saabel/kotlinnotionclient/ratelimit/TokenBucket.kt:20–21</span>
+<pre><code> * One bucket is created per [NotionRateLimit] plugin install — i.e. per `HttpClient` /
+ * `NotionClient` — never as a process-global singleton.</code></pre>
+<p>Notion's limit, though, applies per integration token. Work out what breaks when one process
+builds two <code>NotionClient</code>s on the same token — a read client and a write client, say. Each
+has a full burst of 20 and a private 3/s allowance, so the process paces itself at 6/s and believes it
+is behaving. Which side notices first, and what do the two then do to each other through the retry
+loop?</p>
+<p>Then design the fix and be honest about where it hurts. Keying buckets by token means holding them
+process-wide, which is what that "never" guards against: what is the lifecycle of that map, who
+evicts an entry when the last client using it closes, and what happens to a consumer running two
+tenants' tokens in one JVM? Ask too whether the <code>Mutex</code> queue survives a bucket shared
+across clients with different cancellation semantics. And note
+the constraint that makes this a design question rather than a refactor: <code>TokenBucket</code> is
+<code>internal</code> while <code>NotionClient</code> construction is public API.</p>
+</div>
+
+<h2>Further reading</h2>
+
+<ul>
+<li><a href="../../journal/2026_05_30_01_RateLimiting_Diagnosis.md"><code>journal/2026_05_30_01_RateLimiting_Diagnosis.md</code></a>,
+§"Concrete defects, ranked" — the nine defects the rewrite was answering.</li>
+<li><a href="../error-handling.md"><code>docs/error-handling.md</code></a>, §Retry Matrix — the
+classifier as a table: every status, whether it retries, and on which delay strategy.</li>
+<li><a href="https://ktor.io/docs/client-custom-plugins.html#handle-requests-and-responses">Ktor
+docs, "Custom client plugins" §Handle requests and responses</a> — where <code>on(Send)</code> sits
+relative to the request and response hooks, and why it is the phase that may call
+<code>proceed</code> twice.</li>
+<li><a href="https://github.com/Kotlin/kotlinx.coroutines/blob/master/kotlinx-coroutines-test/README.md#delay-skipping">
+<code>kotlinx-coroutines-test</code> README, §Delay-skipping</a> and §Controlling the virtual time —
+what <code>runTest</code> does to <code>delay</code>, and the <code>currentTime</code> /
+<code>advanceUntilIdle</code> API these tests use.</li>
+</ul>
