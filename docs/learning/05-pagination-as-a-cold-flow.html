@@ -1,0 +1,515 @@
+<title>Pagination as a Cold Flow</title>
+<style>
+/* Shared stylesheet for the docs/learning series.
+   Inlined verbatim into each lesson's <style> block — no linking, no network. */
+
+html { -webkit-text-size-adjust: 100%; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-size: 17px;
+  line-height: 1.6;
+  color: #1a1a1a;
+  background: #fdfdfc;
+  max-width: 70ch;
+  margin: 0 auto;
+  padding: 2rem 1.25rem 6rem;
+}
+h1, h2, h3 { line-height: 1.25; font-weight: 650; }
+h1 { font-size: 1.9rem; margin: 0 0 .25rem; }
+h2 { font-size: 1.4rem; margin: 2.75rem 0 .75rem; padding-bottom: .3rem; border-bottom: 2px solid #d8d5cd; }
+h3 { font-size: 1.12rem; margin: 1.9rem 0 .5rem; color: #33312c; }
+p, li { margin: 0 0 1rem; }
+li { margin-bottom: .45rem; }
+ul, ol { padding-left: 1.5rem; }
+
+a { color: #0b5a9e; text-decoration: underline; text-underline-offset: 2px; }
+a:hover { color: #073e6d; }
+a:visited { color: #5a3a8e; }
+
+code {
+  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+  font-size: .875em;
+  background: #f1efe9;
+  border-radius: 3px;
+  padding: .1em .32em;
+}
+pre {
+  background: #f6f5f1;
+  border: 1px solid #e0ddd4;
+  border-radius: 4px;
+  padding: .85rem 1rem;
+  overflow-x: auto;
+  font-size: .82rem;
+  line-height: 1.5;
+}
+pre code { background: none; padding: 0; font-size: inherit; }
+
+.subtitle { color: #57544d; font-size: 1rem; margin: 0 0 2rem; }
+.difficulty {
+  display: inline-block; font-size: .78rem; letter-spacing: .04em; text-transform: uppercase;
+  background: #e8e5dc; border-radius: 3px; padding: .12em .5em; color: #46433c;
+}
+.src { display: block; font-size: .78rem; color: #6b675f; margin: 1.4rem 0 .3rem; }
+
+.callout { border: 1px solid #c9c4b6; border-left: 4px solid #8a8272; background: #faf9f5;
+  border-radius: 4px; padding: 1rem 1.1rem .35rem; margin: 1.25rem 0; }
+.callout h3 { margin-top: 0; }
+
+blockquote { margin: 1.25rem 0; padding: .1rem 0 .1rem 1rem; border-left: 3px solid #d8d5cd; color: #3b3833; }
+hr { border: 0; border-top: 1px solid #e0ddd4; margin: 3rem 0; }
+table { border-collapse: collapse; width: 100%; font-size: .92rem; }
+th, td { border: 1px solid #e0ddd4; padding: .4rem .6rem; text-align: left; vertical-align: top; }
+th { background: #f4f2ec; }
+</style>
+
+<h1>05 — Pagination as a cold Flow</h1>
+<p class="subtitle">A cursor chain that does nothing at all until somebody collects it · <span class="difficulty">Medium</span></p>
+
+<h2>The hook</h2>
+
+<p>On 15 April 2026 a notebook example claimed <code>pageSize(5)</code> would fetch the first five
+results. It did not. <code>journal/2026_04_15_02_Pagination_Limit_Investigation.md</code> states the
+problem in two sentences:</p>
+<span class="src">journal/2026_04_15_02_Pagination_Limit_Investigation.md:25–28</span>
+<pre><code>`pageSize(N)` controlled the *batch size* per API call, not the *total result count*. A caller who
+genuinely wants only the top 5 results (e.g. a "most recently edited tasks" widget) had no way to
+opt out of auto-pagination. `search()` was already single-call; `BlocksApi.retrieveChildren()`
+had the same always-auto-paginate gap as `DataSourcesApi.query()`.</code></pre>
+
+<p>The interesting part is where the investigation decided the fault <em>was not</em>:</p>
+<span class="src">journal/2026_04_15_02_Pagination_Limit_Investigation.md:37–38</span>
+<pre><code>- **`Pagination.kt`**: Generic helpers (`collectAll`, `asFlow`, `asPagesFlow`) are correct as-is;
+  the gap is at the API layer, not in the utilities.</code></pre>
+
+<p>That verdict holds up. The Flow half already stopped early — a <code>.take(5)</code> ends the
+cursor chain after one request, and always did. What it could not do was ask for a <em>small</em>
+first request, since every flow pins <code>pageSize</code> to <code>MAX_PAGE_SIZE = 100</code>
+(<code>config/NotionApiLimits.kt:76</code>). <code>queryFirstPage</code> was added alongside; the two
+answer different questions. This lesson is the first, and the ten lines behind it.</p>
+
+<h2>The concept, plainly</h2>
+
+<p>Everything paginated here funnels through
+<code>src/main/kotlin/it/saabel/kotlinnotionclient/utils/Pagination.kt</code>, whose central function
+returns a <code>Flow&lt;T&gt;</code> built by <code>flow { }</code>. Coldness is worth being precise
+about, because in a cursor chain it means four specific things.</p>
+
+<p><strong>Nothing has happened when the function returns.</strong>
+<code>notion.blocks.retrieveChildrenAsFlow(id)</code> performs zero HTTP requests. The object handed
+back closes over the fetcher and holds nothing else: no first page, no cursor, no connection. The
+chain has not started; it has been described.</p>
+
+<p><strong>The cursor is per-collection state.</strong> <code>var cursor: String? = null</code> lives
+<em>inside</em> the <code>flow { }</code> block, created fresh every time somebody collects. Two
+collectors mean two independent walks and two full sets of requests — this is not a stateful iterator
+you can pass around and pull from in pieces. It is a recipe, re-executed on demand.</p>
+
+<p><strong>The fetch loop runs in the collector's coroutine.</strong> <code>emit</code> is a suspend
+call into the collector's lambda — there is no buffer and no second thread. Page <var>n</var>+1 is
+requested only after every item of page <var>n</var> has been handed over and the collector has
+returned, so a slow consumer paces the API calls: a happy accident, given the rate limiter under all
+of this.</p>
+
+<p><strong>Stopping is an exception, and it lands in the right place.</strong>
+<code>take(1)</code> throws out of <code>emit</code> once its quota is met, unwinding the
+<code>do</code>/<code>while</code> loop before the next <code>fetcher(cursor)</code> call: the second
+page is never requested. Cancelling from outside — a <code>withTimeout</code>, a cancelled scope —
+cancels the fetcher while it is suspended, so the in-flight HTTP call dies with it instead of
+completing and being discarded. The pagination code implements neither. Both follow from the loop
+being ordinary sequential code inside a coroutine.</p>
+
+<h2>This code, annotated</h2>
+
+<h3>The whole engine</h3>
+
+<span class="src">src/main/kotlin/it/saabel/kotlinnotionclient/utils/Pagination.kt:40</span>
+<pre><code>typealias PageFetcher&lt;T, R&gt; = suspend (cursor: String?) -&gt; R</code></pre>
+<span class="src">src/main/kotlin/it/saabel/kotlinnotionclient/utils/Pagination.kt:71–80</span>
+<pre><code>    fun &lt;T, R&gt; asFlow(fetcher: PageFetcher&lt;T, R&gt;): Flow&lt;T&gt;
+        where R : PaginatedResponse&lt;T&gt; =
+        flow {
+            var cursor: String? = null
+            do {
+                val page = fetcher(cursor)
+                page.results.forEach { emit(it) }
+                cursor = page.nextCursor
+            } while (page.hasMore)
+        }</code></pre>
+
+<p><code>T</code> never appears on the right-hand side of the typealias — a phantom parameter,
+carried only so the <code>where R : PaginatedResponse&lt;T&gt;</code> constraint can tie element type
+to response type at the call site. That constraint is the whole abstraction:
+<code>PaginatedResponse&lt;T&gt;</code> (<code>Pagination.kt:16–32</code>) declares
+<code>results</code>, <code>nextCursor</code> and <code>hasMore</code>, and every list-shaped Notion
+model implements it, so one loop serves blocks, comments, users, search results and property items
+alike.</p>
+
+<p>One detail to keep: the loop tests <code>page.hasMore</code>, but the value it feeds to the next
+iteration is <code>page.nextCursor</code>. A response reporting <code>has_more: true</code> with
+<code>next_cursor: null</code> would make it re-fetch the first page forever. The windowed drain,
+written later, guards exactly that —
+<code>while (response.hasMore &amp;&amp; cursor != null)</code>
+(<code>api/WindowedRowIteration.kt:91</code>). The generic helper does not.</p>
+
+<h3><code>collectAll</code>, and being honest about it</h3>
+
+<span class="src">src/main/kotlin/it/saabel/kotlinnotionclient/utils/Pagination.kt:106–116</span>
+<pre><code>    suspend fun &lt;T, R&gt; collectAll(fetcher: PageFetcher&lt;T, R&gt;): List&lt;T&gt;
+        where R : PaginatedResponse&lt;T&gt; {
+        val allResults = mutableListOf&lt;T&gt;()
+        var cursor: String? = null
+        do {
+            val page = fetcher(cursor)
+            allResults.addAll(page.results)
+            cursor = page.nextCursor
+        } while (page.hasMore)
+        return allResults
+    }</code></pre>
+
+<p>The same loop with a list where the <code>emit</code> was — and usually the one you want. The
+public surface says so: <code>query()</code>, <code>list()</code> and <code>retrieveChildren()</code>
+return <code>List</code> and drain the chain themselves, while the Flow variants carry an opt-in
+<code>AsFlow</code> suffix. <code>docs/pagination.md</code> puts the crossover near a thousand
+items.</p>
+
+<p>Be sceptical of the memory argument especially. <code>collectAll</code> holds <var>n</var> items;
+the Flow holds one page — a hundred at most. For the few hundred rows most queries return that is
+nothing, and a caller who writes <code>.toList()</code> has bought the allocation back plus a
+wrapper. The advantages that pay are the two the loop shape gives away free: <strong>stopping
+early</strong> and <strong>starting work before the last page lands</strong>. If neither applies,
+take the list.</p>
+
+<h3>The flow that could not use the helper</h3>
+
+<p><code>DataSourcesApi.queryAsFlow</code> hand-rolls the same loop, for two reasons worth reading:</p>
+<span class="src">src/main/kotlin/it/saabel/kotlinnotionclient/api/DataSourcesApi.kt:521–527</span>
+<pre><code>        // Validated eagerly (at call time, not lazily on first collection) — consistent with
+        // fail-fast validation elsewhere and with a caller's likely expectation that an
+        // IllegalArgumentException surfaces before any Flow is even handed back.
+        validateFilterPropertiesLimit(filterProperties)
+        return flow {
+            val emitted = mutableListOf&lt;it.saabel.kotlinnotionclient.models.pages.Page&gt;()
+            var cursor: String? = null</code></pre>
+
+<p>That comment is the coldness caveat in practice: validation inside <code>flow { }</code> would not
+fire until first collection, possibly on another coroutine, long after the offending call. Everything
+above <code>return flow {</code> is eager; everything below is not.</p>
+
+<span class="src">src/main/kotlin/it/saabel/kotlinnotionclient/api/DataSourcesApi.kt:538–550</span>
+<pre><code>                response.results.forEach {
+                    emitted.add(it)
+                    emit(it)
+                }
+                response.requestStatus?.takeIf { it.isIncomplete }?.let { status -&gt;
+                    throw NotionException.QueryResultLimitReached(
+                        partialResults = emitted.toList(),
+                        nextCursor = response.nextCursor,
+                        requestStatus = status,
+                    )
+                }
+                cursor = response.nextCursor
+            } while (response.hasMore)</code></pre>
+
+<p>The second reason: it keeps <code>emitted</code> so the exception can carry partial results, which
+<code>Pagination.asFlow</code>, retaining nothing, could not. The sibling
+<code>queryPagedFlow</code>, needing neither, does delegate (<code>DataSourcesApi.kt:593</code>).</p>
+
+<h3>Where the cursor chain simply stops working</h3>
+
+<p>A single Notion query is capped at 10,000 rows server-side. At the cap the response reports
+<code>has_more: false</code> and sets <code>request_status.type == "incomplete"</code> — so an honest
+cursor loop terminates <em>normally</em>, and short. <code>FOLLOWUPS.md</code> item 26 records the
+shape confirmed against a live 11,000-row data source: the flag arrives on the <strong>first</strong>
+page, cursor still usable. The generic helper cannot see it — <code>PaginatedResponse</code> has no
+<code>requestStatus</code> — so <code>query</code> and <code>queryAsFlow</code> throw
+<code>QueryResultLimitReached</code> rather than return a plausible truncated list
+(<code>CHANGELOG.md:661–668</code>).</p>
+
+<span class="src">src/main/kotlin/it/saabel/kotlinnotionclient/api/WindowedRowIteration.kt:56–68</span>
+<pre><code>            while (true) {
+                val windowRequest =
+                    request.copy(
+                        filter = combineFilters(request.filter, tracker.windowFilter()),
+                        sorts = listOf(tracker.sort()),
+                        startCursor = null,
+                        pageSize = NotionApiLimits.Response.MAX_PAGE_SIZE,
+                    )
+                var newRowsInWindow = 0
+                var truncated = false
+                var cursor: String? = null
+                var pageCount = 0
+                do {</code></pre>
+
+<p>Two nested loops: the inner <code>do</code>/<code>while</code> is an ordinary cursor chain; the
+outer <code>while (true)</code> opens a fresh query — filtered from the last key value seen —
+whenever the previous one was truncated. New filter, new result set, new 10,000-row budget.</p>
+
+<span class="src">src/main/kotlin/it/saabel/kotlinnotionclient/api/WindowedRowIteration.kt:91–102</span>
+<pre><code>                } while (response.hasMore &amp;&amp; cursor != null)
+
+                if (!truncated) {
+                    // The window completed without hitting the cap: everything is drained.
+                    return@flow
+                }
+                if (newRowsInWindow == 0) {
+                    throw NotionException.IterationStalled(
+                        keyDescription = tracker.keyDescription,
+                        boundaryValue = tracker.boundaryValue,
+                    )
+                }</code></pre>
+
+<p>Termination is "a window finished without truncation"; <code>newRowsInWindow == 0</code> is the
+liveness check, since a window that reopens and yields nothing new would spin forever.</p>
+
+<p>Mutation enters here, and is easy to get backwards. It is not why windowing exists — the
+10,000-row cap is. It is the constraint on <em>which key you may window by</em>:</p>
+<span class="src">src/main/kotlin/it/saabel/kotlinnotionclient/models/datasources/RowIterationKey.kt:12–15</span>
+<pre><code> * `last_edited_time` is deliberately not offered as a key: it changes whenever a row
+ * is edited, so a row edited mid-drain moves within the ordering and can be skipped
+ * or duplicated. Detecting such duplicates would require remembering every emitted
+ * row id, which does not scale to the data sources this helper exists for.</code></pre>
+
+<p>Mechanically: sort ascending by <code>last_edited_time</code>, drain window one, and the boundary
+becomes the largest edit time you saw. Somebody now edits a row you emitted an hour ago. Its key
+jumps to <em>now</em>, past the boundary, so the next window's <code>on_or_after</code> filter
+matches it and you emit it twice. Any key that can move relative to a boundary you have crossed does
+this, in one direction or the other. Neither key on offer moves: <code>created_time</code> is
+immutable, and a <code>unique_id</code> is immutable and strictly increasing — which is why that one
+re-opens with a strict <code>greater_than</code> and needs no de-duplication
+(<code>WindowedRowIteration.kt:193–199</code>).</p>
+
+<p><code>created_time</code> pays a smaller price: Notion rounds it to the minute, so boundary ties
+are normal and the window reopens with <code>on_or_after</code>, re-reading rows already emitted.</p>
+<span class="src">src/main/kotlin/it/saabel/kotlinnotionclient/api/WindowedRowIteration.kt:165–175</span>
+<pre><code>            return if (boundary == null || instant &gt; boundary) {
+                boundaryInstant = instant
+                boundaryValue = page.createdTime
+                boundaryIds.clear()
+                boundaryIds.add(page.id)
+                true
+            } else {
+                // Same created_time as the boundary (or, defensively, earlier):
+                // emit only ids not already seen in this bucket.
+                boundaryIds.add(page.id)
+            }</code></pre>
+
+<p><code>boundaryIds.clear()</code> is the line that matters: the set holds only rows sharing the
+current boundary timestamp and empties the moment the boundary advances, so memory is bounded by the
+widest one-minute bucket, not by the data source. <code>Set.add</code> returning <code>false</code>
+for a repeat is what makes the <code>else</code> branch a filter.</p>
+
+<h3>The same chain in TypeScript</h3>
+
+<p><code>reference/js/pagination-helpers.ts</code> is a vendored MIT excerpt of
+<code>notion-sdk-js</code>, kept because #40 named it prior art
+(<code>reference/js/README.md:12–18</code>). Its generic helper is <code>asFlow</code> spelled as an
+async generator:</p>
+<span class="src">reference/js/pagination-helpers.ts:49–62</span>
+<pre><code>export async function* iteratePaginatedAPI&lt;Args extends PaginatedArgs, Item&gt;(
+  listFn: (args: Args) =&gt; Promise&lt;PaginatedList&lt;Item&gt;&gt;,
+  firstPageArgs: Args
+): AsyncIterableIterator&lt;Item&gt; {
+  let nextCursor: string | null | undefined = firstPageArgs.start_cursor
+  do {
+    const response: PaginatedList&lt;Item&gt; = await listFn({
+      ...firstPageArgs,
+      start_cursor: nextCursor,
+    })
+    yield* response.results
+    nextCursor = response.next_cursor
+  } while (nextCursor)
+}</code></pre>
+
+<p>Structurally identical, and note it loops on the cursor rather than on <code>has_more</code> —
+the guard the Kotlin helper lacks. The idiomatic differences are the interesting part. An async
+generator is <strong>single-shot and stateful</strong>: the iterator <em>is</em> the cursor position,
+so you can pull ten rows, put it down, and pull ten more later. A cold Flow cannot be half-consumed
+and set aside — that means a channel and a parked coroutine in Kotlin — but it can be collected
+twice, composed with operators, and <strong>cancelled from outside</strong>. Breaking out of a
+<code>for await</code> ends the generator between yields; aborting a request already in flight needs
+an <code>AbortController</code> threaded through by hand. Structured cancellation reaches the socket
+for free; resumable position costs extra. JavaScript made the opposite trade.</p>
+
+<p>The drains diverge more sharply. Both partition by <code>created_time</code> ascending, restart
+from the last-seen boundary on <code>incomplete</code>, and de-duplicate ties — arrived at
+independently here, with this excerpt as the confirmation
+(<code>reference/js/README.md:53–60</code>). But the JS version de-duplicates against every row it
+has ever yielded:</p>
+<span class="src">reference/js/pagination-helpers.ts:169, 192–195</span>
+<pre><code>  const seenRowIds = new Set&lt;string&gt;()
+// …
+        if (!seenRowIds.has(row.id)) {
+          seenRowIds.add(row.id)
+          yield row
+        }</code></pre>
+
+<p>For a data source large enough to need this helper, that set ends up holding every id in it. The
+Kotlin tracker keeps only the boundary bucket — and <code>RowIterationKey</code>'s KDoc, quoted
+above, rejects the unbounded set in the same breath as <code>last_edited_time</code>. The JS helper
+also offers <code>created_time</code> only, throwing a string <code>Error</code> when one timestamp
+holds more rows than the cap; this repo adds the <code>UniqueId</code> key as the escape hatch, and a
+typed <code>IterationStalled</code> pointing at it.</p>
+
+<h2>The analogy, and its limits</h2>
+
+<p><code>Sequence</code> is the analogy that almost works, and it is worth knowing where it breaks.
+Cold, lazy, pull-based, <code>take</code> stops the producer mid-generation — true of both. It breaks
+on one annotation: <code>SequenceScope</code> is <code>@RestrictsSuspension</code>, so inside
+<code>sequence { }</code> you may call <code>yield</code> and nothing else that suspends. A page
+fetcher is a suspend function making a network call. No version of <code>asFlow</code> written with
+<code>sequence { }</code> avoids blocking a thread per page. That restriction, not reactive-streams
+enthusiasm, is why the return type is <code>Flow</code>.</p>
+
+<p>The Java <code>Stream</code> intuition misleads differently. A <code>Stream</code> is single-use
+and its laziness optimises over a source that already exists; re-running it throws. A cold Flow is
+multi-use by design and each use re-executes the side effects — here, the whole cursor chain.
+Collecting twice is not a caching bug, it is two complete walks of the API.</p>
+
+<p>One limit on the Flow story itself: this is not a concurrency mechanism. Nothing runs ahead. Page
+<var>n</var>+1 is not fetched while you process page <var>n</var>, and no operator in
+<code>Pagination.kt</code> makes it so. <code>.buffer()</code> buys exactly one page of look-ahead —
+at which point you have chosen to run ahead of a rate limiter that exists to stop you. Sequential is
+the right default here, not an oversight.</p>
+
+<h2>See it yourself</h2>
+
+<p>The generic helpers have their own spec, asserting on the <em>number of fetcher calls</em> — the
+observable coldness is really about:</p>
+<pre><code>./gradlew test -Dkotest.tags.include="Unit" --tests "*.PaginationTest"</code></pre>
+
+<p><code>src/test/kotlin/unit/utils/PaginationTest.kt:117</code> pins
+<code>callCount shouldBe 3</code> for a three-page chain; line 204 pins <code>2</code>. Then watch
+the windowed drain at the wire level — this spec captures every request body and asserts the injected
+sort and the re-opened window filter:</p>
+<pre><code>./gradlew test -Dkotest.tags.include="Unit" --tests "*.LargeDataSourceIterationTest"</code></pre>
+
+<h2>Exercises</h2>
+
+<div class="callout">
+<h3>Exercise 1 — Verifiable</h3>
+<p>Serve a three-page cursor chain from <code>MockEngine</code>, collect one item, and prove the
+other two pages were never requested. Use the repo's builder in
+<code>src/test/kotlin/unit/util/MockResponseBuilder.kt</code>: handlers are tried in order and the
+first non-404 wins, so the cursor-specific ones must be registered <em>before</em> the catch-all.
+Create <code>src/test/kotlin/unit/utils/ScratchColdFlowProbe.kt</code>:</p>
+<pre><code>package unit.utils
+
+import io.kotest.core.annotation.Tags
+import io.kotest.core.spec.style.FunSpec
+import io.kotest.matchers.shouldBe
+import io.ktor.client.engine.mock.MockEngine
+import io.ktor.http.HttpMethod
+import it.saabel.kotlinnotionclient.NotionClient
+import it.saabel.kotlinnotionclient.config.NotionConfig
+import kotlinx.coroutines.flow.take
+import kotlinx.coroutines.flow.toList
+import kotlinx.coroutines.test.runTest
+import unit.util.mockClient
+
+@Tags("Unit")
+class ScratchColdFlowProbe :
+    FunSpec({
+
+        fun blockPage(
+            id: String,
+            nextCursor: String?,
+            hasMore: Boolean,
+        ): String {
+            val cursor = nextCursor?.let { "\"$it\"" } ?: "null"
+            return """
+                {
+                  "object": "list",
+                  "results": [
+                    {
+                      "object": "block",
+                      "id": "$id",
+                      "created_time": "2026-01-01T00:00:00.000Z",
+                      "last_edited_time": "2026-01-01T00:00:00.000Z",
+                      "in_trash": false,
+                      "parent": {"type": "page_id", "page_id": "parent-1"},
+                      "has_children": false,
+                      "type": "paragraph",
+                      "paragraph": {"rich_text": []}
+                    }
+                  ],
+                  "next_cursor": $cursor,
+                  "has_more": $hasMore,
+                  "type": "block",
+                  "block": {}
+                }
+                """.trimIndent()
+        }
+
+        test("take(1) fetches exactly one page of the cursor chain") {
+            runTest {
+                val http =
+                    mockClient {
+                        addJsonResponse(HttpMethod.Get, "start_cursor=c-2", blockPage("b-3", null, hasMore = false))
+                        addJsonResponse(HttpMethod.Get, "start_cursor=c-1", blockPage("b-2", "c-2", hasMore = true))
+                        addJsonResponse(HttpMethod.Get, "/v1/blocks/", blockPage("b-1", "c-1", hasMore = true))
+                    }
+                val engine = http.engine as MockEngine
+                val notion = NotionClient.createWithClient(http, NotionConfig("test-token"))
+
+                val ids = notion.blocks.retrieveChildrenAsFlow("block-1").take(1).toList().map { it.id }
+
+                ids shouldBe listOf("b-1")
+                engine.requestHistory.size shouldBe 1
+
+                val all = notion.blocks.retrieveChildrenAsFlow("block-1").toList().map { it.id }
+                all shouldBe listOf("b-1", "b-2", "b-3")
+                engine.requestHistory.size shouldBe 4
+            }
+        }
+    })
+</code></pre>
+<p><strong>Expected end state.</strong>
+<code>./gradlew test -Dkotest.tags.include="Unit" --tests "*.ScratchColdFlowProbe"</code> goes green.
+<code>engine.requestHistory.size shouldBe 1</code> is the assertion the exercise is for: pages two
+and three exist in the mock and were never asked for. The rest is the other half of coldness —
+collecting the same Flow again re-walks the chain, taking the running total to four, not three. Now
+break it: replace <code>.take(1)</code> with <code>.first()</code>, then with
+<code>.toList().take(1)</code>, predicting each request count before running. Delete the file
+afterwards.</p>
+</div>
+
+<div class="callout">
+<h3>Exercise 2 — Extension</h3>
+<p><code>CHANGELOG.md:377</code> heads the feature "Resumable iteration past the 10,000-row
+pagination ceiling". It resumes across <em>windows</em>; nothing survives the process. Design the
+version that does.</p>
+<p>First, the state. For <code>RowIterationKey.UniqueId</code> it is one <code>Int</code> —
+<code>lastNumber</code> at <code>WindowedRowIteration.kt:189</code> — and the strict
+<code>greater_than</code> window makes a restart from it exactly correct. For
+<code>CreatedTime</code> it is a timestamp <em>and</em> <code>boundaryIds</code>; drop the set and
+the resume re-emits the whole boundary minute. Bounded, not constant, different per key.</p>
+<p>Then the real question: API shape. <code>RowIterationKey</code> is a public sealed interface
+naming <em>which</em> column to window by; the boundary is private mutable state on an
+<code>internal</code> tracker. Does the checkpoint belong on the key — <code>CreatedTime</code>
+carrying an optional boundary, and so no longer a <code>data object</code> — or in a separate
+parameter and return value, leaving the key a pure column selector? Adding a field to a public sealed
+hierarchy is source-breaking for anyone with an exhaustive <code>when</code>, so this is a
+compatibility decision, not a naming one. Sketch both.</p>
+<p>Finally, what are you promising? The drain is already not a snapshot
+(<code>DataSourcesApi.kt:678–683</code>), and one resumed a day later is weaker again: rows created
+behind your boundary meanwhile are never seen, and a <code>unique_id</code> backfill finished
+overnight silently changes what the window matches. Is a checkpoint that cannot state its own
+staleness a feature or a trap?</p>
+</div>
+
+<h2>Further reading</h2>
+
+<ul>
+<li><a href="../pagination.md"><code>docs/pagination.md</code></a>, §Under the Hood and §Choosing the
+Right Approach — the three helpers side by side, and the repo's own guidance on when the list beats
+the Flow.</li>
+<li><a href="../../journal/2026_04_15_02_Pagination_Limit_Investigation.md"><code>journal/2026_04_15_02_Pagination_Limit_Investigation.md</code></a>,
+§Investigation Findings — why the fix landed at the API layer and not in
+<code>Pagination.kt</code>.</li>
+<li><a href="https://github.com/Kotlin/kotlinx.coroutines/blob/master/docs/topics/coroutines-flow.md#cold-flows">
+<code>kotlinx.coroutines</code> Flow guide, §Cold flows</a> — and §Flow cancellation further down the
+same page, which is the mechanism behind <code>take</code> ending the cursor chain.</li>
+<li><a href="https://ktor.io/docs/client-testing.html#usage">Ktor docs, "Testing client" §Usage</a> —
+<code>MockEngine</code>'s <code>addHandler</code> and <code>requestHistory</code>, the two pieces
+Exercise 1 leans on.</li>
+</ul>
