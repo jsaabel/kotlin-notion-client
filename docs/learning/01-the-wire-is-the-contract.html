@@ -1,0 +1,534 @@
+<title>The Wire Is the Contract</title>
+<style>
+/* Shared stylesheet for the docs/learning series.
+   Inlined verbatim into each lesson's <style> block — no linking, no network. */
+
+html { -webkit-text-size-adjust: 100%; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-size: 17px;
+  line-height: 1.6;
+  color: #1a1a1a;
+  background: #fdfdfc;
+  max-width: 70ch;
+  margin: 0 auto;
+  padding: 2rem 1.25rem 6rem;
+}
+h1, h2, h3 { line-height: 1.25; font-weight: 650; }
+h1 { font-size: 1.9rem; margin: 0 0 .25rem; }
+h2 { font-size: 1.4rem; margin: 2.75rem 0 .75rem; padding-bottom: .3rem; border-bottom: 2px solid #d8d5cd; }
+h3 { font-size: 1.12rem; margin: 1.9rem 0 .5rem; color: #33312c; }
+p, li { margin: 0 0 1rem; }
+li { margin-bottom: .45rem; }
+ul, ol { padding-left: 1.5rem; }
+
+a { color: #0b5a9e; text-decoration: underline; text-underline-offset: 2px; }
+a:hover { color: #073e6d; }
+a:visited { color: #5a3a8e; }
+
+code {
+  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+  font-size: .875em;
+  background: #f1efe9;
+  border-radius: 3px;
+  padding: .1em .32em;
+}
+pre {
+  background: #f6f5f1;
+  border: 1px solid #e0ddd4;
+  border-radius: 4px;
+  padding: .85rem 1rem;
+  overflow-x: auto;
+  font-size: .82rem;
+  line-height: 1.5;
+}
+pre code { background: none; padding: 0; font-size: inherit; }
+
+.subtitle { color: #57544d; font-size: 1rem; margin: 0 0 2rem; }
+.difficulty {
+  display: inline-block; font-size: .78rem; letter-spacing: .04em; text-transform: uppercase;
+  background: #e8e5dc; border-radius: 3px; padding: .12em .5em; color: #46433c;
+}
+.src { display: block; font-size: .78rem; color: #6b675f; margin: 1.4rem 0 .3rem; }
+
+.callout { border: 1px solid #c9c4b6; border-left: 4px solid #8a8272; background: #faf9f5;
+  border-radius: 4px; padding: 1rem 1.1rem .35rem; margin: 1.25rem 0; }
+.callout h3 { margin-top: 0; }
+
+blockquote { margin: 1.25rem 0; padding: .1rem 0 .1rem 1rem; border-left: 3px solid #d8d5cd; color: #3b3833; }
+hr { border: 0; border-top: 1px solid #e0ddd4; margin: 3rem 0; }
+table { border-collapse: collapse; width: 100%; font-size: .92rem; }
+th, td { border: 1px solid #e0ddd4; padding: .4rem .6rem; text-align: left; vertical-align: top; }
+th { background: #f4f2ec; }
+</style>
+
+<h1>01 — The wire is the contract</h1>
+<p class="subtitle"><code>kotlinx.serialization</code> past <code>@Serializable</code> · <span class="difficulty">Medium</span></p>
+
+<h2>The hook</h2>
+
+<p>On 3 November 2025 a query against a live workspace started failing, and the client reported
+this:</p>
+
+<blockquote>Network error occurred</blockquote>
+
+<p>Nothing was wrong with the network. <code>journal/2025_11_03_Unsupported_Property_Types_Investigation.md</code>
+records the reproduction:</p>
+
+<span class="src">journal/2025_11_03_Unsupported_Property_Types_Investigation.md:10–13</span>
+<pre><code>### Reproduction
+1. Query data source with standard properties → ✅ Works
+2. Add button property to any page → ❌ Fails with "Network error occurred"
+3. Remove button property → ✅ Works again</code></pre>
+
+<p>A Notion <em>button</em> property holds no data at all — its JSON value is <code>{}</code> — and
+adding one to a single page took down the whole query result. The message was misleading because
+<code>DataSourcesApi.kt</code> caught bare
+<code>Exception</code> and wrapped it as <code>NotionException.NetworkError</code> (same journal, lines
+63–66); the real failure was a <code>SerializationException</code>.</p>
+
+<p>Six months later the same failure resurfaced one level up, on database property <em>schemas</em>,
+and that journal caught the real exception verbatim:</p>
+
+<span class="src">journal/2026_05_03_01_DatabaseProperty_Unknown_Fallback.md:12–15</span>
+<pre><code>Serializer for subclass 'button' is not found in the polymorphic scope of 'DatabaseProperty'.
+JSON input: {"id":"A%5E%3Bf","name":"Create schedule","description":null,"type":"button","button":{}}</code></pre>
+
+<p>That sentence is the whole lesson. <code>@Serializable</code> on a sealed class buys a
+<em>closed</em> world: a fixed table of subtypes, resolved by name, no default arm. Notion's API is
+someone else's schema on someone else's calendar, and this library has to survive the parts that did
+not exist when the jar shipped.</p>
+
+<h2>The concept, plainly</h2>
+
+<p>Notion's JSON is a tagged union with an unusual tag, drawn by the KDoc atop
+<code>src/main/kotlin/it/saabel/kotlinnotionclient/models/pages/PageProperty.kt</code>:</p>
+
+<span class="src">src/main/kotlin/it/saabel/kotlinnotionclient/models/pages/PageProperty.kt:25–33</span>
+<pre><code> * ## Structure Differences
+ * API responses include metadata that requests don't:
+ * ```json
+ * {
+ *   "id": "property_id",           // ← Metadata (response only)
+ *   "type": "property_type",       // ← Metadata (response only)
+ *   "{property_type}": { ... }     // ← Actual value
+ * }
+ * ```</code></pre>
+
+<p>The value of <code>"type"</code> is not merely a type name. It is <em>the name of another key in
+the same object</em> — <code>{"type":"number","number":42}</code>, <code>{"type":"select","select":{…}}</code>.</p>
+
+<p>kotlinx.serialization's built-in polymorphism does something adjacent, which is what makes this
+confusing. A sealed hierarchy annotated <code>@Serializable</code> gets a compiler-generated
+<code>SealedClassSerializer</code>; JSON writes a <em>class discriminator</em> key — literally
+<code>"type"</code> by default — holding the subclass's serial name, then writes that subclass's fields
+flat alongside it. Squint and you get <code>{"type":"number","number":42}</code>, exactly what Notion
+sends.</p>
+
+<p>Two things break.</p>
+
+<p><strong>The world is closed.</strong> The generated serializer looks the discriminator value up in
+a fixed table and throws when it misses — the <code>'button' is not found in the polymorphic
+scope</code> message above. There is no "and otherwise". Every
+property type Notion ships after your release is a crash in a jar already on Maven Central.</p>
+
+<p><strong>The discriminator is metadata; here the tag is data.</strong> These models declare
+<code>abstract val type: String</code> — the tag is a field callers read. kotlinx refuses that
+combination outright: a subclass carrying a property serialized under the discriminator's name fails,
+and the message offers three ways out — change the discriminator in <code>JsonConfiguration</code>,
+rename the property, or fall back to array polymorphism. When the wire format is someone else's, none
+is available.</p>
+
+<p>Nor does the <code>Json</code> configuration rescue this. The 2025 journal, lines 68–70:
+<code>ignoreUnknownKeys = true</code> "only ignores unknown JSON <em>keys</em>, NOT unknown sealed class
+subtypes". Leniency about extra fields and leniency about unmodelled variants are different features,
+and this library needs both.</p>
+
+<p>So the serializer is written by hand. A <code>KSerializer&lt;T&gt;</code> is three members:
+<code>descriptor</code>, <code>serialize</code>, <code>deserialize</code>. The technique that makes
+Notion's shape tractable is to <em>stop streaming</em>: cast the <code>Decoder</code> to a
+<code>JsonDecoder</code>, pull the subtree into a <code>JsonElement</code>, read the tag from the
+materialised tree, then hand <em>the same element</em> to whichever generated serializer you chose. You
+pay a tree allocation and lose incremental decode; in exchange you can construct a value no generated
+serializer would have produced.</p>
+
+<h2>This code, annotated</h2>
+
+<h3>The hierarchy</h3>
+
+<span class="src">src/main/kotlin/it/saabel/kotlinnotionclient/models/pages/PageProperty.kt:47–50, 74–80</span>
+<pre><code>@Serializable(with = PagePropertySerializer::class)
+sealed class PageProperty {
+    abstract val id: String
+    abstract val type: String
+
+// …
+
+    @Serializable
+    @SerialName("number")
+    data class Number(
+        @SerialName("id") override val id: String = "",
+        @SerialName("type") override val type: String,
+        @SerialName("number") val number: Double?,
+    ) : PageProperty()</code></pre>
+
+<p><code>@Serializable(with = …)</code> is the switch: the compiler still generates a serializer per
+<em>variant</em>, which is what <code>PageProperty.Number.serializer()</code> resolves to, but the base
+class delegates to the hand-written one. Note what that does to <code>@SerialName("number")</code> — it
+no longer drives dispatch, which is now a <code>when</code> over a <code>String</code>; the annotation
+survives as documentation. Meanwhile <code>type</code> is an ordinary modelled field, the collision
+kotlinx would have rejected.</p>
+
+<p><code>id</code> defaulting to <code>""</code> is not laziness: items inside a rollup
+<code>show_original</code> array arrive with no <code>id</code> at all, and the test says so:</p>
+
+<span class="src">src/test/kotlin/unit/properties/PagePropertyUnknownTypeTest.kt:232–235</span>
+<pre><code>            // Array items have no "id" field — they should deserialize with id = ""
+            val first = result.array[0].shouldBeInstanceOf&lt;PageProperty.Number&gt;()
+            first.id shouldBe ""
+            first.number shouldBe 933.0</code></pre>
+
+<h3>deserialize</h3>
+
+<span class="src">src/main/kotlin/it/saabel/kotlinnotionclient/models/pages/PagePropertySerializer.kt:43–58</span>
+<pre><code>object PagePropertySerializer : KSerializer&lt;PageProperty&gt; {
+    override val descriptor: SerialDescriptor = buildClassSerialDescriptor("PageProperty")
+
+    override fun deserialize(decoder: Decoder): PageProperty {
+        require(decoder is JsonDecoder) { "PagePropertySerializer can only deserialize JSON" }
+
+        val element = decoder.decodeJsonElement()
+        val jsonObject = element.jsonObject
+
+        val type =
+            jsonObject["type"]?.jsonPrimitive?.content
+                ?: throw SerializationException("Missing 'type' field in PageProperty JSON")
+
+        val id = jsonObject["id"]?.jsonPrimitive?.content ?: ""
+
+        return when (type) {</code></pre>
+
+<p>Four decisions in fifteen lines. <code>require(decoder is JsonDecoder)</code> states the format
+dependency up front rather than failing later with a <code>ClassCastException</code>.
+<code>decodeJsonElement()</code> is the pivot from streaming to tree. A <em>missing</em>
+<code>"type"</code> is fatal — the library will not guess a variant from the payload's shape.
+<code>id</code> is read generically, because the one branch that cannot delegate needs it by hand.</p>
+
+<p>Then twenty-three branches of one form —
+<code>decoder.json.decodeFromJsonElement(PageProperty.X.serializer(), element)</code>, re-dispatching
+the <em>same</em> parsed element. Then the branch the whole file exists for:</p>
+
+<span class="src">src/main/kotlin/it/saabel/kotlinnotionclient/models/pages/PagePropertySerializer.kt:151–160</span>
+<pre><code>            else -&gt; {
+                // Fallback to Unknown for unsupported property types
+                // Manually construct Unknown with the raw JSON element
+                PageProperty.Unknown(
+                    id = id,
+                    type = type,
+                    rawContent = element,
+                )
+            }
+        }
+    }</code></pre>
+
+<p>Nothing clever in it, and that is the point: the <code>button</code> property becomes
+<code>Unknown(id = "A%5E%3Bf", type = "button", rawContent = {…})</code> and the caller who wanted the
+Title gets the Title.</p>
+
+<h3>The distinction that costs an hour if you miss it</h3>
+
+<p>The serializer's KDoc spends four lines on a difference that is not about mechanics, but about who
+has to fix the problem:</p>
+<span class="src">src/main/kotlin/it/saabel/kotlinnotionclient/models/pages/PagePropertySerializer.kt:38–41</span>
+<pre><code> * [PageProperty.Unknown] means *this client* does not model the type. It is not the same as
+ * Notion reporting that it could not compute a value: the API's own `"unsupported"` formula and
+ * rollup values are modelled explicitly as [FormulaResult.UnsupportedResult] and
+ * [RollupResult.UnsupportedResult].</code></pre>
+
+<span class="src">src/main/kotlin/it/saabel/kotlinnotionclient/models/pages/PageProperty.kt:339–357</span>
+<pre><code>    /**
+     * Notion could not compute this formula, so it returned no value.
+     *
+     * The API reports `formula.type = "unsupported"` with an empty `unsupported`
+     * object when a formula depends on too many related pages or on too deeply
+     * nested formulas and rollups. This says nothing about this client's support
+     * for the property — the formula is visible in Notion's UI but the API
+     * declines to evaluate it — so it is a workspace-side limit to work around
+     * (simplify the formula, or reduce the number of related pages), not a
+     * missing model. Contrast [PageProperty.Unknown], which *is* a gap here.
+     *
+     * @property unsupported Always an empty object; kept so the value round-trips.
+     */
+    @Serializable
+    @SerialName("unsupported")
+    data class UnsupportedResult(
+        @SerialName("type") val type: String,
+        @SerialName("unsupported") val unsupported: JsonObject = JsonObject(emptyMap()),
+    ) : FormulaResult()</code></pre>
+
+<p>Both read, at a call site, as "we don't support this". They are opposites.
+<code>Unknown</code> is a gap in <em>this library</em> and the fix is a pull request; Notion's
+<code>"unsupported"</code> is <em>Notion</em> declining to evaluate a formula, and the fix is in the
+workspace — simplify the formula, cut the relation count. Collapse them into one thing and you will
+spend an afternoon adding a variant for a type that already had one. <code>unsupported</code> keeps
+its always-empty <code>JsonObject</code>: worthless to read, kept so the value round-trips.</p>
+
+<p>The split repeats one level down: <code>FormulaResult</code> and <code>RollupResult</code> each
+carry <code>UnsupportedResult</code> <em>and</em> their own <code>Unknown</code>, and
+<code>RollupResult</code> adds <code>IncompleteResult</code> for a rollup still being computed
+(<code>PageProperty.kt:429–451</code>). Three owners of three problems, all once one
+<code>JsonDecodingException</code>.</p>
+
+<h3>serialize, and the exhaustive <code>when</code></h3>
+
+<span class="src">src/main/kotlin/it/saabel/kotlinnotionclient/models/pages/PagePropertySerializer.kt:163–171, 266–273</span>
+<pre><code>    override fun serialize(
+        encoder: Encoder,
+        value: PageProperty,
+    ) {
+        // For serialization, delegate to the appropriate serializer
+        when (value) {
+            is PageProperty.Title -&gt; {
+                encoder.encodeSerializableValue(PageProperty.Title.serializer(), value)
+            }
+
+// …
+
+            is PageProperty.Verification -&gt; {
+                encoder.encodeSerializableValue(PageProperty.Verification.serializer(), value)
+            }
+
+            is PageProperty.Unknown -&gt; {
+                encoder.encodeSerializableValue(PageProperty.Unknown.serializer(), value)
+            }
+        }
+    }</code></pre>
+
+<p>Twenty-four near-identical branches, and no <code>else</code>. That absence is the enforcement
+point: add a variant to <code>PageProperty</code> and the compiler stops you <em>here</em>, before any
+test runs — the payoff the sealed hierarchy was bought for.</p>
+
+<p>It is narrower than it looks, because the same hierarchy is matched elsewhere with an opt-out:</p>
+
+<span class="src">src/main/kotlin/it/saabel/kotlinnotionclient/models/pages/PageExtensions.kt:260–268</span>
+<pre><code>        is PageProperty.LastEditedBy -&gt; {
+            property.lastEditedBy.name ?: property.lastEditedBy.id
+        }
+
+        else -&gt; {
+            null
+        }
+    }
+}</code></pre>
+
+<p><code>getPlainTextForProperty</code> accepts new variants silently and returns <code>null</code>;
+today <code>Files</code>, <code>Verification</code> and <code>Unknown</code> land there. Exhaustiveness
+is not a property of a sealed class but of each <code>when</code> written over it, and one
+<code>else</code> forfeits it for that site forever.</p>
+
+<p>One more thing hides in that <code>Unknown</code> branch: it encodes through <code>Unknown</code>'s
+<em>generated</em> serializer, writing its three declared fields, so a decoded button property
+re-encodes as <code>{"id":"…","type":"button","rawContent":{"id":"…","type":"button","button":{}}}</code>
+— a shape no Notion endpoint accepts. Harmless in practice, because requests use a different hierarchy:
+<code>PagePropertyValue</code> in
+<code>src/main/kotlin/it/saabel/kotlinnotionclient/models/pages/PageRequests.kt:105</code> (naming
+convention at <code>PageProperty.kt:20–21</code>). That is the second exercise.</p>
+
+<h3>Two other serializers, and why three approaches coexist</h3>
+
+<span class="src">src/main/kotlin/it/saabel/kotlinnotionclient/models/base/ParentSerializer.kt:27–42</span>
+<pre><code>object ParentSerializer : JsonContentPolymorphicSerializer&lt;Parent&gt;(Parent::class) {
+    override fun selectDeserializer(element: JsonElement): DeserializationStrategy&lt;Parent&gt; {
+        val type =
+            element.jsonObject["type"]?.jsonPrimitive?.content
+                ?: throw SerializationException("Missing 'type' field in Parent JSON")
+
+        return when (type) {
+            "page_id" -&gt; Parent.PageParent.serializer()
+// …
+            else -&gt; throw SerializationException("Unknown Parent type: $type")
+        }
+    }
+}</code></pre>
+
+<p><code>JsonContentPolymorphicSerializer</code> is the cheap version of the same idea: kotlinx parses
+the element and asks one question — <em>which strategy?</em> One method, and encoding comes free (it
+serializes with the concrete class's own serializer — flat, no discriminator injected). Seventeen lines
+instead of two hundred and seventy-five.</p>
+
+<p>The cost is the return type. <code>selectDeserializer</code> must return a
+<code>DeserializationStrategy&lt;Parent&gt;</code>; it cannot return a <em>value</em>. There is no way to
+say "build an <code>Unknown</code> holding this element" — the element is in your hand and the
+signature will not let you keep it. That is why <code>PagePropertySerializer</code> is a full
+<code>KSerializer</code> and <code>ParentSerializer</code> is not. The 2025 journal names the
+asymmetry as known at the time (lines 76–80: "Both currently throw on unknown types, but we'll improve
+this"); <code>"agent_id"</code> in that <code>when</code> is evidence Notion does add parent types.</p>
+
+<p><code>IconSerializer</code> is the third shape: content-polymorphic for decode, explicit dispatch for
+encode.</p>
+
+<span class="src">src/main/kotlin/it/saabel/kotlinnotionclient/models/base/IconSerializer.kt:25–28</span>
+<pre><code> * Encoding dispatches on the subclass explicitly rather than looking its serializer up
+ * reflectively, so [Icon.Removed] reliably reaches [IconRemovedSerializer] and is written as
+ * JSON `null` — a reflective lookup would fall back to the generic object serializer and emit
+ * `{}` instead. See `docs/adr/0002-explicit-null-payloads.md`.</code></pre>
+
+<p>Here it is <em>encoding</em> that has a requirement the free implementation cannot meet, so the
+class keeps <code>JsonContentPolymorphicSerializer</code> as a private nested
+<code>ContentSerializer</code> for decoding (<code>IconSerializer.kt:31–47</code>) and hand-writes only
+<code>serialize</code>. <code>Icon.Removed</code> and <code>Icon.PendingUpload</code> appear only in the
+encode <code>when</code> — request-side variants that never arrive from Notion.</p>
+
+<p>Three serializers, three amounts of hand-written code, tracking exactly one thing: which side of
+the round trip has a requirement the generated machinery cannot express.</p>
+
+<h3>One <code>Json</code>, in one place</h3>
+
+<span class="src">src/main/kotlin/it/saabel/kotlinnotionclient/serialization/NotionJson.kt:6–12, 21–29</span>
+<pre><code> * The JSON configuration every request the client sends is encoded with.
+ *
+ * Kept in one place so tests can assert on the *exact* bytes a request produces rather than on a
+ * hand-copied approximation of this config. The settings are load-bearing:
+ *
+ * - `ignoreUnknownKeys` — Notion adds response fields without notice; an unmodelled one must not
+ *   fail a read.
+
+// …
+
+internal object NotionJson {
+    /** Builds the client's JSON configuration. @param prettyPrint indent the encoded output */
+    fun forClient(prettyPrint: Boolean = false): Json =
+        Json {
+            ignoreUnknownKeys = true
+            this.prettyPrint = prettyPrint
+            encodeDefaults = true
+            explicitNulls = false
+        }</code></pre>
+
+<p>The object exists so that a test asserting on encoded bytes asserts about the configuration the
+client actually installs (<code>NotionClient.kt:152</code>), not a drifted copy. It is
+<code>internal</code> on purpose: the config is not public contract, only its output is.</p>
+
+<h2>The analogy, and its limits</h2>
+
+<p>If your instinct here is Jackson-shaped, it is right and the API is missing. Jackson
+models Notion's exact shape as a first-class feature:
+<code>@JsonTypeInfo(use = Id.NAME, include = As.EXISTING_PROPERTY, property = "type", visible = true)</code>
+plus <code>@JsonSubTypes</code>. <code>EXISTING_PROPERTY</code> means "the tag is a real field, don't
+synthesise one"; <code>visible = true</code> adds "and deserialize it into the object too" — precisely
+the collision kotlinx rejects. And <code>@JsonTypeInfo(defaultImpl = …)</code> is
+<code>PageProperty.Unknown</code> in an annotation.</p>
+
+<p><strong>Where the analogy stops.</strong> Jackson can do that because it reflects over your classes
+at runtime; kotlinx generates serializers at compile time and never looks at a class again, so there is
+nowhere for a "when unrecognised, construct this" hook to live. The nearest thing it offers is
+<code>SerializersModule.polymorphicDefaultDeserializer</code>, which does not reach this case: the
+provider is handed the <em>discriminator string only</em> —
+<code>(String?) -&gt; DeserializationStrategy&lt;T&gt;?</code> — and returns a strategy, not a value. It can
+route an unknown tag; it cannot preserve <code>rawContent</code>, because it never sees the JSON.</p>
+
+<p><strong>A second limit, in the code itself.</strong>
+<code>buildClassSerialDescriptor("PageProperty")</code> builds a descriptor with <em>no elements</em>. A
+descriptor is the format's map of a value; this one is a stub, and works only because both paths bypass
+it — decoding goes through <code>JsonElement</code>, encoding delegates to the variant's own generated
+serializer. Point CBOR or protobuf at this hierarchy and there is nothing to work from. The
+<code>require(decoder is JsonDecoder)</code> is honest about that; the descriptor is not.</p>
+
+<p><strong>A third limit, from being a library.</strong> Every variant added to a public sealed class
+is a source-breaking change for anyone with an exhaustive <code>when</code> over it. This library has
+done it deliberately, and says so:</p>
+
+<span class="src">CHANGELOG.md:138–143</span>
+<pre><code>- **`FormulaResult` and `RollupResult` gained an `UnsupportedResult` subclass** (#36). An
+  exhaustive `when` over either sealed class with no `else` branch no longer compiles.
+  *This fixes a latent crash:* Notion returns `type: "unsupported"` for formulas and rollups
+  that depend on too many related pages, and the missing subclass previously failed
+  deserialization of the **entire page** with `JsonDecodingException`. Runtime behaviour for
+  input that already worked is unchanged.</code></pre>
+
+<p>The exhaustive <code>when</code> is a gift inside the library and a bill outside it; that argument
+belongs to lesson 06.</p>
+
+<h2>See it yourself</h2>
+
+<p>Both run against the repo as it stands, hit no network, and take about a second:</p>
+
+<pre><code>./gradlew test -Dkotest.tags.include="Unit" --tests "*.PagePropertyUnknownTypeTest"
+./gradlew test -Dkotest.tags.include="Unit" --tests "*.FormulaRollupUnknownFallbackTest"</code></pre>
+
+<p>Read <code>src/test/kotlin/unit/properties/PagePropertyUnknownTypeTest.kt</code> alongside the
+output. The interesting assertion is not the <code>button</code> one but line 143, where a comment
+records history:</p>
+
+<span class="src">src/test/kotlin/unit/properties/PagePropertyUnknownTypeTest.kt:141–143</span>
+<pre><code>            page.properties["Button"]!!.shouldBeInstanceOf&lt;PageProperty.Unknown&gt;()
+            // Verification is now a known type (no longer Unknown)
+            page.properties["Verification"]!!.shouldBeInstanceOf&lt;PageProperty.Verification&gt;()</code></pre>
+
+<p><code>verification</code> made the journey the fallback exists to permit: unmodelled, decoded as
+<code>Unknown</code>, shipped, then promoted to a real variant (<code>CHANGELOG.md:866</code>) with no
+intervening release crashing on it.
+<code>src/test/kotlin/unit/properties/FormulaRollupUnknownFallbackTest.kt:52–80</code> tests the same
+mechanism against a <code>"vector"</code> formula type Notion has never sent — an invented future, the
+only honest way to test forward compatibility.</p>
+
+<h2>Exercises</h2>
+
+<div class="callout">
+<h3>Exercise 1 — Verifiable</h3>
+<p>Promote <code>button</code> from <code>Unknown</code> to a real variant, end to end.</p>
+<ol>
+<li>Add a <code>Button</code> variant to <code>PageProperty</code> in
+<code>src/main/kotlin/it/saabel/kotlinnotionclient/models/pages/PageProperty.kt</code>, following
+<code>Verification</code> at lines 270–276. The wire payload is an empty object, so model it as
+<code>JsonObject</code>.</li>
+<li>Add the <code>"button"</code> branch to <code>deserialize</code> and the
+<code>is PageProperty.Button</code> branch to <code>serialize</code> in
+<code>PagePropertySerializer.kt</code>.</li>
+<li>Write the decode test in the inline-JSON style of
+<code>src/test/kotlin/unit/properties/PagePropertyUnknownTypeTest.kt</code>.</li>
+</ol>
+<p><strong>Expected end state.</strong> Your new test passes — and three existing assertions in
+<code>PagePropertyUnknownTypeTest.kt</code> (lines 89–90, 141, 177) now <em>fail</em>, because they pin
+<code>button</code> to <code>Unknown</code>. That failure is the proof your branch is live; update
+them.</p>
+<p><strong>Then predict before you run.</strong> Delete only the <code>"button"</code> branch from
+<code>deserialize</code>. Which fails, and how? Answer: it still <em>compiles</em> — the
+<code>when</code> in <code>deserialize</code> is over a <code>String</code> and has an <code>else</code>
+— and your test fails at runtime, with Kotest reporting that the value was a
+<code>PageProperty.Unknown</code> where <code>PageProperty.Button</code> was expected. Now put it back
+and delete the <code>is PageProperty.Button</code> branch from <code>serialize</code> instead. That one
+does not compile: <code>'when' expression must be exhaustive</code>, naming the missing branch. Two
+deletions, two entirely different failure modes, and only one of them was caught by the type system.</p>
+</div>
+
+<div class="callout">
+<h3>Exercise 2 — Extension</h3>
+<p>Make <code>Unknown</code> re-encode losslessly — a decoded button property should encode back to the
+bytes Notion sent, not to <code>{"id":…,"type":…,"rawContent":{…}}</code>. Writing it is short: give
+<code>Unknown</code> its own <code>KSerializer</code> that emits <code>rawContent</code> directly.
+Deciding whether to is the exercise.</p>
+<p>Consider: <code>rawContent</code> is <em>response</em> JSON, carrying <code>id</code> and computed
+values Notion rejects on write, so a faithful round trip is still not a legal request body. Does
+lossless re-encoding buy anything real, then, or only make an illegal payload look plausible? Would it
+be better to make <code>PageProperty</code> refuse to encode at all — the way
+<code>Icon.PendingUpload</code> does via <code>PendingUploadRefusingSerializer</code> — letting the type
+system say "responses are not requests"? What would that break for someone caching a <code>Page</code>
+as JSON?</p>
+</div>
+
+<h2>Further reading</h2>
+
+<ul>
+<li><a href="https://github.com/Kotlin/kotlinx.serialization/blob/master/docs/json.md#content-based-polymorphic-deserialization">kotlinx.serialization guide, "Content-based polymorphic deserialization"</a>
+— <code>JsonContentPolymorphicSerializer</code> as intended, and where its signature stops being
+enough for this repo.</li>
+<li><a href="https://github.com/Kotlin/kotlinx.serialization/blob/master/docs/polymorphism.md#default-polymorphic-type-handler-for-deserialization">kotlinx.serialization guide, "Default polymorphic type handler for deserialization"</a>
+— the built-in fallback hook, and why the discriminator string alone rules it out here.</li>
+<li><a href="../../journal/2025_11_03_Unsupported_Property_Types_Investigation.md"><code>journal/2025_11_03_Unsupported_Property_Types_Investigation.md</code></a>
+— the original diagnosis, and the three options considered (skip / <code>Unknown</code> / better
+message).</li>
+<li><a href="../adr/0002-explicit-null-payloads.md"><code>docs/adr/0002-explicit-null-payloads.md</code></a>
+— the other half of "the wire is the contract": why <code>IconSerializer</code> dispatches explicitly
+on encode.</li>
+</ul>
