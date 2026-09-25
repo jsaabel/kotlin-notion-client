@@ -57,7 +57,7 @@ sealed class PageProperty {
         @SerialName("title") val title: List<RichText>,
     ) : PageProperty() {
         /** Extract plain text from the title */
-        val plainText: String get() = title.firstOrNull()?.plainText ?: ""
+        val plainText: String get() = title.joinToString("") { it.plainText }
     }
 
     @Serializable

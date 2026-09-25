@@ -7,7 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-_Nothing yet — 0.7.0 is open. Add entries here as work lands._
+### Fixed
+
+- `PageProperty.Title.plainText` (and `Page.getTitleAsPlainText`) now joins every rich-text
+  segment of a title instead of returning only the first, so titles with mixed formatting,
+  links or mentions are no longer truncated (#89).
 
 ## [0.6.0] - 2026-09-03
 
