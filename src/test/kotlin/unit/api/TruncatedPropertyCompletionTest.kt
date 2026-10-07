@@ -129,7 +129,7 @@ class TruncatedPropertyCompletionTest :
             val itemRequests = requests.filter { it.isPropertyItemRequest() }
             itemRequests shouldHaveSize 2
             itemRequests.forEach {
-                it.url.pathSegments.takeLast(4) shouldBe listOf("pages", pageId, "properties", relationPropertyId)
+                it.url.segments.takeLast(4) shouldBe listOf("pages", pageId, "properties", relationPropertyId)
                 it.url.parameters["page_size"] shouldBe "100"
             }
             itemRequests[1].url.parameters["start_cursor"] shouldBe "cursor-2"
@@ -218,7 +218,7 @@ class TruncatedPropertyCompletionTest :
                 PagesApi(
                     httpClient { request ->
                         if (request.isPropertyItemRequest()) {
-                            itemPath = request.url.pathSegments
+                            itemPath = request.url.segments
                             ok(relationItems(0 until 30, null))
                         } else {
                             ok(encodedPage)
