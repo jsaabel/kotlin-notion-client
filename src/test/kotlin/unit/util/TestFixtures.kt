@@ -128,6 +128,12 @@ object TestFixtures {
         fun createPageAsString() = loadSampleResponseAsString("pages", "post_create_a_page")
 
         fun retrievePagePropertyAsString() = loadSampleResponseAsString("pages", "get_retrieve_a_page_property_item")
+
+        /** Official page sample whose `Recipes` relation holds 25 references and `has_more: true`. */
+        fun retrievePageWithTruncatedRelationAsString() = loadSampleResponseAsString("pages", "get_retrieve_a_page_truncated_relation")
+
+        /** Paginated `list` of relation property items (documented shape), with a `next_cursor`. */
+        fun retrievePagePropertyItemRelationList() = loadSampleResponse("pages", "get_retrieve_a_page_property_item_relation_list")
     }
 
     // Block-specific helpers

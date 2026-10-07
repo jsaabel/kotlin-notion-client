@@ -1,0 +1,31 @@
+{
+  "object": "list",
+  "results": [
+    {
+      "object": "property_item",
+      "id": "YfIu",
+      "type": "relation",
+      "relation": {
+        "id": "00000000-0000-0000-0000-000000001000"
+      }
+    },
+    {
+      "object": "property_item",
+      "id": "YfIu",
+      "type": "relation",
+      "relation": {
+        "id": "00000000-0000-0000-0000-000000001001"
+      }
+    }
+  ],
+  "next_cursor": "LYxaUO",
+  "has_more": true,
+  "type": "property_item",
+  "property_item": {
+    "id": "YfIu",
+    "next_url": "https://api.notion.com/v1/pages/59833787-2cf9-4fdf-8782-e53db20768a5/properties/YfIu?start_cursor=LYxaUO&page_size=100",
+    "type": "relation",
+    "relation": {}
+  },
+  "next_url": "https://api.notion.com/v1/pages/59833787-2cf9-4fdf-8782-e53db20768a5/properties/YfIu?start_cursor=LYxaUO&page_size=100"
+}
