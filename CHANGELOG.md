@@ -7,7 +7,40 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-_Nothing yet — 0.7.0 is open. Add entries here as work lands._
+### Fixed
+
+- **Relations with more than 25 entries are no longer silently truncated** (#91). Notion's page
+  object returns at most 25 references per relation (`has_more: true` beyond that), and the
+  client used to hand those 25 back as if they were the whole list. Pages returned by
+  `pages.retrieve`, `pages.create`, `pages.update` and by `dataSources.query`, `queryAsFlow`,
+  `iterateAllRows` / `collectAllRows` (and `views.iterateAllRows`) now have such relations
+  completed through *Retrieve a page property item*. People properties holding exactly 25 people
+  (Notion gives no `has_more` flag there) are re-read the same way.
+- `Page.getRelationProperty` now throws `IllegalStateException` for a relation that is still
+  truncated (from `queryFirstPage` / `queryPagedFlow`, from `trash` / `move`, or with completion
+  opted out) instead of returning a partial list.
+- `pages.retrievePropertyItems*` now path-encode the property ID (both the percent-encoded and
+  decoded forms work) and request 100 items per page.
+
+### Added
+
+- `NotionConfig.completeTruncatedProperties` (default `true`) and a per-call
+  `completeTruncatedProperties` parameter on `pages.retrieve`, `dataSources.query(dataSourceId,
+  request, …)` and `dataSources.queryAsFlow(dataSourceId, request, …)` to opt out explicitly.
+- `Page.getRelationPropertyPartial(name)` to read a possibly truncated relation knowingly.
+
+### Changed
+
+- **Behaviour change:** reads of pages whose relations exceed 25 entries now make extra requests
+  (at least one per truncated property, per page). Data source queries over many such pages
+  slow down accordingly; opt out with `completeTruncatedProperties = false` where only the first
+  references matter.
+
+### Docs
+
+- `docs/pages.md` documents the 25-reference cap, the default completion and the read-modify-write
+  hazard of `relation(name, ids)`; fixed the non-existent `PropertyItem.Relation` example.
+  `docs/pagination.md` no longer shows a `pageSize` argument `retrievePropertyItems` never had.
 
 ## [0.6.1] - 2026-09-26
 

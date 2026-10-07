@@ -18,7 +18,11 @@ Every page has properties that can store structured data, and can contain blocks
 
 ```kotlin
 // Retrieve a page
-suspend fun retrieve(pageId: String): Page
+suspend fun retrieve(
+    pageId: String,
+    filterProperties: List<String>? = null,
+    completeTruncatedProperties: Boolean = config.completeTruncatedProperties,
+): Page
 
 // Create a page (DSL)
 suspend fun create(block: CreatePageRequestBuilder.() -> Unit): Page
@@ -36,6 +40,8 @@ suspend fun moveToDataSource(pageId: String, dataSourceId: String): Page
 
 // Retrieve property items (for paginated properties like relations)
 suspend fun retrievePropertyItems(pageId: String, propertyId: String): List<PropertyItem>
+fun retrievePropertyItemsAsFlow(pageId: String, propertyId: String): Flow<PropertyItem>
+fun retrievePropertyItemsPagedFlow(pageId: String, propertyId: String): Flow<PagePropertyItemResponse>
 ```
 
 ## Examples
@@ -232,26 +238,65 @@ val restored = notion.pages.update("page-id") {
 }
 ```
 
-### Retrieve Paginated Property Items
+### Relations With More Than 25 Entries
 
-Some properties like relations can have many items that require pagination:
+Notion's page object returns **at most 25 references per relation property** (it sets
+`has_more: true` when there are more), and can't be guaranteed to return more than 25 people per
+people property. The client completes these for you by default:
+
+- `pages.retrieve`, `pages.create` and `pages.update`, and every page from `dataSources.query`,
+  `queryAsFlow`, `iterateAllRows` / `collectAllRows` (and `views.iterateAllRows`), follow up with
+  *Retrieve a page property item* requests, so `getRelationProperty` returns **every** reference.
+  For people, a list of exactly 25 is re-read (Notion gives no `has_more` flag there).
+- This costs extra requests: at least one per truncated property, per page. Reads that used to
+  take one request take more when relations exceed 25.
+- A relation that is still truncated never passes silently: `getRelationProperty` throws
+  `IllegalStateException` for it (`PageProperty.Relation.hasMore == true`).
+
+Opting out is explicit, per call or client-wide:
 
 ```kotlin
-// Get all items from a relation property
+// Per call — the relation keeps hasMore = true
+val page = notion.pages.retrieve("page-id", completeTruncatedProperties = false)
+val firstFew = page.getRelationPropertyPartial("Attendees")   // up to 25, knowingly partial
+page.getRelationProperty("Attendees")                         // throws if truncated
+
+// Client-wide
+val notion = NotionClient(NotionConfig(apiToken = token, completeTruncatedProperties = false))
+```
+
+`dataSources.queryFirstPage` and `queryPagedFlow` return Notion's response as-is (exactly one
+request per response), so their pages are **not** completed — re-read a page with
+`pages.retrieve` or use `query`/`queryAsFlow` when you need full relations.
+
+> ⚠️ **Read-modify-write:** `relation(name, ids)` *replaces* the whole relation. Writing back a
+> list read with `getRelationPropertyPartial` (or from an uncompleted page) deletes every
+> reference beyond the first 25. Read through `getRelationProperty` before modifying a relation.
+
+Not yet completed (tracked separately): **rollup**, **formula** results with page/person
+references, and **title / rich_text** values with more than 25 inline mentions. Notion caps
+these at 25 too but gives no `has_more` flag on the page object; use `retrievePropertyItems`
+when you rely on them.
+
+### Retrieve Paginated Property Items
+
+To read a property's items directly, use the property-item endpoint. It follows the cursor chain
+and returns ALL items:
+
+```kotlin
+val property = page.properties.getValue("Related Items")
 val relationItems = notion.pages.retrievePropertyItems(
-    pageId = "page-id",
-    propertyId = "property-id"  // ID of the relation property
+    pageId = page.id,
+    propertyId = property.id,  // property ID from the page (encoded or decoded form)
 )
 
 relationItems.forEach { item ->
-    when (item) {
-        is PropertyItem.Relation -> println("Related page: ${item.relation.id}")
-        else -> println("Other property item: $item")
-    }
+    item.relation?.let { println("Related page: ${it.id}") }
+    item.people?.let { println("Person: ${it.name}") }
 }
 ```
 
-**Note**: This method automatically handles pagination and returns ALL items.
+`retrievePropertyItemsAsFlow` and `retrievePropertyItemsPagedFlow` stream the same items.
 
 ## Understanding Page Parents
 
@@ -327,7 +372,7 @@ val url = page.getUrlProperty("Link")
 val email = page.getEmailProperty("Contact")
 val phoneNumber = page.getPhoneNumberProperty("Phone")
 val multiSelectNames = page.getMultiSelectPropertyNames("Tags")
-val relatedPages = page.getRelationProperty("Related Items")
+val relatedPages = page.getRelationProperty("Related Items")  // complete list; see "Relations With More Than 25 Entries"
 ```
 
 **Use when:** You want clean, concise code and only need the property value (recommended for most cases).
@@ -774,6 +819,7 @@ val cloned = notion.pages.create {
 6. **Trash instead of delete** - Notion doesn't support permanent deletion, use `trash()` to move pages to trash and `trash(false)` to restore
 7. **Validate before create** - The library has built-in validation, but pre-validate complex data
 8. **Property IDs for pagination** - Get property ID from page schema for `retrievePropertyItems()`
+9. **Relations beyond 25** - Pages are completed by default; never write back a relation read with `getRelationPropertyPartial`
 
 ## Gotchas and Tips
 

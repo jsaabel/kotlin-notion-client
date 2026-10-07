@@ -24,6 +24,11 @@ import kotlin.time.Duration.Companion.seconds
  * @param rateLimitConfig Configuration for rate limiting behavior
  * @param enableRateLimit Whether to enable automatic rate limiting
  * @param validationConfig Configuration for request validation behavior
+ * @param completeTruncatedProperties Whether pages returned by the client are completed when
+ *   Notion truncated a property at 25 references (relations with `has_more: true`, and people
+ *   lists of 25 or more). Defaults to `true`: the client makes extra *Retrieve a page property
+ *   item* requests so a relation is never silently partial. Set to `false` to skip those requests
+ *   client-wide; truncated relations then fail loudly in `Page.getRelationProperty`.
  */
 data class NotionConfig(
     val apiToken: String = System.getenv("NOTION_API_TOKEN"),
@@ -38,6 +43,7 @@ data class NotionConfig(
     val rateLimitConfig: RateLimitConfig = RateLimitConfig(),
     val enableRateLimit: Boolean = true,
     val validationConfig: ValidationConfig = ValidationConfig.default(),
+    val completeTruncatedProperties: Boolean = true,
 ) {
     init {
         require(apiToken.isNotBlank()) { "API token cannot be blank" }

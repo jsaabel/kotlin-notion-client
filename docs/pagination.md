@@ -203,15 +203,24 @@ notion.search.searchPagedFlow { /* search builder */ }
 ### Page Property Items
 
 ```kotlin
-// Automatic - returns List<PropertyItem>
-val items = notion.pages.retrievePropertyItems(pageId, propertyId, pageSize = 100)
+// Automatic - returns List<PropertyItem> (requests 100 items per page)
+val items = notion.pages.retrievePropertyItems(pageId, propertyId)
 
 // Flow (item-level) - returns Flow<PropertyItem>
-notion.pages.retrievePropertyItemsAsFlow(pageId, propertyId, pageSize = 100)
+notion.pages.retrievePropertyItemsAsFlow(pageId, propertyId)
 
 // Flow (page-level) - returns Flow<PagePropertyItemResponse>
-notion.pages.retrievePropertyItemsPagedFlow(pageId, propertyId, pageSize = 100)
+notion.pages.retrievePropertyItemsPagedFlow(pageId, propertyId)
 ```
+
+**Relations beyond 25 entries are completed automatically.** Notion's page object caps relation
+properties at 25 references (`has_more: true`). `pages.retrieve`/`create`/`update` and the
+auto-paginating data source methods (`query`, `queryAsFlow`, `iterateAllRows`, `collectAllRows`)
+complete them with the property-item endpoint above, so you rarely need it directly. The raw
+single-response methods (`queryFirstPage`, `queryPagedFlow`) do not complete pages; reading a
+still-truncated relation with `getRelationProperty` throws. Opt out with
+`completeTruncatedProperties = false` (per call, or on `NotionConfig`). See
+[Pages: Relations With More Than 25 Entries](pages.md#relations-with-more-than-25-entries).
 
 ## Common Patterns
 

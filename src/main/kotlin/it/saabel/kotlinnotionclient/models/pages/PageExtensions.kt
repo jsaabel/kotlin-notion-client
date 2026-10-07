@@ -113,9 +113,39 @@ fun Page.getDateProperty(name: String): DateData? = getProperty<PageProperty.Dat
 fun Page.getPeopleProperty(name: String): List<User> = getProperty<PageProperty.People>(name)?.people ?: emptyList()
 
 /**
- * Get a relation property page references.
+ * Get a relation property's page references — always the complete list.
+ *
+ * Notion's page object returns at most 25 references per relation and flags the rest with
+ * `has_more`. Pages returned by `pages.retrieve` / `create` / `update` and by data source
+ * `query` / `queryAsFlow` / `iterateAllRows` are completed by the client by default, so this
+ * returns every reference. A relation that is still truncated (e.g. a page from
+ * `queryFirstPage`, or completion disabled via `NotionConfig.completeTruncatedProperties`) makes
+ * this throw instead of silently returning the first 25. Use [getRelationPropertyPartial] to
+ * read such a list knowingly.
+ *
+ * @throws IllegalStateException if the relation is truncated (`hasMore == true`)
  */
-fun Page.getRelationProperty(name: String): List<PageReference> = getProperty<PageProperty.Relation>(name)?.relation ?: emptyList()
+fun Page.getRelationProperty(name: String): List<PageReference> {
+    val property = getProperty<PageProperty.Relation>(name) ?: return emptyList()
+    check(!property.hasMore) {
+        "Relation property '$name' on page $id is truncated: Notion returned only the first " +
+            "${property.relation.size} references (has_more = true). Re-read the page with " +
+            "pages.retrieve (which completes relations by default), fetch the rest with " +
+            "pages.retrievePropertyItems(\"$id\", \"${property.id}\"), or use " +
+            "getRelationPropertyPartial if the first references are all you need."
+    }
+    return property.relation
+}
+
+/**
+ * Get a relation property's page references exactly as held by this [Page], even if Notion
+ * truncated them at 25 (`PageProperty.Relation.hasMore == true`).
+ *
+ * Explicit opt-out from the completeness check in [getRelationProperty]. Never write a list read
+ * this way back with `relation(name, ids)` — replacing a relation with a truncated list deletes
+ * every reference beyond the first 25.
+ */
+fun Page.getRelationPropertyPartial(name: String): List<PageReference> = getProperty<PageProperty.Relation>(name)?.relation ?: emptyList()
 
 // ========================================
 // Rich Text handling (preserves vs simplifies)
@@ -220,7 +250,7 @@ fun Page.getPlainTextForProperty(name: String): String? {
         }
 
         is PageProperty.Relation -> {
-            "${property.relation.size} relation(s)"
+            "${property.relation.size}${if (property.hasMore) "+" else ""} relation(s)"
         }
 
         is PageProperty.Formula -> {

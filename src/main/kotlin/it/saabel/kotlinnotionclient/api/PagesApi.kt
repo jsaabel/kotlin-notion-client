@@ -60,14 +60,28 @@ class PagesApi(
     private val validationConfig: ValidationConfig = ValidationConfig.default(),
 ) {
     private val validator = RequestValidator(validationConfig)
+    private val propertyItems = PropertyItemsClient(httpClient, config)
+    private val completer = TruncatedPropertyCompleter(propertyItems)
+
+    /** Completes truncated relation/people properties when enabled (#91). */
+    private suspend fun Page.completedIf(enabled: Boolean): Page = if (enabled) completer.complete(this) else this
 
     /**
      * Retrieves a page object using the ID specified.
+     *
+     * Notion's page object returns at most 25 references per relation property (and cannot be
+     * guaranteed to return more than 25 people per people property). By default the client follows
+     * up with *Retrieve a page property item* requests so the returned [Page] carries every
+     * relation and person — see [completeTruncatedProperties].
      *
      * @param pageId The ID of the page to retrieve
      * @param filterProperties Optional list of property IDs to restrict the properties returned in
      *   the response. Accepts both the percent-encoded form returned by the data source schema
      *   (e.g. `%7DVpb`) and the decoded form returned elsewhere (e.g. `}Vpb`).
+     * @param completeTruncatedProperties Whether to complete relations reporting `has_more: true`
+     *   (and people lists of 25 or more) with extra property-item requests. Defaults to
+     *   [NotionConfig.completeTruncatedProperties]. When `false`, a truncated relation keeps
+     *   `hasMore = true` and `Page.getRelationProperty` throws for it.
      * @return Page object with all properties and metadata
      * @throws NotionException.NetworkError for network-related failures
      * @throws NotionException.ApiError for API-related errors (4xx, 5xx responses)
@@ -76,6 +90,7 @@ class PagesApi(
     suspend fun retrieve(
         pageId: String,
         filterProperties: List<String>? = null,
+        completeTruncatedProperties: Boolean = config.completeTruncatedProperties,
     ): Page {
         validateFilterPropertiesLimit(filterProperties)
         return try {
@@ -85,7 +100,7 @@ class PagesApi(
                 }
 
             if (response.status.isSuccess()) {
-                response.body<Page>()
+                response.body<Page>().completedIf(completeTruncatedProperties)
             } else {
                 throw response.toNotionApiError()
             }
@@ -159,7 +174,7 @@ class PagesApi(
                 }
 
             if (response.status.isSuccess()) {
-                response.body<Page>()
+                response.body<Page>().completedIf(config.completeTruncatedProperties)
             } else {
                 throw response.toNotionApiError()
             }
@@ -360,7 +375,7 @@ class PagesApi(
                 }
 
             if (response.status.isSuccess()) {
-                response.body<Page>()
+                response.body<Page>().completedIf(config.completeTruncatedProperties)
             } else {
                 throw response.toNotionApiError()
             }
@@ -508,8 +523,12 @@ class PagesApi(
      * Retrieves all items for a specific page property that may be paginated.
      *
      * This method automatically handles pagination for properties like relations
-     * that may have more items than the API returns by default (e.g., >20 relations).
+     * that may have more items than the page object returns (at most 25 references).
      * Returns all property items in a single list.
+     *
+     * [retrieve], [create], [update] and data source queries already use this endpoint to
+     * complete truncated relation and people properties by default, so most callers never
+     * need to call it directly.
      *
      * @param pageId The ID of the page containing the property
      * @param propertyId The ID of the property to retrieve items for
@@ -521,62 +540,7 @@ class PagesApi(
     suspend fun retrievePropertyItems(
         pageId: String,
         propertyId: String,
-    ): List<PropertyItem> {
-        val allItems = mutableListOf<PropertyItem>()
-        var currentCursor: String? = null
-        var pageCount = 0
-
-        do {
-            val url =
-                buildString {
-                    append("${config.baseUrl}/pages/$pageId/properties/$propertyId")
-                    if (currentCursor != null) {
-                        append("?start_cursor=$currentCursor")
-                    }
-                }
-
-            val response = retrievePropertyItemsPage(url)
-            allItems.addAll(response.results)
-
-            currentCursor = response.nextCursor
-            pageCount++
-
-            // Safety check to prevent infinite loops
-            val maxPages = 100 // Should be plenty for relation properties
-            if (pageCount >= maxPages) {
-                throw NotionException.ApiError(
-                    code = "PAGINATION_LIMIT_EXCEEDED",
-                    status = 500,
-                    details =
-                        "Property retrieval exceeded $maxPages pages. " +
-                            "This may indicate an infinite loop or an extremely large property.",
-                )
-            }
-        } while (response.hasMore)
-
-        return allItems
-    }
-
-    /**
-     * Retrieves a single page of property items.
-     */
-    private suspend fun retrievePropertyItemsPage(url: String): PagePropertyItemResponse =
-        try {
-            val response: HttpResponse = httpClient.get(url)
-
-            if (response.status.isSuccess()) {
-                response.body<PagePropertyItemResponse>()
-            } else {
-                throw response.toNotionApiError()
-            }
-        } catch (e: NotionException) {
-            throw e // Re-throw our own exceptions
-        } catch (e: ClientRequestException) {
-            // Handle HTTP client errors (4xx)
-            throw e.response.toNotionApiError()
-        } catch (e: Exception) {
-            throw NotionException.NetworkError(e)
-        }
+    ): List<PropertyItem> = propertyItems.fetchAll(pageId, propertyId)
 
     // ========== Pagination Helper Methods ==========
 
@@ -603,14 +567,7 @@ class PagesApi(
         propertyId: String,
     ): Flow<PropertyItem> =
         Pagination.asFlow { cursor ->
-            val url =
-                buildString {
-                    append("${config.baseUrl}/pages/$pageId/properties/$propertyId")
-                    if (cursor != null) {
-                        append("?start_cursor=$cursor")
-                    }
-                }
-            retrievePropertyItemsPage(url)
+            propertyItems.fetchPage(pageId, propertyId, cursor)
         }
 
     /**
@@ -636,14 +593,7 @@ class PagesApi(
         propertyId: String,
     ): Flow<PagePropertyItemResponse> =
         Pagination.asPagesFlow { cursor ->
-            val url =
-                buildString {
-                    append("${config.baseUrl}/pages/$pageId/properties/$propertyId")
-                    if (cursor != null) {
-                        append("?start_cursor=$cursor")
-                    }
-                }
-            retrievePropertyItemsPage(url)
+            propertyItems.fetchPage(pageId, propertyId, cursor)
         }
 
     // ---------------------------------------------------------------------

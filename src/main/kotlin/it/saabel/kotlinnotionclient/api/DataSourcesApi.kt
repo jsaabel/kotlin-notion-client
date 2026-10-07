@@ -48,6 +48,7 @@ class DataSourcesApi(
     private val validationConfig: ValidationConfig = ValidationConfig.default(),
 ) {
     private val validator = RequestValidator(validationConfig)
+    private val completer = TruncatedPropertyCompleter(httpClient, config)
 
     /** Resolves the pending-upload sentinels an icon or cover builder may have recorded. */
     private val uploads by lazy { EnhancedFileUploadApi(httpClient, config) }
@@ -140,11 +141,18 @@ class DataSourcesApi(
      * Automatically fetches all pages that match the query criteria by handling
      * pagination transparently. Returns all matching pages in a single list.
      *
+     * Every returned page is complete: relations that Notion truncated at 25 references
+     * (`has_more: true`) and people lists of 25 or more are completed with extra *Retrieve a page
+     * property item* requests — one or more per truncated property — unless
+     * [completeTruncatedProperties] is `false`.
+     *
      * @param dataSourceId The ID of the data source to query
      * @param request The query request with filters and sorts
      * @param filterProperties Optional list of property IDs to restrict the properties returned
      *   for each page. Accepts both the percent-encoded form returned by pre-normalization data
      *   source schemas and the decoded form returned elsewhere (e.g. `}Vpb`). At most 100 IDs.
+     * @param completeTruncatedProperties Whether to complete truncated relation/people properties.
+     *   Defaults to [NotionConfig.completeTruncatedProperties].
      * @return List of all matching pages across all result pages
      * @throws NotionException.QueryResultLimitReached when Notion truncates the result
      *     set at its 10,000-row cap. The exception carries the partial results, the
@@ -158,6 +166,7 @@ class DataSourcesApi(
         dataSourceId: String,
         request: DataSourceQueryRequest = DataSourceQueryRequest(),
         filterProperties: List<String>? = null,
+        completeTruncatedProperties: Boolean = config.completeTruncatedProperties,
     ): List<it.saabel.kotlinnotionclient.models.pages.Page> {
         validateFilterPropertiesLimit(filterProperties)
         val allPages = mutableListOf<it.saabel.kotlinnotionclient.models.pages.Page>()
@@ -171,7 +180,7 @@ class DataSourcesApi(
                     pageSize = NotionApiLimits.Response.MAX_PAGE_SIZE,
                 )
 
-            val response = querySinglePage(dataSourceId, paginatedRequest, filterProperties)
+            val response = querySinglePage(dataSourceId, paginatedRequest, filterProperties, completeTruncatedProperties)
             allPages.addAll(response.results)
 
             response.requestStatus?.takeIf { it.isIncomplete }?.let { status ->
@@ -212,6 +221,9 @@ class DataSourcesApi(
      * @param request The query request with filters, sorts, and pagination parameters
      * @param filterProperties Optional list of property IDs to restrict the properties returned
      *   for each page. At most 100 IDs.
+     * @param completeTruncatedProperties Whether to complete truncated relation/people properties
+     *   on the returned pages. Off by default: the raw single-page methods ([queryFirstPage],
+     *   [queryPagedFlow]) document exactly one API call per response.
      * @return DatabaseQueryResponse containing a single page of results
      * @throws IllegalArgumentException if [filterProperties] has more than 100 entries
      */
@@ -219,6 +231,16 @@ class DataSourcesApi(
         dataSourceId: String,
         request: DataSourceQueryRequest,
         filterProperties: List<String>? = null,
+        completeTruncatedProperties: Boolean = false,
+    ): DataSourceQueryResponse {
+        val response = querySinglePageRaw(dataSourceId, request, filterProperties)
+        return if (completeTruncatedProperties) completer.complete(response) else response
+    }
+
+    private suspend fun querySinglePageRaw(
+        dataSourceId: String,
+        request: DataSourceQueryRequest,
+        filterProperties: List<String>?,
     ): DataSourceQueryResponse =
         try {
             val response: HttpResponse =
@@ -506,10 +528,15 @@ class DataSourcesApi(
      * without losing the per-page metadata, use [queryPagedFlow] instead — it emits
      * the raw response (including `requestStatus`) without throwing.
      *
+     * Like [query], emitted pages have truncated relation/people properties completed unless
+     * [completeTruncatedProperties] is `false`.
+     *
      * @param dataSourceId The ID of the data source to query
      * @param request The query request with filters and sorts
      * @param filterProperties Optional list of property IDs to restrict the properties returned
      *   for each page. At most 100 IDs.
+     * @param completeTruncatedProperties Whether to complete truncated relation/people properties.
+     *   Defaults to [NotionConfig.completeTruncatedProperties].
      * @return Flow<Page> that emits individual pages from all result pages
      * @throws IllegalArgumentException if [filterProperties] has more than 100 entries
      */
@@ -517,6 +544,7 @@ class DataSourcesApi(
         dataSourceId: String,
         request: DataSourceQueryRequest = DataSourceQueryRequest(),
         filterProperties: List<String>? = null,
+        completeTruncatedProperties: Boolean = config.completeTruncatedProperties,
     ): Flow<it.saabel.kotlinnotionclient.models.pages.Page> {
         // Validated eagerly (at call time, not lazily on first collection) — consistent with
         // fail-fast validation elsewhere and with a caller's likely expectation that an
@@ -534,6 +562,7 @@ class DataSourcesApi(
                             pageSize = NotionApiLimits.Response.MAX_PAGE_SIZE,
                         ),
                         filterProperties,
+                        completeTruncatedProperties,
                     )
                 response.results.forEach {
                     emitted.add(it)
@@ -556,6 +585,10 @@ class DataSourcesApi(
      *
      * Unlike [queryAsFlow], this emits complete [DataSourceQueryResponse] objects,
      * allowing access to pagination metadata alongside results.
+     *
+     * Responses are emitted as Notion returned them: relations truncated at 25 references are
+     * **not** completed (they keep `hasMore = true`, and `Page.getRelationProperty` throws for
+     * them). Use [queryAsFlow] or [query] for complete pages.
      *
      * Example usage:
      * ```kotlin
@@ -606,6 +639,10 @@ class DataSourcesApi(
      * Unlike [query], which transparently fetches all matching pages, this method makes
      * exactly one API call and returns the raw response — including the cursor and [hasMore]
      * flag so the caller can decide whether and how to continue.
+     *
+     * The response is returned as Notion sent it: relations truncated at 25 references are
+     * **not** completed (they keep `hasMore = true`, and `Page.getRelationProperty` throws for
+     * them). Use [query] for complete pages, or complete a single page with `pages.retrieve`.
      *
      * Use this when you only want the first N results (e.g. a "top 5" dashboard query)
      * and do not need all matching records. Specify the desired count via [pageSize] in the
@@ -676,6 +713,9 @@ class DataSourcesApi(
      * an already two-level-deep caller filter cannot be combined and the API will
      * reject it.
      *
+     * Truncated relation/people properties on emitted rows are completed as in [query], subject
+     * to [NotionConfig.completeTruncatedProperties].
+     *
      * Consistency: the iteration is not a snapshot. Rows created, deleted, or edited
      * while draining may or may not be included. With the default
      * [RowIterationKey.CreatedTime] key, every row that exists (and keeps matching the
@@ -711,7 +751,7 @@ class DataSourcesApi(
         key: RowIterationKey = RowIterationKey.CreatedTime,
     ): Flow<it.saabel.kotlinnotionclient.models.pages.Page> =
         WindowedRowIteration.iterateAllRows(request, key) { pageRequest ->
-            querySinglePage(dataSourceId, pageRequest)
+            querySinglePage(dataSourceId, pageRequest, completeTruncatedProperties = config.completeTruncatedProperties)
         }
 
     /**
